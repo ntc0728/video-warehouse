@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>宽度契约接入 + UI 双候选 — 源检测/代理配置 · 2026-10-10</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #101014;
+  color: #e8e8ea;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC',
+    'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+}
+a { color: #7cb7ff; }
+
+.bar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 10px 18px;
+  background: #17171c;
+  border-bottom: 1px solid #2a2a32;
+}
+.bar .brand { font-weight: 800; font-size: 15px; }
+.bar .brand em { color: #e0704a; font-style: normal; }
+.grp { display: flex; align-items: center; gap: 6px; }
+.grp .lbl { color: #8b8b96; font-size: 12px; margin-right: 2px; }
+.bar button {
+  padding: 5px 12px;
+  border: 1px solid #3a3a44;
+  border-radius: 99px;
+  background: transparent;
+  color: #c9c9d2;
+  font-size: 13px;
+  cursor: pointer;
+}
+.bar button:hover { border-color: #6a6a78; color: #fff; }
+.bar button.on { background: #e8e8ea; border-color: #e8e8ea; color: #101014; font-weight: 700; }
+.bar button:disabled { opacity: .4; cursor: not-allowed; }
+.bar .sep { width: 1px; height: 22px; background: #2a2a32; }
+.bar .links { margin-left: auto; display: flex; gap: 12px; font-size: 12.5px; }
+
+.badges {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 8px 18px;
+  background: #141419;
+  border-bottom: 1px solid #2a2a32;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+.badges .b {
+  padding: 3px 10px;
+  border: 1px solid #33333d;
+  border-radius: 6px;
+  background: #1b1b22;
+  color: #b9b9c4;
+}
+.badges .b b { color: #fff; font-weight: 700; }
+.badges .b.ok b { color: #5ad07a; }
+.badges .b.warn b { color: #f0a63c; }
+.badges .hint { color: #77777f; align-self: center; }
+
+.stage {
+  overflow-x: auto;
+  padding: 16px 18px 4px;
+}
+.frames { display: flex; gap: 16px; align-items: flex-start; }
+.frame { flex: none; }
+.frame .cap {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  color: #a9a9b4;
+}
+.frame .cap .tag {
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: .04em;
+}
+.frame .cap .tag.a { background: #1f4d2f; color: #7fe0a2; }
+.frame .cap .tag.b { background: #4d3a1f; color: #f0c069; }
+.frame .cap .tag.old { background: #4d1f1f; color: #f08a8a; }
+.frame iframe {
+  display: block;
+  height: 760px;
+  border: 1px solid #33333d;
+  border-radius: 8px;
+  background: #fff;
+  /* content-box：边框不计入所选视口宽，iframe 内部媒体查询按精确档位命中
+     （border-box 下 1920 档内容视口=1918，--page-pad-x 会错落到 60px 档） */
+  box-sizing: content-box;
+}
+.vp-note { padding: 4px 18px 0; color: #77777f; font-size: 12px; }
+
+.prose { max-width: 1080px; padding: 18px 18px 64px; }
+.prose h2 { font-size: 17px; margin: 26px 0 8px; }
+.prose h3 { font-size: 14.5px; margin: 18px 0 6px; color: #d8d8de; }
+.prose p, .prose li { color: #b4b4be; line-height: 1.85; font-size: 13.5px; }
+.prose table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 8px 0; }
+.prose th, .prose td { border: 1px solid #33333d; padding: 7px 10px; text-align: left; line-height: 1.7; color: #b4b4be; }
+.prose th { background: #1b1b22; color: #d8d8de; }
+.prose code { background: #1b1b22; border: 1px solid #33333d; border-radius: 4px; padding: 1px 5px; font-size: 12.5px; }
+.prose .file { color: #8b8b96; font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="brand">宽度契约 × UI 双候选 · <em>Demo 2026-10-10</em></span>
+  <span class="sep"></span>
+  <span class="grp"><span class="lbl">页面</span>
+    <button id="p-sc" class="on" type="button">源检测</button>
+    <button id="p-px" type="button">代理配置</button>
+  </span>
+  <span class="grp"><span class="lbl">视口宽</span>
+    <button data-w="1440" type="button">1440</button>
+    <button data-w="1920" class="on" type="button">1920</button>
+    <button data-w="2200" type="button">2200</button>
+    <button data-w="2560" type="button">2560</button>
+    <button data-w="3440" type="button">3440</button>
+  </span>
+  <span class="grp"><span class="lbl">展示</span>
+    <button id="v-both" class="on" type="button">A/B 并排</button>
+    <button id="v-a" type="button">仅 A</button>
+    <button id="v-b" type="button">仅 B</button>
+    <button id="v-old" type="button" title="A 候选叠加改前样式：无 2200 封顶、无 --page-pad-x 侧距">叠加「改前」</button>
+  </span>
+  <span class="links">
+    <a href="../../../demos/e-source-checker.html" target="_blank" id="lnk-b">B 源检测 独立打开 ↗</a>
+    <a href="../../../demos/e-proxy-setup.html" target="_blank" id="lnk-b2">B 代理配置 独开 ↗</a>
+  </span>
+</div>
+
+<div class="badges" id="badges">
+  <span class="b">A 根容器宽 <b id="m-aw">–</b></span>
+  <span class="b">A 左右侧距 <b id="m-ap">–</b></span>
+  <span class="b">B 页面宽 <b id="m-bw">–</b></span>
+  <span class="b">B 左右侧距 <b id="m-bp">–</b></span>
+  <span class="b" id="m-cap-box">2200 封顶 <b id="m-cap">–</b></span>
+  <span class="hint" id="m-hint">测量自 iframe 内容（需经静态服务器预览；file:// 下浏览器禁止跨文档读取）</span>
+</div>
+
+<div class="vp-note">iframe 宽 = 所选视口宽（媒体查询按 iframe 视口生效）；拖动 stage 横向滚动查看超宽视口。
+  注：B 页徽章在 ≥1920 档可能小于视口宽 —— iframe 高 760px，宽高比超 21:9 会触发 Demo E 自身的
+  <code>min-aspect-ratio:21/9 → --content-max: min(3000px, 92vw)</code> 超宽规则（真实浏览器 21:9 显示器同款行为），非测量误差。</div>
+
+<div class="stage">
+  <div class="frames">
+    <div class="frame" id="frame-a">
+      <div class="cap"><span class="tag a">候选 A · 保守合规</span><span id="cap-a">源检测 — 真实结构 + 真实 CSS（已落地的 G1 契约接入）</span></div>
+      <iframe id="if-a" src="a-source-checker.html" title="候选A"></iframe>
+    </div>
+    <div class="frame" id="frame-b">
+      <div class="cap"><span class="tag b">候选 B · 报刊排版</span><span id="cap-b">Demo E 风格版（demos/e-source-checker.html，仅风格参考未落地）</span></div>
+      <iframe id="if-b" src="../../../demos/e-source-checker.html" title="候选B"></iframe>
+    </div>
+  </div>
+</div>
+
+<div class="prose">
+  <h2>【问题】</h2>
+  <p>源检测页与代理配置页未接入全站 <code>--layout-content-max-width</code>（2200px 硬上限）宽度契约，且侧距与其它页面不一致：
+  源检测根容器曾用 <code>padding: var(--space-xs)</code> 短手整块覆盖 <code>.page-padding</code>（桌面侧距塌到 ~4.5px，贴边）；
+  代理配置桌面侧距用 <code>--space-md</code>（~9.5–12.5px），远小于其它页的 <code>--page-pad-x</code>（60/100/140px 分档）。
+  两页在 2560/3440 宽屏下内容铺满全屏、无 2200 封顶，与 Browse/Home/Detail 等接法不同构。</p>
+
+  <h2>【旧逻辑】</h2>
+  <table>
+    <tr><th>页面</th><th>改前根容器</th><th>问题</th></tr>
+    <tr><td>源检测</td><td class="file">SourceChecker.css:11 <code>padding: var(--space-xs)</code>（短手，无 max-width / margin）</td><td>桌面侧距 ~4.5px 贴边；&gt;2200 视口不封顶</td></tr>
+    <tr><td>代理配置</td><td class="file">ProxySetup.css:13 <code>padding: var(--space-xl) var(--space-md)</code>（无 max-width / margin）</td><td>桌面侧距 ~9.5–12.5px 与全站 60/100/140 档不一致；&gt;2200 不封顶</td></tr>
+  </table>
+
+  <h2>【新逻辑】（阶段 2 已落地）</h2>
+  <ul>
+    <li><b>封顶</b>：两页根容器加 <code>max-width: var(--layout-content-max-width)</code> + <code>margin-inline: auto</code>。
+      该 token <code>:root</code>=100%、≥768 媒体查询=<code>min(100%, 2200px)</code> → ≤2200 视口逐像素与改前一致，&gt;2200 封顶居中，与 Browse/Home/Detail 同构。</li>
+    <li><b>侧距</b>：源检测去掉 padding 短手（只留上下 <code>--space-xs</code>），左右沿用 <code>.page-padding</code> 的 <code>--page-pad-x</code> 分档（&lt;1024 space-lg / 1024–1919=60 / 1920–2559=100 / ≥2560=140）；
+      代理配置 ≥768 补 <code>padding-right/left: var(--page-pad-x)</code>（移动端保持 <code>--space-md</code> 现状）。</li>
+  </ul>
+  <p class="file">涉及文件：src/pages/SourceChecker/SourceChecker.css / src/pages/ProxySetup/ProxySetup.css</p>
+
+  <h2>【预览】</h2>
+  <ul>
+    <li><b>候选 A（保守合规 · 已落地）</b>：上方左 iframe —— 真实页面结构 + 直链真实源码 CSS，观感即当前构建产物。
+      切「叠加改前」可在 A 上叠回改前样式（去封顶 + 回贴边侧距）做旧↔新对比。</li>
+    <li><b>B（Demo E 报刊排版 · 未落地）</b>：上方右 iframe —— <code>demos/e-source-checker.html</code> / <code>demos/e-proxy-setup.html</code>（本次新建）。
+      报刊系自带 <code>--content-max: 2200px</code> 与 <code>--pad-x</code> 同曲线留白，天然符合契约；是否作为两页的 UI 改版方向由用户评审。</li>
+    <li>徽章区实时读出两候选的根容器宽/侧距/是否命中 2200 封顶，随视口切换刷新。</li>
+  </ul>
+</div>
+
+<script>
+(function () {
+  var pages = {
+    sc: {
+      a: 'a-source-checker.html',
+      b: '../../../demos/e-source-checker.html',
+      capA: '源检测 — 真实结构 + 真实 CSS（已落地的 G1 契约接入）',
+      capB: 'Demo E 风格版（demos/e-source-checker.html，仅风格参考未落地）',
+      sel: '.source-checker-page, .page-padding',
+      old: 'html.old-mode .source-checker-page { max-width: none !important; margin-inline: 0 !important; padding: var(--space-xs) !important; }',
+    },
+    px: {
+      a: 'a-proxy-setup.html',
+      b: '../../../demos/e-proxy-setup.html',
+      capA: '代理配置 — 真实结构 + 真实 CSS（已落地的 G1 契约接入）',
+      capB: 'Demo E 报刊排版（demos/e-proxy-setup.html 本次新建，仅风格参考未落地）',
+      sel: '.proxy-setup, .page',
+      old: 'html.old-mode .proxy-setup { max-width: none !important; margin-inline: 0 !important; padding: var(--space-xl) var(--space-md) !important; }',
+    },
+  };
+  var state = { page: 'sc', view: 'both', vw: 1920, old: false };
+
+  var ifA = document.getElementById('if-a');
+  var ifB = document.getElementById('if-b');
+  var frameA = document.getElementById('frame-a');
+  var frameB = document.getElementById('frame-b');
+
+  function eachFrame(fn) {
+    [ifA, ifB].forEach(function (f) {
+      try {
+        var doc = f.contentDocument;
+        if (doc && doc.documentElement) fn(doc);
+      } catch (e) { /* file:// 下读不到，徽章保持 – */ }
+    });
+  }
+
+  function injectOld() {
+    var cfg = pages[state.page];
+    eachFrame(function (doc) {
+      var sid = 'old-mode-style';
+      var el = doc.getElementById(sid);
+      if (state.old) {
+        if (!el) {
+          el = doc.createElement('style');
+          el.id = sid;
+          doc.head.appendChild(el);
+        }
+        el.textContent = cfg.old;
+        doc.documentElement.classList.add('old-mode');
+      } else if (el) {
+        el.remove();
+        doc.documentElement.classList.remove('old-mode');
+      }
+    });
+  }
+
+  function measure() {
+    var cfg = pages[state.page];
+    var docA = null, docB = null;
+    try { docA = ifA.contentDocument; } catch (e) { /* ignore */ }
+    try { docB = ifB.contentDocument; } catch (e) { /* ignore */ }
+
+    var aw = document.getElementById('m-aw');
+    var ap = document.getElementById('m-ap');
+    var bw = document.getElementById('m-bw');
+    var bp = document.getElementById('m-bp');
+    var cap = document.getElementById('m-cap');
+    var capBox = document.getElementById('m-cap-box');
+    var hint = document.getElementById('m-hint');
+
+    var readable = !!(docA && docA.documentElement);
+    hint.textContent = readable
+      ? '测量自 iframe 内容 DOM（实时）'
+      : '无法读取 iframe 内容（file:// 跨文档限制）— 请经静态服务器预览';
+
+    function read(doc, sel) {
+      if (!doc) return null;
+      var root = doc.querySelector(sel);
+      if (!root) return null;
+      var cs = doc.defaultView.getComputedStyle(root);
+      return {
+        w: Math.round(root.getBoundingClientRect().width),
+        pl: Math.round(parseFloat(cs.paddingLeft) || 0),
+        pr: Math.round(parseFloat(cs.paddingRight) || 0),
+      };
+    }
+
+    var a = read(docA, state.page === 'sc' ? '.source-checker-page' : '.proxy-setup');
+    var b = read(docB, '.page');
+
+    if (a) {
+      aw.textContent = a.w + 'px';
+      ap.textContent = a.pl + ' / ' + a.pr + 'px';
+    } else { aw.textContent = ap.textContent = '–'; }
+    if (b) {
+      bw.textContent = b.w + 'px';
+      bp.textContent = b.pl + ' / ' + b.pr + 'px';
+    } else { bw.textContent = bp.textContent = '–'; }
+
+    var capped = state.vw > 2200 && a && a.w <= 2201;
+    cap.textContent = state.vw > 2200
+      ? (a ? (capped ? '命中（A=' + a.w + 'px）' : '未命中（A=' + a.w + 'px）') : '–')
+      : '视口 ≤2200 无需封顶';
+    capBox.className = 'b ' + (state.vw <= 2200 ? '' : (capped ? 'ok' : 'warn'));
+  }
+
+  function relayout() {
+    [ifA, ifB].forEach(function (f) { f.style.width = state.vw + 'px'; });
+    frameA.style.display = (state.view === 'b') ? 'none' : '';
+    frameB.style.display = (state.view === 'a') ? 'none' : '';
+    document.getElementById('v-old').disabled = state.view === 'b';
+    if (state.view === 'b' && state.old) { state.old = false; syncOldBtn(); injectOld(); }
+    requestAnimationFrame(function () { requestAnimationFrame(measure); });
+  }
+
+  function syncOldBtn() {
+    document.getElementById('v-old').classList.toggle('on', state.old);
+  }
+
+  function setPage(key) {
+    state.page = key;
+    document.getElementById('p-sc').classList.toggle('on', key === 'sc');
+    document.getElementById('p-px').classList.toggle('on', key === 'px');
+    var cfg = pages[key];
+    document.getElementById('cap-a').textContent = cfg.capA;
+    document.getElementById('cap-b').textContent = cfg.capB;
+    ifA.src = cfg.a;
+    ifB.src = cfg.b;
+    relayout();
+  }
+
+  document.getElementById('p-sc').addEventListener('click', function () { setPage('sc'); });
+  document.getElementById('p-px').addEventListener('click', function () { setPage('px'); });
+
+  document.querySelectorAll('[data-w]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      state.vw = parseInt(btn.getAttribute('data-w'), 10);
+      document.querySelectorAll('[data-w]').forEach(function (b) { b.classList.toggle('on', b === btn); });
+      relayout();
+    });
+  });
+
+  [['v-both', 'both'], ['v-a', 'a'], ['v-b', 'b']].forEach(function (p) {
+    document.getElementById(p[0]).addEventListener('click', function () {
+      state.view = p[1];
+      ['v-both', 'v-a', 'v-b'].forEach(function (id) {
+        document.getElementById(id).classList.toggle('on', id === p[0]);
+      });
+      relayout();
+    });
+  });
+
+  document.getElementById('v-old').addEventListener('click', function () {
+    state.old = !state.old;
+    syncOldBtn();
+    injectOld();
+    requestAnimationFrame(measure);
+  });
+
+  window.addEventListener('resize', function () { requestAnimationFrame(measure); });
+  // 兜底：若 iframe load 早于本脚本执行（缓存命中），window load 后再测一轮
+  window.addEventListener('load', function () {
+    requestAnimationFrame(function () { requestAnimationFrame(measure); });
+  });
+
+  // 持久 load 监听：初始加载与 setPage 换 src 都会走到这里（初始加载早于脚本执行完毕，
+  // 单靠 setPage 挂监听会漏掉首帧 → 徽章恒 – ）。
+  [ifA, ifB].forEach(function (f) {
+    f.addEventListener('load', function () {
+      injectOld();
+      requestAnimationFrame(function () { requestAnimationFrame(measure); });
+    });
+  });
+
+  relayout();
+})();
+</script>
+</body>
+</html>

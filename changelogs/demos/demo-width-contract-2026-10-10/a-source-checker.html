@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>候选A · 源检测（保守合规版 · 真实 CSS 直链）— 2026-10-10</title>
+<!-- 契约真源直链：variables.css 自带 @import './layout-tokens.css'（--page-pad-x 分档在此） -->
+<link rel="stylesheet" href="../../../src/assets/styles/variables.css">
+<link rel="stylesheet" href="../../../src/pages/SourceChecker/SourceChecker.css">
+<style>
+/* index.css 不可整链（含 Tailwind @/ 别名），此处按需摘录等价基础规则 */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC',
+    'MiSans', 'Microsoft YaHei', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+html { font-size: var(--root-font-size); }
+/* —— .page-padding 原样摘录（index.css:665）：基础 + ≥768 侧距 --page-pad-x —— */
+.page-padding { padding: var(--space-sm) var(--space-sm) 0 var(--space-sm); }
+@media (width >= 768px) {
+  .page-padding { padding-right: var(--page-pad-x); padding-left: var(--page-pad-x); }
+}
+</style>
+</head>
+<body>
+<!-- 结构逐块对应 src/pages/SourceChecker/index.tsx 渲染（header/stats/tabs/content/check-panel） -->
+<div class="page-padding source-checker-page">
+
+  <div class="source-checker-header">
+    <div class="header-left">
+      <h1>源检测</h1>
+      <p>检测网络连接和数据源的可用性状态</p>
+    </div>
+    <div class="header-right">
+      <button class="check-all-btn" type="button">一键检测</button>
+      <span class="last-check-time">上次检测: 2 分钟前</span>
+    </div>
+  </div>
+
+  <div class="source-checker-stats">
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--color-success);">32ms</div>
+      <div class="stat-label">网速延迟</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--color-success);">4/5</div>
+      <div class="stat-label">IPTV 源</div>
+      <div class="stat-config" title="聚合源 A, 聚合源 B, 聚合源 C">聚合源 A, 聚合源 B, 聚合源 C</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--color-success);">3/4</div>
+      <div class="stat-label">视频源</div>
+      <div class="stat-config" title="豆瓣资源, 茅台资源">豆瓣资源, 茅台资源</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--color-text-secondary);">-</div>
+      <div class="stat-label">IPTV 代理</div>
+      <div class="stat-config" title="未配置">未配置</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--color-text-secondary);">-</div>
+      <div class="stat-label">视频代理</div>
+      <div class="stat-config" title="未配置">未配置</div>
+    </div>
+  </div>
+
+  <div class="source-checker-tabs">
+    <button class="tab-btn active" type="button">网速</button>
+    <button class="tab-btn" type="button">IPTV 源 <span class="tab-badge available">4</span></button>
+    <button class="tab-btn" type="button">视频源 <span class="tab-badge available">3</span></button>
+    <button class="tab-btn" type="button">IPTV 代理</button>
+    <button class="tab-btn" type="button">视频代理</button>
+  </div>
+
+  <div class="source-checker-content">
+    <div class="check-panel">
+      <div class="panel-header">
+        <h3>网络连接检测</h3>
+        <button class="btn-small" type="button">检测</button>
+      </div>
+
+      <div class="result-card success">
+        <div class="result-icon">✓</div>
+        <div class="result-info">
+          <div class="result-title">连接成功</div>
+          <div class="result-detail">延迟 32ms，网络正常，可正常访问数据源</div>
+        </div>
+      </div>
+
+      <div class="speed-info">
+        <span class="speed-label">下载测速</span>
+        <span class="speed-value">12.4 MB/s</span>
+      </div>
+
+      <div class="test-points">
+        <h4>测试节点</h4>
+        <ul>
+          <li><span class="point-name">TMDB 图片 · image.tmdb.org</span><span class="point-status available">32ms</span></li>
+          <li><span class="point-name">TMDB API · api.themoviedb.org</span><span class="point-status available">45ms</span></li>
+          <li><span class="point-name">weserv 图片代理 · images.weserv.nl</span><span class="point-status available">58ms</span></li>
+        </ul>
+      </div>
+
+      <div class="source-list">
+        <div class="source-item">
+          <div class="source-info">
+            <div class="source-name">聚合源 A</div>
+            <div class="source-url">https://example.com/iptv-a.m3u</div>
+            <div class="source-meta">最近检测: 2 分钟前</div>
+          </div>
+          <div class="source-status"><span class="status-dot available"></span>可用</div>
+          <div class="latency">32ms</div>
+        </div>
+        <div class="source-item">
+          <div class="source-info">
+            <div class="source-name">聚合源 B</div>
+            <div class="source-url">https://example.com/iptv-b.m3u</div>
+            <div class="source-meta">最近检测: 2 分钟前</div>
+          </div>
+          <div class="source-status"><span class="status-dot available"></span>可用</div>
+          <div class="latency">47ms</div>
+        </div>
+        <div class="source-item">
+          <div class="source-info">
+            <div class="source-name">备用源</div>
+            <div class="source-url">https://example.com/iptv-c.m3u</div>
+            <div class="source-meta">最近检测: 2 分钟前</div>
+          </div>
+          <div class="source-status"><span class="status-dot error"></span>不可用</div>
+          <div class="latency">--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

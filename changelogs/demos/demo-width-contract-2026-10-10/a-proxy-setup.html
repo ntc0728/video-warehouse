@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>候选A · 一键配置代理（保守合规版 · 真实 CSS 直链）— 2026-10-10</title>
+<link rel="stylesheet" href="../../../src/assets/styles/variables.css">
+<link rel="stylesheet" href="../../../src/pages/ProxySetup/ProxySetup.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC',
+    'MiSans', 'Microsoft YaHei', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+html { font-size: var(--root-font-size); }
+</style>
+</head>
+<body>
+<!-- 结构逐块对应 src/pages/ProxySetup/ProxySetup.tsx 渲染（header/grid/console/panel×3） -->
+<div class="proxy-setup">
+  <div class="proxy-setup__inner">
+
+    <header class="proxy-setup__header">
+      <h2 class="proxy-setup__title">☁ 一键配置代理</h2>
+      <p class="proxy-setup__sub">
+        无需手动部署 Cloudflare Worker，跟随向导即可完成视频采集 CORS 代理与 IPTV 流代理配置。
+        Token 仅保存在内存中，离开页面自动清除。
+      </p>
+    </header>
+
+    <div class="proxy-setup__grid">
+      <button type="button" class="proxy-setup__card is-selected">
+        <div class="proxy-setup__card-head"><span>⚡</span><span>视频采集 CORS 代理</span></div>
+        <p class="proxy-setup__card-desc">绕过浏览器跨域限制，访问 CMS 采集站数据</p>
+      </button>
+      <button type="button" class="proxy-setup__card">
+        <div class="proxy-setup__card-head"><span>📡</span><span>IPTV 流代理</span></div>
+        <p class="proxy-setup__card-desc">转发 IPTV 直播流（m3u8 / dash / ts）</p>
+      </button>
+    </div>
+
+    <div class="proxy-setup__console">
+      <span class="proxy-setup__log proxy-setup__log--info"><span class="proxy-setup__log-time">[10:24:01]</span> &gt; 等待配置开始，请在上方选择一个配置入口...</span>
+      <span class="proxy-setup__log proxy-setup__log--info"><span class="proxy-setup__log-time">[10:24:03]</span> 已选择：视频采集 CORS 代理</span>
+    </div>
+
+    <div class="proxy-setup__panel">
+      <h3 class="proxy-setup__panel-title">🛡 登录 Cloudflare</h3>
+      <button type="button" class="proxy-setup__btn proxy-setup__btn--link">
+        <span class="proxy-setup__btn-label">打开 Cloudflare 登录 / 创建 API Token</span>
+      </button>
+      <div class="proxy-setup__field">
+        <label>Cloudflare API Token</label>
+        <div class="proxy-setup__input-row">
+          <input type="password" placeholder="粘贴 API Token（Workers Scripts → Edit 权限）" />
+          <button type="button" class="proxy-setup__btn proxy-setup__btn--ghost">显示</button>
+        </div>
+      </div>
+      <div class="proxy-setup__field">
+        <label>Cloudflare Account ID</label>
+        <input type="text" placeholder="dash.cloudflare.com 右侧可查" />
+      </div>
+    </div>
+
+    <div class="proxy-setup__panel">
+      <div class="proxy-setup__action-row">
+        <button type="button" class="proxy-setup__btn proxy-setup__btn--primary proxy-setup__btn--lg">🚀 开始一键配置 Worker</button>
+        <span class="proxy-setup__action-hint">将上传 worker 脚本并创建 Workers 代理，需先填写上方 Token 与 Account ID。</span>
+      </div>
+    </div>
+
+    <div class="proxy-setup__panel">
+      <div class="proxy-setup__field">
+        <label>自定义域名 <span class="proxy-setup__optional">（可选，留空则使用 Worker 默认链接）</span></label>
+        <input type="text" placeholder="proxy.example.com（需在 Cloudflare DNS 配置 CNAME）" />
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

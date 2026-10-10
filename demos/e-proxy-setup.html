@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="day" class="booting">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinoTV Demo E · 一键配置代理 — 报刊排版式</title>
+<script>try{var m=localStorage.getItem('kino-demo-theme-mode')||(localStorage.getItem('kino-demo-theme')==='night'?'dark':'light');if(m==='system')m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(m==='dark')document.documentElement.setAttribute('data-theme','night')}catch(e){}</script>
+<link rel="stylesheet" href="style-e.css">
+<style>
+/* 代理配置页专属：总览条 + 入口双卡 + 控制台 + 表单 */
+.overview{border:2px solid var(--ink);padding:clamp(14px,2vh,24px) clamp(16px,2vw,32px);
+  display:flex;align-items:center;gap:clamp(16px,2vw,36px);flex-wrap:wrap;
+  margin-top:clamp(14px,2vh,24px)}
+.overview .big{font-family:var(--serif);font-size:clamp(22px,2.2vw,40px);font-weight:900;line-height:1.1}
+.overview .big em{font-style:normal;color:var(--accent)}
+.overview .sp{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ov-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(clamp(120px,12vw,190px),1fr));
+  gap:clamp(10px,1.4vh,18px);margin-top:clamp(12px,1.8vh,20px)}
+.ov-item{border-bottom:1px solid var(--rule);padding-bottom:8px}
+.ov-item span{display:block;font-size:clamp(10.5px,.7vw,12px);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.ov-item b{display:block;font-size:clamp(13px,.88vw,16px);font-weight:800;margin-top:4px}
+.entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,1.2vw,22px)}
+@media (width<=767px){.entry-grid{grid-template-columns:1fr}}
+.entry{border-top:2px solid var(--rule);background:transparent;text-align:left;
+  padding:clamp(14px,2vh,22px) clamp(14px,1.4vw,22px);cursor:pointer;transition:.18s;font:inherit;color:var(--ink)}
+.entry:hover{background:var(--band)}
+.entry.on{border-top-color:var(--accent);background:var(--band)}
+.entry .e-h{display:flex;align-items:center;gap:10px;font-weight:800;
+  font-family:var(--serif);font-size:clamp(15px,1.1vw,19px)}
+.entry .e-d{margin-top:6px;font-size:clamp(11.5px,.75vw,13.5px);color:var(--ink-2);line-height:1.6}
+.entry .e-tag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.entry.on .e-tag{color:var(--accent)}
+.form-rows{border-top:1px solid var(--rule)}
+.log-box{border:1px solid var(--ink);background:var(--band);padding:clamp(10px,1.4vh,16px);
+  min-height:clamp(130px,18vh,200px);max-height:clamp(180px,26vh,280px);overflow:auto;
+  font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:clamp(11.5px,.75vw,13px);
+  line-height:1.8;white-space:pre-wrap;word-break:break-all}
+.log-box .lt{color:var(--ink-3)}
+.log-box .ok{color:#1f7a4d}
+.log-box .warn{color:var(--accent)}
+.demo-note{font-size:clamp(10.5px,.7vw,12px);letter-spacing:.1em;color:var(--ink-3);text-transform:uppercase;font-weight:700}
+.action-row{display:flex;align-items:center;gap:clamp(12px,1.2vw,22px);flex-wrap:wrap;
+  border-top:1px solid var(--rule);padding-top:clamp(12px,1.6vh,18px)}
+.action-row .hint{font-size:clamp(11px,.72vw,13px);color:var(--ink-3);line-height:1.6;max-width:56ch}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="topbar">
+    <a class="tb-brand" href="home-style-e-typographic.html">Kino<em>TV</em></a>
+    <span class="tb-page" id="tb-page"></span>
+    <span class="tb-links" id="tb-links">
+      <a href="home-style-e-typographic.html">首页</a>
+      <span class="search-wrap" id="search-wrap">
+        <button class="search" id="search-btn" type="button" aria-label="搜索" title="搜索 (Ctrl+K)">⌕</button>
+        <form class="search-form" id="search-form" hidden>
+          <input id="search-input" type="text" placeholder="搜索电影 / 剧集…" autocomplete="off">
+          <button class="go" type="submit" aria-label="搜索">⌕</button>
+          <button class="close" id="search-close" type="button" aria-label="关闭">✕</button>
+        </form>
+        <div class="search-drop" id="search-drop" hidden></div>
+      </span>
+      <button class="theme-btn" id="theme-btn" type="button">☾</button>
+    </span>
+  </header>
+
+  <section class="overview">
+    <span class="big" id="ov-big">未配置<em>.</em></span>
+    <span class="sp">
+      <button class="btn btn--solid" id="run" type="button">开始一键配置（演示）</button>
+      <span class="demo-note">演示日志 · 不发起真实部署</span>
+    </span>
+    <div class="ov-list" id="ov-list" style="flex-basis:100%"></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-cap">
+      <h2>配置入口</h2>
+      <span class="sub">二选一，对齐真实 ProxySetup 的 cors / iptv 双入口</span>
+    </div>
+    <div class="entry-grid">
+      <button class="entry on" type="button" data-kind="cors">
+        <span class="e-tag">Entry 01</span>
+        <div class="e-h">视频采集 CORS 代理</div>
+        <div class="e-d">绕过浏览器跨域限制，访问 CMS 采集站数据</div>
+      </button>
+      <button class="entry" type="button" data-kind="iptv">
+        <span class="e-tag">Entry 02</span>
+        <div class="e-h">IPTV 流代理</div>
+        <div class="e-d">转发 IPTV 直播流（m3u8 / dash / ts）</div>
+      </button>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-cap">
+      <h2>部署日志</h2>
+      <span class="sub">所有行均为演示输出，不向 Cloudflare 发起任何请求</span>
+    </div>
+    <div class="log-box" id="log-box"><span class="lt">&gt; 等待配置开始，请在上方选择一个配置入口...</span></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-cap">
+      <h2>登录 Cloudflare</h2>
+      <span class="sub">Token 仅保存在内存中（本演示页不外发、不持久化）</span>
+    </div>
+    <div class="form-rows">
+      <div class="field">
+        <div class="f-t"><b>Cloudflare API Token</b><span>Workers Scripts → Edit 权限</span></div>
+        <div class="f-c">
+          <input class="input" id="cf-token" type="password" placeholder="粘贴 API Token…" style="width:min(46vw,340px)">
+          <button class="btn" id="toggle-token" type="button">显示</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="f-t"><b>Account ID</b><span>dash.cloudflare.com 右侧可查</span></div>
+        <div class="f-c"><input class="input" id="cf-account" type="text" placeholder="Cloudflare Account ID…" style="width:min(46vw,340px)"></div>
+      </div>
+      <div class="field">
+        <div class="f-t"><b>自定义域名</b><span>可选，留空则使用 Worker 默认链接</span></div>
+        <div class="f-c"><input class="input" id="cf-domain" type="text" placeholder="proxy.example.com（需配置 CNAME）" style="width:min(46vw,340px)"></div>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn--solid" id="deploy" type="button">开始一键配置 Worker（演示）</button>
+      <span class="hint">真实页将上传 worker 脚本并创建 Workers 代理；本演示只逐行打印带「演示」标记的日志，不虚构部署结果。</span>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-cap">
+      <h2>配置结果</h2>
+      <span class="sub">未演示完成前保持「未配置」</span>
+    </div>
+    <div id="result-body"><p style="font-size:clamp(12px,.8vw,14px);color:var(--ink-3)">尚未生成结果链接 —— 真实部署成功后此处显示 Worker 地址并可写入项目设置。</p></div>
+  </section>
+
+  <footer>
+    <span>KinoTV — Demo E · 一键配置代理页 · 报刊排版式；入口/日志/Cloudflare 表单/结果四段对齐真实 ProxySetup.tsx。Token 与部署均为演示，不发起真实请求、不显示虚构部署结果。</span>
+    <span class="foot-links"></span>
+    <span>仅供风格评审</span>
+  </footer>
+
+</div>
+
+<div class="fab" id="fab">
+  <button id="fab-refresh" type="button" title="刷新数据">↻</button>
+  <button id="fab-top" type="button" title="返回顶部">↑</button>
+</div>
+
+<script src="_data.js"></script>
+<script src="_data-e-tmdb.js"></script>
+<script src="style-e-boot.js"></script>
+<script>
+var KIND = 'cors';
+var DEPLOYED = { cors: false, iptv: false };
+
+function nowTime(){
+  var d = new Date();
+  return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2);
+}
+function log(msg, cls){
+  var box = document.getElementById('log-box');
+  var line = document.createElement('div');
+  line.innerHTML = '<span class="lt">['+nowTime()+']</span> '+(cls?'<span class="'+cls+'">':'')+msg+(cls?'</span>':'');
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+function overview(){
+  var items = [
+    ['入口', KIND === 'cors' ? 'CORS 代理' : 'IPTV 流代理'],
+    ['Token', document.getElementById('cf-token').value ? '已填写（演示不外发）' : '未填写'],
+    ['CORS', DEPLOYED.cors ? '演示完成' : '未配置'],
+    ['IPTV', DEPLOYED.iptv ? '演示完成' : '未配置'],
+  ];
+  document.getElementById('ov-list').innerHTML = items.map(function(it){
+    var bad = /未/.test(it[1]);
+    return '<div class="ov-item"><span>'+it[0]+'</span><b>'+(bad?'<span style="color:var(--accent)">':'<span style="color:#1f7a4d">')+it[1]+'</span></b></div>';
+  }).join('');
+  var done = (DEPLOYED.cors?1:0)+(DEPLOYED.iptv?1:0);
+  var big = document.getElementById('ov-big');
+  big.innerHTML = done===0 ? '未配置<em>.</em>'
+    : (done===2 ? '2 / 2 演示完成<em>.</em>' : '1 / 2 演示完成<em>.</em>');
+}
+
+document.querySelectorAll('.entry').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.entry').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    KIND = b.getAttribute('data-kind');
+    log('已选择：'+(KIND==='cors'?'视频采集 CORS 代理':'IPTV 流代理')+'（演示）');
+    overview();
+  });
+});
+
+document.getElementById('toggle-token').addEventListener('click', function(){
+  var i = document.getElementById('cf-token');
+  var show = i.type === 'password';
+  i.type = show ? 'text' : 'password';
+  this.textContent = show ? '隐藏' : '显示';
+});
+
+function runDemo(){
+  var token = document.getElementById('cf-token').value.trim();
+  var account = document.getElementById('cf-account').value.trim();
+  if(!token || !account){
+    log('演示提示：请先填写 API Token 与 Account ID（内容不外发）', 'warn');
+    document.getElementById('cf-token').focus();
+    return;
+  }
+  var steps = [
+    ['[演示] 校验 Token 权限：Workers Scripts:Edit — 跳过真实校验', ''],
+    ['[演示] 校验 Account ID — 跳过真实校验', ''],
+    ['[演示] 上传 worker.js —— 不发起网络请求', ''],
+    ['[演示] 创建 Workers 路由 —— 不发起网络请求', ''],
+    ['[演示] 全流程为界面演示，未生成真实 Worker 地址', 'warn'],
+  ];
+  var i = 0;
+  document.getElementById('deploy').disabled = true;
+  var timer = setInterval(function(){
+    if(i >= steps.length){
+      clearInterval(timer);
+      document.getElementById('deploy').disabled = false;
+      DEPLOYED[KIND] = true;
+      document.getElementById('result-body').innerHTML =
+        '<p style="font-size:clamp(12px,.8vw,14px);color:var(--ink-3)">演示结束：未产生真实结果链接（真实页在此显示 Worker 地址，并提供「复制链接 / 自动写入设置」）。</p>';
+      log('[演示] 完成：无真实部署结果，未写入项目设置', 'warn');
+      overview();
+      return;
+    }
+    log(steps[i][0], steps[i][1] || undefined);
+    i++;
+  }, 420);
+}
+
+document.getElementById('deploy').addEventListener('click', runDemo);
+document.getElementById('run').addEventListener('click', runDemo);
+['cf-token','cf-account'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', overview);
+});
+
+KINO_E.boot({ key:'settings', title:'一键配置代理' }).then(function(){
+  overview();
+});
+</script>
+</body>
+</html>
