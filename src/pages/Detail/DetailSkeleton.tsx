@@ -1,56 +1,47 @@
 /**
- * 详情页专属骨架 — 与真实页面**逐区块**同构（2026-09-18 补齐缺失区块；2026-09-24 按用户要求
- * 把 tab 标签也改回骨架方框、右栏 info-card 高度对齐真实单行）。
+ * 详情页专属骨架 — 与真实页面**逐区块**同构（2026-10-10 按方案 A · 海报对开重构）。
  *
- * 旧实现只镜像了 `.detail-top` + 一段简介，缺 tabs / 演员 / 剧照 / 两个推荐行 →
- * 骨架高度远小于真实页，数据到达时整页高度突变（明显 CLS）。
- * 现按 Detail/index.tsx 的真实渲染顺序逐块镜像：
+ * 真实渲染顺序（Detail/index.tsx 方案 A）：
+ *   .detail-hero（海报对开：≥768 两列 海报列|文本区，<768 单列文本区）
+ *     .detail-hero-poster   竖海报 2:3（骨架 = 灰块）
+ *     .detail-hero-info     横板底纹区：kicker / 标题 / meta / 简介 3 行 / CTA 按钮行
+ *   .detail-facts（资料区）
+ *     .detail-tabs-wrap     tab 槽骨架（图标 + 标签方框，不渲染真实文字，外壳复用真实类）
+ *     .detail-content
+ *       基础信息表   chips 4 + 典型 7 格 + 2 条整行（国家/发行）
+ *       演员         .detail-cast-row--collapsed 12 槽
+ *       剧照         .detail-stills-grid 6 张
+ *   相关推荐 / 你可能还喜欢   各 1 行网格（slice(0,12)）
  *
- *   .detail-top（≥1024 两栏 1.4fr/1fr；<1024 / App / TV 堆叠，右栏隐藏）
- *     section.detail-hero      16:9 + 底部标题/元信息/简介行
- *     aside.detail-hero-side   类型 chips + 基础信息网格（2 列）
- *   .detail-tabs-wrap          2 个 tab 槽（图标 + 标签均为骨架方框，不渲染真实文字；
- *                              外壳仍用真实 .detail-tab / .tab-underline 保证 padding/下划线几何）
- *   .detail-content
- *     演员        .detail-cast-row--collapsed（右侧默认折叠 2 行，与真实首屏一致）
- *     简介        若干行（末行短）
- *     剧照        .detail-stills-grid + .detail-stills-skeleton（与真实页自身剧照骨架同值 6 张）
- *   相关推荐 / 你可能还喜欢      各 1 行网格（真实 `slice(0, 12)` → 上限 12 张）
+ * 复用真实结构类（.detail-hero/.detail-hero-poster/.detail-hero-info/.detail-hero-body/
+ * .detail-facts-grid/.detail-fact/.detail-tabs/.detail-cast-row/.detail-stills-grid/.detail-recommend），
+ * 布局几何单真源自动跟随 ≥768 两列形态；骨架私有类只管灰块尺寸与「同构常量」。
  *
- * 「已知常量不当未知」（2026-09-18 用户要求）：区块**数量**与**顺序**都是确定的
- * （tabs 2/3、推荐区 2、剧照 6、推荐上限 12），骨架按真实常量渲染，不用「随便来几块」糊弄。
- * 唯一在数据到达前不可知的是「条件项是否出现」（真实基础信息有 13 个条件项，
- * 单部作品典型命中 6–9 个）→ 取典型值 INFO_CARD_COUNT 并在此注明。
- *
- * 2026-09-24 用户修正：① tab「概览/播放列表」**不要直接显示真实文字**，改用方框（图标槽 +
- * 标签槽两块 skeleton），但外壳仍复用 .detail-tab 使上下 padding/下划线与真实元素一致；
- * ② 右栏 .detail-skeleton__info-card 旧 height 3.25em 远大于真实单行 info-card，
- * 改为与真实 .detail-info-card 同行高（--text-sm 行高量级）。
- *
- * 视口差异化走 CSS 断点（width >= 1024px + html[data-device] 门控，与 Detail.css 同口径），不用 JS。
+ * 「已知常量不当未知」（2026-09-18 要求）：区块数量与顺序确定；唯一不可知的是条件字段
+ * （真实基础信息 12 个条件项 + 2 整行）→ 取典型 INFO_CELL_COUNT=7 / FULL_ROW_COUNT=2 并在此注明。
+ * 旧 .detail-top / .detail-hero-side 两栏镜像随方案 A 退役（2026-10-10）。
  */
 import Skeleton from '@/components/common/Skeleton';
 import { useGridCols } from '@/hooks';
 import './DetailSkeleton.css';
 
 /** tabs：真实前两项恒为概览/播放列表（TV 多一个「季信息」，骨架取公共最小 2）；
-    图标/标签均改骨架方框（2026-09-24），wide 区分标签槽宽度档（2 字 vs 4 字） */
+    图标/标签均为骨架方框，wide 区分标签槽宽度档（2 字 vs 4 字） */
 const TAB_ITEMS = [
   { key: 'info', wide: false },
   { key: 'sources', wide: true },
 ] as const;
 /** 类型 chips：真实 = genres.length（TMDB 典型 2–5） */
 const GENRE_CHIP_COUNT = 4;
-/** 基础信息卡（仅 grid 内；评分/国家/发行已改全宽 side-line）：
-    真实条件项最多 13，单部电影 grid 典型 7（发行时间/状态/时长/语言/导演/预算/票房）→ 取 7 */
-const INFO_CARD_COUNT = 7;
-/** 全宽 side-line：评分 + 国家 + 发行（与真实 .detail-info-row 三条对齐） */
-const INFO_ROW_COUNT = 3;
+/** 基础信息表格数：真实条件项最多 12，典型命中 7（评分/发行时间/状态/时长/语言/导演/票房） */
+const INFO_CELL_COUNT = 7;
+/** 整行（国家 / 发行）恒 2 条 */
+const FULL_ROW_COUNT = 2;
 /** 演员卡槽：真实 `.detail-cast-row--collapsed`（auto-fill minmax(6rem,1fr)，折叠 2 行） */
 const CAST_SLOTS = 12;
-/** 简介行数：真实为一段文本，桌面典型 3 行 */
+/** hero 简介行数：真实 3 行折叠，典型 3 行 */
 const OVERVIEW_LINES = 3;
-/** 剧照：与真实页自身剧照加载骨架同值（Detail/index.tsx 的 6 个 .detail-stills-skeleton） */
+/** 剧照：与真实页自身剧照加载骨架同值 6 张 */
 const STILL_COUNT = 6;
 /** 推荐区：真实最多 2 个（相关推荐 / 你可能还喜欢），每个 slice(0, 12) */
 const RECOMMEND_SECTIONS = ['相关推荐', '你可能还喜欢'] as const;
@@ -77,84 +68,97 @@ export default function DetailSkeleton() {
 
   return (
     <div className="detail-skeleton skeleton-scope" role="status" aria-label="加载中">
-      {/* ── hero + 右侧信息卡 ── */}
-      <div className="detail-skeleton__top">
-        <div className="detail-skeleton__hero">
-          <Skeleton className="detail-skeleton__hero-bg" />
-          <div className="detail-skeleton__hero-content">
+      {/* ── hero 对开：海报列 | 文本区（真实 .detail-hero 两列几何自动生效）── */}
+      <div className="detail-hero detail-skeleton__hero">
+        <div className="detail-hero-poster detail-skeleton__poster">
+          <Skeleton className="detail-skeleton__poster-img" />
+        </div>
+        <div className="detail-hero-info detail-skeleton__hero-info">
+          <div className="detail-hero-body">
+            <div className="detail-hero-topline">
+              <Skeleton className="detail-skeleton__kicker" />
+            </div>
             <Skeleton className="detail-skeleton__title" />
             <Skeleton className="detail-skeleton__meta" />
             <Skeleton className="detail-skeleton__meta detail-skeleton__meta--short" />
+            <div className="detail-skeleton__overview-list">
+              {Array.from({ length: OVERVIEW_LINES }, (_, i) => (
+                <Skeleton
+                  key={i}
+                  className={`detail-skeleton__overview${i === OVERVIEW_LINES - 1 ? ' detail-skeleton__overview--short' : ''}`}
+                />
+              ))}
+            </div>
+            <div className="detail-skeleton__btn-row">
+              <Skeleton className="detail-skeleton__btn detail-skeleton__btn--play" />
+              <Skeleton className="detail-skeleton__btn" />
+              <Skeleton className="detail-skeleton__btn" />
+            </div>
           </div>
-        </div>
-        <aside className="detail-hero-side detail-skeleton__side">
-          <h2 className="detail-section-title">基础信息</h2>
-          <div className="detail-skeleton__chips">
-            {Array.from({ length: GENRE_CHIP_COUNT }, (_, i) => (
-              <Skeleton key={i} className="detail-skeleton__chip" />
-            ))}
-          </div>
-          <div className="detail-skeleton__info-grid">
-            {Array.from({ length: INFO_CARD_COUNT }, (_, i) => (
-              <Skeleton key={i} className="detail-skeleton__info-card" />
-            ))}
-          </div>
-          {Array.from({ length: INFO_ROW_COUNT }, (_, i) => (
-            <Skeleton key={i} className="detail-skeleton__side-line" />
-          ))}
-        </aside>
-      </div>
-
-      {/* ── Tab 导航：外壳复用真实 .detail-tabs-wrap / .detail-tabs / .detail-tab /
-           .tab-underline（padding / 下划线 / gap 几何与真实一致）；
-           图标槽 + 标签槽均为骨架方框，不渲染「概览/播放列表」真实文字（2026-09-24 用户要求）── */}
-      <div className="detail-tabs-wrap">
-        <div className="detail-tabs">
-          {TAB_ITEMS.map((tab) => (
-            <span
-              key={tab.key}
-              className="tab-underline detail-tab detail-skeleton__tab"
-              aria-hidden="true"
-            >
-              <Skeleton className="detail-skeleton__tab-icon" />
-              <Skeleton
-                className={`detail-skeleton__tab-label${tab.wide ? ' detail-skeleton__tab-label--wide' : ''}`}
-              />
-            </span>
-          ))}
         </div>
       </div>
 
-      {/* ── 概览 tab：演员 → 简介 → 剧照（内层 .detail-info 复用真实页内壳：
-           padding / 块级流 / 标题 margin 全部单真源，骨架不再自己搭 flex 间距）── */}
-      <div className="detail-content">
-        <div className="detail-info">
-          <h3 className="detail-section-subtitle">演员</h3>
-          <div className="detail-cast-row detail-cast-row--collapsed detail-skeleton__cast">
-            {Array.from({ length: CAST_SLOTS }, (_, i) => (
-              <div key={i} className="detail-cast-item detail-skeleton__cast-item">
-                <Skeleton className="detail-skeleton__cast-avatar" />
-                <Skeleton className="detail-skeleton__cast-name" />
-                <Skeleton className="detail-skeleton__cast-role" />
-              </div>
+      {/* ── 资料区：tab 槽 + 基础信息表 + 演员 + 剧照 ── */}
+      <div className="detail-facts">
+        {/* tab 条：外壳复用真实 .detail-tabs-wrap / .detail-tabs / .detail-tab /
+            .tab-underline（padding / 下划线几何单真源）；图标槽 + 标签槽均为骨架方框 */}
+        <div className="detail-tabs-wrap">
+          <div className="detail-tabs">
+            {TAB_ITEMS.map((tab) => (
+              <span
+                key={tab.key}
+                className="tab-underline detail-tab detail-skeleton__tab"
+                aria-hidden="true"
+              >
+                <Skeleton className="detail-skeleton__tab-icon" />
+                <Skeleton
+                  className={`detail-skeleton__tab-label${tab.wide ? ' detail-skeleton__tab-label--wide' : ''}`}
+                />
+              </span>
             ))}
           </div>
+        </div>
 
-          <h3 className="detail-section-subtitle">简介</h3>
-          <div className="detail-skeleton__overview-list">
-            {Array.from({ length: OVERVIEW_LINES }, (_, i) => (
-              <Skeleton
-                key={i}
-                className={`detail-skeleton__overview${i === OVERVIEW_LINES - 1 ? ' detail-skeleton__overview--short' : ''}`}
-              />
-            ))}
-          </div>
+        <div className="detail-content">
+          <div className="detail-info">
+            <h2 className="detail-section-title">基础信息</h2>
+            <div className="detail-genres detail-skeleton__chips">
+              {Array.from({ length: GENRE_CHIP_COUNT }, (_, i) => (
+                <Skeleton key={i} className="detail-skeleton__chip" />
+              ))}
+            </div>
+            <div className="detail-facts-grid detail-skeleton__facts-grid">
+              {Array.from({ length: INFO_CELL_COUNT }, (_, i) => (
+                <div key={i} className="detail-fact detail-skeleton__fact">
+                  <Skeleton className="detail-skeleton__fact-label" />
+                  <Skeleton className="detail-skeleton__fact-value" />
+                </div>
+              ))}
+              {Array.from({ length: FULL_ROW_COUNT }, (_, i) => (
+                <div key={`full-${i}`} className="detail-fact detail-fact--full detail-skeleton__fact-full">
+                  <Skeleton className="detail-skeleton__fact-label" />
+                  <Skeleton className="detail-skeleton__side-line" />
+                </div>
+              ))}
+            </div>
 
-          <h3 className="detail-section-subtitle">剧照</h3>
-          <div className="detail-stills-grid">
-            {Array.from({ length: STILL_COUNT }, (_, i) => (
-              <div key={i} className="detail-stills-skeleton" />
-            ))}
+            <h3 className="detail-section-subtitle">演员</h3>
+            <div className="detail-cast-row detail-cast-row--collapsed detail-skeleton__cast">
+              {Array.from({ length: CAST_SLOTS }, (_, i) => (
+                <div key={i} className="detail-cast-item detail-skeleton__cast-item">
+                  <Skeleton className="detail-skeleton__cast-avatar" />
+                  <Skeleton className="detail-skeleton__cast-name" />
+                  <Skeleton className="detail-skeleton__cast-role" />
+                </div>
+              ))}
+            </div>
+
+            <h3 className="detail-section-subtitle">剧照</h3>
+            <div className="detail-stills-grid">
+              {Array.from({ length: STILL_COUNT }, (_, i) => (
+                <div key={i} className="detail-stills-skeleton" />
+              ))}
+            </div>
           </div>
         </div>
       </div>
