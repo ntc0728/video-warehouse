@@ -1,0 +1,287 @@
+/* ============================================================
+   源检测 / 代理配置 布局重设计 · 共享样式层
+   2026-10-10 · 三款方案（甲紧凑单栏 / 乙域卡组矩阵 / 丙任务流）
+   硬规矩：只放「真实功能有映射」的控件样式；假数据块顶部标「演示数据」
+   布局契约：--layout-content-max-width 封顶 + --page-pad-x 侧距
+   ============================================================ */
+
+:root {
+  --k-bg: #f5f6f7;
+  --k-panel: #ffffff;
+  --k-ink: #12161a;
+  --k-text: #1b2128;
+  --k-text-2: #5c6670;
+  --k-text-3: #8a939c;
+  --k-line: #e7e9eb;
+  --k-line-2: #d8dbde;
+  --k-ok: #18a558;
+  --k-ok-bg: #e9f7ef;
+  --k-err: #e0484d;
+  --k-err-bg: #fdeced;
+  --k-warn: #d9822b;
+  --k-warn-bg: #fdf3e6;
+  --k-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--k-bg); }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif);
+  color: var(--k-text);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono, code { font-family: var(--k-mono); }
+code { font-size: 0.92em; }
+
+/* ---------- 壳层：方案切换 + 页切换 ---------- */
+.dshell {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 9px 24px;
+  background: var(--k-ink);
+  color: #fff;
+}
+.dshell-brand { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.dshell-brand b { font-size: 14px; }
+.dshell-tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--k-warn);
+  color: #fff;
+}
+.dshell-sub { font-size: 11.5px; color: #9aa4ae; }
+.dshell-seg { display: flex; gap: 6px; margin-left: auto; }
+.dshell-seg button {
+  padding: 5px 14px;
+  border: 1px solid #2b333c;
+  border-radius: 999px;
+  background: transparent;
+  color: #c6cdd4;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.dshell-seg button.is-on { background: #fff; border-color: #fff; color: var(--k-ink); font-weight: 600; }
+.dshell-pages { display: flex; gap: 6px; }
+.dshell-pages button {
+  padding: 5px 12px;
+  border: 1px solid #2b333c;
+  border-radius: 999px;
+  background: transparent;
+  color: #9aa4ae;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.dshell-pages button.is-on { border-color: var(--k-ok); color: #fff; }
+.dshell-pages button.is-on::before { content: "● "; color: var(--k-ok); }
+
+/* ---------- 舞台 ---------- */
+.stage { display: none; padding: 30px 0 72px; }
+.stage.is-on { display: block; }
+.wrap {
+  max-width: var(--layout-content-max-width, 1440px);
+  margin-inline: auto;
+  padding: 0 var(--page-pad-x, 40px);
+}
+.demo-flag {
+  margin: 0 0 18px;
+  font-size: 12px;
+  color: var(--k-text-3);
+}
+.demo-flag b { color: var(--k-warn); font-weight: 600; }
+
+/* ---------- 通用元件 ---------- */
+.btn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 9px 20px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn--ink { background: var(--k-ink); color: #fff; }
+.btn--ok { background: var(--k-ok); color: #fff; }
+.btn--ghost { background: transparent; border-color: var(--k-line-2); color: var(--k-text); }
+.btn--sm { padding: 6px 14px; font-size: 12.5px; }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dot--ok { background: var(--k-ok); }
+.dot--err { background: var(--k-err); }
+.dot--idle { background: var(--k-text-3); }
+.dot--warn { background: var(--k-warn); }
+
+.pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.pill--ok { background: var(--k-ok-bg); color: var(--k-ok); }
+.pill--err { background: var(--k-err-bg); color: var(--k-err); }
+.pill--idle { background: #eef0f2; color: var(--k-text-3); }
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--k-line);
+}
+.head h1 { margin: 0; font-size: 24px; letter-spacing: 0.01em; }
+.head p { margin: 4px 0 0; font-size: 12.5px; color: var(--k-text-2); }
+.head-act { display: flex; align-items: center; gap: 12px; }
+.head-time { font-size: 12.5px; color: var(--k-text-2); }
+.head-time b { color: var(--k-text); font-weight: 500; }
+
+/* 表单元件（凭证区，两页共用） */
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; }
+.input {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--k-line-2);
+  border-radius: 10px;
+  background: var(--k-panel);
+  overflow: hidden;
+}
+.input:focus-within { border-color: var(--k-ok); box-shadow: 0 0 0 3px rgba(24, 165, 88, 0.14); }
+.input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-family: var(--k-mono);
+  background: transparent;
+  color: var(--k-text);
+}
+.input button {
+  border: 0;
+  border-left: 1px solid var(--k-line);
+  background: #fafbfc;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  color: var(--k-text-2);
+  cursor: pointer;
+  font-family: inherit;
+}
+.hint { margin: 6px 2px 0; font-size: 12px; color: var(--k-text-3); }
+.hint a { color: var(--k-ok); cursor: pointer; text-decoration: none; }
+
+/* 入口选择（radio 卡） */
+.entries { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.entry {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 16px 18px;
+  border: 1px solid var(--k-line-2);
+  border-radius: 12px;
+  background: var(--k-panel);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+.entry b { font-size: 14.5px; color: var(--k-text); }
+.entry span { font-size: 12.5px; color: var(--k-text-2); }
+.entry-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--k-line-2); margin-bottom: 4px; }
+.entry.is-selected { border-color: var(--k-ok); background: rgba(24, 165, 88, 0.05); }
+.entry.is-selected .entry-dot { border-color: var(--k-ok); background: var(--k-ok); box-shadow: inset 0 0 0 2px #fff; }
+
+/* 深色控制台（真实日志，非编造文案） */
+.console {
+  border-radius: 14px;
+  overflow: hidden;
+  background: #101418;
+  box-shadow: 0 14px 40px rgba(16, 20, 24, 0.22);
+}
+.console-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #1a2026;
+  border-bottom: 1px solid #242b32;
+}
+.console-bar i { width: 10px; height: 10px; border-radius: 50%; background: #3a444d; }
+.console-bar i:nth-child(1) { background: #e0484d; }
+.console-bar i:nth-child(2) { background: #d9822b; }
+.console-bar i:nth-child(3) { background: #18a558; }
+.console-bar span { margin-left: 8px; font-family: var(--k-mono); font-size: 11.5px; color: #8a939c; }
+.console-log {
+  margin: 0;
+  padding: 14px 16px 18px;
+  height: 280px;
+  overflow-y: auto;
+  font-family: var(--k-mono);
+  font-size: 12px;
+  line-height: 1.75;
+  color: #c6cdd4;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.console-log .ok { color: #3fd07a; }
+.console-log .err { color: #ff6b6f; }
+.console-log .dim { color: #6d7883; }
+
+/* 结果条（部署成功后） */
+.result {
+  margin-top: 20px;
+  border: 1px solid rgba(24, 165, 88, 0.4);
+  border-radius: 14px;
+  background: var(--k-ok-bg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.result b { font-size: 13.5px; }
+.result-act { margin-left: auto; display: flex; gap: 10px; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  z-index: 90;
+  background: var(--k-ink);
+  color: #fff;
+  font-size: 12.5px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(18, 22, 26, 0.25);
+}
+.toast[hidden] { display: none; }
+
+@media (max-width: 900px) {
+  .entries { grid-template-columns: 1fr; }
+  .dshell { flex-wrap: wrap; gap: 10px; }
+  .dshell-sub { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

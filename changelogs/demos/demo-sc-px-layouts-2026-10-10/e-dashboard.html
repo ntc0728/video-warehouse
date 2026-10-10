@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方案戊 · 仪表盘 Bento — 源检测/代理配置布局重设计</title>
+<link rel="stylesheet" href="../../../src/assets/styles/variables.css">
+<link rel="stylesheet" href="./_base.css">
+<style>
+/* ===== 方案戊：运维仪表盘 bento 格 —— 健康环 + 延迟条形 + 状态磁贴，大数字少文字 ===== */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+  margin-top: 20px;
+}
+.cell {
+  border: 1px solid var(--k-line);
+  border-radius: 16px;
+  background: var(--k-panel);
+  padding: 18px 20px;
+  min-width: 0;
+}
+.cell h3 { margin: 0 0 12px; font-size: 12px; color: var(--k-text-2); font-weight: 600; letter-spacing: 0.05em; }
+.c-health { grid-column: span 4; display: flex; gap: 18px; align-items: center; }
+.c-latency { grid-column: span 8; }
+.c-domains { grid-column: span 12; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; background: transparent; border: 0; padding: 0; }
+.c-list { grid-column: span 7; }
+.c-advice { grid-column: span 5; }
+@media (max-width: 1080px) { .c-health, .c-latency, .c-list, .c-advice { grid-column: span 12; } .c-domains { grid-template-columns: repeat(2, 1fr); } }
+
+.ring { position: relative; width: 108px; height: 108px; flex-shrink: 0; }
+.ring svg { transform: rotate(-90deg); }
+.ring .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ring .num b { font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+.ring .num span { font-size: 10.5px; color: var(--k-text-3); }
+.health-txt { display: flex; flex-direction: column; gap: 6px; }
+.health-txt b { font-size: 16px; }
+.health-txt .bad { color: var(--k-err); font-size: 12.5px; }
+
+/* 延迟条形（数据=当前真实字段：单次延迟 ms，无历史不做趋势线） */
+.bars { display: flex; flex-direction: column; gap: 9px; }
+.bar-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 56px; gap: 10px; align-items: center; font-size: 12px; }
+.bar-row .n { color: var(--k-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 10px; border-radius: 999px; background: #eef0f2; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 999px; background: var(--k-ok); }
+.bar-fill.err { background: var(--k-err); }
+.bar-row .v { font-family: var(--k-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.bar-row .v.err { color: var(--k-err); }
+
+/* 域磁贴 */
+.tile {
+  border: 1px solid var(--k-line); border-radius: 14px; background: var(--k-panel);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.tile:hover { box-shadow: 0 6px 18px rgba(18, 22, 26, 0.07); border-color: var(--k-line-2); }
+.tile.is-bad { border-color: rgba(224, 72, 77, 0.5); }
+.tile-top { display: flex; justify-content: space-between; align-items: center; }
+.tile-name { font-size: 11.5px; color: var(--k-text-2); }
+.tile-val { font-size: 24px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.tile-val small { font-size: 12px; color: var(--k-text-3); font-weight: 600; }
+.tile.is-bad .tile-val { color: var(--k-err); }
+
+/* 状态清单（唯一列表区，替代密表） */
+.slist { margin: 0; padding: 0; list-style: none; }
+.slist li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--k-line); font-size: 12.5px; }
+.slist li:last-child { border-bottom: 0; }
+.slist .nm { width: 130px; font-weight: 600; }
+.slist .u { flex: 1; min-width: 0; font-family: var(--k-mono); font-size: 11px; color: var(--k-text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slist .ops { display: flex; gap: 6px; margin-left: auto; }
+.slist .mini { padding: 3px 10px; border: 1px solid var(--k-line-2); border-radius: 999px; background: transparent; font-size: 11px; color: var(--k-text-2); cursor: pointer; font-family: inherit; }
+.slist .mini:hover { border-color: var(--k-ink); color: var(--k-text); }
+.slist a.mini { text-decoration: none; color: var(--k-ok); border-color: rgba(24, 165, 88, 0.45); }
+
+.advice-card { display: flex; flex-direction: column; gap: 10px; }
+.advice-card p { margin: 0; font-size: 12.5px; color: var(--k-text-2); line-height: 1.7; }
+
+/* 代理配置 bento */
+.p-entries { grid-column: span 12; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: transparent; border: 0; padding: 0; }
+.p-form { grid-column: span 5; }
+.p-console { grid-column: span 7; background: transparent; border: 0; padding: 0; }
+.p-result { grid-column: span 12; background: transparent; border: 0; padding: 0; }
+@media (max-width: 1080px) { .p-form, .p-console { grid-column: span 12; } }
+.seg-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header class="dshell">
+  <div class="dshell-brand"><span class="dshell-tag">布局 Demo</span><b>方案戊 · 仪表盘 Bento</b></div>
+  <span class="dshell-sub">健康环 + 延迟条形 + 域磁贴 · 大数字少文字 · 数据全为真实字段</span>
+  <nav class="dshell-pages">
+    <button data-page="sc" class="is-on">源检测</button>
+    <button data-page="px">代理配置</button>
+  </nav>
+  <div class="dshell-seg">
+    <button onclick="location='a-single-column.html'">甲</button>
+    <button onclick="location='b-domain-cards.html'">乙</button>
+    <button onclick="location='c-task-flow.html'">丙</button>
+    <button onclick="location='d-terminal.html'">丁</button>
+    <button class="is-on">戊 仪表盘</button>
+    <button onclick="location='f-ticket-split.html'">己</button>
+    <button onclick="location='g-ops-feed.html'">庚</button>
+  </div>
+</header>
+
+<!-- ═══════ 源检测 ═══════ -->
+<section class="stage is-on" data-stage="sc">
+<div class="wrap">
+  <p class="demo-flag">⚠ <b>演示数据</b>：环形/条形只用真实存在的字段（当前延迟 ms、可用数），<b>刻意不做趋势线/历史曲线</b>——那需要逐次历史，属未实现。</p>
+
+  <div class="head">
+    <div><h1>源检测</h1><p>健康总览 · 结果缓存 30 分钟</p></div>
+    <div class="head-act">
+      <span class="head-time">上次检测 <b>2 分钟前</b></span>
+      <button class="btn btn--ink" id="sc-all">一键检测</button>
+    </div>
+  </div>
+
+  <div class="bento">
+    <div class="cell c-health">
+      <div class="ring">
+        <svg width="108" height="108" viewBox="0 0 108 108">
+          <circle cx="54" cy="54" r="46" fill="none" stroke="#eef0f2" stroke-width="10"/>
+          <circle cx="54" cy="54" r="46" fill="none" stroke="#d9822b" stroke-width="10"
+                  stroke-dasharray="172.9 289.4" stroke-linecap="round"/>
+        </svg>
+        <div class="num"><b>3<em style="font-style:normal;font-size:16px;color:var(--k-text-3)">/5</em></b><span>检查域</span></div>
+      </div>
+      <div class="health-txt">
+        <b>2 项待修复</b>
+        <span class="bad">视频源 · 备用源异常</span>
+        <span class="bad">代理 · 未配置</span>
+      </div>
+    </div>
+
+    <div class="cell c-latency">
+      <h3>延迟对比（ms · 本次检测实测）</h3>
+      <div class="bars">
+        <div class="bar-row"><span class="n">网速延迟</span><div class="bar-track"><div class="bar-fill" style="width:16%"></div></div><span class="v">32</span></div>
+        <div class="bar-row"><span class="n">IPTV-A</span><div class="bar-track"><div class="bar-fill" style="width:16%"></div></div><span class="v">32</span></div>
+        <div class="bar-row"><span class="n">IPTV-B</span><div class="bar-track"><div class="bar-fill" style="width:24%"></div></div><span class="v">47</span></div>
+        <div class="bar-row"><span class="n">聚合源 A</span><div class="bar-track"><div class="bar-fill" style="width:23%"></div></div><span class="v">45</span></div>
+        <div class="bar-row"><span class="n">聚合源 B</span><div class="bar-track"><div class="bar-fill" style="width:29%"></div></div><span class="v">58</span></div>
+        <div class="bar-row"><span class="n">备用源</span><div class="bar-track"><div class="bar-fill err" style="width:100%"></div></div><span class="v err">超时</span></div>
+      </div>
+    </div>
+
+    <div class="c-domains">
+      <div class="tile"><span class="tile-top"><span class="tile-name">网速</span><i class="dot dot--ok"></i></span><span class="tile-val">32<small>ms</small></span></div>
+      <div class="tile"><span class="tile-top"><span class="tile-name">IPTV 源</span><i class="dot dot--ok"></i></span><span class="tile-val">4<small>/4</small></span></div>
+      <div class="tile is-bad"><span class="tile-top"><span class="tile-name">视频源</span><i class="dot dot--err"></i></span><span class="tile-val">3<small>/4</small></span></div>
+      <div class="tile"><span class="tile-top"><span class="tile-name">CORS 代理</span><i class="dot dot--idle"></i></span><span class="tile-val">—</span></div>
+      <div class="tile"><span class="tile-top"><span class="tile-name">IPTV 代理</span><i class="dot dot--idle"></i></span><span class="tile-val">—</span></div>
+    </div>
+
+    <div class="cell c-list">
+      <h3>全部 7 条源</h3>
+      <ul class="slist" id="sc-list">
+        <li><i class="dot dot--ok"></i><span class="nm">聚合源 IPTV-A</span><span class="u">https://example.com/iptv-a.m3u</span><span class="ops"><button class="mini" data-g="iptv">重测组</button></span></li>
+        <li><i class="dot dot--ok"></i><span class="nm">聚合源 IPTV-B</span><span class="u">https://example.com/iptv-b.m3u</span><span class="ops"><button class="mini" data-g="iptv">重测组</button></span></li>
+        <li><i class="dot dot--ok"></i><span class="nm">聚合源 A</span><span class="u">https://api.example.com/vod</span><span class="ops"><button class="mini" data-g="video">重测组</button></span></li>
+        <li><i class="dot dot--ok"></i><span class="nm">聚合源 B</span><span class="u">https://api2.example.com/vod</span><span class="ops"><button class="mini" data-g="video">重测组</button></span></li>
+        <li><i class="dot dot--err"></i><span class="nm">备用源</span><span class="u" style="color:var(--k-err)">connect ETIMEDOUT (10s)</span><span class="ops"><button class="mini" data-g="video">重测组</button><a class="mini" data-jump="px" href="./e-dashboard.html#px">修复 →</a></span></li>
+        <li><i class="dot dot--idle"></i><span class="nm">视频 CORS 代理</span><span class="u">未配置</span><span class="ops"><a class="mini" data-jump="px" href="./e-dashboard.html#px">部署 →</a></span></li>
+        <li><i class="dot dot--idle"></i><span class="nm">IPTV 流代理</span><span class="u">未配置</span><span class="ops"><a class="mini" data-jump="px" href="./e-dashboard.html#px">部署 →</a></span></li>
+      </ul>
+    </div>
+
+    <div class="cell c-advice advice-card">
+      <h3>建议动作</h3>
+      <p><b>备用源</b>直连超时，符合经代理回退策略；部署 <b>CORS 代理</b>后点「重测组」验证。</p>
+      <p><b>IPTV 流代理</b>未配置——如 IPTV 源出现防盗链问题再部署即可，当前 4/4 可用。</p>
+      <a class="btn btn--ok btn--sm" data-jump="px" href="./e-dashboard.html#px" style="align-self:flex-start;text-decoration:none">去配置代理 →</a>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 代理配置 ═══════ -->
+<section class="stage" data-stage="px">
+<div class="wrap">
+  <p class="demo-flag">⚠ <b>演示数据</b>：凭证/部署为界面演示。控制台作为 bento 大格，结果条横跨整行。</p>
+
+  <div class="head">
+    <div><h1>一键配置代理</h1><p>Cloudflare Worker 部署 · Token 仅存内存</p></div>
+    <div class="head-act"><span class="head-time">部署项 <b id="px-ctx">未选择</b></span></div>
+  </div>
+
+  <div class="bento">
+    <div class="p-entries">
+      <button class="entry" data-entry="cors"><span class="entry-dot"></span><b>视频采集 CORS 代理</b><span>解除跨域限制，恢复备用源</span></button>
+      <button class="entry" data-entry="iptv"><span class="entry-dot"></span><b>IPTV 流代理</b><span>转发 m3u8/hls 流</span></button>
+    </div>
+
+    <div class="cell p-form">
+      <h3>登录凭证</h3>
+      <div class="field">
+        <label>API Token</label>
+        <div class="input"><input id="px-token" type="password" placeholder="粘贴 API Token" autocomplete="off"><button id="px-eye" type="button">显示</button></div>
+        <p class="hint">仅内存 · <a href="#" onclick="return false">创建 Token ↗</a></p>
+      </div>
+      <div class="field">
+        <label>Account ID</label>
+        <div class="input"><input id="px-acct" type="text" placeholder="dash.cloudflare.com 右侧可查" autocomplete="off"></div>
+      </div>
+      <button class="btn btn--ink" id="px-deploy" style="width:100%">开始一键配置 Worker</button>
+      <p class="hint" style="margin-top:10px">将创建/更新 <code>kino-cors-proxy</code>，成功后自动回写设置</p>
+    </div>
+
+    <div class="cell p-console" style="background:transparent;border:0;padding:0">
+      <div class="console" style="height:100%">
+        <div class="console-bar"><i></i><i></i><i></i><span>deploy.log</span></div>
+        <pre class="console-log" id="px-log" style="height:calc(100% - 38px)"><code class="dim">等待部署指令 · 请先选择部署项并填写凭证</code></pre>
+      </div>
+    </div>
+
+    <div class="p-result result" id="px-result" hidden>
+      <span class="pill pill--ok">部署成功 · 已自动回写设置</span>
+      <b class="mono" id="px-url">https://kino-cors-proxy.example.workers.dev</b>
+      <div class="result-act">
+        <button class="btn btn--ghost btn--sm" id="px-copy">复制链接</button>
+        <a class="btn btn--ok btn--sm" href="./e-dashboard.html#sc" data-jump="sc" style="text-decoration:none">重测视频源组 →</a>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<div class="toast" id="toast" hidden>已复制</div>
+
+<script>
+(function () {
+  if (location.search.indexOf('embed') > -1) { var hh = document.querySelector('.dshell'); if (hh) hh.remove(); }
+  var all = document.getElementById('sc-all');
+  all.addEventListener('click', function () { all.disabled = true; all.textContent = '检测中…'; setTimeout(function () { all.disabled = false; all.textContent = '一键检测'; }, 1000); });
+  document.querySelectorAll('.slist .mini[data-g]').forEach(function (b) {
+    b.addEventListener('click', function () { b.textContent = '…'; setTimeout(function () { b.textContent = '重测组'; }, 700); });
+  });
+
+  var entries = document.querySelector('.p-entries');
+  entries.addEventListener('click', function (e) {
+    var b = e.target.closest('.entry'); if (!b) return;
+    entries.querySelectorAll('.entry').forEach(function (x) { x.classList.toggle('is-selected', x === b); });
+    document.getElementById('px-ctx').textContent = b.dataset.entry === 'cors' ? '视频采集 CORS 代理' : 'IPTV 流代理';
+  });
+  document.getElementById('px-eye').addEventListener('click', function () {
+    var inp = document.getElementById('px-token');
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    this.textContent = show ? '隐藏' : '显示';
+  });
+  var logEl = document.getElementById('px-log');
+  function log(msg, cls) {
+    var t = new Date().toTimeString().slice(0, 8);
+    logEl.innerHTML += '\n<code class="' + (cls || '') + '">[' + t + '] ' + msg + '</code>';
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  document.getElementById('px-deploy').addEventListener('click', function () {
+    var sel = entries.querySelector('.entry.is-selected');
+    if (!sel) { log('请先选择部署项', 'err'); return; }
+    if (!document.getElementById('px-token').value.trim() || !document.getElementById('px-acct').value.trim()) { log('请填写 API Token 与 Account ID', 'err'); return; }
+    var btn = this; btn.disabled = true; btn.textContent = '配置中…';
+    var steps = ['校验 Cloudflare 凭据…', '[1/4] 凭据校验通过', '[2/4] 子域获取成功', '[3/4] 上传 Worker 脚本…', '[4/4] 部署完成', '已自动写入项目设置'];
+    var i = 0;
+    (function next() {
+      if (i >= steps.length) { document.getElementById('px-result').hidden = false; btn.disabled = false; btn.textContent = '重新部署'; return; }
+      var s = steps[i++];
+      setTimeout(function () { log(s, s.indexOf(']') > -1 ? 'ok' : 'dim'); next(); }, 320);
+    })();
+  });
+  document.getElementById('px-copy').addEventListener('click', function () {
+    var url = document.getElementById('px-url').textContent;
+    var t = document.getElementById('toast');
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(
+      function () { t.hidden = false; setTimeout(function () { t.hidden = true; }, 1400); },
+      function () { t.textContent = '复制失败，请手动选择'; t.hidden = false; setTimeout(function () { t.hidden = true; }, 1400); }
+    );
+  });
+
+  function showPage(k) {
+    try { history.replaceState(null, '', '#' + k); } catch (e) {}
+    document.querySelectorAll('.stage').forEach(function (s) { s.classList.toggle('is-on', s.dataset.stage === k); });
+    document.querySelectorAll('.dshell-pages button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.page === k); });
+  }
+  document.querySelectorAll('.dshell-pages button').forEach(function (b) {
+    b.addEventListener('click', function () { showPage(b.dataset.page); });
+  });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-jump]');
+    if (a) { e.preventDefault(); showPage(a.dataset.jump); }
+  });
+  if (location.hash === '#px') showPage('px');
+})();
+</script>
+</body>
+</html>

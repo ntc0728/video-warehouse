@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方案丁 · 终端工具风 — 源检测/代理配置布局重设计</title>
+<link rel="stylesheet" href="../../../src/assets/styles/variables.css">
+<link rel="stylesheet" href="./_base.css">
+<style>
+/* ===== 方案丁：终端/CLI 工具风 —— 等宽排版、命令行为主交互、日志流输出 ===== */
+body { background: #0d1117; color: #c9d1d9; }
+.dshell { border-bottom: 1px solid #21262d; }
+.term { max-width: 980px; margin: 0 auto; padding: 0 20px; font-family: var(--k-mono); }
+.term-title {
+  display: flex; align-items: center; gap: 10px;
+  padding: 22px 0 10px; font-size: 12px; color: #8b949e;
+}
+.term-title b { color: #e6edf3; font-size: 14px; }
+.prompt-line { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13.5px; }
+.prompt { color: #3fb950; }
+.cursor { width: 8px; height: 15px; background: #3fb950; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.cmds { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 18px; }
+.cmd {
+  padding: 6px 14px; border: 1px solid #30363d; border-radius: 6px;
+  background: #161b22; color: #58a6ff; font-family: var(--k-mono); font-size: 12.5px; cursor: pointer;
+}
+.cmd:hover { border-color: #58a6ff; }
+.cmd.is-run { color: #8b949e; border-color: #21262d; cursor: wait; }
+
+.out { border: 1px solid #21262d; border-radius: 8px; background: #0d1117; overflow: hidden; margin-bottom: 22px; }
+.out table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.out th { text-align: left; padding: 8px 14px; color: #8b949e; font-weight: 500; border-bottom: 1px solid #21262d; background: #161b22; }
+.out td { padding: 7px 14px; border-bottom: 1px dashed #1c2128; }
+.out tr:last-child td { border-bottom: 0; }
+.out tr:hover td { background: #161b22; }
+.g { color: #3fb950; } .r { color: #f85149; } .y { color: #d29922; } .dim { color: #8b949e; } .hl { color: #58a6ff; }
+.verdict { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #21262d; background: #161b22; }
+.verdict b { font-size: 17px; }
+
+.logstream { padding: 14px 16px; font-size: 12.5px; line-height: 2; min-height: 120px; }
+.logstream .l { display: block; }
+.hintbar { font-size: 11.5px; color: #8b949e; padding: 8px 0 30px; }
+kbd { border: 1px solid #30363d; border-bottom-width: 2px; border-radius: 4px; padding: 0 6px; background: #161b22; font-size: 11px; }
+
+/* 代理配置：仍是终端，但部署是主角 —— 全屏 stdout */
+.deploy-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; }
+@media (max-width: 900px) { .deploy-grid { grid-template-columns: 1fr; } }
+.formcard { border: 1px solid #21262d; border-radius: 8px; background: #161b22; padding: 16px; }
+.formcard .field label { color: #8b949e; font-family: var(--k-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; }
+.formcard .input { background: #0d1117; border-color: #30363d; }
+.formcard .input input { color: #e6edf3; }
+.formcard .input button { background: #21262d; color: #8b949e; border-left-color: #30363d; }
+.formcard .hint { color: #8b949e; }
+.formcard .hint a { color: #58a6ff; }
+.entries { grid-template-columns: 1fr; }
+.entry { background: #0d1117; border-color: #30363d; }
+.entry b { color: #e6edf3; }
+.entry span { color: #8b949e; }
+.entry .entry-dot { border-color: #30363d; }
+.entry.is-selected { border-color: #3fb950; background: rgba(63, 185, 80, 0.06); }
+.entry.is-selected .entry-dot { border-color: #3fb950; background: #3fb950; box-shadow: inset 0 0 0 2px #0d1117; }
+.console { background: #0d1117; border: 1px solid #21262d; box-shadow: none; }
+.console-bar { background: #161b22; border-bottom-color: #21262d; }
+.btn--ink { background: #238636; color: #fff; border-radius: 6px; }
+.btn--ghost { border-color: #30363d; color: #c9d1d9; border-radius: 6px; }
+.result { background: rgba(63, 185, 80, 0.08); border-color: rgba(63, 185, 80, 0.4); border-radius: 8px; }
+.result b { color: #e6edf3; }
+.pill--ok { background: rgba(63, 185, 80, 0.15); color: #3fb950; }
+.pill--idle { background: #21262d; color: #8b949e; }
+.demo-flag { color: #8b949e; }
+.demo-flag b { color: #d29922; }
+.head h1, .head-act, .head-time { color: #8b949e; }
+</style>
+</head>
+<body>
+
+<header class="dshell">
+  <div class="dshell-brand"><span class="dshell-tag">布局 Demo</span><b>方案丁 · 终端工具风</b></div>
+  <span class="dshell-sub">给「自己用」的极客质感 · 命令行交互 · 日志流输出</span>
+  <nav class="dshell-pages">
+    <button data-page="sc" class="is-on">源检测</button>
+    <button data-page="px">代理配置</button>
+  </nav>
+  <div class="dshell-seg">
+    <button data-scheme="a" onclick="location='a-single-column.html'">甲</button>
+    <button data-scheme="b" onclick="location='b-domain-cards.html'">乙</button>
+    <button data-scheme="c" onclick="location='c-task-flow.html'">丙</button>
+    <button data-scheme="d" class="is-on">丁 终端</button>
+    <button data-scheme="e" onclick="location='e-dashboard.html'">戊 仪表盘</button>
+    <button data-scheme="f" onclick="location='f-ticket-split.html'">己 工单分栏</button>
+    <button data-scheme="g" onclick="location='g-ops-feed.html'">庚 运维日志流</button>
+  </div>
+</header>
+
+<!-- ═══════ 源检测 ═══════ -->
+<section class="stage is-on" data-stage="sc">
+<div class="term">
+  <p class="demo-flag" style="padding-top:14px">⚠ <b>演示数据</b>：输出为静态样例；`check` 真触发重绘节奏。整页深色为布局演示，真实落地走项目主题 token 可亮可暗。</p>
+
+  <div class="term-title"><b>kino-monitor</b> · source-checker v2<span class="dim" style="margin-left:auto">缓存 30min · 上次 12:04</span></div>
+
+  <div class="prompt-line"><span class="prompt">❯</span> <span class="hl">kino check</span> --all<span class="cursor"></span></div>
+  <div class="cmds">
+    <button class="cmd" data-cmd="check">kino check --all</button>
+    <button class="cmd" data-cmd="iptv">kino check iptv</button>
+    <button class="cmd" data-cmd="video">kino check video</button>
+    <button class="cmd" data-cmd="proxy">kino check proxy</button>
+  </div>
+
+  <div class="out">
+    <div class="verdict">[OK] 3/5 域通过 · <span class="r">2 FAIL</span> —— <span class="r">video/备用源</span> · <span class="y">proxy/未配置</span>　<a class="cmd" style="float:right" data-jump="px" href="./d-terminal.html#px">→ kino deploy</a></div>
+    <table>
+      <thead><tr><th>domain</th><th>name</th><th>status</th><th>latency</th><th>detail</th></tr></thead>
+      <tbody id="sc-body">
+        <tr><td class="dim">network</td><td>网速延迟</td><td class="g">OK</td><td>32ms</td><td class="dim">2 节点均值</td></tr>
+        <tr><td class="dim">iptv</td><td>聚合源 IPTV-A</td><td class="g">OK</td><td>32ms</td><td class="dim">https://example.com/iptv-a.m3u</td></tr>
+        <tr><td class="dim">iptv</td><td>聚合源 IPTV-B</td><td class="g">OK</td><td>47ms</td><td class="dim">https://example.com/iptv-b.m3u</td></tr>
+        <tr><td class="dim">video</td><td>聚合源 A</td><td class="g">OK</td><td>45ms</td><td class="dim">https://api.example.com/vod</td></tr>
+        <tr><td class="dim">video</td><td>聚合源 B</td><td class="g">OK</td><td>58ms</td><td class="dim">https://api2.example.com/vod</td></tr>
+        <tr><td class="dim">video</td><td>备用源</td><td class="r">FAIL</td><td class="r">—</td><td class="r">connect ETIMEDOUT (10s)</td></tr>
+        <tr><td class="dim">proxy</td><td>视频 CORS 代理</td><td class="y">SKIP</td><td>—</td><td class="dim">未配置 · kino deploy cors</td></tr>
+        <tr><td class="dim">proxy</td><td>IPTV 流代理</td><td class="y">SKIP</td><td>—</td><td class="dim">未配置 · kino deploy iptv</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="out">
+    <div class="logstream" id="sc-log"><span class="l dim">── 输出流（模拟节奏，真实版接检测回调）──</span>
+<span class="l"><span class="g">✓</span> network/speed … 32ms</span>
+<span class="l"><span class="g">✓</span> iptv/聚合源 IPTV-A … 32ms</span>
+<span class="l"><span class="r">✗</span> video/备用源 … ETIMEDOUT</span></div>
+  </div>
+
+  <p class="hintbar"><kbd>Enter</kbd> 执行选中命令 · <kbd>↑↓</kbd> 切换 · 全部功能均为真实交互映射（筛选/重测/跳转），无终端花活假功能。</p>
+</div>
+</section>
+
+<!-- ═══════ 代理配置 ═══════ -->
+<section class="stage" data-stage="px">
+<div class="term">
+  <p class="demo-flag" style="padding-top:14px">⚠ <b>演示数据</b>：stdout 为界面演示，真实版接 Cloudflare API 回调。已去除自定义域名等未实现项。</p>
+
+  <div class="term-title"><b>kino-deploy</b> · proxy wizard<span class="dim" style="margin-left:auto">token 仅存内存</span></div>
+
+  <div class="prompt-line"><span class="prompt">❯</span> <span class="hl">kino deploy</span> --target <span id="ctx" class="y">???</span></div>
+
+  <div class="deploy-grid">
+    <div class="out">
+      <div class="verdict dim">stdout · deploy.log</div>
+      <div class="logstream" id="px-log" style="min-height: 300px"><span class="l dim">等待指令 · 右侧填表后运行 kino deploy</span></div>
+    </div>
+    <div class="formcard">
+      <div class="entries" id="px-entries" style="margin-bottom:14px">
+        <button class="entry" data-entry="cors"><span class="entry-dot"></span><b>cors 代理</b><span>视频采集跨域</span></button>
+        <button class="entry" data-entry="iptv"><span class="entry-dot"></span><b>iptv 流代理</b><span>m3u8/hls 转发</span></button>
+      </div>
+      <div class="field">
+        <label>API Token</label>
+        <div class="input"><input id="px-token" type="password" placeholder="CF token" autocomplete="off"><button id="px-eye" type="button">显示</button></div>
+      </div>
+      <div class="field">
+        <label>Account ID</label>
+        <div class="input"><input id="px-acct" type="text" placeholder="acct id" autocomplete="off"></div>
+      </div>
+      <p class="hint">仅内存 · <a href="#" onclick="return false">创建 Token ↗</a></p>
+      <button class="btn btn--ink" id="px-deploy" style="width:100%;margin-top:12px">kino deploy ▶</button>
+    </div>
+  </div>
+
+  <div class="result" id="px-result" hidden>
+    <span class="pill pill--ok">EXIT 0 · 部署成功</span>
+    <b class="mono" id="px-url">https://kino-cors-proxy.example.workers.dev</b>
+    <div class="result-act">
+      <button class="btn btn--ghost btn--sm" id="px-copy">复制</button>
+      <a class="btn btn--ink btn--sm" href="./d-terminal.html#sc" data-jump="sc" style="text-decoration:none">kino check ↺</a>
+    </div>
+  </div>
+</div>
+</section>
+
+<div class="toast" id="toast" hidden>已复制</div>
+
+<script>
+(function () {
+  if (location.search.indexOf('embed') > -1) { var hh = document.querySelector('.dshell'); if (hh) hh.remove(); }
+  /* check 命令：真实重绘节奏（清行→逐条回显） */
+  var LOGS = [
+    '<span class="g">✓</span> network/speed … 32ms',
+    '<span class="g">✓</span> iptv/聚合源 IPTV-A … 32ms',
+    '<span class="g">✓</span> iptv/聚合源 IPTV-B … 47ms',
+    '<span class="g">✓</span> video/聚合源 A … 45ms',
+    '<span class="g">✓</span> video/聚合源 B … 58ms',
+    '<span class="r">✗</span> video/备用源 … ETIMEDOUT (10s)',
+    '<span class="y">◇</span> proxy/cors … 未配置（kino deploy cors）',
+    '<span class="dim">[OK] 3/5 · 2 FAIL · 16:07:12</span>'
+  ];
+  function runCheck(target) {
+    var logEl = document.getElementById('sc-log');
+    var btns = document.querySelectorAll('.cmd[data-cmd]');
+    btns.forEach(function (b) { if (!target || b.dataset.cmd === target) b.classList.add('is-run'); });
+    logEl.innerHTML = '<span class="l dim">kino check ' + (target || '--all') + ' …</span>';
+    var i = 0;
+    (function next() {
+      if (i >= LOGS.length) { btns.forEach(function (b) { b.classList.remove('is-run'); }); return; }
+      logEl.innerHTML += '\n<span class="l">' + LOGS[i++] + '</span>';
+      setTimeout(next, 160);
+    })();
+  }
+  document.querySelectorAll('.cmd[data-cmd]').forEach(function (b) {
+    b.addEventListener('click', function () { runCheck(b.dataset.cmd === 'check' ? null : b.dataset.cmd); });
+  });
+
+  /* deploy */
+  var entries = document.getElementById('px-entries');
+  entries.addEventListener('click', function (e) {
+    var b = e.target.closest('.entry'); if (!b) return;
+    entries.querySelectorAll('.entry').forEach(function (x) { x.classList.toggle('is-selected', x === b); });
+    document.getElementById('ctx').textContent = b.dataset.entry;
+  });
+  document.getElementById('px-eye').addEventListener('click', function () {
+    var inp = document.getElementById('px-token');
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    this.textContent = show ? '隐藏' : '显示';
+  });
+  var logEl = document.getElementById('px-log');
+  function plog(msg, cls) {
+    var t = new Date().toTimeString().slice(0, 8);
+    logEl.innerHTML += '\n<span class="l ' + (cls || '') + '">[' + t + '] ' + msg + '</span>';
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  document.getElementById('px-deploy').addEventListener('click', function () {
+    var sel = entries.querySelector('.entry.is-selected');
+    if (!sel) { plog('ERR 未选择 --target', 'r'); return; }
+    if (!document.getElementById('px-token').value.trim() || !document.getElementById('px-acct').value.trim()) {
+      plog('ERR 缺少 token / account', 'r'); return;
+    }
+    var btn = this; btn.disabled = true;
+    var steps = ['verify token …', 'auth OK (account ' + document.getElementById('px-acct').value.slice(0, 6) + '…)', 'subdomain resolved', 'uploading worker (' + sel.dataset.entry + ') …', 'deploy complete', 'settings written back'];
+    var i = 0;
+    (function next() {
+      if (i >= steps.length) {
+        document.getElementById('px-result').hidden = false;
+        btn.disabled = false;
+        return;
+      }
+      var s = steps[i++];
+      setTimeout(function () { plog(s, s.indexOf('OK') > -1 || s.indexOf('complete') > -1 ? 'g' : 'dim'); next(); }, 300);
+    })();
+  });
+  document.getElementById('px-copy').addEventListener('click', function () {
+    var url = document.getElementById('px-url').textContent;
+    var t = document.getElementById('toast');
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(
+      function () { t.hidden = false; setTimeout(function () { t.hidden = true; }, 1400); },
+      function () { t.textContent = '复制失败，请手动选择'; t.hidden = false; setTimeout(function () { t.hidden = true; }, 1400); }
+    );
+  });
+
+  /* 壳层 */
+  function showPage(k) {
+    try { history.replaceState(null, '', '#' + k); } catch (e) {}
+    document.querySelectorAll('.stage').forEach(function (s) { s.classList.toggle('is-on', s.dataset.stage === k); });
+    document.querySelectorAll('.dshell-pages button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.page === k); });
+  }
+  document.querySelectorAll('.dshell-pages button').forEach(function (b) {
+    b.addEventListener('click', function () { showPage(b.dataset.page); });
+  });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-jump]');
+    if (a) { e.preventDefault(); showPage(a.dataset.jump); }
+  });
+  if (location.hash === '#px') showPage('px');
+})();
+</script>
+</body>
+</html>

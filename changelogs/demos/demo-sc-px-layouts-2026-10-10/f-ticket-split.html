@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方案己 · 三栏 + 健康带 — 源检测/代理配置布局重设计</title>
+<link rel="stylesheet" href="../../../src/assets/styles/variables.css">
+<link rel="stylesheet" href="./_base.css">
+<style>
+/* ===== 方案己：左导航 · 中列表 · 右详情坞（仅源检测：未选中时 dock 收起、mid 撑满剩余宽；选中才展开，与真实 is-rail 语义一致。代理配置段保持三栏常驻） ===== */
+.cols { display: grid; grid-template-columns: 190px minmax(0, 1fr) 330px; gap: 0; margin-top: 6px; }
+[data-stage="sc"] .cols:not(.has-dock) { grid-template-columns: 190px minmax(0, 1fr); }
+[data-stage="sc"] .cols:not(.has-dock) .dock { display: none; }
+[data-stage="sc"] .cols.has-dock .dock { animation: dock-in 0.18s ease; }
+@media (max-width: 1080px) { .cols, .cols.has-dock { grid-template-columns: 1fr; } .lnav { display: none; } }
+
+.lnav { border-right: 1px solid var(--k-line); padding: 20px 14px; position: sticky; top: 52px; align-self: start; }
+.lnav h4 { margin: 0 0 8px; padding: 0 10px; font-size: 10.5px; letter-spacing: 0.1em; color: var(--k-text-3); }
+.lnav button {
+  display: flex; width: 100%; align-items: center; gap: 8px;
+  padding: 8px 10px; margin-bottom: 2px;
+  border: 0; border-radius: 8px; background: transparent;
+  font-size: 12.5px; color: var(--k-text-2); cursor: pointer; text-align: left; font-family: inherit;
+}
+.lnav button:hover { background: #eef0f2; }
+.lnav button.is-on { background: var(--k-ink); color: #fff; font-weight: 600; }
+.lnav .cnt { margin-left: auto; font-family: var(--k-mono); font-size: 11px; color: var(--k-text-3); }
+.lnav button.is-on .cnt { color: #9aa4ae; }
+.lnav .cnt.bad { color: var(--k-err); }
+.lnav button.is-on .cnt.bad { color: #ffb3b6; }
+
+.mid { padding: 20px 22px; min-width: 0; }
+.mid h2 { margin: 0 0 4px; font-size: 17px; }
+.mid .sub { margin: 0 0 16px; font-size: 12px; color: var(--k-text-2); }
+.vrow {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid var(--k-line); border-radius: 12px;
+  background: var(--k-panel); padding: 12px 16px; margin-bottom: 8px;
+  cursor: pointer; transition: border-color 0.12s;
+}
+.vrow:hover { border-color: var(--k-line-2); }
+.vrow.is-sel { border-color: var(--k-ink); box-shadow: 0 0 0 1px var(--k-ink); }
+.vrow.is-bad { background: var(--k-err-bg); }
+.vrow .nm { font-size: 13.5px; font-weight: 600; width: 150px; flex-shrink: 0; }
+.vrow .u { flex: 1; min-width: 0; font-family: var(--k-mono); font-size: 11.5px; color: var(--k-text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vrow .lat { font-family: var(--k-mono); font-size: 12.5px; width: 56px; text-align: right; }
+.vrow.is-bad .lat { color: var(--k-err); }
+.vrow .g { font-size: 10.5px; color: var(--k-text-3); border: 1px solid var(--k-line); border-radius: 999px; padding: 1px 8px; }
+
+.dock { position: relative; border-left: 1px solid var(--k-line); padding: 20px 18px; position: sticky; top: 52px; align-self: start; }
+@keyframes dock-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: none; } }
+.dock-x { position: absolute; top: 14px; right: 14px; width: 1.5rem; height: 1.5rem; padding: 0; border: 1px solid var(--k-line); border-radius: 999px; background: transparent; color: var(--k-text-2); font-size: 1rem; line-height: 1; cursor: pointer; }
+.dock-x:hover { background: #eef0f2; color: var(--k-text); }
+.dock h3 { margin: 0 0 2px; font-size: 15px; }
+.dock .dsub { font-size: 11.5px; color: var(--k-text-3); margin: 0 0 14px; }
+.dock-kv { margin: 0 0 14px; display: grid; grid-template-columns: 64px 1fr; gap: 8px 10px; font-size: 12px; }
+.dock-kv dt { color: var(--k-text-2); }
+.dock-kv dd { margin: 0; word-break: break-all; }
+.dock-kv dd.err { color: var(--k-err); font-family: var(--k-mono); font-size: 11.5px; }
+.dock-advice { border: 1px solid var(--k-line); border-radius: 10px; background: #fafbfc; padding: 12px 14px; margin-bottom: 12px; }
+.dock-advice p { margin: 0 0 10px; font-size: 12px; color: var(--k-text-2); }
+.dock-empty { color: var(--k-text-3); font-size: 12px; }
+.dock .btn { width: 100%; justify-content: center; }
+
+/* ===== 顶部健康带：与 戊 e-dashboard 保持一致（健康环 + 延迟条形 + c-domains 五域磁贴） ===== */
+.band { margin-top: 18px; padding: 18px 0 4px; border-bottom: 1px solid var(--k-line); }
+.band-top { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
+.c-health { display: flex; gap: 18px; align-items: center; }
+.c-latency { flex: 1 1 320px; min-width: 280px; }
+.ring { position: relative; width: 108px; height: 108px; flex-shrink: 0; }
+.ring svg { transform: rotate(-90deg); }
+.ring .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ring .num b { font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.ring .num span { font-size: 10.5px; color: var(--k-text-3); }
+.health-txt { display: flex; flex-direction: column; gap: 6px; }
+.health-txt b { font-size: 16px; }
+.health-txt .bad { color: var(--k-err); font-size: 12.5px; }
+.c-latency h3 { margin: 0 0 10px; font-size: 12px; color: var(--k-text-2); font-weight: 600; letter-spacing: 0.03em; }
+.bars { display: flex; flex-direction: column; gap: 9px; }
+.bar-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 56px; gap: 10px; align-items: center; font-size: 12px; padding: 2px 4px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; font-family: inherit; text-align: left; }
+.bar-row:hover { background: #f6f8f9; }
+.bar-row.is-sel { box-shadow: 0 0 0 1px var(--k-ink); background: #eef0f2; }
+.bar-row .n { color: var(--k-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 10px; border-radius: 999px; background: #eef0f2; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 999px; background: var(--k-ok); }
+.bar-fill.err { background: var(--k-err); }
+.bar-row .v { font-family: var(--k-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.bar-row .v.err { color: var(--k-err); }
+/* c-domains 五域磁贴（同 戊）：点磁贴→筛选对应分组 */
+.c-domains { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin: 18px 0 14px; }
+.tile { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid var(--k-line); border-radius: 14px; background: var(--k-panel); cursor: pointer; text-align: left; font-family: inherit; transition: box-shadow 0.15s, border-color 0.15s; }
+.tile:hover { box-shadow: 0 6px 18px rgba(18, 22, 26, 0.07); border-color: var(--k-line-2); }
+.tile.is-sel { outline: 2px solid var(--k-ink); outline-offset: -1px; }
+.tile.is-bad { border-color: rgba(224, 72, 77, 0.5); }
+.tile-top { display: flex; justify-content: space-between; align-items: center; }
+.tile-name { font-size: 11.5px; color: var(--k-text-2); }
+.tile-val { font-size: 24px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; color: var(--k-text); }
+.tile-val small { font-size: 12px; color: var(--k-text-3); font-weight: 600; }
+.tile.is-bad .tile-val { color: var(--k-err); }
+@media (max-width: 1080px) { .c-domains { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px) { .c-domains { grid-template-columns: repeat(2, 1fr); } .bar-row { grid-template-columns: 90px minmax(0, 1fr) 48px; } }
+</style>
+</head>
+<body>
+
+<header class="dshell">
+  <div class="dshell-brand"><span class="dshell-tag">布局 Demo</span><b>方案己 · 三栏 + 健康带</b></div>
+  <span class="dshell-sub">顶部健康带（健康环 + 延迟条形 + c-domains 磁贴）· 左分组导航 · 中大卡列表 · 右详情坞选中才展开</span>
+  <nav class="dshell-pages">
+    <button data-page="sc" class="is-on">源检测</button>
+    <button data-page="px">代理配置</button>
+  </nav>
+  <div class="dshell-seg">
+    <button onclick="location='a-single-column.html'">甲</button>
+    <button onclick="location='b-domain-cards.html'">乙</button>
+    <button onclick="location='c-task-flow.html'">丙</button>
+    <button onclick="location='d-terminal.html'">丁</button>
+    <button onclick="location='e-dashboard.html'">戊</button>
+    <button class="is-on">己 三栏+健康带</button>
+    <button onclick="location='g-ops-feed.html'">庚</button>
+  </div>
+</header>
+
+<!-- ═══════ 源检测 ═══════ -->
+<section class="stage is-on" data-stage="sc">
+<div class="wrap" style="max-width:1280px">
+  <p class="demo-flag" style="padding-top:12px">⚠ <b>演示数据</b>：健康环=当前域通过率（3/5）、延迟条形=每条源本次实测 ms（无逐次历史，因此不做趋势线）；条可点→选中对应行。详情坞为常驻第三栏（不跳动）。已删行级时间/历史柱等未实现项。</p>
+
+  <div class="head">
+    <div><h1>源检测</h1><p>5 个检查域 · 8 条明细 · 结果缓存 30 分钟</p></div>
+    <div class="head-act">
+      <span class="head-time">上次检测 <b>2 分钟前</b></span>
+      <button class="btn btn--ink" id="sc-all">一键检测</button>
+    </div>
+  </div>
+
+  <div class="band" id="band">
+    <div class="band-top">
+      <div class="c-health">
+        <div class="ring">
+          <svg width="108" height="108" viewBox="0 0 108 108">
+            <circle cx="54" cy="54" r="46" fill="none" stroke="#eef0f2" stroke-width="10"/>
+            <circle cx="54" cy="54" r="46" fill="none" stroke="#d9822b" stroke-width="10" stroke-dasharray="172.9 289.4" stroke-linecap="round"/>
+          </svg>
+          <div class="num"><b>3<em style="font-style:normal;font-size:16px;color:var(--k-text-3)">/5</em></b><span>检查域</span></div>
+        </div>
+        <div class="health-txt">
+          <b>2 项待修复</b>
+          <span class="bad">视频源 · 备用源异常</span>
+          <span class="bad">代理 · 未配置</span>
+        </div>
+      </div>
+      <div class="c-latency">
+        <h3>延迟对比（ms · 本次检测实测 · 点条选中对应行）</h3>
+        <div class="bars" id="lat-bars"></div>
+      </div>
+    </div>
+    <div class="c-domains" id="c-domains">
+      <button class="tile" data-f="network"><span class="tile-top"><span class="tile-name">网速</span><i class="dot dot--ok"></i></span><span class="tile-val">32<small>ms</small></span></button>
+      <button class="tile" data-f="iptv"><span class="tile-top"><span class="tile-name">IPTV 源</span><i class="dot dot--ok"></i></span><span class="tile-val">4<small>/4</small></span></button>
+      <button class="tile is-bad" data-f="video"><span class="tile-top"><span class="tile-name">视频源</span><i class="dot dot--err"></i></span><span class="tile-val">3<small>/4</small></span></button>
+      <button class="tile" data-f="proxy"><span class="tile-top"><span class="tile-name">CORS 代理</span><i class="dot dot--idle"></i></span><span class="tile-val">—</span></button>
+      <button class="tile" data-f="proxy"><span class="tile-top"><span class="tile-name">IPTV 代理</span><i class="dot dot--idle"></i></span><span class="tile-val">—</span></button>
+    </div>
+  </div>
+
+  <div class="cols">
+    <nav class="lnav">
+      <h4>检查域</h4>
+      <button class="is-on" data-f="all">全部 <span class="cnt">8</span></button>
+      <button data-f="network">网速 <span class="cnt">1</span></button>
+      <button data-f="iptv">IPTV 源 <span class="cnt">2</span></button>
+      <button data-f="video">视频源 <span class="cnt">3</span></button>
+      <button data-f="proxy">代理 <span class="cnt">2</span></button>
+      <h4 style="margin-top:16px">待办</h4>
+      <button data-f="bad">异常/未配置 <span class="cnt bad">3</span></button>
+    </nav>
+
+    <div class="mid">
+      <h2 id="mid-title">全部源</h2>
+      <p class="sub">未选中时列表撑满宽度；点任意一行→右侧展开详情坞（可关闭）。异常行红底。</p>
+      <div id="vlist"></div>
+    </div>
+
+    <aside class="dock" id="dock">
+      <button class="dock-x" id="d-close" aria-label="关闭详情">×</button>
+      <p class="dock-empty" id="dock-empty">← 选择一行查看详情与建议动作</p>
+      <div id="dock-body" hidden>
+        <span class="pill" id="d-pill">异常</span>
+        <h3 id="d-name">备用源</h3>
+        <p class="dsub" id="d-group">视频源组</p>
+        <dl class="dock-kv">
+          <dt>地址</dt><dd class="mono" id="d-url"></dd>
+          <dt>延迟</dt><dd id="d-lat"></dd>
+          <dt>错误</dt><dd class="err" id="d-err"></dd>
+        </dl>
+        <div class="dock-advice">
+          <p id="d-advice"></p>
+          <a class="btn btn--ok btn--sm" id="d-go" data-jump="px" href="./f-ticket-split.html#px" style="text-decoration:none">去配置代理 →</a>
+        </div>
+        <button class="btn btn--ghost btn--sm" id="d-retest">重测本组</button>
+      </div>
+    </aside>
+  </div>
+</div>
+</section>
+
+<!-- ═══════ 代理配置 ═══════ -->
+<section class="stage" data-stage="px">
+<div class="wrap" style="max-width:1280px">
+  <p class="demo-flag" style="padding-top:12px">⚠ <b>演示数据</b>：凭证/部署为界面演示。三栏语义：左=部署步骤导航，中=当前步表单，右=控制台常驻。</p>
+
+  <div class="head">
+    <div><h1>一键配置代理</h1><p>Cloudflare Worker · Token 仅存内存</p></div>
+    <div class="head-act"><span class="head-time">部署项 <b id="px-ctx">未选择</b></span></div>
+  </div>
+
+  <div class="cols">
+    <nav class="lnav">
+      <h4>部署步骤</h4>
+      <button class="is-on" data-ps="1">① 选择部署项</button>
+      <button data-ps="2">② 登录凭证</button>
+      <button data-ps="3">③ 部署与回写</button>
+    </nav>
+
+    <div class="mid">
+      <div data-panel="1">
+        <h2>选择部署项</h2>
+        <p class="sub">两种代理互不关联，可分别部署。</p>
+        <div class="entries" id="px-entries" style="grid-template-columns:1fr">
+          <button class="entry" data-entry="cors"><span class="entry-dot"></span><b>视频采集 CORS 代理</b><span>解除跨域限制，恢复备用源</span></button>
+          <button class="entry" data-entry="iptv"><span class="entry-dot"></span><b>IPTV 流代理</b><span>转发 m3u8/hls 流</span></button>
+        </div>
+        <div style="margin-top:14px"><button class="btn btn--ink btn--sm" data-goto="2">下一步：填凭证 →</button></div>
+      </div>
+      <div data-panel="2" hidden>
+        <h2>登录凭证</h2>
+        <p class="sub">Token 仅内存使用，离开页面自动清除 · <a href="#" onclick="return false" style="color:var(--k-ok)">创建 Token ↗</a></p>
+        <div class="field"><label>API Token</label>
+          <div class="input"><input id="px-token" type="password" placeholder="粘贴 API Token" autocomplete="off"><button id="px-eye" type="button">显示</button></div>
+        </div>
+        <div class="field"><label>Account ID</label>
+          <div class="input"><input id="px-acct" type="text" placeholder="dash.cloudflare.com 右侧可查" autocomplete="off"></div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn--ghost btn--sm" data-goto="1">← 上一步</button><button class="btn btn--ink btn--sm" data-goto="3">下一步：部署 →</button></div>
+      </div>
+      <div data-panel="3" hidden>
+        <h2>部署与回写</h2>
+        <p class="sub">将创建/更新 <code class="mono">kino-cors-proxy</code>，成功后自动回写项目设置。</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn btn--ink" id="px-deploy">开始一键配置 Worker</button><button class="btn btn--ghost btn--sm" data-goto="2">← 上一步</button></div>
+        <div class="result" id="px-result" hidden style="margin-top:16px">
+          <span class="pill pill--ok">部署成功</span>
+          <b class="mono" id="px-url">https://kino-cors-proxy.example.workers.dev</b>
+          <div class="result-act">
+            <button class="btn btn--ghost btn--sm" id="px-copy">复制链接</button>
+            <a class="btn btn--ok btn--sm" href="./f-ticket-split.html#sc" data-jump="sc" style="text-decoration:none">重测视频源组 →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="dock" style="min-height:0;padding-top:20px">
+      <div class="console">
+        <div class="console-bar"><i></i><i></i><i></i><span>deploy.log</span></div>
+        <pre class="console-log" id="px-log" style="height:340px"><code class="dim">等待部署指令</code></pre>
+      </div>
+    </aside>
+  </div>
+</div>
+</section>
+
+<div class="toast" id="toast" hidden>已复制</div>
+
+<script>
+(function () {
+  if (location.search.indexOf('embed') > -1) { var hh = document.querySelector('.dshell'); if (hh) hh.remove(); }
+  var ROWS = [
+    { g: 'network', gn: '网速', st: 'ok', nm: '网速延迟', u: '2 个测试节点均值', lat: '32ms' },
+    { g: 'iptv', gn: 'IPTV 源组', st: 'ok', nm: '聚合源 IPTV-A', u: 'https://example.com/iptv-a.m3u', lat: '32ms' },
+    { g: 'iptv', gn: 'IPTV 源组', st: 'ok', nm: '聚合源 IPTV-B', u: 'https://example.com/iptv-b.m3u', lat: '47ms' },
+    { g: 'video', gn: '视频源组', st: 'ok', nm: '聚合源 A', u: 'https://api.example.com/vod', lat: '45ms' },
+    { g: 'video', gn: '视频源组', st: 'ok', nm: '聚合源 B', u: 'https://api2.example.com/vod', lat: '58ms' },
+    { g: 'video', gn: '视频源组', st: 'bad', nm: '备用源', u: 'https://example.com/vod-c.m3u', lat: '—', err: 'connect ETIMEDOUT (10s)', advice: '直连不可达，符合经代理回退策略。部署 CORS 代理后重测本组验证。', go: true },
+    { g: 'proxy', gn: '代理组', st: 'idle', nm: '视频 CORS 代理', u: '—', lat: '—', err: '', advice: '部署后可恢复跨域受限的视频源。', go: true },
+    { g: 'proxy', gn: '代理组', st: 'idle', nm: 'IPTV 流代理', u: '—', lat: '—', err: '', advice: '部署后可为不可达 IPTV 源提供回退链路。', go: true }
+  ];
+  var PILL = { ok: ['可用', 'pill--ok'], bad: ['异常', 'pill--err'], idle: ['未配置', 'pill--idle'] };
+  var TITLES = { all: '全部明细', network: '网速', iptv: 'IPTV 源组', video: '视频源组', proxy: '代理组', bad: '异常/未配置' };
+  var vlist = document.getElementById('vlist');
+  var lnavSc = document.querySelector('[data-stage="sc"] .lnav');
+  var scCols = document.querySelector('[data-stage="sc"] .cols');
+  var curSel = null;
+
+  function renderList(filter) {
+    vlist.innerHTML = '';
+    ROWS.forEach(function (r, i) {
+      if (filter === 'bad' ? r.st === 'ok' : (filter !== 'all' && r.g !== filter)) return;
+      var d = document.createElement('div');
+      d.className = 'vrow is-' + r.st + (r.st === 'bad' ? ' is-bad' : '');
+      d.dataset.i = i;
+      d.innerHTML = '<span class="pill ' + PILL[r.st][1] + '">' + PILL[r.st][0] + '</span><span class="nm">' + r.nm + '</span><span class="u">' + r.u + '</span><span class="g">' + r.gn + '</span><span class="lat">' + r.lat + '</span>';
+      vlist.appendChild(d);
+    });
+  }
+
+  /* 筛选入口：左栏分组切换（详情高亮另由 openDock 统一） */
+  function applyFilter(f) {
+    renderList(f);
+    document.getElementById('mid-title').textContent = TITLES[f] || '全部明细';
+    lnavSc.querySelectorAll('button[data-f]').forEach(function (x) { x.classList.toggle('is-on', x.dataset.f === f); });
+    document.querySelectorAll('.c-domains .tile').forEach(function (t) { t.classList.toggle('is-sel', f !== 'all' && f !== 'bad' && t.dataset.f === f); });
+  }
+  applyFilter('all');
+
+  lnavSc.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-f]'); if (!b) return;
+    applyFilter(b.dataset.f);
+  });
+
+  /* 五域磁贴 → 筛选对应分组（与左栏、环同属一个真实入口） */
+  document.getElementById('c-domains').addEventListener('click', function (e) {
+    var t = e.target.closest('.tile'); if (!t) return;
+    applyFilter(t.dataset.f);
+  });
+
+  /* 详情坞填充（行点击 与 延迟条形点击 共用） */
+  function openDock(i) {
+    var r = ROWS[i];
+    curSel = i;
+    scCols.classList.add('has-dock');
+    vlist.querySelectorAll('.vrow').forEach(function (x) { x.classList.toggle('is-sel', +x.dataset.i === i); });
+    document.querySelectorAll('.bar-row').forEach(function (x) { x.classList.toggle('is-sel', +x.dataset.i === i); });
+    document.getElementById('dock-empty').hidden = true;
+    document.getElementById('dock-body').hidden = false;
+    var p = document.getElementById('d-pill');
+    p.className = 'pill ' + PILL[r.st][1]; p.textContent = PILL[r.st][0];
+    document.getElementById('d-name').textContent = r.nm;
+    document.getElementById('d-group').textContent = r.gn;
+    document.getElementById('d-url').textContent = r.u;
+    document.getElementById('d-lat').textContent = r.lat;
+    document.getElementById('d-err').parentElement.hidden = !r.err;
+    document.querySelector('.dock-kv dt:nth-child(5)').hidden = !r.err;
+    document.getElementById('d-err').textContent = r.err || '';
+    document.getElementById('d-advice').textContent = r.advice || '该源工作正常，无需操作。';
+    document.getElementById('d-go').style.display = r.go ? '' : 'none';
+  }
+
+  function closeDock() {
+    curSel = null;
+    scCols.classList.remove('has-dock');
+    vlist.querySelectorAll('.vrow.is-sel').forEach(function (x) { x.classList.remove('is-sel'); });
+    document.querySelectorAll('.bar-row.is-sel').forEach(function (x) { x.classList.remove('is-sel'); });
+  }
+  vlist.addEventListener('click', function (e) {
+    var row = e.target.closest('.vrow'); if (!row) return;
+    var i = +row.dataset.i;
+    if (curSel === i) closeDock(); else openDock(i);
+  });
+  document.getElementById('d-close').addEventListener('click', closeDock);
+
+  /* 延迟对比条形：与 戊 一致（/200 基准、.bar-row .n/.bar-track/.bar-fill/.v），只画有实测延迟/超时的源（排除未配置代理），条可点→选中对应行 */
+  var SCALE = 200; /* ms 满格基准（与 戊 e-dashboard 条形宽度一致） */
+  var latEl = document.getElementById('lat-bars');
+  ROWS.forEach(function (r, i) {
+    var m = /^(\d+)ms$/.exec(r.lat);
+    var isTimeout = r.st === 'bad' && !m;
+    if (!m && !isTimeout) return;
+    var pct = m ? Math.min(100, Math.round(+m[1] / SCALE * 100)) : 100;
+    var b = document.createElement('button');
+    b.className = 'bar-row' + (r.st === 'bad' ? ' bad' : '');
+    b.dataset.i = i;
+    b.innerHTML = '<span class="n">' + r.nm + '</span>'
+      + '<span class="bar-track"><span class="bar-fill' + (r.st === 'bad' ? ' err' : '') + '" style="width:' + pct + '%"></span></span>'
+      + '<span class="v' + (r.st === 'bad' ? ' err' : '') + '">' + (m ? m[1] : '超时') + '</span>';
+    b.addEventListener('click', function () { applyFilter('all'); openDock(i); });
+    latEl.appendChild(b);
+  });
+
+  var all = document.getElementById('sc-all');
+  all.addEventListener('click', function () { all.disabled = true; all.textContent = '检测中…'; setTimeout(function () { all.disabled = false; all.textContent = '一键检测'; }, 1000); });
+  document.getElementById('d-retest').addEventListener('click', function () { var b = this; b.disabled = true; b.textContent = '重测中…'; setTimeout(function () { b.disabled = false; b.textContent = '重测本组'; }, 800); });
+
+  /* 代理配置步骤导航 */
+  var nav = document.querySelector('[data-page], .cols .lnav');
+  document.querySelectorAll('.lnav button[data-ps]').forEach(function (b) {
+    b.addEventListener('click', function () { goPanel(b.dataset.ps); });
+  });
+  function goPanel(n) {
+    document.querySelectorAll('.lnav button[data-ps]').forEach(function (x) { x.classList.toggle('is-on', x.dataset.ps === n); });
+    document.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== n; });
+  }
+  document.addEventListener('click', function (e) {
+    var g = e.target.closest('[data-goto]');
+    if (g) goPanel(g.dataset.goto);
+  });
+
+  var entries = document.getElementById('px-entries');
+  entries.addEventListener('click', function (e) {
+    var b = e.target.closest('.entry'); if (!b) return;
+    entries.querySelectorAll('.entry').forEach(function (x) { x.classList.toggle('is-selected', x === b); });
+    document.getElementById('px-ctx').textContent = b.dataset.entry === 'cors' ? '视频采集 CORS 代理' : 'IPTV 流代理';
+  });
+  document.getElementById('px-eye').addEventListener('click', function () {
+    var inp = document.getElementById('px-token');
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    this.textContent = show ? '隐藏' : '显示';
+  });
+  var logEl = document.getElementById('px-log');
+  function log(msg, cls) {
+    var t = new Date().toTimeString().slice(0, 8);
+    logEl.innerHTML += '\n<code class="' + (cls || '') + '">[' + t + '] ' + msg + '</code>';
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  document.getElementById('px-deploy').addEventListener('click', function () {
+    var sel = entries.querySelector('.entry.is-selected');
+    if (!sel) { goPanel('1'); log('请先选择部署项', 'err'); return; }
+    if (!document.getElementById('px-token').value.trim() || !document.getElementById('px-acct').value.trim()) { goPanel('2'); log('请填写 API Token 与 Account ID', 'err'); return; }
+    var btn = this; btn.disabled = true; btn.textContent = '配置中…';
+    var steps = ['校验 Cloudflare 凭据…', '[1/4] 凭据校验通过', '[2/4] 子域获取成功', '[3/4] 上传 Worker 脚本…', '[4/4] 部署完成', '已自动写入项目设置'];
+    var i = 0;
+    (function next() {
+      if (i >= steps.length) { document.getElementById('px-result').hidden = false; btn.disabled = false; btn.textContent = '重新部署'; return; }
+      var s = steps[i++];
+      setTimeout(function () { log(s, s.indexOf(']') > -1 ? 'ok' : 'dim'); next(); }, 320);
+    })();
+  });
+  document.getElementById('px-copy').addEventListener('click', function () {
+    var url = document.getElementById('px-url').textContent;
+    var t = document.getElementById('toast');
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(
+      function () { t.hidden = false; setTimeout(function () { t.hidden = true; }, 1400); },
+      function () { t.textContent = '复制失败，请手动选择'; t.hidden = false; setTimeout(function () { t.hidden = true; }, 1400); }
+    );
+  });
+
+  function showPage(k) {
+    try { history.replaceState(null, '', '#' + k); } catch (e) {}
+    document.querySelectorAll('.stage').forEach(function (s) { s.classList.toggle('is-on', s.dataset.stage === k); });
+    document.querySelectorAll('.dshell-pages button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.page === k); });
+  }
+  document.querySelectorAll('.dshell-pages button').forEach(function (b) {
+    b.addEventListener('click', function () { showPage(b.dataset.page); });
+  });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-jump]');
+    if (a) { e.preventDefault(); showPage(a.dataset.jump); }
+  });
+  if (location.hash === '#px') showPage('px');
+})();
+</script>
+</body>
+</html>

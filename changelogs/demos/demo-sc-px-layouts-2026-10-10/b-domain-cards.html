@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方案乙 · 检查域卡组矩阵 — 源检测/代理配置布局重设计</title>
+<link rel="stylesheet" href="../../../src/assets/styles/variables.css">
+<link rel="stylesheet" href="./_base.css">
+<style>
+/* ===== 方案乙：以「检查域」为主角的大卡矩阵，明细表降级为可折叠区 ===== */
+.grid5 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.dom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  border: 1px solid var(--k-line-2);
+  border-radius: 14px;
+  background: var(--k-panel);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.dom:hover { border-color: var(--k-ink); box-shadow: 0 6px 18px rgba(18, 22, 26, 0.07); }
+.dom.is-bad { border-color: rgba(224, 72, 77, 0.5); background: linear-gradient(180deg, var(--k-err-bg), var(--k-panel) 55%); }
+.dom.is-open { outline: 2px solid var(--k-ink); outline-offset: -2px; }
+.dom-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dom-name { font-size: 13px; font-weight: 600; color: var(--k-text-2); }
+.dom-val { font-size: clamp(24px, 2.6vw, 34px); font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.dom-val small { font-size: 0.45em; font-weight: 600; color: var(--k-text-3); margin-left: 2px; }
+.dom-sub { font-size: 12px; color: var(--k-text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dom-err { font-size: 12px; color: var(--k-err); font-family: var(--k-mono); }
+
+/* 域卡展开面板（组级：错误明细 + 动作） */
+.dom-panel {
+  grid-column: 1 / -1;
+  border: 1px solid var(--k-line);
+  border-radius: 12px;
+  background: #fafbfc;
+  padding: 16px 18px;
+}
+.dom-panel[hidden] { display: none; }
+.dom-panel h3 { margin: 0 0 10px; font-size: 13px; }
+.plist { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.plist li { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+.plist .c-url { font-size: 11.5px; }
+.plist .bad-lat { color: var(--k-err); }
+.plist .act { margin-left: auto; display: flex; gap: 8px; }
+.plist .mini-btn { padding: 3px 10px; border: 1px solid var(--k-line-2); border-radius: 999px; background: var(--k-panel); font-size: 11.5px; color: var(--k-text-2); cursor: pointer; }
+.plist .mini-btn:hover { border-color: var(--k-ink); color: var(--k-text); }
+.plist a.mini-btn { text-decoration: none; color: var(--k-ok); border-color: rgba(24, 165, 88, 0.45); }
+
+/* 底部折叠明细表 */
+.disclose { border-top: 1px solid var(--k-line); padding-top: 12px; }
+.disclose > summary { cursor: pointer; font-size: 12.5px; color: var(--k-text-2); }
+.disclose table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12.5px; }
+.disclose th { text-align: left; font-size: 11px; color: var(--k-text-3); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--k-line); }
+.disclose td { padding: 7px 10px; border-bottom: 1px solid var(--k-line); }
+.disclose .c-url { max-width: 320px; }
+
+/* 代理配置：纵向三步（左内容右控制台堆叠收窄） */
+.stepsec { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px; margin-bottom: 24px; }
+.stepno {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--k-line-2); background: var(--k-panel);
+  font-family: var(--k-mono); font-size: 12.5px; color: var(--k-text-3);
+}
+.stepsec.is-done .stepno { border-color: var(--k-ok); background: var(--k-ok); color: #fff; }
+.stepsec.is-on .stepno { border-color: var(--k-ink); background: var(--k-ink); color: #fff; }
+.stepbody { min-width: 0; }
+.stepbody > h2 { margin: 0 0 12px; font-size: 15px; }
+.stepsec:not(.is-on):not(.is-done) .stepbody { opacity: 0.55; }
+.px-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); gap: 20px; align-items: start; }
+@media (max-width: 1080px) { .px-cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="dshell">
+  <div class="dshell-brand"><span class="dshell-tag">布局 Demo</span><b>方案乙 · 检查域卡组</b></div>
+  <span class="dshell-sub">五检查域大卡为主角 · 组内明细点卡展开 · 密表降级为折叠区</span>
+  <nav class="dshell-pages">
+    <button data-page="sc" class="is-on">源检测</button>
+    <button data-page="px">代理配置</button>
+  </nav>
+  <div class="dshell-seg">
+    <button data-scheme="a" onclick="location='a-single-column.html'">甲</button>
+    <button data-scheme="b" class="is-on">乙 域卡组</button>
+    <button data-scheme="c" onclick="location='c-task-flow.html'">丙</button>
+    <button data-scheme="d" onclick="location='d-terminal.html'">丁 终端</button>
+    <button data-scheme="e" onclick="location='e-dashboard.html'">戊 仪表盘</button>
+    <button data-scheme="f" onclick="location='f-ticket-split.html'">己 工单分栏</button>
+    <button data-scheme="g" onclick="location='g-ops-feed.html'">庚 事件流</button>
+  </div>
+</header>
+
+<!-- ═══════ 源检测 ═══════ -->
+<section class="stage is-on" data-stage="sc">
+<div class="wrap">
+  <p class="demo-flag">⚠ <b>演示数据</b>：卡组为静态样例。与甲款差异：不放大号 N/5 Hero，结论由五卡状态点直接表达；已移除行级时间/历史柱等未实现项。</p>
+
+  <div class="head">
+    <div><h1>源检测</h1><p>五个检查域独立重测 · 结果缓存 30 分钟</p></div>
+    <div class="head-act">
+      <span class="head-time">上次检测 <b>2 分钟前</b></span>
+      <button class="btn btn--ink" id="sc-all">全部重测</button>
+    </div>
+  </div>
+
+  <div class="grid5" id="doms">
+    <button class="dom" data-dom="network">
+      <span class="dom-top"><span class="dom-name">网速延迟</span><i class="dot dot--ok"></i></span>
+      <span class="dom-val">32<small>ms</small></span>
+      <span class="dom-sub">2 个测试节点均值</span>
+    </button>
+    <button class="dom" data-dom="iptv">
+      <span class="dom-top"><span class="dom-name">IPTV 源</span><i class="dot dot--ok"></i></span>
+      <span class="dom-val">4<small>/4</small></span>
+      <span class="dom-sub">全部可用</span>
+    </button>
+    <button class="dom is-bad" data-dom="video">
+      <span class="dom-top"><span class="dom-name">视频源</span><i class="dot dot--err"></i></span>
+      <span class="dom-val">3<small>/4</small></span>
+      <span class="dom-err">备用源连接超时</span>
+    </button>
+    <button class="dom" data-dom="videoProxy">
+      <span class="dom-top"><span class="dom-name">视频 CORS 代理</span><i class="dot dot--idle"></i></span>
+      <span class="dom-val">—</span>
+      <span class="dom-sub">未配置</span>
+    </button>
+    <button class="dom" data-dom="iptvProxy">
+      <span class="dom-top"><span class="dom-name">IPTV 流代理</span><i class="dot dot--idle"></i></span>
+      <span class="dom-val">—</span>
+      <span class="dom-sub">未配置</span>
+    </button>
+    <!-- 卡展开面板插入此处 -->
+    <div class="dom-panel" id="panel-video" hidden>
+      <h3>视频源 · 组内明细</h3>
+      <ul class="plist">
+        <li><i class="dot dot--ok"></i>聚合源 A <span class="c-url mono">https://api.example.com/vod</span><span class="act"><button class="mini-btn">重测</button></span></li>
+        <li><i class="dot dot--ok"></i>聚合源 B <span class="c-url mono">https://api2.example.com/vod</span><span class="act"><button class="mini-btn">重测</button></span></li>
+        <li><i class="dot dot--err"></i>备用源 <span class="bad-lat mono">connect ETIMEDOUT (10s)</span><span class="act"><button class="mini-btn">重测</button><a class="mini-btn" data-jump="px" href="./b-domain-cards.html#px">去配置代理 →</a></span></li>
+      </ul>
+    </div>
+    <div class="dom-panel" id="panel-iptv" hidden>
+      <h3>IPTV 源 · 组内明细</h3>
+      <ul class="plist">
+        <li><i class="dot dot--ok"></i>聚合源 IPTV-A <span class="c-url mono">https://example.com/iptv-a.m3u</span><span class="act"><button class="mini-btn">重测</button></span></li>
+        <li><i class="dot dot--ok"></i>聚合源 IPTV-B <span class="c-url mono">https://example.com/iptv-b.m3u</span><span class="act"><button class="mini-btn">重测</button></span></li>
+      </ul>
+    </div>
+    <div class="dom-panel" id="panel-videoProxy" hidden>
+      <h3>视频 CORS 代理</h3>
+      <ul class="plist">
+        <li><i class="dot dot--idle"></i>未配置。部署后可恢复跨域受限的视频源。<span class="act"><a class="mini-btn" data-jump="px" href="./b-domain-cards.html#px">去配置代理 →</a></span></li>
+      </ul>
+    </div>
+    <div class="dom-panel" id="panel-iptvProxy" hidden>
+      <h3>IPTV 流代理</h3>
+      <ul class="plist">
+        <li><i class="dot dot--idle"></i>未配置。部署后可为不可达 IPTV 源提供回退链路。<span class="act"><a class="mini-btn" data-jump="px" href="./b-domain-cards.html#px">去配置代理 →</a></span></li>
+      </ul>
+    </div>
+    <div class="dom-panel" id="panel-network" hidden>
+      <h3>网速 · 测试节点</h3>
+      <ul class="plist">
+        <li><i class="dot dot--ok"></i>阿里云 CDN <span class="mono">28ms</span><span class="act"><button class="mini-btn">重测</button></span></li>
+        <li><i class="dot dot--ok"></i>Cloudflare <span class="mono">36ms</span><span class="act"><button class="mini-btn">重测</button></span></li>
+      </ul>
+    </div>
+  </div>
+
+  <details class="disclose">
+    <summary>查看全部 7 条源明细（dense 表）</summary>
+    <table>
+      <thead><tr><th>状态</th><th>名称</th><th>类型</th><th>地址</th><th style="text-align:right">延迟</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill pill--ok">可用</span></td><td>聚合源 IPTV-A</td><td>IPTV</td><td class="c-url">https://example.com/iptv-a.m3u</td><td class="mono" style="text-align:right">32ms</td></tr>
+        <tr><td><span class="pill pill--ok">可用</span></td><td>聚合源 IPTV-B</td><td>IPTV</td><td class="c-url">https://example.com/iptv-b.m3u</td><td class="mono" style="text-align:right">47ms</td></tr>
+        <tr><td><span class="pill pill--ok">可用</span></td><td>聚合源 A</td><td>视频</td><td class="c-url">https://api.example.com/vod</td><td class="mono" style="text-align:right">45ms</td></tr>
+        <tr><td><span class="pill pill--ok">可用</span></td><td>聚合源 B</td><td>视频</td><td class="c-url">https://api2.example.com/vod</td><td class="mono" style="text-align:right">58ms</td></tr>
+        <tr><td><span class="pill pill--err">异常</span></td><td>备用源</td><td>视频</td><td class="c-url">https://example.com/vod-c.m3u</td><td class="mono" style="text-align:right">—</td></tr>
+        <tr><td><span class="pill pill--idle">未配置</span></td><td>视频 CORS 代理</td><td>代理</td><td class="c-url">—</td><td class="mono" style="text-align:right">—</td></tr>
+        <tr><td><span class="pill pill--idle">未配置</span></td><td>IPTV 流代理</td><td>代理</td><td class="c-url">—</td><td class="mono" style="text-align:right">—</td></tr>
+      </tbody>
+    </table>
+  </details>
+</div>
+</section>
+
+<!-- ═══════ 代理配置 ═══════ -->
+<section class="stage" data-stage="px">
+<div class="wrap">
+  <p class="demo-flag">⚠ <b>演示数据</b>：凭证校验/部署为界面演示。布局差异：纵向三步编号（无横排流水线），控制台右列常驻。</p>
+
+  <div class="head">
+    <div><h1>一键配置代理</h1><p>Cloudflare Worker 部署向导 · Token 仅存内存不落盘</p></div>
+    <div class="head-act"><span class="head-time">部署项 <b id="px-ctx">未选择</b></span></div>
+  </div>
+
+  <div class="px-cols">
+    <div>
+      <div class="stepsec is-on" data-step="1">
+        <span class="stepno">1</span>
+        <div class="stepbody">
+          <h2>选择部署项</h2>
+          <div class="entries" id="px-entries">
+            <button class="entry" data-entry="cors"><span class="entry-dot"></span><b>视频采集 CORS 代理</b><span>解除浏览器跨域限制，恢复视频源可用性</span></button>
+            <button class="entry" data-entry="iptv"><span class="entry-dot"></span><b>IPTV 流代理</b><span>转发 m3u8/hls 流，解决播放端防盗链</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="stepsec" data-step="2">
+        <span class="stepno">2</span>
+        <div class="stepbody">
+          <h2>登录凭证</h2>
+          <div class="field">
+            <label>API Token</label>
+            <div class="input"><input id="px-token" type="password" placeholder="粘贴 API Token（Workers Scripts → Edit 权限）" autocomplete="off"><button id="px-eye" type="button">显示</button></div>
+            <p class="hint">仅在内存中使用，离开页面自动清除 · <a href="#" onclick="return false">打开 Cloudflare 创建 Token</a></p>
+          </div>
+          <div class="field">
+            <label>Account ID</label>
+            <div class="input"><input id="px-acct" type="text" placeholder="dash.cloudflare.com 右侧可查" autocomplete="off"></div>
+          </div>
+        </div>
+      </div>
+      <div class="stepsec" data-step="3">
+        <span class="stepno">3</span>
+        <div class="stepbody">
+          <h2>部署并回写</h2>
+          <div class="cta-row" style="display:flex;align-items:center;gap:14px">
+            <button class="btn btn--ink" id="px-deploy">开始一键配置 Worker</button>
+            <span class="hint">将创建/更新 <code>kino-cors-proxy</code>，成功后自动回写项目设置</span>
+          </div>
+          <div class="result" id="px-result" hidden style="margin-top:16px">
+            <span class="pill pill--ok">部署成功</span>
+            <b class="mono" id="px-url">https://kino-cors-proxy.example.workers.dev</b>
+            <div class="result-act">
+              <button class="btn btn--ghost btn--sm" id="px-copy">复制链接</button>
+              <a class="btn btn--ok btn--sm" href="./b-domain-cards.html#sc" data-jump="sc" style="text-decoration:none">回源检测页</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="console">
+      <div class="console-bar"><i></i><i></i><i></i><span>deploy.log</span></div>
+      <pre class="console-log" id="px-log"><code class="dim">等待部署指令 · 请先选择部署项并填写凭证</code></pre>
+    </div>
+  </div>
+</div>
+</section>
+
+<div class="toast" id="toast" hidden>已复制</div>
+
+<script>
+(function () {
+  if (location.search.indexOf('embed') > -1) { var hh = document.querySelector('.dshell'); if (hh) hh.remove(); }
+  /* 域卡展开（accordion） */
+  var doms = document.getElementById('doms');
+  doms.addEventListener('click', function (e) {
+    var card = e.target.closest('.dom');
+    if (e.target.closest('.mini-btn, a')) return;
+    if (!card) {
+      var act = e.target.closest('.plist .mini-btn');
+      if (act && act.tagName === 'BUTTON') { act.textContent = '检测中…'; setTimeout(function () { act.textContent = '重测'; }, 800); }
+      return;
+    }
+    var key = card.dataset.dom;
+    var panel = document.getElementById('panel-' + key);
+    var open = !panel.hidden;
+    doms.querySelectorAll('.dom-panel').forEach(function (p) { p.hidden = true; });
+    doms.querySelectorAll('.dom').forEach(function (c) { c.classList.remove('is-open'); });
+    if (!open) { panel.hidden = false; card.classList.add('is-open'); }
+  });
+  document.getElementById('sc-all').addEventListener('click', function () {
+    var b = this; b.disabled = true; b.textContent = '检测中…';
+    setTimeout(function () { b.disabled = false; b.textContent = '全部重测'; }, 1100);
+  });
+
+  /* 代理配置三步状态机（真实校验驱动） */
+  var entries = document.getElementById('px-entries');
+  var secs = [null, document.querySelector('[data-step="1"]'), document.querySelector('[data-step="2"]'), document.querySelector('[data-step="3"]')];
+  function refreshSteps() {
+    var s1 = !!entries.querySelector('.entry.is-selected');
+    var s2 = document.getElementById('px-token').value.trim() && document.getElementById('px-acct').value.trim();
+    var s3 = !document.getElementById('px-result').hidden;
+    var active = !s1 ? 1 : !s2 ? 2 : !s3 ? 3 : 4;
+    [1, 2, 3].forEach(function (i) {
+      secs[i].classList.toggle('is-done', i < active || (i === 3 && s3));
+      secs[i].classList.toggle('is-on', i === active);
+    });
+  }
+  entries.addEventListener('click', function (e) {
+    var b = e.target.closest('.entry'); if (!b) return;
+    entries.querySelectorAll('.entry').forEach(function (x) { x.classList.toggle('is-selected', x === b); });
+    document.getElementById('px-ctx').textContent = b.dataset.entry === 'cors' ? '视频采集 CORS 代理' : 'IPTV 流代理';
+    refreshSteps();
+  });
+  ['px-token', 'px-acct'].forEach(function (id) { document.getElementById(id).addEventListener('input', refreshSteps); });
+  document.getElementById('px-eye').addEventListener('click', function () {
+    var inp = document.getElementById('px-token');
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    this.textContent = show ? '隐藏' : '显示';
+  });
+  var logEl = document.getElementById('px-log');
+  function log(msg, cls) {
+    var t = new Date().toTimeString().slice(0, 8);
+    logEl.innerHTML += '\n<code class="' + (cls || '') + '">[' + t + '] ' + msg + '</code>';
+    logEl.parentElement.scrollTop = logEl.parentElement.scrollHeight;
+  }
+  document.getElementById('px-deploy').addEventListener('click', function () {
+    var sel = entries.querySelector('.entry.is-selected');
+    if (!sel) { log('请先选择部署项', 'err'); return; }
+    if (!document.getElementById('px-token').value.trim() || !document.getElementById('px-acct').value.trim()) {
+      log('请填写 API Token 与 Account ID', 'err'); return;
+    }
+    log('开始配置「' + (sel.dataset.entry === 'cors' ? '视频采集 CORS 代理' : 'IPTV 流代理') + '」…');
+    var btn = this; btn.disabled = true; btn.textContent = '配置中…';
+    var steps = ['校验 Cloudflare 凭据…', '[1/4] 凭据校验通过', '[2/4] 子域获取成功', '[3/4] 上传 Worker 脚本…', '[4/4] 部署完成', '已自动写入项目设置'];
+    var i = 0;
+    (function next() {
+      if (i >= steps.length) {
+        document.getElementById('px-result').hidden = false;
+        refreshSteps();
+        btn.disabled = false; btn.textContent = '重新部署';
+        return;
+      }
+      var s = steps[i++];
+      setTimeout(function () { log(s, s.indexOf(']') > -1 ? 'ok' : 'dim'); next(); }, 320);
+    })();
+  });
+  document.getElementById('px-copy').addEventListener('click', function () {
+    var url = document.getElementById('px-url').textContent;
+    var t = document.getElementById('toast');
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(
+      function () { t.hidden = false; setTimeout(function () { t.hidden = true; }, 1400); },
+      function () { t.textContent = '复制失败，请手动选择'; t.hidden = false; setTimeout(function () { t.hidden = true; }, 1400); }
+    );
+  });
+
+  /* 壳层 */
+  function showPage(k) {
+    try { history.replaceState(null, '', '#' + k); } catch (e) {}
+    document.querySelectorAll('.stage').forEach(function (s) { s.classList.toggle('is-on', s.dataset.stage === k); });
+    document.querySelectorAll('.dshell-pages button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.page === k); });
+  }
+  document.querySelectorAll('.dshell-pages button').forEach(function (b) {
+    b.addEventListener('click', function () { showPage(b.dataset.page); });
+  });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-jump]');
+    if (a) { e.preventDefault(); showPage(a.dataset.jump); }
+  });
+  if (location.hash === '#px') showPage('px');
+})();
+</script>
+</body>
+</html>

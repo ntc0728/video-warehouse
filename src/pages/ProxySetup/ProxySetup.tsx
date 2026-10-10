@@ -1,20 +1,21 @@
 /**
  * ProxySetup — 一键配置代理页（隐藏入口：设置页「关于」点 KinoTV 3 次）
  *
- * [2026-08-07 一键配置代理]
- * - 两个独立入口：视频采集 CORS 代理 / IPTV 流代理（分开处理，互不关联）
- * - 深色日志方框实时显示命令进度
- * - 登录 Cloudflare（API Token + Account ID）→ 一键上传 Worker 脚本
- * - 自定义域名（可选，默认 .workers.dev 链接）
- * - 复制链接 / 自动写入项目设置
- * - 走 AppLayout 常规路由（侧边栏保留）、Design Token 主题适配、宽度占容器剩余空间
+ * [2026-08-07 一键配置代理]  [2026-10-10 落地「己 · 三栏分步向导」]
+ * - 三栏：左步骤导航（① 选部署项 → ② 登录凭证 → ③ 部署回写）/ 中当前步面板（上一步·下一步）/ 右深色控制台常驻
+ * - 两个独立入口：视频采集 CORS 代理 / IPTV 流代理（互不关联）
+ * - 登录 Cloudflare（API Token + Account ID）→ 一键上传 Worker 脚本；部署按钮仅在第 3 步
+ * - 自定义域名（可选，真实功能：填了覆盖 Worker 链接；DNS CNAME 需自行在 Cloudflare 配）
+ * - 成功后自动写入项目设置，手动按钮兜底
+ * - 走 AppLayout 常规路由（侧边栏保留）、Design Token 主题适配
  */
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Cloud, Copy, Globe, Rocket, ShieldCheck } from 'lucide-react';
+import { Activity, ArrowLeft, ArrowRight, Cloud, Copy, Rocket } from 'lucide-react';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useIsMobileLayout } from '@/hooks/useMediaQuery';
+import { useDocumentTitle, useIsDesktop } from '@/hooks';
 import SubPage from '@/components/common/SubPage/SubPage';
 import { toast } from '@/components/ui/toastBus';
 import { Icon } from '@/components/ui/Icon';
@@ -32,6 +33,12 @@ interface LogLine {
   type: DeployLogType;
 }
 
+/** worker 脚本名（与 cloudflare.ts deployProxyWorker 内部命名一致，CTA hint 展示用） */
+const WORKER_NAME: Record<'cors' | 'iptv', string> = {
+  cors: 'kino-cors-proxy',
+  iptv: 'kino-iptv-proxy',
+};
+
 function nowTime(): string {
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -43,16 +50,22 @@ export default function ProxySetup() {
   const setIptvSettings = useIPTVStore((s) => s.setSettings);
 
   // 移动端：整页 portal 为全屏子页（SubPage，对齐设置页 SettingsSubPage），顶栏替代全局导航栏。
-  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
   const isMobile = useIsMobileLayout();
+  const isDesktop = useIsDesktop();
+
+  // 浏览器页签标题（此前未设，补齐）
+  useDocumentTitle('一键配置代理');
 
   // 状态
   const [kind, setKind] = useState<SetupKind>(null);
   const [token, setToken] = useState('');
   const [accountId, setAccountId] = useState('');
   const [domain, setDomain] = useState('');
-  const [logs, setLogs] = useState<LogLine[]>([
-    { time: nowTime(), msg: '> 等待配置开始，请在上方选择一个配置入口...', type: 'info' },
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [hint, setHint] = useState<string | null>(null);
+  const [logs, setLogs] = useState<LogLine[]>(() => [
+    // 初始提示方位随布局变：≥1024 非 app 三栏在左侧；app/窄视口步骤导航横排居顶部（原固定「上方」为误）
+    { time: nowTime(), msg: `> 等待配置开始，请在${isDesktop && !isMobile ? '左侧' : '上方'}选择一个配置入口...`, type: 'info' },
   ]);
   const [deploying, setDeploying] = useState(false);
   const [resultUrl, setResultUrl] = useState('');
@@ -66,6 +79,7 @@ export default function ProxySetup() {
   const handleSelectKind = useCallback((k: 'cors' | 'iptv') => {
     setKind(k);
     setResultUrl('');
+    setHint(null);
     appendLog(k === 'cors' ? '已选择：视频采集 CORS 代理' : '已选择：IPTV 流代理', 'info');
   }, [appendLog]);
 
@@ -78,6 +92,7 @@ export default function ProxySetup() {
   const handleDeploy = useCallback(async () => {
     if (!kind) {
       appendLog('请先选择一个配置入口', 'error');
+      setStep(1);
       return;
     }
     if (!token.trim() || !accountId.trim()) {
@@ -98,14 +113,23 @@ export default function ProxySetup() {
         appendLog(`已使用 Worker 默认链接：${finalUrl}`, 'success');
       }
       setResultUrl(finalUrl);
-      appendLog('配置完成！请复制链接并粘贴到项目设置相应位置。', 'success');
+      // 自动回写：部署成功即写入设置，手动按钮保留作兜底
+      if (kind === 'cors') {
+        setCorsProxy(finalUrl);
+        appendLog(`已自动写入「视频采集 CORS 代理」：${finalUrl}`, 'success');
+      } else {
+        setIptvSettings({ proxyUrl: finalUrl });
+        appendLog(`已自动写入「IPTV 代理服务器地址」：${finalUrl}`, 'success');
+      }
+      appendLog('配置完成！可「回源检测复检」验证代理链路。', 'success');
+      toast.show({ content: '配置完成，已自动写入项目设置', type: 'success' });
     } catch (e) {
       appendLog(`配置失败：${(e as Error).message ?? '未知错误'}`, 'error');
       toast.show({ content: `配置失败：${(e as Error).message}`, type: 'error' });
     } finally {
       setDeploying(false);
     }
-  }, [kind, token, accountId, domain, appendLog]);
+  }, [kind, token, accountId, domain, appendLog, setCorsProxy, setIptvSettings]);
 
   const copyResult = useCallback(async () => {
     if (!resultUrl) {
@@ -121,7 +145,7 @@ export default function ProxySetup() {
     }
   }, [resultUrl, appendLog]);
 
-  /** 自动写入设置 */
+  /** 写入设置（兜底手动，自动回写已执行） */
   const writeToSettings = useCallback(() => {
     if (!resultUrl) {
       appendLog('暂无链接可写入，请先完成配置', 'warn');
@@ -137,13 +161,37 @@ export default function ProxySetup() {
     toast.show({ content: '已写入项目设置，可跳转设置页确认', type: 'success' });
   }, [resultUrl, kind, setCorsProxy, setIptvSettings, appendLog]);
 
-  // 部署流水线（状态监控台改版 2026-10-10）：纯派生展示，不改变部署行为
-  const pipeCredDone = Boolean(token.trim() && accountId.trim());
-  const pipeEntryDone = kind !== null;
-  const pipeDeployDone = Boolean(resultUrl);
-  const pipeActive = !pipeCredDone ? 1 : !pipeEntryDone ? 2 : !pipeDeployDone ? 3 : 4;
-  const pipeCls = (p: number) =>
-    `proxy-setup__pipe-step${p < pipeActive ? ' is-done' : ''}${p === pipeActive ? ' is-on' : ''}`;
+  // 步骤完成态（派生展示，用于左导航 is-done/is-on）
+  const stepDone = {
+    1: kind !== null,
+    2: Boolean(token.trim() && accountId.trim()),
+    3: Boolean(resultUrl),
+  };
+  const stepCls = (s: 1 | 2 | 3) =>
+    `proxy-setup__stepnav-item${stepDone[s] ? ' is-done' : ''}${step === s ? ' is-on' : ''}${hint && step === s ? ' is-error' : ''}`;
+
+  // 下一步校验：点击时提示、不拦截（不置灰，未填完停留本步 + 页内红字提示）
+  const stepValid1 = kind !== null;
+  const stepValid2 = Boolean(token.trim() && accountId.trim());
+  const goNext = useCallback(() => {
+    if (step === 1) {
+      if (!stepValid1) { setHint('请先选择一个部署项'); return; }
+      setHint(null); setStep(2);
+    } else if (step === 2) {
+      if (!stepValid2) { setHint('请填写 API Token 与 Account ID'); return; }
+      setHint(null); setStep(3);
+    }
+  }, [step, stepValid1, stepValid2]);
+  const goStep = useCallback((n: 1 | 2 | 3) => { setHint(null); setStep(n); }, []);
+
+  // 第3步「部署确认摘要」（真实字段派生）
+  const normDomain = domain.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  const summaryRows: { k: string; v: string; muted?: boolean }[] = [
+    { k: '部署项', v: kind === 'cors' ? '视频采集 CORS 代理' : kind === 'iptv' ? 'IPTV 流代理' : '未选择', muted: !kind },
+    { k: '目标 Worker', v: kind ? WORKER_NAME[kind] : '—', muted: !kind },
+    { k: '访问链接', v: normDomain ? `https://${normDomain}` : '默认 .workers.dev 链接', muted: !normDomain },
+    { k: 'Account', v: accountId.trim() ? `…${accountId.trim().slice(-6)}` : '未填写', muted: !accountId.trim() },
+  ];
 
   const page = (
     <div className="proxy-setup">
@@ -162,89 +210,119 @@ export default function ProxySetup() {
           </span>
         </header>
 
-        {/* 四步流水线：凭证 → 选择部署项 → 部署 → 完成 */}
-        <ol className="proxy-setup__pipe">
-          <li className={pipeCls(1)}>
-            <span className="proxy-setup__pipe-num">01</span>
-            <span className="proxy-setup__pipe-name">登录凭证</span>
-            <span className="proxy-setup__pipe-desc">Token + Account</span>
-          </li>
-          <li className={pipeCls(2)}>
-            <span className="proxy-setup__pipe-num">02</span>
-            <span className="proxy-setup__pipe-name">选择部署项</span>
-            <span className="proxy-setup__pipe-desc">CORS / 流代理</span>
-          </li>
-          <li className={pipeCls(3)}>
-            <span className="proxy-setup__pipe-num">03</span>
-            <span className="proxy-setup__pipe-name">部署 Worker</span>
-            <span className="proxy-setup__pipe-desc">实时日志</span>
-          </li>
-          <li className={pipeCls(4)}>
-            <span className="proxy-setup__pipe-num">04</span>
-            <span className="proxy-setup__pipe-name">完成</span>
-            <span className="proxy-setup__pipe-desc">回写设置</span>
-          </li>
-        </ol>
+        <div className="proxy-setup__cols">
+          {/* 左：步骤导航 */}
+          <nav className="proxy-setup__stepnav" aria-label="部署步骤">
+            <h4>部署步骤</h4>
+            <button type="button" className={stepCls(1)} onClick={() => goStep(1)}>
+              <span className="proxy-setup__stepnav-no">①</span> 选择部署项
+            </button>
+            <button type="button" className={stepCls(2)} onClick={() => goStep(2)}>
+              <span className="proxy-setup__stepnav-no">②</span> 登录凭证
+            </button>
+            <button type="button" className={stepCls(3)} onClick={() => goStep(3)}>
+              <span className="proxy-setup__stepnav-no">③</span> 部署与回写
+            </button>
+          </nav>
 
-        <div className="proxy-setup__body">
-          <div className="proxy-setup__form">
-            {/* 两个独立入口（radio 圆点样式，对齐监控台 demo） */}
-            <div className="proxy-setup__grid">
-              <button
-                type="button"
-                className={`proxy-setup__card${kind === 'cors' ? ' is-selected' : ''}`}
-                onClick={() => handleSelectKind('cors')}
-              >
-                <span className="proxy-setup__entry-dot" />
-                <span className="proxy-setup__entry-name">视频采集 CORS 代理</span>
-                <span className="proxy-setup__card-desc">绕过浏览器跨域限制，访问 CMS 采集站数据</span>
-              </button>
-              <button
-                type="button"
-                className={`proxy-setup__card${kind === 'iptv' ? ' is-selected' : ''}`}
-                onClick={() => handleSelectKind('iptv')}
-              >
-                <span className="proxy-setup__entry-dot" />
-                <span className="proxy-setup__entry-name">IPTV 流代理</span>
-                <span className="proxy-setup__card-desc">转发 IPTV 直播流（m3u8 / dash / ts）</span>
-              </button>
+          {/* 中：当前步面板（一次一步 + 上/下一步） */}
+          <div className="proxy-setup__main">
+            <div className="proxy-setup__panel" hidden={step !== 1}>
+              <h3 className="proxy-setup__panel-title"><Icon icon={Cloud} size="sm" /> 选择部署项</h3>
+              <p className="proxy-setup__panel-desc">两种代理互不关联，可分别部署。</p>
+              <div className="proxy-setup__grid">
+                <button
+                  type="button"
+                  className={`proxy-setup__card${kind === 'cors' ? ' is-selected' : ''}`}
+                  onClick={() => handleSelectKind('cors')}
+                >
+                  <span className="proxy-setup__entry-dot" />
+                  <span className="proxy-setup__entry-name">视频采集 CORS 代理</span>
+                  <span className="proxy-setup__card-desc">绕过浏览器跨域限制，访问 CMS 采集站数据</span>
+                </button>
+                <button
+                  type="button"
+                  className={`proxy-setup__card${kind === 'iptv' ? ' is-selected' : ''}`}
+                  onClick={() => handleSelectKind('iptv')}
+                >
+                  <span className="proxy-setup__entry-dot" />
+                  <span className="proxy-setup__entry-name">IPTV 流代理</span>
+                  <span className="proxy-setup__card-desc">转发 IPTV 直播流（m3u8 / dash / ts）</span>
+                </button>
+              </div>
+              <div className="proxy-setup__nav-row">
+                <span />
+                <button type="button" className="proxy-setup__btn proxy-setup__btn--primary proxy-setup__btn--sm" onClick={goNext}>
+                  下一步：填凭证 <Icon icon={ArrowRight} size="sm" />
+                </button>
+              </div>
+              {hint && step === 1 && <p className="proxy-setup__hint proxy-setup__hint--error">{hint}</p>}
             </div>
 
-            {/* 登录 Cloudflare */}
-            <div className="proxy-setup__panel">
-              <h3 className="proxy-setup__panel-title"><Icon icon={ShieldCheck} size="sm" /> 登录 Cloudflare</h3>
-              <button type="button" className="proxy-setup__btn proxy-setup__btn--link" onClick={openCloudflareLogin}>
-                <span className="proxy-setup__btn-label">打开 Cloudflare 登录 / 创建 API Token</span>
-              </button>
+            <div className="proxy-setup__panel" hidden={step !== 2}>
+              <h3 className="proxy-setup__panel-title"><Icon icon={Cloud} size="sm" /> 登录凭证</h3>
               <div className="proxy-setup__field">
-                <label htmlFor="cf-token">Cloudflare API Token</label>
+                <label htmlFor="cf-token">API Token</label>
                 <div className="proxy-setup__input-row">
                   <input
                     id="cf-token"
                     type={showToken ? 'text' : 'password'}
                     value={token}
-                    onChange={(e) => setToken(e.target.value)}
+                    onChange={(e) => { setToken(e.target.value); setHint(null); }}
+                    className={hint && !token.trim() ? ' is-invalid' : ''}
                     placeholder="粘贴 API Token（Workers Scripts → Edit 权限）"
                   />
                   <button type="button" className="proxy-setup__btn proxy-setup__btn--ghost" onClick={() => setShowToken((v) => !v)}>
                     {showToken ? '隐藏' : '显示'}
                   </button>
                 </div>
+                <p className="proxy-setup__hint">
+                  仅在内存中使用，离开页面自动清除 ·
+                  <button type="button" className="proxy-setup__hint-link" onClick={openCloudflareLogin}>打开 Cloudflare 创建 Token</button>
+                </p>
               </div>
               <div className="proxy-setup__field">
-                <label htmlFor="cf-account">Cloudflare Account ID</label>
+                <label htmlFor="cf-account">Account ID</label>
                 <input
                   id="cf-account"
                   type="text"
                   value={accountId}
-                  onChange={(e) => setAccountId(e.target.value)}
+                  onChange={(e) => { setAccountId(e.target.value); setHint(null); }}
+                  className={hint && !accountId.trim() ? ' is-invalid' : ''}
                   placeholder="dash.cloudflare.com 右侧可查"
                 />
               </div>
+              <div className="proxy-setup__field">
+                <label htmlFor="cf-domain">自定义域名 <span className="proxy-setup__optional">（可选，留空则使用 Worker 默认链接；需自行在 Cloudflare DNS 配 CNAME）</span></label>
+                <input
+                  id="cf-domain"
+                  type="text"
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  placeholder="proxy.example.com"
+                />
+              </div>
+              <div className="proxy-setup__nav-row">
+                <button type="button" className="proxy-setup__btn proxy-setup__btn--sm" onClick={() => goStep(1)}>
+                  <Icon icon={ArrowLeft} size="sm" /> 上一步
+                </button>
+                <button type="button" className="proxy-setup__btn proxy-setup__btn--primary proxy-setup__btn--sm" onClick={goNext}>
+                  下一步：部署 <Icon icon={ArrowRight} size="sm" />
+                </button>
+              </div>
+              {hint && step === 2 && <p className="proxy-setup__hint proxy-setup__hint--error">{hint}</p>}
             </div>
 
-            {/* 开始配置 */}
-            <div className="proxy-setup__panel">
+            <div className="proxy-setup__panel" hidden={step !== 3}>
+              <h3 className="proxy-setup__panel-title"><Icon icon={Rocket} size="sm" /> 部署与回写</h3>
+              <dl className="proxy-setup__summary">
+                {summaryRows.map((s) => (
+                  <div key={s.k} className="proxy-setup__summary-row">
+                    <dt>{s.k}</dt>
+                    <dd className={s.muted ? ' is-muted' : ''}>{s.v}</dd>
+                  </div>
+                ))}
+              </dl>
               <div className="proxy-setup__action-row">
                 <button
                   type="button"
@@ -255,43 +333,40 @@ export default function ProxySetup() {
                   {deploying ? <Icon icon={Activity} size="sm" className="spin" /> : <Icon icon={Rocket} size="sm" />}
                   {deploying ? '配置中...' : '开始一键配置 Worker'}
                 </button>
-                <span className="proxy-setup__action-hint">将上传 worker 脚本并创建 Workers 代理，需先填写上方 Token 与 Account ID。</span>
+                <span className="proxy-setup__action-hint">
+                  将创建/更新 <code className="proxy-setup__cta-code">{kind ? WORKER_NAME[kind] : 'Worker'}</code>，成功后自动回写项目设置
+                </span>
               </div>
-            </div>
+              <div className="proxy-setup__nav-row">
+                <button type="button" className="proxy-setup__btn proxy-setup__btn--sm" onClick={() => goStep(2)}>
+                  <Icon icon={ArrowLeft} size="sm" /> 上一步
+                </button>
+              </div>
 
-            {/* 自定义域名 + 结果 */}
-            <div className="proxy-setup__panel">
-              <div className="proxy-setup__field">
-                <label htmlFor="cf-domain">自定义域名 <span className="proxy-setup__optional">（可选，留空则使用 Worker 默认链接）</span></label>
-                <input
-                  id="cf-domain"
-                  type="text"
-                  value={domain}
-                  onChange={(e) => setDomain(e.target.value)}
-                  placeholder="proxy.example.com（需在 Cloudflare DNS 配置 CNAME）"
-                />
-              </div>
               {resultUrl && (
                 <div className="proxy-setup__result">
-                  <div className="proxy-setup__result-label">配置完成，复制以下链接到项目设置：</div>
-                  <div className="proxy-setup__result-url">{resultUrl}</div>
+                  <div className="proxy-setup__result-main">
+                    <span className="proxy-setup__result-pill">部署成功</span>
+                    <b className="proxy-setup__result-url">{resultUrl}</b>
+                  </div>
                   <div className="proxy-setup__result-actions">
                     <button type="button" className="proxy-setup__btn" onClick={copyResult}>
                       <Icon icon={Copy} size="sm" /> 复制链接
                     </button>
-                    <button type="button" className="proxy-setup__btn proxy-setup__btn--primary" onClick={writeToSettings}>
-                      <Icon icon={Globe} size="sm" /> 自动写入设置
+                    <button type="button" className="proxy-setup__btn" onClick={writeToSettings}>
+                      <Icon icon={Cloud} size="sm" /> 重新写入设置
                     </button>
                     <Link className="proxy-setup__btn proxy-setup__btn--ok" to="/source-checker">
                       回源检测复检 →
                     </Link>
                   </div>
+                  <p className="proxy-setup__result-note">已自动写入「设置 → 代理」，下次检测将走代理链路。</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* 深色控制台：mac 标题栏 + 日志，全页唯一强对比锚点，与表单并排常驻 */}
+          {/* 右：深色控制台常驻 */}
           <div className="proxy-setup__console-wrap">
             <div className="proxy-setup__console-bar" aria-hidden="true">
               <span className="proxy-setup__console-dot" />
@@ -308,12 +383,10 @@ export default function ProxySetup() {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
 
-  // 移动端：整页 portal 挂 body（fixed inset:0 覆盖全视口），顶栏替代全局导航栏，
-  // 内容在顶栏下方独立滚动 —— 与设置页 SettingsSubPage 完全同模式，无全局 padding 补偿
+  // 移动端：整页 portal 挂 body（fixed inset:0 覆盖全视口），顶栏替代全局导航栏
   return isMobile ? <SubPage title="一键配置代理">{page}</SubPage> : page;
 }

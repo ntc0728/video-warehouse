@@ -37,7 +37,9 @@ test.describe('代理配置', () => {
     const logText = await page.locator('.proxy-setup__console').textContent();
     expect(logText).toContain('已选择');
 
-    // PROXY-003
+    // PROXY-003：2026-10-10 落地「己 · 分步向导」后，部署按钮在第 3 步（隐藏于步骤 1/2）。
+    // 先经左侧步骤导航跳到「③ 部署与回写」（导航按钮常驻可见、唯一），再点部署。
+    await page.getByRole('button', { name: /部署与回写/ }).click();
     await page.getByRole('button', { name: /开始一键配置 Worker/ }).click();
     // 等控制台输出「请填写 Cloudflare API Token」，替代固定 300ms 睡眠
     await expect.poll(async () => (await page.locator('.proxy-setup__console').textContent()) ?? '',

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>源检测 / 代理配置 · 七款布局方案自由切换 — 2026-10-10</title>
+<link rel="stylesheet" href="../../../src/assets/styles/variables.css">
+<style>
+:root {
+  --s-bg: #f5f6f7;
+  --s-ink: #12161a;
+  --s-text: #1b2128;
+  --s-text-2: #5c6670;
+  --s-text-3: #8a939c;
+  --s-line: #e7e9eb;
+  --s-ok: #18a558;
+  --s-warn: #d9822b;
+  --s-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--s-bg);
+  color: var(--s-text);
+  font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---------- 顶栏（唯一切换入口） ---------- */
+.bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 18px;
+  background: var(--s-ink);
+  color: #fff;
+  z-index: 5;
+}
+.brand { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.brand .tag {
+  font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: var(--s-warn); color: #fff;
+}
+.brand b { font-size: 14px; }
+.brand i { font-style: normal; font-size: 11.5px; color: #9aa4ae; }
+
+.schemes { display: flex; gap: 5px; margin-left: auto; flex-wrap: wrap; }
+.schemes button {
+  padding: 5px 12px;
+  border: 1px solid #2b333c; border-radius: 999px;
+  background: transparent; color: #c6cdd4;
+  font-size: 12px; font-family: inherit; cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.schemes button:hover { border-color: #4a5560; color: #fff; }
+.schemes button.is-on { background: #fff; border-color: #fff; color: var(--s-ink); font-weight: 600; }
+
+.pages { display: flex; gap: 5px; }
+.pages button {
+  padding: 5px 12px;
+  border: 1px solid #2b333c; border-radius: 999px;
+  background: transparent; color: #9aa4ae;
+  font-size: 12px; font-family: inherit; cursor: pointer;
+}
+.pages button.is-on { border-color: var(--s-ok); color: #fff; }
+.pages button.is-on::before { content: "● "; color: var(--s-ok); }
+
+.open-new {
+  font-size: 11.5px; color: #9aa4ae; text-decoration: none;
+  border: 1px solid #2b333c; border-radius: 999px; padding: 4px 10px;
+  white-space: nowrap;
+}
+.open-new:hover { color: #fff; border-color: #4a5560; }
+
+/* ---------- 说明条 ---------- */
+.desc {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 18px;
+  border-bottom: 1px solid var(--s-line);
+  background: var(--s-panel, #fff);
+  font-size: 12px; color: var(--s-text-2);
+}
+.desc b { color: var(--s-text); font-size: 12.5px; }
+.desc .kb { margin-left: auto; color: var(--s-text-3); font-size: 11px; white-space: nowrap; }
+.desc kbd {
+  font-family: var(--s-mono); font-size: 10.5px;
+  border: 1px solid #d8dbde; border-bottom-width: 2px; border-radius: 4px;
+  padding: 0 5px; background: #fafbfc; color: var(--s-text-2);
+}
+
+/* ---------- 舞台 iframe ---------- */
+.frame { flex: 1 1 auto; border: 0; width: 100%; display: block; background: var(--s-bg); }
+
+@media (max-width: 1100px) {
+  .bar { flex-wrap: wrap; gap: 8px; }
+  .schemes { margin-left: 0; order: 3; width: 100%; }
+  .desc .kb { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .schemes button { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">
+    <span class="tag">布局 Demo</span>
+    <b>源检测 / 代理配置</b>
+    <i>七款方案 · 单页自由切换</i>
+  </div>
+  <nav class="pages" id="pages">
+    <button data-page="sc" class="is-on">源检测</button>
+    <button data-page="px">代理配置</button>
+  </nav>
+  <nav class="schemes" id="schemes"></nav>
+  <a class="open-new" id="openNew" href="./a-single-column.html" target="_blank" rel="noopener">新窗口打开 ↗</a>
+</header>
+
+<p class="desc">
+  <b id="desc-name">甲 · 紧凑单栏</b>
+  <span id="desc-text">Hero 结论 + dense 表，点行行内展开详情（无右栏 inspector）</span>
+  <span class="kb"><kbd>1</kbd>–<kbd>7</kbd> 切方案 · <kbd>←</kbd><kbd>→</kbd> 上/下一款 · <kbd>Q</kbd>/<kbd>W</kbd> 切页面</span>
+</p>
+
+<iframe class="frame" id="frame" title="方案预览" src="./a-single-column.html?embed=1#sc"></iframe>
+
+<script>
+(function () {
+  /* 七款注册表：文件 + 名称 + 一句话说明（全部真实存在、可切换） */
+  var SCHEMES = [
+    { k: 'a', file: 'a-single-column.html', name: '甲 · 紧凑单栏', desc: 'Hero 结论 + dense 表，点行行内展开详情（无右栏 inspector）' },
+    { k: 'b', file: 'b-domain-cards.html', name: '乙 · 检查域卡组', desc: '五检查域大卡当主角，点卡展开组内明细；密表降级折叠区' },
+    { k: 'c', file: 'c-task-flow.html', name: '丙 · 任务流', desc: '体检 → 定位 → 复检一条时间线，未开始步骤淡出' },
+    { k: 'd', file: 'd-terminal.html', name: '丁 · 终端工具风', desc: 'CLI 质感：命令按钮 + 等宽输出 + 日志流逐条回显' },
+    { k: 'e', file: 'e-dashboard.html', name: '戊 · 仪表盘 Bento', desc: '健康环 + 延迟对比条形 + 域磁贴；只用真实字段，无趋势线' },
+    { k: 'f', file: 'f-ticket-split.html', name: '己 · 三栏+健康带', desc: '顶部健康带与 戊 一致（健康环 + 延迟条形 + c-domains 五域磁贴；条可点选行、磁贴可筛选）·左分组导航 / 中大卡列表 / 右详情坞常驻' },
+    { k: 'g', file: 'g-ops-feed.html', name: '庚 · 运维事件流', desc: '一条 feed，事件全由当场操作产生（真实时间戳），部署汇入同轴' }
+  ];
+  var curScheme = 'a';
+  var curPage = 'sc';
+  var frame = document.getElementById('frame');
+  var schemesEl = document.getElementById('schemes');
+
+  /* 渲染方案按钮（七款一律真实可达） */
+  SCHEMES.forEach(function (s, i) {
+    var b = document.createElement('button');
+    b.textContent = s.name.split(' · ')[0] + ' ' + s.name.split(' · ')[1];
+    b.title = (i + 1) + ' · ' + s.desc;
+    b.dataset.k = s.k;
+    if (s.k === curScheme) b.classList.add('is-on');
+    b.addEventListener('click', function () { apply(s.k, curPage); });
+    schemesEl.appendChild(b);
+  });
+
+  function apply(k, pg) {
+    curScheme = k; curPage = pg || curPage;
+    var s = SCHEMES.filter(function (x) { return x.k === curScheme; })[0];
+    frame.src = './' + s.file + '?embed=1#' + curPage;
+    document.getElementById('desc-name').textContent = s.name;
+    document.getElementById('desc-text').textContent = s.desc;
+    document.getElementById('openNew').href = './' + s.file + '#' + curPage;
+    schemesEl.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.k === curScheme); });
+    document.querySelectorAll('#pages button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.page === curPage); });
+    /* 分享态：地址栏可定位方案/页面 */
+    try { history.replaceState(null, '', '?scheme=' + curScheme + '&page=' + curPage); } catch (e) {}
+  }
+
+  document.getElementById('pages').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-page]');
+    if (b) apply(curScheme, b.dataset.page);
+  });
+
+  /* 同步 iframe 内部的跨页跳转（如「去配置代理 →」）：读 hash 回写按钮态 */
+  var syncTimer = null;
+  frame.addEventListener('load', function () {
+    clearInterval(syncTimer);
+    syncTimer = setInterval(function () {
+      var h = '';
+      try { h = (frame.contentWindow.location.hash || '').replace('#', ''); } catch (e) {}
+      if (h && h !== curPage) {
+        curPage = h;
+        document.querySelectorAll('#pages button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.page === h); });
+        try { history.replaceState(null, '', '?scheme=' + curScheme + '&page=' + curPage); } catch (e2) {}
+      }
+    }, 600);
+  });
+
+  /* 键盘：1-7 切方案，←→ 步进，Q/W 切页 */
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var n = parseInt(e.key, 10);
+    if (n >= 1 && n <= SCHEMES.length) { apply(SCHEMES[n - 1].k, curPage); return; }
+    var idx = SCHEMES.map(function (s) { return s.k; }).indexOf(curScheme);
+    if (e.key === 'ArrowRight') apply(SCHEMES[(idx + 1) % SCHEMES.length].k, curPage);
+    if (e.key === 'ArrowLeft') apply(SCHEMES[(idx - 1 + SCHEMES.length) % SCHEMES.length].k, curPage);
+    if (e.key === 'q' || e.key === 'Q') apply(curScheme, 'sc');
+    if (e.key === 'w' || e.key === 'W') apply(curScheme, 'px');
+  });
+
+  /* 支持 ?scheme=&page= 直达 */
+  var q = new URLSearchParams(location.search);
+  var s0 = q.get('scheme'), p0 = q.get('page');
+  var valid = SCHEMES.some(function (s) { return s.k === s0; });
+  apply(valid ? s0 : 'a', p0 === 'px' ? 'px' : 'sc');
+})();
+</script>
+</body>
+</html>

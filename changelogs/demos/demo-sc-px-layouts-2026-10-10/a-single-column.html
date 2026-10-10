@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方案甲 · 紧凑单栏监控台 — 源检测/代理配置布局重设计</title>
+<link rel="stylesheet" href="../../../src/assets/styles/variables.css">
+<link rel="stylesheet" href="./_base.css">
+<style>
+/* ===== 方案甲：Hero 结论 + dense 表 + 行内展开详情（无 inspector 右栏） ===== */
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--k-line);
+}
+.hero-num {
+  font-size: clamp(44px, 6vw, 72px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--k-ink);
+}
+.hero-num em { font-style: normal; font-size: 0.42em; font-weight: 600; color: var(--k-text-3); }
+.hero-side { display: flex; flex-direction: column; gap: 4px; }
+.hero-cap { font-size: 12px; color: var(--k-text-2); letter-spacing: 0.04em; }
+.hero-state { font-size: 15px; font-weight: 600; color: var(--k-warn); }
+.hero-state.is-ok { color: var(--k-ok); }
+.hero-mini { margin-left: auto; display: flex; gap: 18px; }
+.hero-mini li {
+  list-style: none;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--k-text-2);
+}
+.hero-mini b { font-size: 13.5px; color: var(--k-text); font-variant-numeric: tabular-nums; }
+
+.segbar { display: flex; align-items: center; gap: 8px; margin: 18px 0 12px; flex-wrap: wrap; }
+.seg { display: flex; gap: 6px; }
+.seg button {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--k-line-2);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12.5px;
+  color: var(--k-text-2);
+  cursor: pointer;
+  font-family: inherit;
+}
+.seg button i { font-style: normal; font-family: var(--k-mono); font-size: 11px; color: var(--k-text-3); }
+.seg button.is-on { background: var(--k-ink); border-color: var(--k-ink); color: #fff; font-weight: 600; }
+.seg button.is-on i { color: #9aa4ae; }
+.seg-act { margin-left: auto; display: flex; gap: 8px; }
+.mini-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--k-line-2);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--k-text-2);
+  cursor: pointer;
+  font-family: inherit;
+}
+.mini-btn:hover { border-color: var(--k-ink); color: var(--k-text); }
+.mini-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--k-panel);
+  border: 1px solid var(--k-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.tbl th {
+  text-align: left; font-size: 11.5px; font-weight: 600; color: var(--k-text-2);
+  padding: 10px 14px; border-bottom: 1px solid var(--k-line); background: #fafbfc;
+}
+.tbl td { padding: 11px 14px; border-bottom: 1px solid var(--k-line); font-size: 13px; vertical-align: middle; }
+.tbl tbody tr:last-child td { border-bottom: 0; }
+.tbl tr.row { cursor: pointer; }
+.tbl tr.row:hover { background: #f6f8f9; }
+.tbl tr.row.is-bad { background: var(--k-err-bg); }
+.tbl tr.row.is-open { outline: 2px solid var(--k-ink); outline-offset: -2px; }
+.tbl tr.row.is-idle { background: #fafbfc; }
+.c-url { font-family: var(--k-mono); font-size: 12px; color: var(--k-text-2); max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-lat { font-family: var(--k-mono); font-variant-numeric: tabular-nums; }
+tr.is-bad .c-lat { color: var(--k-err); }
+tr:not(.is-bad):not(.is-idle) .c-lat { color: var(--k-ok); }
+
+/* 行内展开详情（accordion，替右栏 inspector） */
+tr.detail td { background: #fafbfc; padding: 0 14px; border-bottom: 1px solid var(--k-line); }
+tr.detail[hidden] { display: none; }
+.detail-in { padding: 14px 0 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: start; }
+.detail-kv { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 12.5px; }
+.detail-kv dt { color: var(--k-text-2); white-space: nowrap; }
+.detail-kv dd { margin: 0; word-break: break-all; }
+.detail-kv dd.err { color: var(--k-err); font-family: var(--k-mono); }
+.detail-advice { font-size: 12.5px; color: var(--k-text-2); margin: 10px 0 0; }
+.detail-act { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+
+/* 代理配置（单栏纵向：流水线 → 入口 → 凭证 → CTA → 控制台 → 结果） */
+.pipe {
+  display: flex; margin: 20px 0; padding: 0; list-style: none;
+  border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-panel); overflow: hidden;
+}
+.pipe li { flex: 1; display: flex; flex-direction: column; gap: 1px; padding: 12px 18px; border-left: 1px solid var(--k-line); }
+.pipe li:first-child { border-left: 0; }
+.pipe i { font-style: normal; font-family: var(--k-mono); font-size: 11px; color: var(--k-text-3); }
+.pipe b { font-size: 13.5px; }
+.pipe span { font-size: 12px; color: var(--k-text-2); }
+.pipe li.is-done { background: var(--k-ok-bg); }
+.pipe li.is-done i { color: var(--k-ok); }
+.pipe li.is-done i::after { content: " ✓"; }
+.pipe li.is-on { background: var(--k-ink); color: #fff; }
+.pipe li.is-on i { color: var(--k-ok); }
+.pipe li.is-on span { color: #9aa4ae; }
+
+.px-sec { margin-bottom: 20px; }
+.px-sec > h2 { font-size: 13px; margin: 0 0 10px; color: var(--k-text-2); letter-spacing: 0.04em; }
+.cta-row { display: flex; align-items: center; gap: 14px; }
+.cta-hint { font-size: 12.5px; color: var(--k-text-3); }
+.cta-hint code { color: var(--k-text-2); }
+.console { max-width: 860px; }
+</style>
+</head>
+<body>
+
+<header class="dshell">
+  <div class="dshell-brand"><span class="dshell-tag">布局 Demo</span><b>方案甲 · 紧凑单栏</b></div>
+  <span class="dshell-sub">Hero 结论 + dense 表 + 行内展开 · 无右栏 inspector · 已删未实现控件</span>
+  <nav class="dshell-pages">
+    <button data-page="sc" class="is-on">源检测</button>
+    <button data-page="px">代理配置</button>
+  </nav>
+  <div class="dshell-seg">
+    <button data-scheme="a" class="is-on">甲 单栏</button>
+    <button data-scheme="b" onclick="location='b-domain-cards.html'">乙</button>
+    <button data-scheme="c" onclick="location='c-task-flow.html'">丙</button>
+    <button data-scheme="d" onclick="location='d-terminal.html'">丁 终端</button>
+    <button data-scheme="e" onclick="location='e-dashboard.html'">戊 仪表盘</button>
+    <button data-scheme="f" onclick="location='f-ticket-split.html'">己 工单分栏</button>
+    <button data-scheme="g" onclick="location='g-ops-feed.html'">庚 事件流</button>
+  </div>
+</header>
+
+<!-- ═══════ 源检测 ═══════ -->
+<section class="stage is-on" data-stage="sc">
+<div class="wrap">
+  <p class="demo-flag">⚠ <b>演示数据</b>：下表为静态样例（真实检测逻辑不变，仅布局重排）。已移除：行级「最近」列（实为全局时间）、近 5 次历史柱、自动切换代理复检文案。</p>
+
+  <div class="head">
+    <div><h1>源检测</h1><p>网络与数据源健康状态 · 结果缓存 30 分钟</p></div>
+    <div class="head-act">
+      <span class="head-time">上次检测 <b>2 分钟前</b></span>
+      <button class="btn btn--ink" id="sc-checkall">一键检测</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-num"><span id="sc-ok">3</span><em>/5</em></div>
+    <div class="hero-side">
+      <span class="hero-cap">检查域可用</span>
+      <b class="hero-state" id="sc-state">2 项待修复 · 备用源异常、代理未配置</b>
+    </div>
+    <ul class="hero-mini">
+      <li><i class="dot dot--ok"></i>网速 <b>32ms</b></li>
+      <li><i class="dot dot--err"></i>视频源 <b>3/4</b></li>
+      <li><i class="dot dot--idle"></i>代理 <b>未配置</b></li>
+    </ul>
+  </div>
+
+  <div class="segbar">
+    <div class="seg" id="sc-seg">
+      <button class="is-on" data-seg="all">全部 <i>7</i></button>
+      <button data-seg="iptv">IPTV 源 <i>2</i></button>
+      <button data-seg="video">视频源 <i>3</i></button>
+      <button data-seg="proxy">代理 <i>2</i></button>
+    </div>
+    <div class="seg-act">
+      <button class="mini-btn" data-recheck="iptv">重测 IPTV</button>
+      <button class="mini-btn" data-recheck="video">重测视频源</button>
+      <button class="mini-btn" data-recheck="proxy">重测代理</button>
+    </div>
+  </div>
+
+  <table class="tbl" id="sc-tbl">
+    <thead><tr><th style="width:5.5em">状态</th><th>名称</th><th style="width:4em">类型</th><th>地址</th><th style="width:5em;text-align:right">延迟</th></tr></thead>
+    <tbody id="sc-tbody"></tbody>
+  </table>
+  <p class="hint" style="margin-top:10px">点击任意行可展开详情；异常行附「去配置代理」出口。</p>
+</div>
+</section>
+
+<!-- ═══════ 代理配置 ═══════ -->
+<section class="stage" data-stage="px">
+<div class="wrap">
+  <p class="demo-flag">⚠ <b>演示数据</b>：Token 校验/部署为界面演示；真实页面接 Cloudflare API。已移除：自定义域名字段（仅改前端字符串、DNS 需手动配置，属未实现承诺）。</p>
+
+  <div class="head">
+    <div><h1>一键配置代理</h1><p>Cloudflare Worker 部署向导 · Token 仅存内存不落盘</p></div>
+    <div class="head-act"><span class="head-time">部署项 <b id="px-ctx">未选择</b></span></div>
+  </div>
+
+  <ol class="pipe" id="px-pipe">
+    <li data-p="1"><i>01</i><b>选择部署项</b><span>CORS / 流代理</span></li>
+    <li data-p="2"><i>02</i><b>登录凭证</b><span>Token + Account</span></li>
+    <li data-p="3"><i>03</i><b>部署 Worker</b><span>实时日志</span></li>
+    <li data-p="4"><i>04</i><b>完成</b><span>自动回写设置</span></li>
+  </ol>
+
+  <div class="px-sec">
+    <h2>① 选择部署项</h2>
+    <div class="entries" id="px-entries">
+      <button class="entry" data-entry="cors"><span class="entry-dot"></span><b>视频采集 CORS 代理</b><span>解除浏览器跨域限制，恢复视频源可用性</span></button>
+      <button class="entry" data-entry="iptv"><span class="entry-dot"></span><b>IPTV 流代理</b><span>转发 m3u8/hls 流，解决播放端防盗链</span></button>
+    </div>
+  </div>
+
+  <div class="px-sec">
+    <h2>② 登录凭证</h2>
+    <div class="field">
+      <label>API Token</label>
+      <div class="input"><input id="px-token" type="password" placeholder="粘贴 API Token（Workers Scripts → Edit 权限）" autocomplete="off"><button id="px-eye" type="button">显示</button></div>
+      <p class="hint">仅在内存中使用，离开页面自动清除 · <a href="#" onclick="return false">打开 Cloudflare 创建 Token</a></p>
+    </div>
+    <div class="field">
+      <label>Account ID</label>
+      <div class="input"><input id="px-acct" type="text" placeholder="dash.cloudflare.com 右侧可查" autocomplete="off"></div>
+    </div>
+  </div>
+
+  <div class="px-sec">
+    <h2>③ 部署</h2>
+    <div class="cta-row">
+      <button class="btn btn--ink" id="px-deploy">开始一键配置 Worker</button>
+      <span class="cta-hint">将创建/更新 <code>kino-cors-proxy</code>，成功后自动回写项目设置</span>
+    </div>
+  </div>
+
+  <div class="console">
+    <div class="console-bar"><i></i><i></i><i></i><span>deploy.log</span></div>
+    <pre class="console-log" id="px-log"><code class="dim">等待部署指令 · 请先选择部署项并填写凭证</code></pre>
+  </div>
+
+  <div class="result" id="px-result" hidden>
+    <span class="pill pill--ok">部署成功</span>
+    <b class="mono" id="px-url">https://kino-cors-proxy.example.workers.dev</b>
+    <div class="result-act">
+      <button class="btn btn--ghost btn--sm" id="px-copy">复制链接</button>
+      <a class="btn btn--ok btn--sm" href="./a-single-column.html#sc" id="px-back" style="text-decoration:none">回源检测页</a>
+    </div>
+  </div>
+</div>
+</section>
+
+<div class="toast" id="toast" hidden>已复制</div>
+
+<script>
+/* 方案甲交互：全部为真实可操作（筛选/展开/选中校验/复制走剪贴板），无假按钮 */
+(function () {
+  if (location.search.indexOf('embed') > -1) { var hh = document.querySelector('.dshell'); if (hh) hh.remove(); }
+  var ROWS = [
+    { seg: 'iptv', st: 'ok', name: '聚合源 IPTV-A', type: 'IPTV', url: 'https://example.com/iptv-a.m3u', lat: '32ms' },
+    { seg: 'iptv', st: 'ok', name: '聚合源 IPTV-B', type: 'IPTV', url: 'https://example.com/iptv-b.m3u', lat: '47ms' },
+    { seg: 'video', st: 'ok', name: '聚合源 A', type: '视频', url: 'https://api.example.com/vod', lat: '45ms' },
+    { seg: 'video', st: 'ok', name: '聚合源 B', type: '视频', url: 'https://api2.example.com/vod', lat: '58ms' },
+    { seg: 'video', st: 'bad', name: '备用源', type: '视频', url: 'https://example.com/vod-c.m3u', lat: '—', err: 'connect ETIMEDOUT (10s)', advice: '该源直连不可达，符合「经代理回退」策略；部署 CORS 代理后需手动重测本组。', toPx: true },
+    { seg: 'proxy', st: 'idle', name: '视频 CORS 代理', type: '代理', url: '—', lat: '—', advice: '部署后可恢复跨域受限的视频源。', toPx: true },
+    { seg: 'proxy', st: 'idle', name: 'IPTV 流代理', type: '代理', url: '—', lat: '—', advice: '部署后可为不可达 IPTV 源提供回退链路。', toPx: true }
+  ];
+  var PILL = { ok: '<span class="pill pill--ok">可用</span>', bad: '<span class="pill pill--err">异常</span>', idle: '<span class="pill pill--idle">未配置</span>' };
+  var tbody = document.getElementById('sc-tbody');
+
+  ROWS.forEach(function (r, i) {
+    var tr = document.createElement('tr');
+    tr.className = 'row is-' + r.seg + (r.st === 'bad' ? ' is-bad' : r.st === 'idle' ? ' is-idle' : '');
+    tr.dataset.i = i; tr.dataset.seg = r.seg;
+    tr.innerHTML = '<td>' + PILL[r.st] + '</td><td>' + r.name + '</td><td>' + r.type + '</td><td class="c-url">' + r.url + '</td><td class="c-lat" style="text-align:right">' + r.lat + '</td>';
+    var dr = document.createElement('tr');
+    dr.className = 'detail'; dr.hidden = true; dr.dataset.for = i;
+    dr.innerHTML = '<td colspan="5"><div class="detail-in"><div>'
+      + '<dl class="detail-kv"><dt>地址</dt><dd class="mono">' + r.url + '</dd>'
+      + (r.err ? '<dt>错误</dt><dd class="err">' + r.err + '</dd>' : '')
+      + '</dl>'
+      + (r.advice ? '<p class="detail-advice">' + r.advice + '</p>' : '')
+      + '</div><div class="detail-act">'
+      + (r.toPx ? '<a class="btn btn--ok btn--sm" href="./a-single-column.html#px" data-jump="px" style="text-decoration:none">去配置代理 →</a>' : '')
+      + '<button class="mini-btn" data-single-recheck="' + r.seg + '">重测本组</button>'
+      + '</div></div></td>';
+    tbody.appendChild(tr); tbody.appendChild(dr);
+  });
+
+  tbody.addEventListener('click', function (e) {
+    if (e.target.closest('a, button')) return;
+    var tr = e.target.closest('tr.row');
+    if (!tr) return;
+    var d = tbody.querySelector('tr.detail[data-for="' + tr.dataset.i + '"]');
+    var open = !d.hidden;
+    tbody.querySelectorAll('tr.detail').forEach(function (x) { x.hidden = true; });
+    tbody.querySelectorAll('tr.row').forEach(function (x) { x.classList.remove('is-open'); });
+    if (!open) { d.hidden = false; tr.classList.add('is-open'); }
+  });
+
+  /* 分段筛选 */
+  document.getElementById('sc-seg').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-seg]'); if (!b) return;
+    this.querySelectorAll('button').forEach(function (x) { x.classList.toggle('is-on', x === b); });
+    var k = b.dataset.seg;
+    tbody.querySelectorAll('tr.row').forEach(function (tr) {
+      var show = k === 'all' || tr.dataset.seg === k;
+      tr.style.display = show ? '' : 'none';
+      var d = tbody.querySelector('tr.detail[data-for="' + tr.dataset.i + '"]');
+      if (!show) { d.hidden = true; tr.classList.remove('is-open'); }
+      d.style.display = show ? '' : 'none';
+    });
+  });
+
+  /* 组重测：真实反馈 = 该行组 pill 短暂切「检测中」后复原（演示节奏） */
+  function flashGroup(key) {
+    var rows = tbody.querySelectorAll('tr.row[data-seg="' + key + '"]');
+    rows.forEach(function (tr) { tr.querySelector('.pill').textContent = '检测中…'; });
+    setTimeout(function () {
+      rows.forEach(function (tr) {
+        var r = ROWS[tr.dataset.i];
+        tr.querySelector('.pill').outerHTML = PILL[r.st];
+      });
+    }, 900);
+  }
+  document.querySelectorAll('[data-recheck],[data-single-recheck]').forEach(function (b) {
+    b.addEventListener('click', function () { flashGroup(b.dataset.recheck || b.dataset.singleRecheck); });
+  });
+
+  /* ── 代理配置 ── */
+  var entries = document.getElementById('px-entries');
+  var deployed = false;
+  function setPipe(n) {
+    document.querySelectorAll('#px-pipe li').forEach(function (li) {
+      var p = +li.dataset.p;
+      li.classList.toggle('is-done', p < n);
+      li.classList.toggle('is-on', p === n);
+    });
+  }
+  entries.addEventListener('click', function (e) {
+    var b = e.target.closest('.entry'); if (!b) return;
+    entries.querySelectorAll('.entry').forEach(function (x) { x.classList.toggle('is-selected', x === b); });
+    document.getElementById('px-ctx').textContent = b.dataset.entry === 'cors' ? '视频采集 CORS 代理' : 'IPTV 流代理';
+    setPipe(document.getElementById('px-token').value && document.getElementById('px-acct').value ? 3 : 2);
+  });
+  document.getElementById('px-eye').addEventListener('click', function () {
+    var inp = document.getElementById('px-token');
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    this.textContent = show ? '隐藏' : '显示';
+  });
+  var logEl = document.getElementById('px-log');
+  function log(msg, cls) {
+    var t = new Date().toTimeString().slice(0, 8);
+    logEl.innerHTML += '\n<code class="' + (cls || '') + '">[' + t + '] ' + msg + '</code>';
+    logEl.parentElement.scrollTop = logEl.parentElement.scrollHeight;
+  }
+  document.getElementById('px-deploy').addEventListener('click', function () {
+    var sel = entries.querySelector('.entry.is-selected');
+    if (!sel) { log('请先选择部署项', 'err'); return; }
+    if (!document.getElementById('px-token').value.trim() || !document.getElementById('px-acct').value.trim()) {
+      log('请填写 API Token 与 Account ID', 'err'); return;
+    }
+    log('开始配置「' + (sel.dataset.entry === 'cors' ? '视频采集 CORS 代理' : 'IPTV 流代理') + '」…');
+    setPipe(3);
+    var btn = this; btn.disabled = true; btn.textContent = '配置中…';
+    var steps = ['校验 Cloudflare 凭据…', '[1/4] 凭据校验通过', '[2/4] 子域获取成功', '[3/4] 上传 Worker 脚本…', '[3/4] 脚本上传成功', '[4/4] 部署完成', '已自动写入项目设置'];
+    var i = 0;
+    (function next() {
+      if (i >= steps.length) {
+        document.getElementById('px-result').hidden = false;
+        setPipe(5);
+        btn.disabled = false; btn.textContent = '重新部署';
+        return;
+      }
+      var s = steps[i++];
+      setTimeout(function () { log(s, s.indexOf(']') > -1 ? 'ok' : 'dim'); next(); }, 320);
+    })();
+  });
+  document.getElementById('px-copy').addEventListener('click', function () {
+    var url = document.getElementById('px-url').textContent;
+    var t = document.getElementById('toast');
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(
+      function () { t.hidden = false; setTimeout(function () { t.hidden = true; }, 1400); },
+      function () { t.textContent = '复制失败，请手动选择'; t.hidden = false; setTimeout(function () { t.hidden = true; }, 1400); }
+    );
+  });
+
+  /* 壳层：页切换 */
+  function showPage(k) {
+    try { history.replaceState(null, '', '#' + k); } catch (e) {}
+    document.querySelectorAll('.stage').forEach(function (s) { s.classList.toggle('is-on', s.dataset.stage === k); });
+    document.querySelectorAll('.dshell-pages button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.page === k); });
+  }
+  document.querySelectorAll('.dshell-pages button').forEach(function (b) {
+    b.addEventListener('click', function () { showPage(b.dataset.page); });
+  });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-jump]');
+    if (a) { e.preventDefault(); showPage(a.dataset.jump); }
+  });
+  if (location.hash === '#px') showPage('px');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方案庚 · 运维事件流 — 源检测/代理配置布局重设计</title>
+<link rel="stylesheet" href="../../../src/assets/styles/variables.css">
+<link rel="stylesheet" href="./_base.css">
+<style>
+/* ===== 方案庚：事件流（feed）——页面只有一条纵向时间轴，事件全由真实操作产生 ===== */
+.feedwrap { max-width: 700px; margin: 0 auto; padding: 0 16px; }
+.topbar-cta {
+  position: sticky; top: 52px; z-index: 30;
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(245, 246, 247, 0.92); backdrop-filter: blur(8px);
+  padding: 14px 0; border-bottom: 1px solid var(--k-line); margin-bottom: 6px;
+}
+.topbar-cta .st { font-size: 12.5px; color: var(--k-text-2); }
+.topbar-cta .st b { color: var(--k-text); }
+.topbar-cta .btn { margin-left: auto; }
+
+.feed { margin: 0; padding: 0; list-style: none; }
+.ev {
+  position: relative;
+  border: 1px solid var(--k-line); border-radius: 14px;
+  background: var(--k-panel);
+  margin: 14px 0; padding: 16px 18px;
+}
+.ev-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ev-head time { margin-left: auto; font-family: var(--k-mono); font-size: 11px; color: var(--k-text-3); }
+.ev-head b { font-size: 14px; }
+.ev ul.minilist { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.ev ul.minilist li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.ev ul.minilist .u { font-family: var(--k-mono); font-size: 11px; color: var(--k-text-3); margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46%; }
+.ev ul.minilist .e { color: var(--k-err); font-family: var(--k-mono); font-size: 11.5px; }
+.ev-foot { display: flex; gap: 8px; margin-top: 12px; }
+.ev.is-bad { border-color: rgba(224, 72, 77, 0.45); background: linear-gradient(180deg, var(--k-err-bg), var(--k-panel) 40%); }
+.ev.is-sys { background: #fafbfc; }
+.ev.is-sys p { margin: 0; font-size: 12.5px; color: var(--k-text-2); }
+.ev .empty { color: var(--k-text-3); font-size: 12px; }
+.run-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--k-ink); flex-shrink: 0; }
+.run-dot.err { background: var(--k-err); }
+.run-dot.ok { background: var(--k-ok); }
+.run-dot.info { background: var(--k-ok); }
+</style>
+</head>
+<body>
+
+<header class="dshell">
+  <div class="dshell-brand"><span class="dshell-tag">布局 Demo</span><b>方案庚 · 运维事件流</b></div>
+  <span class="dshell-sub">一条纵向 feed · 每个事件都由真实操作产生 · 点了才出现，不预写剧情</span>
+  <nav class="dshell-pages">
+    <button data-page="sc" class="is-on">源检测</button>
+    <button data-page="px">代理配置</button>
+  </nav>
+  <div class="dshell-seg">
+    <button onclick="location='a-single-column.html'">甲</button>
+    <button onclick="location='b-domain-cards.html'">乙</button>
+    <button onclick="location='c-task-flow.html'">丙</button>
+    <button onclick="location='d-terminal.html'">丁</button>
+    <button onclick="location='e-dashboard.html'">戊</button>
+    <button onclick="location='f-ticket-split.html'">己</button>
+    <button class="is-on">庚 事件流</button>
+  </div>
+</header>
+
+<!-- ═══════ 源检测 ═══════ -->
+<section class="stage is-on" data-stage="sc">
+<div class="feedwrap">
+  <p class="demo-flag" style="padding-top:12px">⚠ <b>演示数据</b>：首条「上次体检」事件为载入样例；你点「一键检测/部署/重测」后产生的事件全部是<b>当场真实发生</b>的（含真实时间戳），刷新即清空，符合事件流语义。</p>
+
+  <div class="topbar-cta">
+    <span class="st">最近结论 · <b id="top-verdict">3/5 域通过，2 项待修复</b></span>
+    <button class="btn btn--ink" id="go-check">一键检测</button>
+  </div>
+
+  <ol class="feed" id="feed-sc">
+    <li class="ev is-bad">
+      <div class="ev-head"><span class="run-dot err"></span><b>体检 · 3/5 通过</b><time>12:04:10</time></div>
+      <ul class="minilist">
+        <li><i class="dot dot--ok"></i>网速 32ms <span class="u">2 节点均值</span></li>
+        <li><i class="dot dot--ok"></i>IPTV 4/4 <span class="u">全部可用</span></li>
+        <li><i class="dot dot--err"></i>视频源 3/4 · 备用源 <span class="e">ETIMEDOUT (10s)</span></li>
+        <li><i class="dot dot--idle"></i>CORS 代理 · IPTV 代理 <span class="e">未配置</span></li>
+      </ul>
+      <div class="ev-foot">
+        <button class="btn btn--ok btn--sm" data-jump="px" id="to-px">修复：配置代理 →</button>
+        <button class="btn btn--ghost btn--sm" id="re-fail">重测失败项</button>
+      </div>
+    </li>
+  </ol>
+</div>
+</section>
+
+<!-- ═══════ 代理配置 ═══════ -->
+<section class="stage" data-stage="px">
+<div class="feedwrap">
+  <p class="demo-flag" style="padding-top:12px">⚠ <b>演示数据</b>：凭证/部署为界面演示。部署动作同样汇入同一条 feed（跨页共享时间轴 = 本款核心叙事）。</p>
+
+  <div class="topbar-cta">
+    <span class="st">来自体检异常 · <b>备用源超时</b></span>
+    <button class="btn btn--ghost" data-jump="sc" id="back-sc">← 回事件流</button>
+  </div>
+
+  <ol class="feed">
+    <li class="ev">
+      <div class="ev-head"><span class="run-dot"></span><b>部署配置</b></div>
+      <div class="entries" id="px-entries" style="margin-bottom:14px">
+        <button class="entry" data-entry="cors"><span class="entry-dot"></span><b>视频采集 CORS 代理</b><span>解除跨域限制，恢复备用源</span></button>
+        <button class="entry" data-entry="iptv"><span class="entry-dot"></span><b>IPTV 流代理</b><span>转发 m3u8/hls 流</span></button>
+      </div>
+      <div class="field"><label>API Token</label>
+        <div class="input"><input id="px-token" type="password" placeholder="粘贴 API Token" autocomplete="off"><button id="px-eye" type="button">显示</button></div>
+        <p class="hint">仅内存使用，离开页面自动清除 · <a href="#" onclick="return false">创建 Token ↗</a></p>
+      </div>
+      <div class="field"><label>Account ID</label>
+        <div class="input"><input id="px-acct" type="text" placeholder="dash.cloudflare.com 右侧可查" autocomplete="off"></div>
+      </div>
+      <button class="btn btn--ink" id="px-deploy" style="width:100%">开始一键配置 Worker</button>
+      <p class="hint" style="margin-top:10px">将创建/更新 <code>kino-cors-proxy</code>，成功后自动回写设置</p>
+    </li>
+  </ol>
+</div>
+</section>
+
+<div class="toast" id="toast" hidden>已复制</div>
+
+<script>
+(function () {
+  if (location.search.indexOf('embed') > -1) { var hh = document.querySelector('.dshell'); if (hh) hh.remove(); }
+  /* feed 引擎：所有事件由真实操作当场产生 */
+  var feed = document.getElementById('feed-sc');
+  var deployed = false;
+  function now() { return new Date().toTimeString().slice(0, 8); }
+  function push(node) { feed.insertBefore(node, feed.firstChild); }
+
+  function checkEvent(target) {
+    var li = document.createElement('li');
+    li.className = 'ev is-sys';
+    li.innerHTML = '<div class="ev-head"><span class="run-dot"></span><b>体检进行中…</b><time>' + now() + '</time></div><p class="empty">并发 4 路 · ' + (target || '全部 5 域') + '</p>';
+    push(li);
+    setTimeout(function () {
+      li.className = 'ev is-bad';
+      li.querySelector('.run-dot').className = 'run-dot err';
+      li.querySelector('b').textContent = '体检 · 3/5 通过（模拟回执）';
+      li.querySelector('p').outerHTML = '<ul class="minilist"><li><i class="dot dot--ok"></i>网速 / IPTV×4 / 聚合源 A·B <span class="u">正常</span></li><li><i class="dot dot--err"></i>备用源 <span class="e">ETIMEDOUT (10s)</span></li><li><i class="dot dot--idle"></i>CORS · IPTV 代理 <span class="e">未配置</span></li></ul><div class="ev-foot"><button class="btn btn--ok btn--sm" data-jump="px">修复：配置代理 →</button></div>';
+      document.getElementById('top-verdict').textContent = '3/5 域通过，2 项待修复 · ' + now();
+    }, 1000);
+  }
+  document.getElementById('go-check').addEventListener('click', function () { checkEvent(null); });
+  document.getElementById('re-fail').addEventListener('click', function () { checkEvent('仅失败项'); });
+
+  /* 代理配置 */
+  var entries = document.getElementById('px-entries');
+  entries.addEventListener('click', function (e) {
+    var b = e.target.closest('.entry'); if (!b) return;
+    entries.querySelectorAll('.entry').forEach(function (x) { x.classList.toggle('is-selected', x === b); });
+  });
+  document.getElementById('px-eye').addEventListener('click', function () {
+    var inp = document.getElementById('px-token');
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    this.textContent = show ? '隐藏' : '显示';
+  });
+  document.getElementById('px-deploy').addEventListener('click', function () {
+    var sel = entries.querySelector('.entry.is-selected');
+    var t = document.getElementById('toast');
+    function flash(m) { t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(function () { t.hidden = true; }, 1600); }
+    if (!sel) { flash('请先选择部署项'); return; }
+    if (!document.getElementById('px-token').value.trim() || !document.getElementById('px-acct').value.trim()) { flash('请填写 API Token 与 Account ID'); return; }
+    var btn = this; btn.disabled = true; btn.textContent = '配置中…';
+    var running = document.createElement('li');
+    running.className = 'ev is-sys';
+    running.innerHTML = '<div class="ev-head"><span class="run-dot"></span><b>Worker 部署中…</b><time>' + now() + '</time></div><p class="empty">校验凭据 → 上传脚本 → 回写设置</p>';
+    push(running);
+    showPage('sc');
+    setTimeout(function () {
+      deployed = true;
+      running.className = 'ev';
+      running.querySelector('.run-dot').className = 'run-dot ok';
+      running.querySelector('b').textContent = '部署成功 · kino-cors-proxy（模拟回执）';
+      running.querySelector('p').outerHTML = '<ul class="minilist"><li><i class="dot dot--ok"></i>https://kino-cors-proxy.example.workers.dev <span class="u">已自动回写设置</span></li></ul><div class="ev-foot"><button class="btn btn--ghost btn--sm" id="cp">复制链接</button><button class="btn btn--ok btn--sm" id="re-video">重测视频源组验证 →</button></div>';
+      document.getElementById('top-verdict').textContent = '代理已部署 · 建议重测视频源组';
+      var cp = document.getElementById('cp');
+      if (cp) cp.addEventListener('click', function () {
+        (navigator.clipboard ? navigator.clipboard.writeText('https://kino-cors-proxy.example.workers.dev') : Promise.reject()).then(function () { flash('已复制'); }, function () { flash('复制失败，请手动选择'); });
+      });
+      var rv = document.getElementById('re-video');
+      if (rv) rv.addEventListener('click', function () { checkEvent('视频源组'); });
+      btn.disabled = false; btn.textContent = '开始一键配置 Worker';
+    }, 1400);
+  });
+
+  /* 壳层 */
+  function showPage(k) {
+    try { history.replaceState(null, '', '#' + k); } catch (e) {}
+    document.querySelectorAll('.stage').forEach(function (s) { s.classList.toggle('is-on', s.dataset.stage === k); });
+    document.querySelectorAll('.dshell-pages button').forEach(function (b) { b.classList.toggle('is-on', b.dataset.page === k); });
+  }
+  document.querySelectorAll('.dshell-pages button').forEach(function (b) {
+    b.addEventListener('click', function () { showPage(b.dataset.page); });
+  });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-jump]');
+    if (a) { e.preventDefault(); showPage(a.dataset.jump); }
+  });
+  if (location.hash === '#px') showPage('px');
+})();
+</script>
+</body>
+</html>
