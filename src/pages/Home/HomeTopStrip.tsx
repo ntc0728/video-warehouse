@@ -58,9 +58,11 @@ export default function HomeTopStrip({ continueCount, favoriteCount, trending }:
   return (
     <div className="home-topstrip">
       <div className="home-topstrip__inner">
-        <span className="home-topstrip__crumb">今日热度趋势</span>
-        {heatTop20.length > 0 && (
-          <div className="home-topstrip__rotator" role="status" aria-label="今日热度趋势">
+        {/* 今日热度趋势「整体」卡片（2026-10-11）：标题 + 轮播 + 右侧 pill 同属一张卡。 */}
+        <div className="home-topstrip__trend">
+          <span className="home-topstrip__crumb">今日热度趋势</span>
+          {heatTop20.length > 0 && (
+            <div className="home-topstrip__rotator" role="status" aria-label="今日热度趋势">
             <div
               className="home-topstrip__rotator-track"
               /* 位移 = 条数 × 单条高（--rotator-h 定义在 Home.css .home-topstrip__rotator）。
@@ -93,18 +95,24 @@ export default function HomeTopStrip({ continueCount, favoriteCount, trending }:
                       {item.voteAverage.toFixed(1)}
                     </span>
                   )}
+                  {/* 简介（2026-10-11 用户需求：评分后新增）：取 TMDB overview，
+                     空间不足时溢出隐藏（text-overflow:ellipsis，见 Home.css __desc）。 */}
+                  {item.description && (
+                    <span className="home-topstrip__desc">{item.description}</span>
+                  )}
                 </Link>
               ))}
             </div>
           </div>
-        )}
-        <div className="home-topstrip__right">
-          {continueCount > 0 && (
-            <Link to="/history" className="home-topstrip__pill" aria-label="前往历史（继续观看）">继续观看 {continueCount}</Link>
           )}
-          {favoriteCount > 0 && (
-            <Link to="/collections" className="home-topstrip__pill" aria-label="前往收藏">收藏 {favoriteCount}</Link>
-          )}
+          <div className="home-topstrip__right">
+            {continueCount > 0 && (
+              <Link to="/history" className="home-topstrip__pill" aria-label="前往历史（继续观看）">继续观看 {continueCount}</Link>
+            )}
+            {favoriteCount > 0 && (
+              <Link to="/collections" className="home-topstrip__pill" aria-label="前往收藏">收藏 {favoriteCount}</Link>
+            )}
+          </div>
         </div>
       </div>
     </div>
