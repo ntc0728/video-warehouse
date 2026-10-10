@@ -4,10 +4,17 @@
   flex: 1 1 0;
   flex-direction: column;
   width: 100%;
+  /* G1 宽度契约接入（2026-10-10）：≤1920 视口取 100%（与改前逐像素一致），
+     ≥1920 封顶 2200px 居中，与 Browse/Home/Detail 等接法同构。
+     左右不再用 padding 短手整块覆盖 .page-padding —— 沿用统一侧距
+     （<768 --space-sm；≥768 --page-pad-x 分档 60/100/140px）。 */
+  max-width: var(--layout-content-max-width);
   height: 100%;
   min-height: 0;
-  padding: var(--space-xs);
+  padding-top: var(--space-xs);
+  padding-bottom: var(--space-xs);
   background-color: var(--color-background);
+  margin-inline: auto;
 }
 
 /* 页面标题 */

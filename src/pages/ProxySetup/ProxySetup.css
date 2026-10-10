@@ -8,7 +8,19 @@
   align-items: center;
   width: 100%;
   min-width: 0;
+  /* G1 宽度契约接入（2026-10-10）：≤1920 取 100%，≥1920 封顶 2200px 居中。
+     侧距同步接统一规范：移动端 --space-md（保持现状），≥768 改 --page-pad-x
+     分档（原 --space-md 桌面仅 ~9.5px，贴边过近，与其它页面不一致）。 */
+  max-width: var(--layout-content-max-width);
+  margin-inline: auto;
   padding: var(--space-xl) var(--space-md);
+}
+
+@media (width >= 768px) {
+  .proxy-setup {
+    padding-right: var(--page-pad-x);
+    padding-left: var(--page-pad-x);
+  }
 }
 
 .proxy-setup__inner {
