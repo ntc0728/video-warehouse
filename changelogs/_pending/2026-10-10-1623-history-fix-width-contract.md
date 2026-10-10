@@ -8,9 +8,6 @@ files:
   - src/pages/History/History.css（固定高兜底注释）
   - src/pages/SourceChecker/SourceChecker.css（2200 封顶 + 侧距）
   - src/pages/ProxySetup/ProxySetup.css（2200 封顶 + 侧距）
-  - changelogs/demos/demo-width-contract-2026-10-10/index.html（新增，壳，已被整体重做取代、暂留）
-  - changelogs/demos/demo-width-contract-2026-10-10/a-source-checker.html（新增，候选 A v2，同上暂留）
-  - changelogs/demos/demo-width-contract-2026-10-10/a-proxy-setup.html（新增，候选 A v2，同上暂留）
   - changelogs/demos/demo-status-console-2026-10-10/index.html（新增，任务流走查壳）
   - changelogs/demos/demo-status-console-2026-10-10/_console.css（新增，监控台样式层）
   - changelogs/demos/demo-status-console-2026-10-10/_steps.js（新增，步骤机与演示交互）
@@ -62,8 +59,8 @@ ProxySetup.css `padding: var(--space-xl) var(--space-md)`；两根容器均 `wid
   <768 `--space-sm`、≥768 `--page-pad-x` 60/100/140 分档）；代理配置 ≥768 显式
   `padding-inline: var(--page-pad-x)`（移动端 `--space-md` 保持现状）。
 
-【预览】`changelogs/demos/demo-width-contract-2026-10-10/index.html`（阶段 3 双候选壳，
-含「叠加改前」旧↔新切换，实测徽章读 iframe 内容 DOM）。
+【预览】当时经双候选壳 demo 验证（该 demo 后随整体重做删除）；现预览即两页真实页面
+（1440/1920/2560 视口直开）。
 
 【验证】diag-width 实测 1440/1920/2560：A 根宽 1440/1920/2200、侧距 60/100/140，
 hScroll=0；2200 封顶命中徽章正确。
@@ -85,8 +82,8 @@ hScroll=0；2200 封顶命中徽章正确。
   出口）；代理配置页四步流水线常驻顶部 + 凭证表单 + 深色控制台逐条日志 + 结果块直通复检。
 - **可玩交互**：一键检测扫描动画、行点击开 inspector、部署流水线自动推进 + 日志逐条、
   复检 Hero 3→5 翻绿、键盘 ←/→ 步进。
-- 旧 demo `demo-width-contract-2026-10-10/`（含 A v2 现代工具风候选）暂留待拍板删否；
-  无论新方案落选与否，阶段 2 契约接入均保留。
+- 旧 demo `demo-width-contract-2026-10-10/`（含 A v2 现代工具风候选）已按拍板删除；
+  阶段 2 契约接入保留在两页真实代码中。
 
 【预览】`http://127.0.0.1:3001/changelogs/demos/demo-status-console-2026-10-10/index.html`
 （dev server 直开，已登记 changelogs/README.md 索引）。
@@ -103,7 +100,6 @@ hScroll=0；2200 封顶命中徽章正确。
 - `node scripts/e2e-skeleton.mjs scripts/history.spec.ts scripts/collections.spec.ts
   scripts/source-checker.spec.ts scripts/proxy-setup.spec.ts` → **13/13 passed（11s，retries=0，
   调试档 ≤120s 预算内）**，跑批进程零遗留。
-- **下一步**：① 用户拍板「任务流走查 × 状态监控台」demo（通过后才动两页真实 UI），
-并拍板旧 demo `demo-width-contract-2026-10-10/` 删否；② 收藏页已拍板跳过（无复现条件
-不动手）；③ push 前跑 `node scripts/changelog-collect.mjs`（本轮片段勿与
-`2026-10-10-1330-detail-layout-demos.md` 混并）。
+- **下一步**：① 按拍板把「任务流走查 × 状态监控台」方案落地到两页真实 UI（实施中）；
+② 收藏页已拍板跳过（无复现条件不动手）；③ push 前跑 `node scripts/changelog-collect.mjs`
+（本轮片段勿与 `2026-10-10-1330-detail-layout-demos.md` 混并）。
