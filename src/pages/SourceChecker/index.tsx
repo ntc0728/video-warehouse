@@ -453,6 +453,7 @@ export default function SourceCheckerPage() {
   interface RowVM {
     key: string;
     group: 'network' | 'iptv' | 'video' | 'proxy';
+    type: string;
     name: string;
     sub: string;
     status: 'ok' | 'bad' | 'idle' | 'checking';
@@ -469,11 +470,12 @@ export default function SourceCheckerPage() {
     const out: RowVM[] = [];
     // 网速
     if (checkingTabs.has('network')) {
-      out.push({ key: 'network', group: 'network', name: '网速延迟', sub: '测试节点连通性', status: 'checking', statusText: '检测中', latency: '…' });
+      out.push({ key: 'network', group: 'network', type: '网速', name: '网速延迟', sub: '测试节点连通性', status: 'checking', statusText: '检测中', latency: '…' });
     } else if (networkResult) {
       out.push({
         key: 'network',
         group: 'network',
+        type: '网速',
         name: '网速延迟',
         sub: networkResult.error ?? (networkResult.speed ? `估算带宽 ${networkResult.speed}` : `${networkResult.nodes.length} 个测试节点`),
         status: networkResult.error ? 'bad' : 'ok',
@@ -487,12 +489,13 @@ export default function SourceCheckerPage() {
     }
     // IPTV 源
     if (checkingTabs.has('iptv') && iptvResults.length === 0) {
-      out.push({ key: 'iptv-loading', group: 'iptv', name: 'IPTV 源', sub: `${iptvProgress.current}/${iptvProgress.total}`, status: 'checking', statusText: '检测中', latency: '…' });
+      out.push({ key: 'iptv-loading', group: 'iptv', type: 'IPTV', name: 'IPTV 源', sub: `${iptvProgress.current}/${iptvProgress.total}`, status: 'checking', statusText: '检测中', latency: '…' });
     }
     iptvResults.forEach((s, i) => {
       out.push({
         key: `iptv-${i}`,
         group: 'iptv',
+        type: 'IPTV',
         name: s.name,
         sub: s.url,
         status: checkingTabs.has('iptv') ? 'checking' : s.available ? 'ok' : 'bad',
@@ -508,12 +511,13 @@ export default function SourceCheckerPage() {
     });
     // 视频源
     if (checkingTabs.has('video') && videoResults.length === 0) {
-      out.push({ key: 'video-loading', group: 'video', name: '视频源', sub: `${videoProgress.current}/${videoProgress.total}`, status: 'checking', statusText: '检测中', latency: '…' });
+      out.push({ key: 'video-loading', group: 'video', type: '视频', name: '视频源', sub: `${videoProgress.current}/${videoProgress.total}`, status: 'checking', statusText: '检测中', latency: '…' });
     }
     videoResults.forEach((s, i) => {
       out.push({
         key: `video-${i}`,
         group: 'video',
+        type: '视频',
         name: s.name,
         sub: s.details ?? s.url,
         status: checkingTabs.has('video') ? 'checking' : s.available ? 'ok' : 'bad',
@@ -530,11 +534,11 @@ export default function SourceCheckerPage() {
     });
     // 代理 ×2
     const proxyRow = (key: 'iptvProxy' | 'videoProxy', name: string, result: ProxyCheckResult | null, hint: string): RowVM => {
-      if (checkingTabs.has(key)) return { key, group: 'proxy', name, sub: result?.url || '—', status: 'checking', statusText: '检测中', latency: '…' };
-      if (!result) return { key, group: 'proxy', name, sub: '—', status: 'idle', statusText: '未检测', latency: '—' };
-      if (!result.configured) return { key, group: 'proxy', name, sub: '—', status: 'idle', statusText: '未配置', latency: '—', advice: { text: hint, toSetup: true } };
+      if (checkingTabs.has(key)) return { key, group: 'proxy', type: '代理', name, sub: result?.url || '—', status: 'checking', statusText: '检测中', latency: '…' };
+      if (!result) return { key, group: 'proxy', type: '代理', name, sub: '—', status: 'idle', statusText: '未检测', latency: '—' };
+      if (!result.configured) return { key, group: 'proxy', type: '代理', name, sub: '—', status: 'idle', statusText: '未配置', latency: '—', advice: { text: hint, toSetup: true } };
       return {
-        key, group: 'proxy', name, sub: result.url,
+        key, group: 'proxy', type: '代理', name, sub: result.url,
         status: result.available ? 'ok' : 'bad',
         statusText: result.available ? '运行中' : '异常',
         latency: result.available ? `${result.latency}ms` : '—',
@@ -570,6 +574,11 @@ export default function SourceCheckerPage() {
           <p>网络与数据源健康状态 · 结果缓存 30 分钟</p>
         </div>
         <div className="header-right">
+          {lastCheckTime && (
+            <span className={`last-check-time ${isCacheExpired ? 'expired' : ''}`}>
+              上次检测: {formatRelativeTime(lastCheckTime)}
+            </span>
+          )}
           <button
             className="check-all-btn"
             onClick={handleCheckAll}
@@ -577,15 +586,10 @@ export default function SourceCheckerPage() {
           >
             {isBatchChecking ? '检测中...' : '一键检测'}
           </button>
-          {lastCheckTime && (
-            <span className={`last-check-time ${isCacheExpired ? 'expired' : ''}`}>
-              上次检测: {formatRelativeTime(lastCheckTime)}
-            </span>
-          )}
         </div>
       </div>
 
-      {/* Hero 结论（监控台改版）：大号可用数 + 状态一句话 */}
+      {/* Hero 单带（对齐监控台 demo）：左大号结论 + 右五指标横条内联 */}
       <div className={`source-checker-hero${verdictOk ? ' is-ok' : ''}${!allChecked && !verdictOk ? ' is-idle' : ''}`}>
         <div className="source-checker-hero-num">
           {allChecked || okCount > 0 ? okCount : '—'}<em>/{domainStates.length}</em>
@@ -594,43 +598,47 @@ export default function SourceCheckerPage() {
           <span className="source-checker-hero-cap">检查域可用</span>
           <b className="source-checker-hero-state">{verdictText}</b>
         </div>
-      </div>
-
-      <div className="source-checker-stats">
-        <div className="stat-card">
-          <div className="stat-value" style={{ color: networkResult?.error ? 'var(--color-error)' : networkResult ? 'var(--color-success)' : 'var(--color-text-secondary)' }}>
-            {networkResult?.error ? '异常' : networkResult ? `${networkResult.latency}ms` : '-'}
-          </div>
-          <div className="stat-label">网速延迟</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value" style={{ color: stats.iptv.available > 0 ? 'var(--color-success)' : 'var(--color-text-secondary)' }}>
-            {stats.iptv.total > 0 ? `${stats.iptv.available}/${stats.iptv.total}` : '-'}
-          </div>
-          <div className="stat-label">IPTV 源</div>
-          <div className="stat-config" title={selectedIPTVNames}>{selectedIPTVNames}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value" style={{ color: stats.video.available > 0 ? 'var(--color-success)' : 'var(--color-text-secondary)' }}>
-            {stats.video.total > 0 ? `${stats.video.available}/${stats.video.total}` : '-'}
-          </div>
-          <div className="stat-label">视频源</div>
-          <div className="stat-config" title={selectedVideoNames}>{selectedVideoNames}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value" style={{ color: iptvProxyResult?.available === true ? 'var(--color-success)' : iptvProxyResult?.available === false ? 'var(--color-error)' : 'var(--color-text-secondary)' }}>
-            {iptvProxyResult?.configured ? (iptvProxyResult.available ? '正常' : '异常') : '-'}
-          </div>
-          <div className="stat-label">IPTV 代理</div>
-          <div className="stat-config" title={iptvProxyUrl}>{iptvProxyUrl}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value" style={{ color: videoProxyResult?.available === true ? 'var(--color-success)' : videoProxyResult?.available === false ? 'var(--color-error)' : 'var(--color-text-secondary)' }}>
-            {videoProxyResult?.configured ? (videoProxyResult.available ? '正常' : '异常') : '-'}
-          </div>
-          <div className="stat-label">视频代理</div>
-          <div className="stat-config" title={videoProxyUrl}>{videoProxyUrl}</div>
-        </div>
+        <ul className="source-checker-stats">
+          <li className="stat-card">
+            <span className={`stat-dot ${networkResult?.error ? 'is-bad' : networkResult ? 'is-ok' : 'is-idle'}`} />
+            <span className="stat-label">网速延迟</span>
+            <span className="stat-value">
+              {networkResult?.error ? '异常' : networkResult ? `${networkResult.latency}ms` : '—'}
+            </span>
+          </li>
+          <li className="stat-card">
+            <span className={`stat-dot ${stats.iptv.total === 0 ? 'is-idle' : stats.iptv.available === stats.iptv.total ? 'is-ok' : 'is-bad'}`} />
+            <span className="stat-label">IPTV 源</span>
+            <span className="stat-value">
+              {stats.iptv.total > 0 ? `${stats.iptv.available}/${stats.iptv.total}` : '—'}
+            </span>
+            <span className="stat-config" title={selectedIPTVNames}>{selectedIPTVNames}</span>
+          </li>
+          <li className="stat-card">
+            <span className={`stat-dot ${stats.video.total === 0 ? 'is-idle' : stats.video.available === stats.video.total ? 'is-ok' : 'is-bad'}`} />
+            <span className="stat-label">视频源</span>
+            <span className="stat-value">
+              {stats.video.total > 0 ? `${stats.video.available}/${stats.video.total}` : '—'}
+            </span>
+            <span className="stat-config" title={selectedVideoNames}>{selectedVideoNames}</span>
+          </li>
+          <li className="stat-card">
+            <span className={`stat-dot ${!iptvProxyResult?.configured ? 'is-idle' : iptvProxyResult.available ? 'is-ok' : 'is-bad'}`} />
+            <span className="stat-label">IPTV 代理</span>
+            <span className="stat-value">
+              {iptvProxyResult?.configured ? (iptvProxyResult.available ? '正常' : '异常') : '未配置'}
+            </span>
+            <span className="stat-config" title={iptvProxyUrl}>{iptvProxyUrl}</span>
+          </li>
+          <li className="stat-card">
+            <span className={`stat-dot ${!videoProxyResult?.configured ? 'is-idle' : videoProxyResult.available ? 'is-ok' : 'is-bad'}`} />
+            <span className="stat-label">视频代理</span>
+            <span className="stat-value">
+              {videoProxyResult?.configured ? (videoProxyResult.available ? '正常' : '异常') : '未配置'}
+            </span>
+            <span className="stat-config" title={videoProxyUrl}>{videoProxyUrl}</span>
+          </li>
+        </ul>
       </div>
 
       {/* 工具条：分段筛选（.tab-btn）+ 分组重测（.btn-small）+ 检测中指示 */}
@@ -688,38 +696,47 @@ export default function SourceCheckerPage() {
         </div>
       </div>
 
-      <div className="source-checker-body">
+      <div className={`source-checker-body${selectedRow ? ' is-rail' : ''}`}>
         <div className="source-checker-main">
           {filteredRows.length === 0 ? (
             <div className="empty-state">尚未检测，点击右上角「一键检测」或工具条按钮开始体检</div>
           ) : (
-            <div className="source-checker-table-wrap">
-              <table className="source-checker-table">
-                <thead>
-                  <tr>
-                    <th className="c-status">状态</th>
-                    <th className="c-name">名称</th>
-                    <th className="c-url">地址 / 详情</th>
-                    <th className="c-lat">延迟</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRows.map((r) => (
-                    <tr
-                      key={r.key}
-                      className={`is-${r.status}${selectedKey === r.key ? ' is-selected' : ''}`}
-                      onClick={() => setSelectedKey(selectedKey === r.key ? null : r.key)}
-                      title={r.error || r.name}
-                    >
-                      <td className="c-status"><span className="row-pill">{r.statusText}</span></td>
-                      <td className="c-name">{r.name}</td>
-                      <td className="c-url" title={r.sub}>{r.sub}</td>
-                      <td className="c-lat">{r.latency}</td>
+            <>
+              <div className="source-checker-table-wrap">
+                <table className="source-checker-table">
+                  <thead>
+                    <tr>
+                      <th className="c-status">状态</th>
+                      <th className="c-name">名称</th>
+                      <th className="c-type">类型</th>
+                      <th className="c-url">地址 / 详情</th>
+                      <th className="c-lat">延迟</th>
+                      <th className="c-ago">最近</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredRows.map((r) => (
+                      <tr
+                        key={r.key}
+                        className={`is-${r.status}${selectedKey === r.key ? ' is-selected' : ''}`}
+                        onClick={() => setSelectedKey(selectedKey === r.key ? null : r.key)}
+                        title={r.error || r.name}
+                      >
+                        <td className="c-status"><span className="row-pill">{r.statusText}</span></td>
+                        <td className="c-name">{r.name}</td>
+                        <td className="c-type">{r.type}</td>
+                        <td className="c-url" title={r.sub}>{r.sub}</td>
+                        <td className="c-lat">{r.latency}</td>
+                        <td className="c-ago">
+                          {r.status === 'idle' || !lastCheckTime ? '—' : formatRelativeTime(lastCheckTime)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="source-checker-tip">异常行点击可打开右侧详情 —— 建议动作可直达代理配置页</p>
+            </>
           )}
         </div>
         {selectedRow && (

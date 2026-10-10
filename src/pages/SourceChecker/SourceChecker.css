@@ -90,30 +90,32 @@
   transform: none;
 }
 
-/* Hero 结论：大号可用数 + 状态一句话（全页第一视觉） */
+/* Hero 单带（对齐监控台 demo mc-hero）：左大号结论 + 右五指标横条内联 */
 .source-checker-hero {
   display: flex;
+  flex-wrap: wrap;
   flex-shrink: 0;
-  gap: var(--space-md);
-  align-items: baseline;
+  gap: var(--space-lg);
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: var(--space-sm);
-  padding: var(--space-md) var(--space-sm);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background-color: var(--color-surface);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--color-border-light);
 }
 .source-checker-hero-num {
   color: var(--color-text);
   font-family: "SF Mono", Consolas, monospace;
-  font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+  font-size: clamp(2.75rem, 5vw, 5.5rem);
   font-weight: 700;
   line-height: 1;
+  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
+  transition: color var(--dur-md, 0.2s);
 }
 .source-checker-hero-num em {
   color: var(--color-text-tertiary);
   font-size: 0.45em;
-  font-weight: 500;
+  font-weight: 600;
   font-style: normal;
 }
 .source-checker-hero-side {
@@ -123,11 +125,12 @@
   min-width: 0;
 }
 .source-checker-hero-cap {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: var(--text-2xs);
+  letter-spacing: 0.04em;
 }
 .source-checker-hero-state {
-  color: var(--color-text-secondary);
+  color: var(--color-warning-text);
   font-size: var(--text-sm);
   font-weight: 600;
 }
@@ -138,38 +141,63 @@
 .source-checker-hero.is-idle .source-checker-hero-num {
   color: var(--color-text-disabled);
 }
-
-/* 指标横条：五个 stat-chip（去卡片化后为紧凑芯片） */
-.source-checker-stats {
-  display: grid;
-  flex-shrink: 0;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--space-sm);
-  margin-bottom: var(--space-sm);
+.source-checker-hero.is-idle .source-checker-hero-state {
+  color: var(--color-text-tertiary);
 }
 
-.stat-card {
-  padding: var(--space-sm) var(--space-xs);
+/* 指标横条（语义 <ul> 列表）：五格内联（demo hero-metrics，border 分隔、dot+label+value） */
+.source-checker-stats {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  min-width: 0;
+  margin: 0 0 0 auto;
+  padding: 0;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background-color: var(--color-surface);
-  text-align: center;
+  overflow: hidden;
+  list-style: none;
+}
+
+.stat-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  align-items: flex-start;
+  min-width: 7rem;
+  padding: var(--space-sm) var(--space-md);
+  border-left: 1px solid var(--color-border-light);
+  text-align: left;
+}
+.stat-card:first-child {
+  border-left: 0;
+}
+
+.stat-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--color-text-tertiary);
+}
+.stat-dot.is-ok { background: var(--color-success); }
+.stat-dot.is-bad { background: var(--color-error); }
+.stat-dot.is-idle { background: var(--color-text-tertiary); }
+
+.stat-card .stat-label {
+  color: var(--color-text-secondary);
+  font-size: var(--text-2xs);
 }
 
 .stat-card .stat-value {
-  margin-bottom: var(--space-2xs);
   font-size: var(--text-lg);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.stat-card .stat-label {
-  color: var(--color-text-secondary);
-  font-size: var(--text-xs);
-}
-
 .stat-config {
-  margin-top: var(--space-2xs);
+  max-width: 12rem;
   color: var(--color-text-tertiary);
   font-size: var(--text-2xs);
   white-space: nowrap;
@@ -224,9 +252,10 @@
   color: var(--color-text);
 }
 
+/* 分段 active = 黑底白字胶囊（对齐 demo mc-seg is-on） */
 .tab-btn.active {
-  background: var(--color-tab-active-bg);
-  color: var(--color-tab-active-text);
+  background: var(--color-text);
+  color: var(--color-text-inverse);
 }
 
 .tab-badge {
@@ -302,12 +331,10 @@
   font-size: var(--text-2xs);
 }
 
-/* 2026-09-28 去卡片化（改版延续）：桌面（非手机 web / 非 app / 非 TV）报头/指标/工具条去卡壳。
-   表格与 inspector 右栏保留细边框 —— dense 数据台的结构语言。 */
+/* 2026-09-28 去卡片化（改版延续）：桌面报头/工具条去卡壳；
+   Hero 带与指标横条自带结构边框（demo 语言），不参与 flatten。 */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .source-checker-header,
-  html:not([data-device="app"]):not([data-device="tv"]) .source-checker-hero,
-  html:not([data-device="app"]):not([data-device="tv"]) .stat-card,
   html:not([data-device="app"]):not([data-device="tv"]) .source-checker-tabs {
     border-color: transparent;
     border-radius: 0;
@@ -319,7 +346,8 @@
   }
 }
 
-/* 主体：左 dense 表格 + 右 inspector */
+/* 主体：左 dense 表格 + 右 inspector（仅打开时分栏 —— demo data-rail 语义，
+   未选中行时不预留右栏，避免右侧大面积空白） */
 .source-checker-body {
   display: grid;
   flex: 1 1 0;
@@ -330,10 +358,10 @@
 }
 
 @media (width >= 1024px) {
-  .source-checker-body {
+  .source-checker-body.is-rail {
     grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
   }
-  html[data-device="app"] .source-checker-body {
+  html[data-device="app"] .source-checker-body.is-rail {
     grid-template-columns: minmax(0, 1fr);
   }
 }
