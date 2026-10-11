@@ -51,7 +51,9 @@
   1920 = 2K 起点；**2200 = 内容区封顶 = 卡片增列点**（从 2560 下移）；2560 = 超宽收敛；
   **无硬件语义数字（如 1980）一律不加**。
 - **页面整体布局大屏起点 = 1440**（现仅 `page-pad` ≥1440 / SearchBox ≥1441 / Home 骨架 ≥1440 / 卡片间距 >1440）。
-  HeroBili + 分类导航上移/mega/热度榜已**回退 1280**。`Player.css` 仍 `<1280 / ≥1280` 待整改。
+  HeroBili 回退 1280 历史保持；分类 mega 面板（顶栏 chips + overlay）已于 4a986d2 退役、
+  2026-10-11 死代码清理删除（宽屏分类入口 = CategoryInlineBoard 合集行）。
+  `Player.css` 仍 `<1280 / ≥1280` 待整改。
 - `--card-cols` **不受 1440 限制，仍含 1280→6 档**（1440 起点只针对页面布局，非 card 排列）。
 - **左栏 / rail 例外：起点 = 1024**。已落地：Browse BR-C 侧栏筛选 + RecordShell rail。
   Browse 768–1023 走移动端命令栏（`isPhone = useIsMobileLayout() || useIsMobile()`）。
@@ -192,13 +194,13 @@ flex 拉伸 + aspect-ratio 反算等）见 **`patterns.md` → 「页面骨架�
 ## 10. Hero / 首页大屏
 
 - **`useIsWideDesktop` = `(min-width: 1024px) && !isTV`**，是「首页大屏 UI」的**唯一 JS 真源**。
-  CSS 侧四个消费方必须同步：`Home.css`（两栏）、`CategoryQuickAccess.css`（两处）、`HeroBili.css`。
+  CSS 侧消费方同步：`Home.css` / `CategoryQuickAccess.css`（圆卡 ≥1024 档）/ `HeroBili.css`。
   `StickyHeader.css` / `HeroBanner.css` / `SearchBox.css` 本就有 1024 块，不用改。
   与 `useIsMobile`（1023）互补无缝。
-- **`.cqa-trend*` = 首页左栏「今日趋势 TOP 20」连续榜**：数据直接取 store 的 `trending`
-  （`/trending/all/day` 单页 20 条，零新增请求）。
 - **chart 页封面按视口切换数据源**：`useIsMobile()`（=1023）→ <1024 竖版 `112×168` 取 `posterPath`(`w154`)；
   ≥1024 横版 16:9 取 `backdropPath`(`w300`)。**纯 CSS 换不了图源，必须在 JS 侧切**。
+  （原「`.cqa-trend*` 左栏今日趋势」条目已作废：左栏随 2026-09-29 大屏整改删除，
+  文档滞后到 2026-10-11 清理时移除。）
 - **`.hero-bili__right` 列数 = `useHeroSideCols()`**（`src/hooks/useHeroSideCols.ts`）：
   `isTV → 3` / `1024–1280 → 2` / `≤1023 → 2` / 其余 `→ 3`。
   **卡数 = 列 × `SIDE_ROWS`(2) 必须在 JS 侧算**（CSS 只是同步表现），
@@ -213,19 +215,37 @@ flex 拉伸 + aspect-ratio 反算等）见 **`patterns.md` → 「页面骨架�
 - **`.hero-bili__cards` 不可锁 `height: var(--hero-banner-h)`**：锁高 + `rows: repeat(2, minmax(0,1fr))`
   会让行高恒 = bannerH/2、与列数解耦，降列即比例失控。现为 `height: auto` + `rows: repeat(2, auto)`，
   卡高由 `.hero-side-card__cover` 的 `aspect-ratio: 16/9` 派生。
-  ⚠️ **算卡片宽必须扣 shuffle 换一换列宽**：
-  `(sideW − shuffleW≈33.7 − columnGap − (cols−1) × sideGap) / cols`，用整列宽算会高估。
+  ✅ 2026-10-11 现状：换一换为**内容右缘外留白区的脱标浮层**（不占列宽），
+  右栏卡网格独占 --hero-side-w 全宽（2026-09-30 二次镜像修复）——旧「算卡宽必扣 shuffle 列」条目作废。
 - **Hero 类改动无法用 production preview 验证**：无 TMDB Token → 首页数据为空 → `HeroBili` 根本不渲染。
   只能靠「产物系数 grep + 几何算术」验证。
-- **≤1280 顶栏纯文本态的选中胶囊**：真实选中元素是 **`.cqa-nav__item--on`**
-  （不是 `.sticky-header__nav-item--active`）；改胶囊尺寸/圆角必须**同时覆盖**
-  `.cqa-nav__item` + `.sticky-header__nav-item`。
+- **顶栏导航选中态**（mega chips 已退役 2026-10-11）：现为 `.sticky-header__nav-item--active`
+  单一真源；旧 `.cqa-nav__item` 双类同步条目作废（home.spec 1.3c 保留 `.cqa-nav` 恒不存在的回归锁）。
 - **搜索框 header 变体宽度**：`1024–1280` 已封顶 `min(--layout-searchbox-max-w, calc(420px * --ui-scale))`；
   `≥1441` 封顶 `440px`。**`--layout-searchbox-header-max-w` 是死 token，无消费方**。
 - **`sticky-header__inner` 不再用 `--page-pad-x`**，回归基础 `padding: 0 var(--space-md)`，
   仅保留 `max-width: --layout-content-max-width` + 居中封顶。
-- **切换态统一范式**：CQA 切 chip / chart 切 tab → **清空旧数据 → 居中 `<TvMascot blink size={44} />` + 文案**，
-  不用「保留旧网格 + 遮罩降沉」。
+- **切换态统一范式**：chart 切 tab（及任何多页签网格切换）→ **清空旧数据 → 居中 `<TvMascot blink size={44} />` + 文案**，
+  不用「保留旧网格 + 遮罩降沉」（原 CQA 切 chip 同源案例已随面板退役）。
+
+---
+
+## 10b. 右下/侧浮层按钮定位基准（2026-10-11 四次修正定稿，硬约定）
+
+- **基准 = 主体内容右缘，非视口右缘**：返回顶部/刷新 fab 组/换一换三颗按钮常驻
+  「内容右缘外的留白区」，与内容保持 `--fab-breath` 呼吸距（随视口增大、
+  clamp 12~28px），既不悬浮在内容上也不贴视口。
+- **单真源 token（layout-tokens.css，非 TV）**：
+  `--content-edge-gutter`（视口→内容右缘实际留白 = pad + ≥2200 居中边距）、
+  `--fab-breath: clamp(12px, 1.5vw, 28px)`、
+  `--shuffle-max-shift = G − 48`（换一换可用留白上限）、`--shuffle-left = 100% + min(breath, maxShift)`。
+- **⚠️ 构建坑（实测踩过）**：本仓 [vite:css] postcss-calc 解析器**不吃 `min()` 内嵌 `calc()`、
+  也不吃 `calc(<pct> + min())`**，嵌套形态会被**整条静默丢弃**（仅 build warning，样式直接失效）。
+  复合表达式必须下沉为 custom property（定义不参与解析），消费处只写 `var()`。
+- **absolute 浮层方向语义**：`right: -X` 外推的是元素**右缘**（元素向左延伸会压内容）；
+  要「元素左缘距容器右缘 X」应写 `left: calc(100% + X)`——换一换三次版 `right:-breath` 压卡即此错。
+- fixed 浮层公式：`right = max(G − 按钮宽 − breath, space-md)`；TV 回退视口档（无 2200 契约）；
+  移动端/app 媒体档维持各自旧值。启动骨架 bs-shuffle 与真实同公式（layout-tokens 已注入可直读）。
 
 ---
 

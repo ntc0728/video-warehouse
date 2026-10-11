@@ -135,3 +135,12 @@
   - **红线**：① `--card-cols` 增列必须发生在内容区停止变宽那一刻（2200 封顶），否则「视口变宽卡片反而缩小」；② 新增 `@media` 尺寸/网格规则不影响 TV 须加 `html:not([data-device="tv"])` 前缀；③ 改/删断点档位必须 grep 全仓注释（variables.css 体系说明块 + 组件 CSS 规则头 + Skeleton 注释）同步；④ 3840 档与 2200 同值，仅作 4K 占位。
   - 实测梯度与根因（1920 段 ui-scale 死规则、2560 列数跳变）见 `changelogs/2026-09-07.md`「大屏断点两处修正」节；≥2560 超宽适配（G1 content-shell / G2-A / G3 边框提档 / P-A 播放器 / BR-C）见同文件。
 
+- **ADR-024 浅色主题「纸白分层」四层背景体系 + 浮层内容右缘基准（2026-10-11，用户拍板）**
+  背景体系整改：页面底与骨架扫光/等待占位/失败占位同为中性灰，对比仅 1.08~1.26:1，状态「糊成一片」。
+  我们决定（仅浅色模式，**暗色冻结在 2026-09-28 档不变**）：① 页面底升纯白 #fff，「灰」专属模块底（tag/收藏/分页 #f5f6f8）与占位/骨架语义（placeholder #f0f2f6、shimmer #f3f4f7↔#e8ebf1，均微冷相）——跨语义解耦（参照 YouTube 浅色版）；② 右下/侧浮层按钮（返回顶部/刷新 fab/换一换）以**主体内容右缘**为定位基准（非视口）：按钮住内容右缘外留白区，呼吸距 `--fab-breath: clamp(12px,1.5vw,28px)` 随视口增大但封顶，公式 token 化（--content-edge-gutter / --shuffle-max-shift / --shuffle-left，单真源 layout-tokens.css）。
+  后果/踩坑固化：① 本仓 postcss-calc 解析器不吃 `min()` 内嵌 `calc()` 与 `calc(<pct> + min())`，嵌套形态被构建**静默整条丢弃**（仅 warning）——复合数学表达式必须下沉为 custom property；② absolute 浮层 `right:-X` 外推的是**右缘**（元素向左延伸会压内容），要左缘偏移应用 `left: calc(100% + X)`；③ 设置页「点击文本位移」根因是全局按压缩放（button:active > * scale .96）的 `.settings-page *` 豁免类实际不存在于设置页 DOM——新可点行按钮须挂 `.no-press`。细则见 `docs/agents/css-layout-conventions.md` §10b；过程四版演进（对齐内容缘→压内容→方向反）见 `changelogs/2026-10-11.md`。
+
+- **ADR-025 CMS 源面板「只显有数据源」聚合模型 + 播放失败判定后置（2026-10-11，用户定稿）**
+  旧行为：播放页 CMS 面板预先铺设置页全部勾选源，接口无数据的源也显示，点 tab 才懒搜（lazy-fetch）；用户要求「进入播放页即判断，无论是否有历史记录」。
+  我们决定：① 进入即对全部启用源**并行探测**（错峰 120ms/源 + 失败重试一次 + 429 进 axios 重试；同代理域瞬发并发易限流，失败被静默当「无数据」=「同一数据时有时无」的根因），只有接口返回当前视频数据的源进面板；面板初始化 effect 不再铺勾选源（接管守卫防时序覆盖）。② **顺序硬约束：先聚合落定，后选中/季集线路回显**；选择优先级 = 入口指定源(有数据) > 历史源(有数据) > 勾选序首个；历史源无数据→不回显它，由 `usePlayerStore.sourceNotice` 驱动续播卡顶部行提醒换源（播放器内靠上居中，不用全局 toast），按内容身份（季+集号）续播；快速恢复路径带 `sourceIdx === histIdx` 守卫（vod_id 跨源不通用）。③ **failover 闸门**：探测未全部落定期间源死亡错误挂起，`probeSettledSeq` 到达后重放——播放失败/空态判定必须等所有源响应结束。细则见 `docs/agents/runtime-conventions.md` §1；同步删除无入口的 mega 分类面板死代码（Nav/Panel/overlay store/categoryPanelData，home.spec 1.3c 留退役回归锁）。
+
