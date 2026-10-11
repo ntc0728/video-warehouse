@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo · 背景色对比度方案 A：中性灰阶拉开 + 独立高光带（2026-10-11）</title>
+<style>
+  /* ═══ 方案 A「拉开明度 + 高光带」═══
+     思路：骨架底色仍用中性灰（与全站极简灰调性一致），但做两件事：
+     ① 拉大占位色与页面底的明度差（placeholder / shimmer 两档整体压深一档）；
+     ② 扫光不再依赖 a/b 两灰交替，改为「静止底色 + 一条独立白色高光带掠过」
+        （Facebook / LinkedIn / Ant Design 5 / Material 通行做法），扫光感知由
+        高光带承担，底色本身可以稳定不闪。
+     参照：AntD Skeleton 渐变 rgba(0,0,0,.06)→.15 叠页面底（≈#e4e4e4→#d1d1d1，比现状深）；
+     Material 暗色用白色 overlay 提亮表面表达层级。 */
+
+  /* ── 主题 token：页面级 ── */
+  :root {
+    --bg: #f5f5f5; --text: #111; --text-2: #666; --text-3: #8b8b8b;
+    --chrome: #fff; --border: #d9d9d9;
+  }
+  [data-theme="dark"] {
+    --bg: #141414; --text: #fff; --text-2: #a0a0a0; --text-3: #8c8c8c;
+    --chrome: #1f1f1f; --border: #363636;
+  }
+
+  /* ── OLD = 现状 token（variables.css :137-139 浅色 / :874-878 暗色）── */
+  .panel-old {
+    --placeholder: #e9e9e9; --sh-a: #ececec; --sh-b: #dcdcdc;
+    --sheen: rgba(255, 255, 255, 0); --fail-border: #d9d9d9; --fail-fg: #9a9a9a;
+  }
+  [data-theme="dark"] .panel-old {
+    --placeholder: #262626; --sh-a: #262626; --sh-b: #333333;
+    --sheen: rgba(255, 255, 255, 0); --fail-border: #363636; --fail-fg: #7a7a7a;
+  }
+  /* ── NEW = 方案 A 建议值 ── */
+  .panel-new {
+    --placeholder: #d6d7d9; --sh-a: #d6d7d9; --sh-b: #d6d7d9;
+    --sheen: rgba(255, 255, 255, 0.9); --fail-border: #b3b5b9; --fail-fg: #85878c;
+  }
+  [data-theme="dark"] .panel-new {
+    --placeholder: #2d2e31; --sh-a: #2d2e31; --sh-b: #2d2e31;
+    --sheen: rgba(255, 255, 255, 0.12); --fail-border: #4b4d54; --fail-fg: #8f9298;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.6;
+    transition: background .2s, color .2s;
+  }
+  header {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 18px 28px; border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 17px; margin: 0; }
+  header .sub { color: var(--text-2); font-size: 12px; }
+  .theme-btn {
+    margin-left: auto; padding: 6px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--chrome); color: var(--text);
+    font: inherit;
+  }
+  main { padding: 24px 28px 64px; max-width: 1280px; margin: 0 auto; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (width <= 900px) { .cols { grid-template-columns: 1fr; } }
+  .panel { border: 1px solid var(--border); border-radius: 12px; padding: 18px; background: var(--bg); }
+  .panel > h2 { margin: 0 0 4px; font-size: 15px; }
+  .panel > .desc { font-size: 12px; color: var(--text-2); margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (width <= 1100px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ── 卡片（复刻去卡片化后的真实形态：无卡壳，封面直接压页面底）── */
+  .card { min-width: 0; }
+  .poster {
+    position: relative; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden;
+    background: var(--placeholder);
+  }
+  .lbl { font-size: 11px; color: var(--text-3); margin-top: 6px; }
+  .titlebar { height: 10px; border-radius: 4px; margin-top: 8px; background: var(--placeholder); }
+  .titlebar.short { width: 62%; }
+
+  /* 态① 扫光加载中：OLD=两灰交替；NEW=静止底 + 白色高光带掠过 */
+  .state-load .poster {
+    background: linear-gradient(90deg, var(--sh-a) 25%, var(--sh-b) 50%, var(--sh-a) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite;
+  }
+  .panel-new .state-load .poster {
+    background: var(--sh-a);
+    animation: none;
+  }
+  .panel-new .state-load .poster::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(100deg, transparent 35%, var(--sheen) 50%, transparent 65%);
+    background-size: 250% 100%;
+    animation: sheen 2.2s var(--e, cubic-bezier(.4, 0, .2, 1)) infinite;
+  }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  @keyframes sheen { from { background-position: 180% 0; } to { background-position: -80% 0; } }
+
+  /* 态② 等待/缓存占位：静止纯色底（现状与页面底几乎同色 → 隐形） */
+  /* 态③ 失败占位：静止底 + 描边 + 图标（LazyImage 品牌兜底同构） */
+  .state-fail .poster {
+    background: linear-gradient(180deg, var(--sh-a), var(--sh-b));
+    box-shadow: inset 0 0 0 1px var(--fail-border);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: var(--fail-fg);
+  }
+  .state-fail .poster svg { width: 30px; height: 30px; }
+  .state-fail .poster .brand { font-size: 11px; letter-spacing: .18em; font-weight: 600; }
+
+  /* 参照：加载成功 */
+  .state-ok .poster {
+    background: linear-gradient(160deg, #3b4b6e, #1d2536 60%, #12161f);
+  }
+  [data-theme="light"] .state-ok .poster {
+    background: linear-gradient(160deg, #6b7fa8, #384a6b 60%, #222c3f);
+  }
+
+  /* hover 光泽带（真实卡 .video-card-glow 同构，白 15% 带）供对照 */
+  .state-ok .poster { position: relative; }
+  .state-ok .poster::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+    transform: translateX(-150%) skewX(-20deg); opacity: 0;
+  }
+  .state-ok:hover .poster::after { animation: glow 0.7s forwards; }
+  @keyframes glow { to { transform: translateX(250%) skewX(-20deg); opacity: 1; } }
+
+  /* ── 数值表 ── */
+  table { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 22px; }
+  th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; }
+  th { background: var(--chrome); }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; border: 1px solid rgba(128,128,128,.4); }
+  .note { font-size: 12px; color: var(--text-2); margin-top: 14px; padding: 12px 14px; border: 1px dashed var(--border); border-radius: 8px; }
+  .ratio-ok { color: #2e7d32; font-weight: 600; }
+  .ratio-bad { color: #c62828; font-weight: 600; }
+  [data-theme="dark"] .ratio-ok { color: #7cc47f; }
+  [data-theme="dark"] .ratio-bad { color: #ff8a80; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>方案 A · 中性灰阶拉开 + 独立高光带</h1>
+    <div class="sub">改动最小：只动骨架/占位色组（--color-placeholder / shimmer），页面底与主题结构不变。扫光由「两灰交替」改为「静止底 + 白色高光带」。</div>
+  </div>
+  <button class="theme-btn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">切换亮/暗主题</button>
+</header>
+<main>
+  <div class="cols">
+    <section class="panel panel-old">
+      <h2>OLD · 现状</h2>
+      <div class="desc">浅色：底 #f5f5f5 / 占位 #e9e9e9 / 扫光 #ececec↔#dcdcdc（对比 1.08~1.26:1，肉眼几乎不可辨）</div>
+      <div class="grid">
+        <div class="card state-load"><div class="poster"></div><div class="titlebar"></div><div class="lbl">① 扫光加载中</div></div>
+        <div class="card state-wait"><div class="poster"></div><div class="titlebar"></div><div class="lbl">② 等待/缓存占位</div></div>
+        <div class="card state-fail"><div class="poster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m7 3 5 4 5-4"/></svg><span class="brand">kinoTV</span></div><div class="titlebar"></div><div class="lbl">③ 加载失败</div></div>
+        <div class="card state-ok"><div class="poster"></div><div class="titlebar"></div><div class="lbl">参照：已加载（hover 有光泽带）</div></div>
+      </div>
+    </section>
+    <section class="panel panel-new">
+      <h2>NEW · 方案 A</h2>
+      <div class="desc">浅色：占位压深至 #d6d7d9（1.33:1）；扫光= 静止底 + rgba(255,255,255,.9) 高光带掠过；暗色：#2d2e31（1.37:1）+ 12% 白带</div>
+      <div class="grid">
+        <div class="card state-load"><div class="poster"></div><div class="titlebar"></div><div class="lbl">① 扫光加载中（高光带）</div></div>
+        <div class="card state-wait"><div class="poster"></div><div class="titlebar"></div><div class="lbl">② 等待/缓存占位</div></div>
+        <div class="card state-fail"><div class="poster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m7 3 5 4 5-4"/></svg><span class="brand">kinoTV</span></div><div class="titlebar"></div><div class="lbl">③ 加载失败（描边加深的中性底）</div></div>
+        <div class="card state-ok"><div class="poster"></div><div class="titlebar"></div><div class="lbl">参照：已加载</div></div>
+      </div>
+    </section>
+  </div>
+
+  <table>
+    <tr><th>token</th><th>现状（浅 / 暗）</th><th>方案 A（浅 / 暗）</th><th>对页面底对比度 旧 → 新</th></tr>
+    <tr><td>--color-placeholder（等待/失败底）</td>
+      <td><span class="sw" style="background:#e9e9e9"></span>#e9e9e9 / <span class="sw" style="background:#262626"></span>#262626</td>
+      <td><span class="sw" style="background:#d6d7d9"></span>#d6d7d9 / <span class="sw" style="background:#2d2e31"></span>#2d2e31</td>
+      <td><span class="ratio-bad">1.11 / 1.22</span> → <span class="ratio-ok">1.33 / 1.37</span></td></tr>
+    <tr><td>扫光机制</td>
+      <td colspan="2">两灰交替渐变（a↔b 内部差仅 1.16 / 1.21，且整体太浅） → 静止底 + 白色高光带（浅 90% / 暗 12%）</td>
+      <td>扫光可见性由高光带承担，不再受底色上限约束</td></tr>
+    <tr><td>失败态描边</td>
+      <td><span class="sw" style="background:#d9d9d9"></span>#d9d9d9 / <span class="sw" style="background:#363636"></span>#363636</td>
+      <td><span class="sw" style="background:#b3b5b9"></span>#b3b5b9 / <span class="sw" style="background:#4b4d54"></span>#4b4d54</td>
+      <td>失败边界更清晰（与加载态同为静止底时靠描边区分）</td></tr>
+  </table>
+
+  <div class="note">
+    依据：Ant Design 5 骨架渐变 rgba(0,0,0,.06)→.15（叠浅底≈#e4e4e4→#d1d1d1，均比现状 #ececec 深）；
+    Facebook/LinkedIn shimmer 均为「固定底色 + 掠过式高光带」。骨架属装饰性对比，行业普遍落在 1.3~1.6:1，
+    方案 A 取该区间上限并用高光带解决「扫光看不见」。<br>
+    ⚠ 附带发现（各方案通用）：--color-tag-bg / favorite-bg / page-btn-bg 浅色档均为 #f5f5f5，与页面底 100% 同值，去卡化后同样隐形，建议一并提档到 #e8e8e8。
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light" data-sys="new">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>背景体系 方案一 · 纸白分层（2026-10-11 第二轮）</title>
+<style>
+  /* ═══ 方案一「纸白分层」═══
+     核心逻辑：现状问题的根源不是"占位色不够深"，而是**页面底本身是灰的**（#f5f5f5），
+     导致占位/模块/骨架全部要在"灰"里挤，怎么调都相近。本方案把页面底升为纯白，
+     "灰"从此只属于模块底与占位骨架的语义 → 页面底与占位天然最大区分，不再靠调 ΔL 抢救。
+     参照：YouTube 网页版浅色主题 body 纯白 + 浅灰模块；iOS App Store/设置 = 白页上灰分组。
+     四层语义：页面底(白) → 模块底(轻灰) → 骨架/占位(中灰+扫光) → 失败(灰底+冷描边)。 */
+
+  /* ── OLD 现状体系 ── */
+  html[data-theme="light"] {
+    --page:#f5f5f5; --surface:#fff; --module:#f5f5f5;
+    --sk-a:#ececec; --sk-b:#dcdcdc; --wait:#e9e9e9;
+    --fail-bd:#d9d9d9; --fail-fg:#9a9a9a;
+    --text:#111; --text-2:#666; --text-3:#8b8b8b; --line:#d9d9d9; --chip-tx:#333;
+  }
+  html[data-theme="dark"] {
+    --page:#141414; --surface:#1f1f1f; --module:#262626;
+    --sk-a:#262626; --sk-b:#333333; --wait:#262626;
+    --fail-bd:#363636; --fail-fg:#7a7a7a;
+    --text:#fff; --text-2:#a0a0a0; --text-3:#8c8c8c; --line:#363636; --chip-tx:#ddd;
+  }
+  /* ── NEW 方案一 ── */
+  html[data-sys="new"][data-theme="light"] {
+    --page:#ffffff; --surface:#ffffff; --module:#f5f6f8;
+    --sk-a:#f3f4f7; --sk-b:#e8ebf1; --wait:#f0f2f6;
+    --fail-bd:#dde2ea; --fail-fg:#858b96;
+    --text:#111; --text-2:#5f6672; --text-3:#8b909a; --line:#e8eaee; --chip-tx:#333;
+  }
+  html[data-sys="new"][data-theme="dark"] {
+    --page:#121215; --surface:#1e1f23; --module:#232528;
+    --sk-a:#26272b; --sk-b:#3a3c43; --wait:#25262b;
+    --fail-bd:rgba(255,255,255,.15); --fail-fg:#9499a3;
+    --text:#fff; --text-2:#a2a7ae; --text-3:#8b9098; --line:#36383e; --chip-tx:#e6e6e6;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page); color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.6; transition: background .25s, color .25s;
+  }
+  /* ── 控制条 ── */
+  .ctrl {
+    position: sticky; top: 0; z-index: 9; display: flex; gap: 10px; align-items: center;
+    padding: 10px 22px; background: var(--page); border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  .ctrl b { font-size: 14px; margin-right: auto; }
+  .ctrl button {
+    padding: 5px 14px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 12.5px;
+    border: 1px solid var(--line); background: var(--module); color: var(--text);
+  }
+  .ctrl button.on { background: var(--text); color: var(--page); border-color: var(--text); }
+  /* ── 页面 mock ── */
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 18px 22px 60px; }
+  .hd { display: flex; gap: 12px; align-items: center; padding: 6px 0 16px; }
+  .hd .logo { font-weight: 800; letter-spacing: .04em; }
+  .hd .nav i { display: inline-block; margin-right: 8px; padding: 4px 14px; border-radius: 999px; background: var(--module); color: var(--chip-tx); font-size: 12.5px; font-style: normal; }
+  .hd .search { margin-left: auto; width: 190px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+  .hero { aspect-ratio: 21/9; border-radius: 14px; background: linear-gradient(120deg, #232b3d, #0d1119 70%); margin-bottom: 18px; }
+  .sec { display: flex; align-items: center; gap: 10px; margin: 20px 0 10px; }
+  .sec h3 { margin: 0; font-size: 15px; }
+  .sec .more { color: var(--text-3); font-size: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px; }
+  @media (width <= 1000px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  .card { min-width: 0; }
+  .p { position: relative; aspect-ratio: 2/3; border-radius: 8px; overflow: hidden; background: var(--wait); }
+  .t { height: 9px; border-radius: 4px; margin-top: 7px; background: var(--module); }
+  .t.s { width: 55%; }
+  .lbl { font-size: 10.5px; color: var(--text-3); margin-top: 5px; }
+  .load .p {
+    background: linear-gradient(90deg, var(--sk-a) 25%, var(--sk-b) 50%, var(--sk-a) 75%);
+    background-size: 200% 100%; animation: shim 3s infinite;
+  }
+  @keyframes shim { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+  .fail .p {
+    background: linear-gradient(180deg, var(--sk-a), var(--wait));
+    box-shadow: inset 0 0 0 1px var(--fail-bd);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--fail-fg);
+  }
+  .fail .p svg { width: 26px; height: 26px; }
+  .fail .p span { font-size: 10px; letter-spacing: .16em; font-weight: 600; }
+  .ok .p { background: linear-gradient(160deg, #5a6f96, #2c3a55 55%, #1a2233); }
+  /* 模块区：tags / 分页 / 简介块 */
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 6px; }
+  .chip { padding: 4px 14px; border-radius: 999px; background: var(--module); color: var(--chip-tx); font-size: 12.5px; }
+  .chip.act { background: var(--text); color: var(--page); }
+  .pager { display: flex; gap: 6px; margin-top: 12px; }
+  .pg { width: 30px; height: 30px; border-radius: 8px; background: var(--module); color: var(--chip-tx); display: flex; align-items: center; justify-content: center; font-size: 12.5px; }
+  .pg.cur { outline: 2px solid var(--text); }
+  /* 对照说明 */
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
+  @media (width <= 900px) { .cmp { grid-template-columns: 1fr; } }
+  .box { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .box h4 { margin: 0 0 8px; font-size: 13px; }
+  .box .sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; border: 1px solid rgba(128,128,128,.35); vertical-align: -1px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 22px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; }
+  th { background: var(--module); }
+  .note { font-size: 12px; color: var(--text-2); margin-top: 16px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="ctrl">
+  <b>方案一 · 纸白分层：页面底归白，灰只属于占位与模块</b>
+  <button id="bOld" onclick="setsys('old')">现状体系</button>
+  <button id="bNew" class="on" onclick="setsys('new')">方案体系</button>
+  <button id="bTh" onclick="ttheme()">切换亮/暗</button>
+</div>
+<div class="wrap">
+  <div class="hd"><span class="logo">KinoTV</span><span class="nav"><i>首页</i><i>直播</i><i>榜单</i><i>收藏</i></span><span class="search"></span></div>
+  <div class="hero"></div>
+  <div class="sec"><h3>正在热播</h3><span class="more">全部 ›</span></div>
+  <div class="grid">
+    <div class="card load"><div class="p"></div><div class="t"></div><div class="lbl">扫光加载中</div></div>
+    <div class="card load"><div class="p"></div><div class="t"></div><div class="lbl">扫光加载中</div></div>
+    <div class="card wait"><div class="p"></div><div class="t"></div><div class="lbl">等待/缓存占位</div></div>
+    <div class="card fail"><div class="p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m7 3 5 4 5-4"/></svg><span>kinoTV</span></div><div class="t"></div><div class="lbl">加载失败</div></div>
+    <div class="card ok"><div class="p"></div><div class="t"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t s"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t s"></div><div class="lbl">已加载</div></div>
+  </div>
+  <div class="chips"><span class="chip act">全部</span><span class="chip">电影</span><span class="chip">剧集</span><span class="chip">综艺</span><span class="chip">动漫</span><span class="chip">纪录片</span></div>
+  <div class="pager"><span class="pg cur">1</span><span class="pg">2</span><span class="pg">3</span><span class="pg">4</span><span class="pg">›</span></div>
+
+  <div class="cmp">
+    <div class="box"><h4>现状：四层压成两层近似灰</h4>
+      <div><span class="sw" style="background:#f5f5f5"></span>页面底 #f5f5f5　<span class="sw" style="background:#ececec"></span>扫光 #ececec　<span class="sw" style="background:#dcdcdc"></span>#dcdcdc　<span class="sw" style="background:#e9e9e9"></span>占位 #e9e9e9</div>
+      <div style="margin-top:6px;font-size:12px;color:var(--text-2)">模块底（tag/分页）也 = #f5f5f5，与页面底完全同值 → 整页"灰糊"。</div>
+    </div>
+    <div class="box"><h4>方案一：白页 + 灰模块 + 中灰骨架，层层面面拉开</h4>
+      <div><span class="sw" style="background:#fff;border-color:#bbb"></span>页面底 #fff　<span class="sw" style="background:#f5f6f8"></span>模块 #f5f6f8　<span class="sw" style="background:#f3f4f7"></span>扫光 #f3f4f7↔<span class="sw" style="background:#e8ebf1"></span>#e8ebf1　<span class="sw" style="background:#f0f2f6"></span>占位 #f0f2f6</div>
+      <div style="margin-top:6px;font-size:12px;color:var(--text-2)">纯白页底上，轻灰模块与中灰骨架一眼分层；灰度已按反馈整体提亮半档，避免"太深"。</div>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>层级 token</th><th>现状（浅/暗）</th><th>方案一（浅/暗）</th><th>说明</th></tr>
+    <tr><td>页面底 --color-background</td><td>#f5f5f5 / #141414</td><td>#ffffff / #121215</td><td>浅色升纯白；暗色微偏冷黑（比现状深一点点让 surface 跳出，不过沉）</td></tr>
+    <tr><td>内容面 --color-surface</td><td>#fff / #1f1f1f</td><td>#ffffff / #1e1f23</td><td>浅色与页面同白（靠阴影/边框分界）；暗色与页底拉开层次</td></tr>
+    <tr><td>模块底 tag/收藏/分页</td><td>#f5f5f5(=页底) / #262626</td><td>#f5f6f8 / #232528</td><td>灰专属模块语义，白页上清晰成块</td></tr>
+    <tr><td>扫光 --shimmer-a↔b</td><td>#ececec↔#dcdcdc / #262626↔#333</td><td>#f3f4f7↔#e8ebf1 / #26272b↔#3a3c43</td><td>扫光两端内部对比 1.16→1.22，灰度已提亮半档减轻沉感</td></tr>
+    <tr><td>等待占位 --color-placeholder</td><td>#e9e9e9 / #262626</td><td>#f0f2f6 / #25262b</td><td>带微冷相区别于纯白页底</td></tr>
+    <tr><td>失败态描边/前景</td><td>#d9d9d9·text-tertiary / #363636</td><td>#dde2ea·#858b96 / rgba(白15%)·#9499a3</td><td>静止底+描边，与扫光态区分</td></tr>
+  </table>
+
+  <div class="note">
+    连带影响（落地时需一并核对）：① sticky-header 玻璃底、hero 区、各页大面积 rgba(0,0,0,.0x) hover 层在纯白页底上的观感；② 暗色页面底由 #141414 → #0f0f11，surface/#262626 系浮层级差同时重排；③ index.html 启动骨架填充需同步交接色；④ 皮肤 skins.css（mechanical/retro）不吃这套灰阶则不动。<br>
+    依据：YouTube 网页版浅色 body = 纯白、模块/骨架用 #f0f1f2→#e2e5ea 级浅灰；iOS「分组背景」语言 = 白页上垫浅灰容器；骨架灰与页面底**跨语义**（页面不灰、灰即占位）是第一层解法，比在灰里调 ΔL 更稳。
+  </div>
+</div>
+<script>
+  function setsys(v) {
+    document.documentElement.dataset.sys = v;
+    document.getElementById('bOld').classList.toggle('on', v === 'old');
+    document.getElementById('bNew').classList.toggle('on', v === 'new');
+  }
+  function ttheme() {
+    const h = document.documentElement;
+    h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light" data-sys="new">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>背景体系 方案四 · 暖白纸质（2026-10-11 第二轮）</title>
+<style>
+  /* ═══ 方案四「暖白纸质」═══
+     核心逻辑：与方案三同法、反向取色——整套背景/占位/边框放进**暖米灰阶**
+     （hue≈40°，sat 3~9%）。站内已有大量暖色语义（收藏橙、评分金、bili 粉），
+     冷灰底与它们相冲；暖底让整站色调统一、"纸感"亲和，占位灰取更深的暖驼灰，
+     与页面底差 2 阶一眼可辨。
+     参照：Notion（页 #fffcfa / 侧栏 #f7f6f3 / 占位暖灰）；小红书（暖白页 + 米灰模块）；
+     得到/B 站阅读类浅色版同路数。暗档为"暖炭黑"（Netflix 之外的 Apple TV 深黑偏暖做法）。 */
+
+  /* ── OLD 现状体系 ── */
+  html[data-theme="light"] {
+    --page:#f5f5f5; --surface:#fff; --module:#f5f5f5;
+    --sk-a:#ececec; --sk-b:#dcdcdc; --wait:#e9e9e9;
+    --fail-bd:#d9d9d9; --fail-fg:#9a9a9a;
+    --text:#111; --text-2:#666; --text-3:#8b8b8b; --line:#d9d9d9; --chip-tx:#333;
+  }
+  html[data-theme="dark"] {
+    --page:#141414; --surface:#1f1f1f; --module:#262626;
+    --sk-a:#262626; --sk-b:#333333; --wait:#262626;
+    --fail-bd:#363636; --fail-fg:#7a7a7a;
+    --text:#fff; --text-2:#a0a0a0; --text-3:#8c8c8c; --line:#363636; --chip-tx:#ddd;
+  }
+  /* ── NEW 方案四：暖米灰阶 ── */
+  html[data-sys="new"][data-theme="light"] {
+    --page:#faf8f4; --surface:#ffffff; --module:#f4f2ec;
+    --sk-a:#f2efe8; --sk-b:#e8e3d8; --wait:#efeadd;
+    --fail-bd:#ddd7c9; --fail-fg:#8f887a;
+    --text:#231f18; --text-2:#6b6455; --text-3:#968e7d; --line:#e4dfd3; --chip-tx:#4a4438;
+  }
+  html[data-sys="new"][data-theme="dark"] {
+    --page:#191714; --surface:#25221d; --module:#312e27;
+    --sk-a:#33302a; --sk-b:#4a4539; --wait:#36332c;
+    --fail-bd:rgba(255,240,214,.16); --fail-fg:#a89f8d;
+    --text:#f5f1e8; --text-2:#b0a897; --text-3:#948c7c; --line:#423e35; --chip-tx:#ece5d8;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page); color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.6; transition: background .25s, color .25s;
+  }
+  .ctrl {
+    position: sticky; top: 0; z-index: 9; display: flex; gap: 10px; align-items: center;
+    padding: 10px 22px; background: var(--page); border-bottom: 1px solid var(--line);
+  }
+  .ctrl b { font-size: 14px; margin-right: auto; }
+  .ctrl button {
+    padding: 5px 14px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 12.5px;
+    border: 1px solid var(--line); background: var(--module); color: var(--text);
+  }
+  .ctrl button.on { background: var(--text); color: var(--page); border-color: var(--text); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 18px 22px 60px; }
+  .hd { display: flex; gap: 12px; align-items: center; padding: 6px 0 16px; }
+  .hd .logo { font-weight: 800; letter-spacing: .04em; }
+  .hd .nav i { display: inline-block; margin-right: 8px; padding: 4px 14px; border-radius: 999px; background: var(--module); color: var(--chip-tx); font-size: 12.5px; font-style: normal; }
+  .hd .search { margin-left: auto; width: 190px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+  .hero { aspect-ratio: 21/9; border-radius: 14px; background: linear-gradient(120deg, #3d3527, #26211a 70%); margin-bottom: 18px; }
+  .sec { display: flex; align-items: center; gap: 10px; margin: 20px 0 10px; }
+  .sec h3 { margin: 0; font-size: 15px; }
+  .sec .more { color: var(--text-3); font-size: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px; }
+  @media (width <= 1000px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  .card { min-width: 0; }
+  .p { position: relative; aspect-ratio: 2/3; border-radius: 8px; overflow: hidden; background: var(--wait); }
+  .t { height: 9px; border-radius: 4px; margin-top: 7px; background: var(--module); }
+  .t.s { width: 55%; }
+  .lbl { font-size: 10.5px; color: var(--text-3); margin-top: 5px; }
+  .load .p {
+    background: linear-gradient(90deg, var(--sk-a) 25%, var(--sk-b) 50%, var(--sk-a) 75%);
+    background-size: 200% 100%; animation: shim 3s infinite;
+  }
+  @keyframes shim { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+  .fail .p {
+    background: linear-gradient(180deg, var(--sk-a), var(--wait));
+    box-shadow: inset 0 0 0 1px var(--fail-bd);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--fail-fg);
+  }
+  .fail .p svg { width: 26px; height: 26px; }
+  .fail .p span { font-size: 10px; letter-spacing: .16em; font-weight: 600; }
+  .ok .p { background: linear-gradient(160deg, #8b7a5e, #57493a 55%, #2d2620); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 6px; }
+  .chip { padding: 4px 14px; border-radius: 999px; background: var(--module); color: var(--chip-tx); font-size: 12.5px; }
+  .chip.act { background: var(--text); color: var(--page); }
+  .pager { display: flex; gap: 6px; margin-top: 12px; }
+  .pg { width: 30px; height: 30px; border-radius: 8px; background: var(--module); color: var(--chip-tx); display: flex; align-items: center; justify-content: center; font-size: 12.5px; }
+  .pg.cur { outline: 2px solid var(--text); }
+  .demo-warm { display: flex; gap: 10px; margin-top: 18px; }
+  .fav { padding: 4px 12px; border-radius: 999px; background: #fff2e8; color: #d46b08; font-size: 12px; }
+  .rate { padding: 4px 12px; border-radius: 999px; background: #fffbe6; color: #ad8b00; font-size: 12px; }
+  .scale { display: flex; border-radius: 10px; overflow: hidden; margin-top: 26px; border: 1px solid var(--line); }
+  .scale i { flex: 1; height: 64px; display: flex; align-items: flex-end; justify-content: center; font-size: 10px; font-style: normal; padding: 4px 0; color: var(--text-2); }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 22px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; }
+  th { background: var(--module); }
+  .note { font-size: 12px; color: var(--text-2); margin-top: 16px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="ctrl">
+  <b>方案四 · 暖白纸质：整套背景入暖米灰阶，与站内橙/金/粉语义色同调</b>
+  <button id="bOld" onclick="setsys('old')">现状体系</button>
+  <button id="bNew" class="on" onclick="setsys('new')">方案体系</button>
+  <button id="bTh" onclick="ttheme()">切换亮/暗</button>
+</div>
+<div class="wrap">
+  <div class="hd"><span class="logo">KinoTV</span><span class="nav"><i>首页</i><i>直播</i><i>榜单</i><i>收藏</i></span><span class="search"></span></div>
+  <div class="hero"></div>
+  <div class="sec"><h3>正在热播</h3><span class="more">全部 ›</span></div>
+  <div class="grid">
+    <div class="card load"><div class="p"></div><div class="t"></div><div class="lbl">扫光加载中</div></div>
+    <div class="card load"><div class="p"></div><div class="t"></div><div class="lbl">扫光加载中</div></div>
+    <div class="card wait"><div class="p"></div><div class="t"></div><div class="lbl">等待/缓存占位</div></div>
+    <div class="card fail"><div class="p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m7 3 5 4 5-4"/></svg><span>kinoTV</span></div><div class="t"></div><div class="lbl">加载失败</div></div>
+    <div class="card ok"><div class="p"></div><div class="t"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t s"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t s"></div><div class="lbl">已加载</div></div>
+  </div>
+  <div class="chips"><span class="chip act">全部</span><span class="chip">电影</span><span class="chip">剧集</span><span class="chip">综艺</span><span class="chip">动漫</span><span class="chip">纪录片</span></div>
+  <div class="pager"><span class="pg cur">1</span><span class="pg">2</span><span class="pg">3</span><span class="pg">4</span><span class="pg">›</span></div>
+  <div class="demo-warm"><span class="fav">★ 已收藏</span><span class="rate">★ 9.2</span><span style="color:#fb7299;font-size:12.5px;align-self:center">bili 粉示例</span></div>
+
+  <div class="scale" id="scale"></div>
+
+  <table>
+    <tr><th>层级 token</th><th>现状（浅/暗）</th><th>方案四（浅/暗，hue≈40° 暖阶）</th><th>层级步位</th></tr>
+    <tr><td>页面底 --color-background</td><td>#f5f5f5 / #141414</td><td>#faf8f4 / #191714</td><td>阶0（暖白 / 暖炭黑，较原稿提亮一档）</td></tr>
+    <tr><td>内容面 surface</td><td>#fff / #1f1f1f</td><td>#ffffff / #25221d</td><td>阶1</td></tr>
+    <tr><td>模块底 tag/分页</td><td>#f5f5f5(=页底) / #262626</td><td>#f4f2ec / #312e27</td><td>阶2</td></tr>
+    <tr><td>等待占位</td><td>#e9e9e9 / #262626</td><td>#efeadd / #36332c</td><td>阶3（米驼灰，已减淡半档保留纸感）</td></tr>
+    <tr><td>扫光 a↔b</td><td>#ececec↔#dcdcdc / #262626↔#333</td><td>#f2efe8↔#e8e3d8 / #33302a↔#4a4539</td><td>阶3~4</td></tr>
+    <tr><td>失败描边/前景</td><td>#d9d9d9·#9a9a9a / #363636</td><td>#ddd7c9·#8f887a / 暖白16%·#a89f8d</td><td>阶5（已减淡）</td></tr>
+  </table>
+
+  <div class="note">
+    要点：① 收藏橙/评分金/bili 粉在同为暖系的底上和谐共处（示例行可直接对比现状"冷灰底+暖色块"的相冲感）；② 页面底 #faf8f4 比现状更亮更"纸"，占位取米驼 #efeadd（已减淡半档） —— 明度差与现状接近但**色相差**把它拉开心；③ 暗档暖炭黑 #191714 适合"影音室"氛围，但白字对比略降，需以 text-2/3 同族暖灰重排。<br>
+    连带影响：同方案三，属"换整套灰阶"级工程（variables.css 浅暗全量 + 启动骨架 + 皮肤对照）；另需复核 hero 深底、播放器黑色语境是否与之相融。<br>
+    依据：Notion / 小红书 / 微信读书等"阅读亲和"产品均走暖白纸感；若产品调性偏"精品影音"，方案三的冷阶更合适；偏"生活化社区"，方案四更合适。
+  </div>
+</div>
+<script>
+  function setsys(v) {
+    document.documentElement.dataset.sys = v;
+    document.getElementById('bOld').classList.toggle('on', v === 'old');
+    document.getElementById('bNew').classList.toggle('on', v === 'new');
+    drawScale();
+  }
+  function ttheme() {
+    const h = document.documentElement;
+    h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+    drawScale();
+  }
+  function drawScale() {
+    const s = getComputedStyle(document.documentElement);
+    const keys = [['--page','页面底'],['--surface','surface'],['--module','模块底'],['--wait','等待占位'],['--sk-a','扫光a'],['--sk-b','扫光b']];
+    document.getElementById('scale').innerHTML = keys.map(k =>
+      `<i style="background:var(${k[0]})">${k[1]}<br>${s.getPropertyValue(k[0]).trim()}</i>`).join('');
+  }
+  drawScale();
+</script>
+</body>
+</html>

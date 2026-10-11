@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo · 背景色对比度方案 B：冷调蓝灰占位（2026-10-11）</title>
+<style>
+  /* ═══ 方案 B「冷调蓝灰偏移」═══
+     思路：页面底维持中性灰 #f5f5f5 / #141414 不动，但把骨架/占位色族整体带上
+     低饱和蓝相（hue≈215°，sat 6~14%）。人眼对「色相差」远比「同色相 ΔL≈10」敏感，
+     明度差只需中等即可一眼分出「这是占位块、那是页面背景」。
+     参照：Facebook 页面底 #f0f2f5 + 占位蓝灰 #e4e6eb→#d8dde6；Bilibili 亮色占位
+     #f0f5f6（青相）；Tailwind slate 族（#e2e8f0/#cbd5e1）——社交/视频站主流做法。 */
+
+  :root {
+    --bg: #f5f5f5; --text: #111; --text-2: #666; --text-3: #8b8b8b;
+    --chrome: #fff; --border: #d9d9d9;
+  }
+  [data-theme="dark"] {
+    --bg: #141414; --text: #fff; --text-2: #a0a0a0; --text-3: #8c8c8c;
+    --chrome: #1f1f1f; --border: #363636;
+  }
+
+  /* OLD = 现状 */
+  .panel-old {
+    --placeholder: #e9e9e9; --sh-a: #ececec; --sh-b: #dcdcdc;
+    --fail-border: #d9d9d9; --fail-fg: #9a9a9a;
+  }
+  [data-theme="dark"] .panel-old {
+    --placeholder: #262626; --sh-a: #262626; --sh-b: #333333;
+    --fail-border: #363636; --fail-fg: #7a7a7a;
+  }
+  /* NEW = 方案 B：冷调蓝灰 */
+  .panel-new {
+    --placeholder: #d9dfe9; --sh-a: #e2e7f0; --sh-b: #c8d1e0;
+    --fail-border: #a9b5c7; --fail-fg: #7e8ba0;
+  }
+  [data-theme="dark"] .panel-new {
+    --placeholder: #22272f; --sh-a: #262b35; --sh-b: #363e4d;
+    --fail-border: #46536a; --fail-fg: #8b93a2;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.6;
+    transition: background .2s, color .2s;
+  }
+  header {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 18px 28px; border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 17px; margin: 0; }
+  header .sub { color: var(--text-2); font-size: 12px; }
+  .theme-btn {
+    margin-left: auto; padding: 6px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--chrome); color: var(--text); font: inherit;
+  }
+  main { padding: 24px 28px 64px; max-width: 1280px; margin: 0 auto; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (width <= 900px) { .cols { grid-template-columns: 1fr; } }
+  .panel { border: 1px solid var(--border); border-radius: 12px; padding: 18px; background: var(--bg); }
+  .panel > h2 { margin: 0 0 4px; font-size: 15px; }
+  .panel > .desc { font-size: 12px; color: var(--text-2); margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (width <= 1100px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .card { min-width: 0; }
+  .poster { position: relative; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden; background: var(--placeholder); }
+  .lbl { font-size: 11px; color: var(--text-3); margin-top: 6px; }
+  .titlebar { height: 10px; border-radius: 4px; margin-top: 8px; background: var(--placeholder); }
+
+  .state-load .poster {
+    background: linear-gradient(90deg, var(--sh-a) 25%, var(--sh-b) 50%, var(--sh-a) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite;
+  }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  .state-fail .poster {
+    background: linear-gradient(180deg, var(--sh-a), var(--sh-b));
+    box-shadow: inset 0 0 0 1px var(--fail-border);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: var(--fail-fg);
+  }
+  .state-fail .poster svg { width: 30px; height: 30px; }
+  .state-fail .poster .brand { font-size: 11px; letter-spacing: .18em; font-weight: 600; }
+
+  .state-ok .poster { background: linear-gradient(160deg, #3b4b6e, #1d2536 60%, #12161f); position: relative; }
+  [data-theme="light"] .state-ok .poster { background: linear-gradient(160deg, #6b7fa8, #384a6b 60%, #222c3f); }
+  .state-ok .poster::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+    transform: translateX(-150%) skewX(-20deg); opacity: 0;
+  }
+  .state-ok:hover .poster::after { animation: glow 0.7s forwards; }
+  @keyframes glow { to { transform: translateX(250%) skewX(-20deg); opacity: 1; } }
+
+  table { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 22px; }
+  th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; }
+  th { background: var(--chrome); }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; border: 1px solid rgba(128,128,128,.4); }
+  .note { font-size: 12px; color: var(--text-2); margin-top: 14px; padding: 12px 14px; border: 1px dashed var(--border); border-radius: 8px; }
+  .ratio-ok { color: #2e7d32; font-weight: 600; }
+  .ratio-bad { color: #c62828; font-weight: 600; }
+  [data-theme="dark"] .ratio-ok { color: #7cc47f; }
+  [data-theme="dark"] .ratio-bad { color: #ff8a80; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>方案 B · 冷调蓝灰占位（色相差异化）</h1>
+    <div class="sub">页面底不动；骨架/占位/失败色族整体带低饱和蓝相。明度差维持中等，靠 hue 一眼区分「占位 vs 背景」。保留现有 a/b 两灰扫光机制，改动仅三行 token。</div>
+  </div>
+  <button class="theme-btn" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">切换亮/暗主题</button>
+</header>
+<main>
+  <div class="cols">
+    <section class="panel panel-old">
+      <h2>OLD · 现状</h2>
+      <div class="desc">全 neutral 灰：#e9e9e9 / #ececec↔#dcdcdc 与 #f5f5f5 同色相，ΔL 太小 → 三态糊成一片</div>
+      <div class="grid">
+        <div class="card state-load"><div class="poster"></div><div class="titlebar"></div><div class="lbl">① 扫光加载中</div></div>
+        <div class="card state-wait"><div class="poster"></div><div class="titlebar"></div><div class="lbl">② 等待/缓存占位</div></div>
+        <div class="card state-fail"><div class="poster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m7 3 5 4 5-4"/></svg><span class="brand">kinoTV</span></div><div class="titlebar"></div><div class="lbl">③ 加载失败</div></div>
+        <div class="card state-ok"><div class="poster"></div><div class="titlebar"></div><div class="lbl">参照：已加载</div></div>
+      </div>
+    </section>
+    <section class="panel panel-new">
+      <h2>NEW · 方案 B</h2>
+      <div class="desc">浅色：占位 #d9dfe9 / 扫光 #e2e7f0↔#c8d1e0（蓝相 8~11%）；暗色：#22272f / #262b35↔#363e4d</div>
+      <div class="grid">
+        <div class="card state-load"><div class="poster"></div><div class="titlebar"></div><div class="lbl">① 扫光加载中</div></div>
+        <div class="card state-wait"><div class="poster"></div><div class="titlebar"></div><div class="lbl">② 等待/缓存占位</div></div>
+        <div class="card state-fail"><div class="poster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m7 3 5 4 5-4"/></svg><span class="brand">kinoTV</span></div><div class="titlebar"></div><div class="lbl">③ 加载失败（冷描边）</div></div>
+        <div class="card state-ok"><div class="poster"></div><div class="titlebar"></div><div class="lbl">参照：已加载</div></div>
+      </div>
+    </section>
+  </div>
+
+  <table>
+    <tr><th>token</th><th>现状（浅 / 暗）</th><th>方案 B（浅 / 暗）</th><th>与页面底的关系 旧 → 新</th></tr>
+    <tr><td>--color-placeholder</td>
+      <td><span class="sw" style="background:#e9e9e9"></span>#e9e9e9 / <span class="sw" style="background:#262626"></span>#262626</td>
+      <td><span class="sw" style="background:#d9dfe9"></span>#d9dfe9 / <span class="sw" style="background:#22272f"></span>#22272f</td>
+      <td>同色相 ΔL≈12（不可辨）→ <span class="ratio-ok">ΔL≈26 + 蓝相 9%</span></td></tr>
+    <tr><td>shimmer-a ↔ b（扫光两端）</td>
+      <td><span class="sw" style="background:#ececec"></span>#ececec ↔ <span class="sw" style="background:#dcdcdc"></span>#dcdcdc</td>
+      <td><span class="sw" style="background:#e2e7f0"></span>#e2e7f0 ↔ <span class="sw" style="background:#c8d1e0"></span>#c8d1e0</td>
+      <td>内部对比 1.16 → <span class="ratio-ok">1.30</span>，扫光带明显加宽</td></tr>
+    <tr><td>失败描边</td>
+      <td><span class="sw" style="background:#d9d9d9"></span>#d9d9d9 / <span class="sw" style="background:#363636"></span>#363636</td>
+      <td><span class="sw" style="background:#a9b5c7"></span>#a9b5c7 / <span class="sw" style="background:#46536a"></span>#46536a</td>
+      <td>冷相描边，与加载态边界一眼区分</td></tr>
+  </table>
+
+  <div class="note">
+    依据：Facebook 亮色页面底 #f0f2f5、占位 #e4e6eb→#d8dde6（同款低饱和蓝灰）；Bilibili 占位 #f0f5f6；
+    Tailwind slate 族是社区公认的「骨架灰」标准答案——与 neutral 灰页面底靠 hue 解耦，不需要把明度拉得很脏。<br>
+    风险提示：蓝相与站内「收藏橙 #fa8c16 / 评分金」暖色并置时对比更跳，需要整屏预览确认观感；若嫌偏冷可把饱和度减半（demo 值 sat 9%→4.5% 即接近方案 A）。<br>
+    ⚠ 附带发现（各方案通用）：tag-bg / favorite-bg / page-btn-bg 浅色档 #f5f5f5 与页面底同值，建议一并提档。
+  </div>
+</main>
+</body>
+</html>

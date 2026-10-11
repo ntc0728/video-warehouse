@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light" data-sys="new">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>背景体系 方案二 · 深底白卡分层（2026-10-11 第二轮）</title>
+<style>
+  /* ═══ 方案二「深底白卡分层」═══
+     核心逻辑：层级靠**明度反转**——页面底加深（浅档加灰、暗档加蓝黑），内容模块
+     回归白色/亮面卡片，骨架占位活在卡片上：灰压白、层级天然立体。现状"去卡片化"
+     让一切平铺在灰页上，是本问题的一半根源；本方案是「轻量回归卡片」。
+     ⚠️ 与 2026-09-28 去卡片化决策部分冲突，选它 = 拍板回退该方向的一部分。
+     参照：Ant Design Pro layout 页底 #f0f2f5 + 白卡；爱奇艺/腾讯视频网页浅色版
+     均为"深一点的灰底 + 纯白内容卡"；Material 规范 elevation 语言。 */
+
+  /* ── OLD 现状体系 ── */
+  html[data-theme="light"] {
+    --page:#f5f5f5; --surface:#fff; --module:#f5f5f5;
+    --sk-a:#ececec; --sk-b:#dcdcdc; --wait:#e9e9e9;
+    --fail-bd:#d9d9d9; --fail-fg:#9a9a9a;
+    --text:#111; --text-2:#666; --text-3:#8b8b8b; --line:#d9d9d9; --chip-tx:#333;
+  }
+  html[data-theme="dark"] {
+    --page:#141414; --surface:#1f1f1f; --module:#262626;
+    --sk-a:#262626; --sk-b:#333333; --wait:#262626;
+    --fail-bd:#363636; --fail-fg:#7a7a7a;
+    --text:#fff; --text-2:#a0a0a0; --text-3:#8c8c8c; --line:#363636; --chip-tx:#ddd;
+  }
+  /* ── NEW 方案二 ── */
+  html[data-sys="new"][data-theme="light"] {
+    --page:#eceef2; --surface:#ffffff; --module:#ebeef4;
+    --sk-a:#f4f5f9; --sk-b:#e9ebf2; --wait:#f1f3f8;
+    --fail-bd:#d8dce6; --fail-fg:#878d9a;
+    --text:#111; --text-2:#5c626d; --text-3:#8a8f99; --line:#dfe2e9; --chip-tx:#333;
+  }
+  html[data-sys="new"][data-theme="dark"] {
+    --page:#131418; --surface:#1f2128; --module:#2a2d36;
+    --sk-a:#2c2f3a; --sk-b:#414554; --wait:#292c35;
+    --fail-bd:rgba(255,255,255,.16); --fail-fg:#99a0ae;
+    --text:#fff; --text-2:#a3a8b3; --text-3:#8c919c; --line:#3d414d; --chip-tx:#e4e6ea;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page); color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.6; transition: background .25s, color .25s;
+  }
+  .ctrl {
+    position: sticky; top: 0; z-index: 9; display: flex; gap: 10px; align-items: center;
+    padding: 10px 22px; background: var(--page); border-bottom: 1px solid var(--line);
+  }
+  .ctrl b { font-size: 14px; margin-right: auto; }
+  .ctrl button {
+    padding: 5px 14px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 12.5px;
+    border: 1px solid var(--line); background: var(--module); color: var(--text);
+  }
+  .ctrl button.on { background: var(--text); color: var(--page); border-color: var(--text); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 18px 22px 60px; }
+  .hd { display: flex; gap: 12px; align-items: center; padding: 6px 0 16px; }
+  .hd .logo { font-weight: 800; letter-spacing: .04em; }
+  .hd .nav i { display: inline-block; margin-right: 8px; padding: 4px 14px; border-radius: 999px; background: var(--surface); color: var(--chip-tx); font-size: 12.5px; font-style: normal; box-shadow: var(--cardsh); }
+  .hd .search { margin-left: auto; width: 190px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+  .hero { aspect-ratio: 21/9; border-radius: 14px; background: linear-gradient(120deg, #232b3d, #0d1119 70%); margin-bottom: 18px; }
+  .sec { display: flex; align-items: center; gap: 10px; margin: 20px 0 10px; }
+  .sec h3 { margin: 0; font-size: 15px; }
+  .sec .more { color: var(--text-3); font-size: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px; }
+  @media (width <= 1000px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  .card { min-width: 0; }
+  /* 方案二关键：卡片回归——封面+标题活在 surface 卡壳里 */
+  html[data-sys="new"] .card {
+    background: var(--surface); border-radius: 10px; padding: 7px;
+    box-shadow: var(--cardsh); border: 1px solid var(--line);
+  }
+  html[data-sys="new"] .t { background: var(--module); margin: 7px 2px 0; }
+  html[data-sys="new"] .lbl { padding: 0 2px; }
+  .p { position: relative; aspect-ratio: 2/3; border-radius: 8px; overflow: hidden; background: var(--wait); }
+  .t { height: 9px; border-radius: 4px; margin-top: 7px; background: var(--module); }
+  .t.s { width: 55%; }
+  .lbl { font-size: 10.5px; color: var(--text-3); margin-top: 5px; }
+  .load .p {
+    background: linear-gradient(90deg, var(--sk-a) 25%, var(--sk-b) 50%, var(--sk-a) 75%);
+    background-size: 200% 100%; animation: shim 3s infinite;
+  }
+  @keyframes shim { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+  .fail .p {
+    background: linear-gradient(180deg, var(--sk-a), var(--wait));
+    box-shadow: inset 0 0 0 1px var(--fail-bd);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--fail-fg);
+  }
+  .fail .p svg { width: 26px; height: 26px; }
+  .fail .p span { font-size: 10px; letter-spacing: .16em; font-weight: 600; }
+  .ok .p { background: linear-gradient(160deg, #5a6f96, #2c3a55 55%, #1a2233); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 6px; }
+  .chip { padding: 4px 14px; border-radius: 999px; background: var(--module); color: var(--chip-tx); font-size: 12.5px; }
+  html[data-sys="new"] .chip { background: var(--surface); border: 1px solid var(--line); }
+  .chip.act { background: var(--text) !important; color: var(--page); border-color: var(--text); }
+  .pager { display: flex; gap: 6px; margin-top: 12px; }
+  .pg { width: 30px; height: 30px; border-radius: 8px; background: var(--module); color: var(--chip-tx); display: flex; align-items: center; justify-content: center; font-size: 12.5px; }
+  html[data-sys="new"] .pg { background: var(--surface); border: 1px solid var(--line); }
+  .pg.cur { outline: 2px solid var(--text); }
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
+  @media (width <= 900px) { .cmp { grid-template-columns: 1fr; } }
+  .box { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--surface); }
+  .box h4 { margin: 0 0 8px; font-size: 13px; }
+  .box .sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; border: 1px solid rgba(128,128,128,.35); vertical-align: -1px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 22px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; }
+  th { background: var(--module); }
+  .note { font-size: 12px; color: var(--text-2); margin-top: 16px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="ctrl">
+  <b>方案二 · 深底白卡分层：页面底加深一档，内容回归轻卡片（⚠ 部分回退"去卡片化"）</b>
+  <button id="bOld" onclick="setsys('old')">现状体系</button>
+  <button id="bNew" class="on" onclick="setsys('new')">方案体系</button>
+  <button id="bTh" onclick="ttheme()">切换亮/暗</button>
+</div>
+<div class="wrap">
+  <div class="hd"><span class="logo">KinoTV</span><span class="nav"><i>首页</i><i>直播</i><i>榜单</i><i>收藏</i></span><span class="search"></span></div>
+  <div class="hero"></div>
+  <div class="sec"><h3>正在热播</h3><span class="more">全部 ›</span></div>
+  <div class="grid">
+    <div class="card load"><div class="p"></div><div class="t"></div><div class="lbl">扫光加载中</div></div>
+    <div class="card load"><div class="p"></div><div class="t"></div><div class="lbl">扫光加载中</div></div>
+    <div class="card wait"><div class="p"></div><div class="t"></div><div class="lbl">等待/缓存占位</div></div>
+    <div class="card fail"><div class="p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m7 3 5 4 5-4"/></svg><span>kinoTV</span></div><div class="t"></div><div class="lbl">加载失败</div></div>
+    <div class="card ok"><div class="p"></div><div class="t"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t s"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t s"></div><div class="lbl">已加载</div></div>
+  </div>
+  <div class="chips"><span class="chip act">全部</span><span class="chip">电影</span><span class="chip">剧集</span><span class="chip">综艺</span><span class="chip">动漫</span><span class="chip">纪录片</span></div>
+  <div class="pager"><span class="pg cur">1</span><span class="pg">2</span><span class="pg">3</span><span class="pg">4</span><span class="pg">›</span></div>
+
+  <div class="cmp">
+    <div class="box"><h4>现状：去卡后一切平铺在 #f5f5f5 灰页上</h4>
+      <div style="font-size:12px;color:var(--text-2)">页面底、模块底、占位、扫光全在同一灰带上挤 ΔL，层级感消失 → "灰糊"。</div>
+    </div>
+    <div class="box"><h4>方案二：底深 + 卡亮 + 骨架灰活在卡上</h4>
+      <div><span class="sw" style="background:#eceef2"></span>页面 #eceef2　<span class="sw" style="background:#fff;border-color:#bbb"></span>卡片 #fff　<span class="sw" style="background:#f4f5f9"></span>扫光 #f4f5f9↔<span class="sw" style="background:#e9ebf2"></span>#e9ebf2</div>
+      <div style="margin-top:6px;font-size:12px;color:var(--text-2)">骨架/占位从"压页面底"变回"压白卡底"，白 vs 灰对比 ≥1.4:1 且语义清晰：卡片=内容容器。</div>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>层级 token</th><th>现状（浅/暗）</th><th>方案二（浅/暗）</th><th>说明</th></tr>
+    <tr><td>页面底 --color-background</td><td>#f5f5f5 / #141414</td><td>#eceef2 / #131418</td><td>浅档加灰带冷相；暗档微加深（提亮过原稿，不过沉）</td></tr>
+    <tr><td>内容面 --color-surface（卡壳回归）</td><td>#fff / #1f1f1f（去卡后几乎不用）</td><td>#fff / #1f2128 + 轻描边微阴影</td><td><b>⚠ 拍板点：恢复卡片层</b>，模块（tag/分页/chip）也改白壳描边</td></tr>
+    <tr><td>模块底 tag/收藏/分页</td><td>#f5f5f5(=页底) / #262626</td><td>白卡+描边（跟 surface）</td><td>不再用"和页底同值的灰"</td></tr>
+    <tr><td>扫光 --shimmer-a↔b</td><td>#ececec↔#dcdcdc / #262626↔#333</td><td>#f4f5f9↔#e9ebf2 / #2c2f3a↔#414554</td><td>活在白卡上：浅档扫光已提亮半档（白卡里的淡灰带），暗档加亮保证扫光可见</td></tr>
+    <tr><td>等待占位 --color-placeholder</td><td>#e9e9e9 / #262626</td><td>#f1f3f8 / #292c35</td><td>微冷相，在白卡内轻柔可辨</td></tr>
+    <tr><td>失败态</td><td>灰底+近无形描边</td><td>#…+描边 #d8dce6 / 白16%</td><td>静止+描边区分加载态</td></tr>
+  </table>
+
+  <div class="note">
+    连带影响：① 全站需新增"卡片壳"（VideoCard/行卡/模块容器加 padding+surface 底+描边/阴影），是四个方案里<b>工程改动面最大</b>的一个，且与 2026-09-28 去卡片化决策相反，需明确拍板；② 首页 hero 卡、IPTV 卡、榜单等既有"卡内布局"代码会复活其意义；③ 页面底加深后，sticky-header 玻璃底/遮罩浓度需重校。<br>
+    依据：Ant Design Pro（#f0f2f5 页底+白卡）是后台与内容站最成熟的层级模板；爱奇艺/腾讯/优酷网页浅色版全部采用"灰底白卡"；Material elevation 规范以表面亮度表达层级。若舍不得去卡化的极简感，此方案慎选。
+  </div>
+</div>
+<script>
+  document.documentElement.style.setProperty('--cardsh', '0 1px 4px rgba(0,0,0,.06)');
+  if (location.search.includes('dark')) document.documentElement.dataset.theme = 'dark';
+  function setsys(v) {
+    document.documentElement.dataset.sys = v;
+    document.getElementById('bOld').classList.toggle('on', v === 'old');
+    document.getElementById('bNew').classList.toggle('on', v === 'new');
+  }
+  function ttheme() {
+    const h = document.documentElement;
+    h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+  }
+</script>
+</body>
+</html>

@@ -177,3 +177,9 @@ ehthumbs.db
 
 # 一次性分析/探针脚本与中间产物（临时，不入库）
 .tmp-*
+
+# changelog 合并归档区：仅供 changelog-collect 本地幂等判据，历史事实已入当日 YYYY-MM-DD.md，不入库（2026-10-11 治理）
+changelogs/_pending/_archived/
+
+# 一次性诊断截图产物（2026-10-11 清理）
+px-fixed-*.png

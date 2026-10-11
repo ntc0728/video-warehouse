@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>背景体系整改 · 第二轮方案总览（2026-10-11）</title>
+<style>
+  :root { --bg:#f5f5f5; --chrome:#fff; --text:#111; --text-2:#666; --text-3:#8b8b8b; --border:#d9d9d9; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif; font-size:14px; line-height:1.7; }
+  main { max-width:1120px; margin:0 auto; padding:32px 28px 64px; }
+  h1 { font-size:20px; margin:0 0 6px; }
+  .sub { color:var(--text-2); font-size:13px; margin-bottom:22px; }
+  .prob { background:var(--chrome); border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin-bottom:24px; }
+  .prob h2 { margin:0 0 10px; font-size:15px; }
+  .layers { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  @media (width<=860px){ .layers{grid-template-columns:1fr 1fr;} }
+  .layer { border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:12px; }
+  .layer b { display:block; font-size:12.5px; margin-bottom:6px; }
+  .chip2 { display:inline-block; width:100%; padding:6px 8px; border-radius:6px; margin-top:4px; font-size:10.5px; color:#333; }
+  .cards { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+  @media (width<=860px){ .cards{grid-template-columns:1fr;} }
+  .card { display:block; text-decoration:none; color:inherit; background:var(--chrome); border:1px solid var(--border); border-radius:12px; padding:18px; transition:box-shadow .15s, transform .15s; }
+  .card:hover { box-shadow:0 6px 20px rgba(0,0,0,.1); transform:translateY(-2px); }
+  .card h3 { margin:0 0 4px; font-size:15.5px; }
+  .card .tag { font-size:12px; color:var(--text-3); margin-bottom:10px; }
+  .strip { display:flex; height:58px; border-radius:8px; overflow:hidden; margin-bottom:10px; border:1px solid rgba(0,0,0,.12); }
+  .strip i { flex:1; display:flex; align-items:flex-end; justify-content:center; font-size:9.5px; font-style:normal; padding-bottom:3px; color:inherit; opacity:.85; }
+  .card p { font-size:12.5px; color:var(--text-2); margin:0; }
+  .risk { font-size:11.5px; color:#c62828; margin-top:8px; }
+  footer { margin-top:26px; font-size:12px; color:var(--text-3); }
+  a.old { color:#1677ff; }
+</style>
+</head>
+<body>
+<main>
+  <h1>背景体系整改 · 第二轮（范围=整套页面背景体系，含页面底）</h1>
+  <div class="sub">第一轮（只动骨架/占位 token 的 A/B/C 三案）已被否——根因是<b>页面底自身</b>参与造成的层次坍塌，本轮把四层一起重设计。每个方案页均可「现状体系 ↔ 方案体系」一键切换 + 亮/暗主题，整页 mock 直接比体感。灰度已按反馈统一减淡/提亮（页底不过沉、骨架灰保留可辨但不深）。</div>
+
+  <section class="prob">
+    <h2>问题重新定义：四层背景语义坍塌</h2>
+    <div class="layers">
+      <div class="layer"><b>① 页面底</b>现状浅 #f5f5f5 / 暗 #141414
+        <span class="chip2" style="background:#f5f5f5;border:1px dashed #bbb">#f5f5f5</span>
+        <span class="chip2" style="background:#141414;color:#ccc">#141414</span></div>
+      <div class="layer"><b>② 模块底</b>tag/收藏/分页现状 = #f5f5f5，与页面底<b>完全同值</b>
+        <span class="chip2" style="background:#f5f5f5;border:1px dashed #bbb">同值 → 隐形</span></div>
+      <div class="layer"><b>③ 骨架/扫光/占位</b>#ececec↔#dcdcdc / #e9e9e9，距页面底 ΔL≈10~30 同色相
+        <span class="chip2" style="background:#ececec">扫光</span>
+        <span class="chip2" style="background:#dcdcdc">扫光止</span></div>
+      <div class="layer"><b>④ 失败占位</b>与③同色族，仅靠描边区分
+        <span class="chip2" style="background:linear-gradient(180deg,#ececec,#dcdcdc);border:1px solid #d9d9d9">失败=灰+边</span></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-2);margin-top:10px">→ 结论：不解决「页面底本身是灰的」这个前提，只调③④永远挤在同一条灰带里。四个新方案分别给出四种不同的"体系级"答案。</div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="demo-bg-system-1-paper-white-2026-10-11.html">
+      <h3>方案一 · 纸白分层</h3>
+      <div class="tag">页面底升纯白，"灰"专属占位与模块语义</div>
+      <div class="strip"><i style="background:#fff;border-right:1px solid #ddd">页 #fff</i><i style="background:#f5f6f8">模块</i><i style="background:#f3f4f7">扫光a</i><i style="background:#e8ebf1">扫光b</i><i style="background:#f0f2f6">占位</i></div>
+      <p>YouTube 浅色版同款路数：白页上灰即"占位/模块"，跨语义解耦，不再同灰带内卷 ΔL。暗档页底 #121215 微降一档让浮层跳出（已按反馈提亮，不沉）。改动集中在颜色 token。</p>
+      <div class="risk">代价：浅色页失去现状"灰底缓冲"，白页+白 surface 需靠描边/阴影分界。</div>
+    </a>
+    <a class="card" href="demo-bg-system-2-lightcard-2026-10-11.html">
+      <h3>方案二 · 深底白卡分层</h3>
+      <div class="tag">页面底加深一档，内容回归白卡（明度反转）</div>
+      <div class="strip"><i style="background:#eceef2">页 #eceef2</i><i style="background:#fff;border-right:1px solid #ddd">卡 #fff</i><i style="background:#f4f5f9">扫光a</i><i style="background:#e9ebf2">扫光b</i><i style="background:#f1f3f8">占位</i></div>
+      <p>Ant Design Pro / 爱奇艺 / 腾讯视频经典"灰底白卡"：骨架活在白卡上，底深内容亮，层级最传统最稳。暗档同走"页更深、面更亮"。</p>
+      <div class="risk">代价：⚠ 部分回退 2026-09-28「去卡片化」决策，工程改动面四案最大，需明确拍板。</div>
+    </a>
+    <a class="card" href="demo-bg-system-3-cctint-2026-10-11.html">
+      <h3>方案三 · 影院色阶 Tint</h3>
+      <div class="tag">四层全部放进一条蓝紫灰阶（hue≈225°），层间差 2 阶</div>
+      <div class="strip"><i style="background:#f2f3f8">页</i><i style="background:#fff;border-right:1px solid #ddd">卡</i><i style="background:#eceef5">模块</i><i style="background:#e6e9f3">占位</i><i style="background:#dfe3f0">扫光b</i></div>
+      <p>Linear/Vercel/Netflix 式 tinted neutral：保留"灰底"习惯但整套换掉死中性，文字/边框同族重排（demo 内含实时色阶条）。品牌暖色在冷灰底上更跳。</p>
+      <div class="risk">代价：全站灰阶大重排（浅+暗全量 token），属"换一套主题色阶"级工程。</div>
+    </a>
+    <a class="card" href="demo-bg-system-4-warmpaper-2026-10-11.html">
+      <h3>方案四 · 暖白纸质</h3>
+      <div class="tag">与方案三同法反向取色：整套暖米灰阶（hue≈40°）</div>
+      <div class="strip"><i style="background:#faf8f4">页</i><i style="background:#fff;border-right:1px solid #ddd">卡</i><i style="background:#f4f2ec">模块</i><i style="background:#efeadd">占位</i><i style="background:#e8e3d8">扫光b</i></div>
+      <p>Notion/小红书式纸感亲和：与站内收藏橙/评分金/bili 粉同暖调和谐；暗档暖炭黑营造"影音室"。demo 内含语义色同调对比行。</p>
+      <div class="risk">代价：同方案三量级；冷调品牌感（KinoTV 现偏冷灰）会转 warm，需整站预览定调性。</div>
+    </a>
+  </div>
+
+  <footer>
+    第一轮存档 demo（仅骨架/占位 token 微调的 A/B/C 三案，已被否）：<a class="old" href="demo-bg-contrast-index-2026-10-11.html">demo-bg-contrast-index</a>。
+    本轮四案共同点：① 骨架/扫光/失败四层与页面底至少跨 2 个色阶或 1 个语义维度；② 失败态 = 静止底 + 明确描边；③ 均含暗档配套；④ 落地时启动骨架（index.html）需同步交接色。
+  </footer>
+</main>
+</body>
+</html>

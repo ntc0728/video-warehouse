@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light" data-sys="new">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>背景体系 方案三 · 影院色阶 Tint（2026-10-11 第二轮）</title>
+<style>
+  /* ═══ 方案三「影院色阶 Tint」═══
+     核心逻辑：现状"灰糊"的另一半原因是**整套灰全是死中性**（R=G=B），显得脏且廉价。
+     本方案把四层（页面底/模块底/骨架占位/失败）全部放进同一条**极低饱和蓝紫灰阶**上
+     （hue≈225°，sat 4~10%），层与层靠色阶步进区分，整站获得统一的"夜色影院"倾向性。
+     页面底维持"灰"语义但比现状深一档、带色相 → 占位取更深的两个台阶，不再同色相邻挤。
+     参照：Linear / Raycast / Vercel（深色产品全站 tinted neutral）；
+     Netflix 深色体系（#000 页底 → #141414 面 → #2a2a2f 级占位，全带冷相）。 */
+
+  /* ── OLD 现状体系 ── */
+  html[data-theme="light"] {
+    --page:#f5f5f5; --surface:#fff; --module:#f5f5f5;
+    --sk-a:#ececec; --sk-b:#dcdcdc; --wait:#e9e9e9;
+    --fail-bd:#d9d9d9; --fail-fg:#9a9a9a;
+    --text:#111; --text-2:#666; --text-3:#8b8b8b; --line:#d9d9d9; --chip-tx:#333;
+  }
+  html[data-theme="dark"] {
+    --page:#141414; --surface:#1f1f1f; --module:#262626;
+    --sk-a:#262626; --sk-b:#333333; --wait:#262626;
+    --fail-bd:#363636; --fail-fg:#7a7a7a;
+    --text:#fff; --text-2:#a0a0a0; --text-3:#8c8c8c; --line:#363636; --chip-tx:#ddd;
+  }
+  /* ── NEW 方案三：蓝紫灰阶（浅档 / 暗档）── */
+  html[data-sys="new"][data-theme="light"] {
+    --page:#f2f3f8; --surface:#ffffff; --module:#eceef5;
+    --sk-a:#eaecf4; --sk-b:#dfe3f0; --wait:#e6e9f3;
+    --fail-bd:#ced3e2; --fail-fg:#7b8196;
+    --text:#171a22; --text-2:#5b6070; --text-3:#8b8fa0; --line:#dcdfeb; --chip-tx:#333a4a;
+  }
+  html[data-sys="new"][data-theme="dark"] {
+    --page:#121319; --surface:#1d1f28; --module:#282b37;
+    --sk-a:#2c2f3c; --sk-b:#3e4254; --wait:#2f3240;
+    --fail-bd:rgba(255,255,255,.17); --fail-fg:#9ba0b2;
+    --text:#f2f3f7; --text-2:#a7abc0; --text-3:#8d92a6; --line:#383b4b; --chip-tx:#dfe2ec;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page); color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.6; transition: background .25s, color .25s;
+  }
+  .ctrl {
+    position: sticky; top: 0; z-index: 9; display: flex; gap: 10px; align-items: center;
+    padding: 10px 22px; background: var(--page); border-bottom: 1px solid var(--line);
+  }
+  .ctrl b { font-size: 14px; margin-right: auto; }
+  .ctrl button {
+    padding: 5px 14px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 12.5px;
+    border: 1px solid var(--line); background: var(--module); color: var(--text);
+  }
+  .ctrl button.on { background: var(--text); color: var(--page); border-color: var(--text); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 18px 22px 60px; }
+  .hd { display: flex; gap: 12px; align-items: center; padding: 6px 0 16px; }
+  .hd .logo { font-weight: 800; letter-spacing: .04em; }
+  .hd .nav i { display: inline-block; margin-right: 8px; padding: 4px 14px; border-radius: 999px; background: var(--module); color: var(--chip-tx); font-size: 12.5px; font-style: normal; }
+  .hd .search { margin-left: auto; width: 190px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+  .hero { aspect-ratio: 21/9; border-radius: 14px; background: linear-gradient(120deg, #252c42, #10131f 70%); margin-bottom: 18px; }
+  .sec { display: flex; align-items: center; gap: 10px; margin: 20px 0 10px; }
+  .sec h3 { margin: 0; font-size: 15px; }
+  .sec .more { color: var(--text-3); font-size: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px; }
+  @media (width <= 1000px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  .card { min-width: 0; }
+  /* 方案三：封面区给一层极淡 surface 衬底（媒体窗坐在色阶上） */
+  html[data-sys="new"] .p { box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
+  .p { position: relative; aspect-ratio: 2/3; border-radius: 8px; overflow: hidden; background: var(--wait); }
+  .t { height: 9px; border-radius: 4px; margin-top: 7px; background: var(--module); }
+  .t.s { width: 55%; }
+  .lbl { font-size: 10.5px; color: var(--text-3); margin-top: 5px; }
+  .load .p {
+    background: linear-gradient(90deg, var(--sk-a) 25%, var(--sk-b) 50%, var(--sk-a) 75%);
+    background-size: 200% 100%; animation: shim 3s infinite;
+  }
+  @keyframes shim { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+  .fail .p {
+    background: linear-gradient(180deg, var(--sk-a), var(--wait));
+    box-shadow: inset 0 0 0 1px var(--fail-bd);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--fail-fg);
+  }
+  .fail .p svg { width: 26px; height: 26px; }
+  .fail .p span { font-size: 10px; letter-spacing: .16em; font-weight: 600; }
+  .ok .p { background: linear-gradient(160deg, #5d719b, #2d3a58 55%, #1b2334); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 6px; }
+  .chip { padding: 4px 14px; border-radius: 999px; background: var(--module); color: var(--chip-tx); font-size: 12.5px; }
+  .chip.act { background: var(--text); color: var(--page); }
+  .pager { display: flex; gap: 6px; margin-top: 12px; }
+  .pg { width: 30px; height: 30px; border-radius: 8px; background: var(--module); color: var(--chip-tx); display: flex; align-items: center; justify-content: center; font-size: 12.5px; }
+  .pg.cur { outline: 2px solid var(--text); }
+  .scale { display: flex; border-radius: 10px; overflow: hidden; margin-top: 26px; border: 1px solid var(--line); }
+  .scale i { flex: 1; height: 64px; display: flex; align-items: flex-end; justify-content: center; font-size: 10px; font-style: normal; padding: 4px 0; color: var(--text-2); }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 22px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; }
+  th { background: var(--module); }
+  .note { font-size: 12px; color: var(--text-2); margin-top: 16px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="ctrl">
+  <b>方案三 · 影院色阶 Tint：四层放进同一条蓝紫灰阶，层间靠色阶步进拉开</b>
+  <button id="bOld" onclick="setsys('old')">现状体系</button>
+  <button id="bNew" class="on" onclick="setsys('new')">方案体系</button>
+  <button id="bTh" onclick="ttheme()">切换亮/暗</button>
+</div>
+<div class="wrap">
+  <div class="hd"><span class="logo">KinoTV</span><span class="nav"><i>首页</i><i>直播</i><i>榜单</i><i>收藏</i></span><span class="search"></span></div>
+  <div class="hero"></div>
+  <div class="sec"><h3>正在热播</h3><span class="more">全部 ›</span></div>
+  <div class="grid">
+    <div class="card load"><div class="p"></div><div class="t"></div><div class="lbl">扫光加载中</div></div>
+    <div class="card load"><div class="p"></div><div class="t"></div><div class="lbl">扫光加载中</div></div>
+    <div class="card wait"><div class="p"></div><div class="t"></div><div class="lbl">等待/缓存占位</div></div>
+    <div class="card fail"><div class="p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m7 3 5 4 5-4"/></svg><span>kinoTV</span></div><div class="t"></div><div class="lbl">加载失败</div></div>
+    <div class="card ok"><div class="p"></div><div class="t"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t s"></div><div class="lbl">已加载</div></div>
+    <div class="card ok"><div class="p"></div><div class="t s"></div><div class="lbl">已加载</div></div>
+  </div>
+  <div class="chips"><span class="chip act">全部</span><span class="chip">电影</span><span class="chip">剧集</span><span class="chip">综艺</span><span class="chip">动漫</span><span class="chip">纪录片</span></div>
+  <div class="pager"><span class="pg cur">1</span><span class="pg">2</span><span class="pg">3</span><span class="pg">4</span><span class="pg">›</span></div>
+
+  <div class="scale" id="scale"></div>
+
+  <table>
+    <tr><th>层级 token</th><th>现状（浅/暗，纯中性灰）</th><th>方案三（浅/暗，hue≈225° 色阶）</th><th>层级步位</th></tr>
+    <tr><td>页面底 --color-background</td><td>#f5f5f5 / #141414</td><td><span style="background:#f2f3f8;display:inline-block;width:11px;height:11px;border-radius:3px"></span> #f2f3f8 / <span style="background:#121319;display:inline-block;width:11px;height:11px;border-radius:3px"></span> #121319</td><td>阶0（蓝黑微深，已较原稿提亮一档）</td></tr>
+    <tr><td>内容面 surface</td><td>#fff / #1f1f1f</td><td>#ffffff / #1d1f28</td><td>阶1</td></tr>
+    <tr><td>模块底 tag/分页</td><td>#f5f5f5(=页底) / #262626</td><td>#eceef5 / #282b37</td><td>阶2</td></tr>
+    <tr><td>等待占位</td><td>#e9e9e9 / #262626</td><td>#e6e9f3 / #2f3240</td><td>阶3（灰度较原稿减淡半档）</td></tr>
+    <tr><td>扫光 a↔b</td><td>#ececec↔#dcdcdc / #262626↔#333</td><td>#eaecf4↔#dfe3f0 / #2c2f3c↔#3e4254</td><td>阶3~4（跨两级，扫光带仍宽）</td></tr>
+    <tr><td>失败描边/前景</td><td>#d9d9d9·#9a9a9a / #363636</td><td>#ced3e2·#7b8196 / 白17%·#9ba0b2</td><td>阶5（全套最深，已减淡）</td></tr>
+  </table>
+
+  <div class="note">
+    要点：① 骨架与页面底**同色相不同阶**（差 2 个台阶 ≈ ΔL 20~25），比"白页放灰骨架"（方案一）更保留现有暗调品牌感，比"死灰挤 ΔL"（现状）区分强得多；② 文字/边框全套一并入色阶（见 mock），避免彩色骨架配中性文字出现两套"灰"；③ 品牌色（bili 粉、收藏橙、评分金）不动，冷灰底反而让它们更跳。<br>
+    连带影响：页面底/surface/边框/文字族全量 token 都要重排（variables.css 浅暗两块 + index.html 启动骨架 + skins.css 皮肤对照检查），是"改一套新灰阶体系"级别的工程；暗档页底 #121319 仅微深于现状且非纯黑，OLED 滚动拖影风险低。<br>
+    依据：Linear/Vercel/Raycast 等以 tinted neutral 著称的产品全线 hue 220~235°；Netflix 深色页 #141414→浮层 #2a2a2f 级亦带冷相。中性灰显"脏"、微彩灰显"贵"是行业共识。
+  </div>
+</div>
+<script>
+  function setsys(v) {
+    document.documentElement.dataset.sys = v;
+    document.getElementById('bOld').classList.toggle('on', v === 'old');
+    document.getElementById('bNew').classList.toggle('on', v === 'new');
+    drawScale();
+  }
+  function ttheme() {
+    const h = document.documentElement;
+    h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+    drawScale();
+  }
+  function drawScale() {
+    const s = getComputedStyle(document.documentElement);
+    const keys = [['--page','页面底'],['--surface','surface'],['--module','模块底'],['--wait','等待占位'],['--sk-a','扫光a'],['--sk-b','扫光b']];
+    document.getElementById('scale').innerHTML = keys.map(k =>
+      `<i style="background:var(${k[0]})">${k[1]}<br>${s.getPropertyValue(k[0]).trim()}</i>`).join('');
+  }
+  drawScale();
+</script>
+</body>
+</html>

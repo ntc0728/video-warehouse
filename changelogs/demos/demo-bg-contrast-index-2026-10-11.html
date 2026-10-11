@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo · 背景色对比度整改方案总览（2026-10-11）</title>
+<style>
+  :root {
+    --bg: #f5f5f5; --chrome: #fff; --text: #111; --text-2: #666; --text-3: #8b8b8b; --border: #d9d9d9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.7;
+  }
+  main { max-width: 1080px; margin: 0 auto; padding: 32px 28px 64px; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  .sub { color: var(--text-2); font-size: 13px; margin-bottom: 24px; }
+  .prob { background: var(--chrome); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 26px; }
+  .prob h2 { margin: 0 0 8px; font-size: 15px; }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+  .sw { border-radius: 8px; padding: 10px 14px; font-size: 11px; border: 1px solid rgba(0,0,0,.12); }
+  .ratio { color: #c62828; font-weight: 700; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (width <= 860px) { .cards { grid-template-columns: 1fr; } }
+  .card {
+    display: block; text-decoration: none; color: inherit; background: var(--chrome);
+    border: 1px solid var(--border); border-radius: 12px; padding: 18px; transition: box-shadow .15s, transform .15s;
+  }
+  .card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.1); transform: translateY(-2px); }
+  .card h3 { margin: 0 0 6px; font-size: 15px; }
+  .card .tagline { font-size: 12px; color: var(--text-3); margin-bottom: 10px; }
+  .strip { display: flex; height: 46px; border-radius: 8px; overflow: hidden; margin-bottom: 10px; border: 1px solid rgba(0,0,0,.1); }
+  .strip i { flex: 1; }
+  .card p { font-size: 12.5px; color: var(--text-2); margin: 0; }
+  .kv { font-size: 11.5px; color: var(--text-3); margin-top: 8px; }
+  footer { margin-top: 28px; font-size: 12px; color: var(--text-3); }
+</style>
+</head>
+<body>
+<main>
+  <h1>背景色对比度整改 · 方案总览</h1>
+  <div class="sub">问题：页面底与卡片扫光/等待占位/失败占位几乎同色，状态糊成一片。以下三个方案 demo 各自内含 OLD↔NEW 并排对比 + 亮/暗主题切换。</div>
+
+  <section class="prob">
+    <h2>问题量化（现状，均为同色相中性灰、只差一丝明度）</h2>
+    <div class="swatches">
+      <div class="sw" style="background:#f5f5f5">页面底 #f5f5f5</div>
+      <div class="sw" style="background:#ececec">扫光起 #ececec → <span class="ratio">1.08:1</span></div>
+      <div class="sw" style="background:#dcdcdc">扫光止 #dcdcdc → <span class="ratio">1.26:1</span></div>
+      <div class="sw" style="background:#e9e9e9">等待/失败底 #e9e9e9 → <span class="ratio">1.11:1</span></div>
+      <div class="sw" style="background:#f5f5f5">tag/收藏/分页底 #f5f5f5 → <span class="ratio">1.00:1（完全同值）</span></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-2)">暗色主题同病：页面底 #141414 vs 占位 #262626（1.22:1）/ 扫光止 #333（1.46:1）。WCAG 对有意义视觉元素建议 ≥3:1；行业骨架类实践普遍 1.3~1.6:1 且依赖色相/高光带增强可辨性。</div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="demo-bg-contrast-a-sheen-2026-10-11.html">
+      <h3>方案 A · 中性灰阶拉开 + 独立高光带</h3>
+      <div class="tagline">改动最小 · 调性最稳</div>
+      <div class="strip"><i style="background:#f5f5f5"></i><i style="background:#d6d7d9"></i><i style="background:#c4c4c4"></i><i style="background:#fff"></i></div>
+      <p>占位整体压深一档（1.33:1），扫光改为「静止底 + 白色高光带掠过」（Facebook/AntD 同款机制），扫光可见性不再受底色上限约束。</p>
+      <div class="kv">适合：想保持现有极简灰调、风险最低</div>
+    </a>
+    <a class="card" href="demo-bg-contrast-b-cooltint-2026-10-11.html">
+      <h3>方案 B · 冷调蓝灰占位（色相差异化）</h3>
+      <div class="tagline"> hue 解耦 · 一眼可辨</div>
+      <div class="strip"><i style="background:#f5f5f5"></i><i style="background:#e2e7f0"></i><i style="background:#d9dfe9"></i><i style="background:#c8d1e0"></i></div>
+      <p>页面底不动，占位色族带低饱和蓝相（Facebook #e4e6eb / B站 / Tailwind slate 主流做法）。人眼对色相差远比对同色相 ΔL 敏感。</p>
+      <div class="kv">适合：接受占位带一点冷色、追求现代社交站质感</div>
+    </a>
+    <a class="card" href="demo-bg-contrast-c-media-dark-2026-10-11.html">
+      <h3>方案 C · 媒体面恒深（主题解耦）</h3>
+      <div class="tagline">影院感最强 · 变化最大</div>
+      <div class="strip"><i style="background:#f5f5f5"></i><i style="background:#1b1d22"></i><i style="background:#23262d"></i><i style="background:#383d48"></i></div>
+      <p>封面占位两主题统一用固定深底（Disney+/Prime/YouTube 浅色主题下海报占位仍是深色）。与任何页面底天然大对比，是项目「媒体上下文族」契约的延伸。</p>
+      <div class="kv">适合：想要流媒体影院质感、浅色主题一步到位解决</div>
+    </a>
+  </div>
+
+  <footer>
+    三方案均只动 token 层（variables.css 色源 + 少量新 token），消费方（LazyImage / Skeleton.css / 各页骨架 / VideoCard 封面底）经 var() 自动生效。
+    通用附带项：--color-tag-bg / --color-favorite-bg / --color-page-btn-bg 浅色档与页面底 #f5f5f5 同值，任一方案落地时建议一并提档至 #e8e8e8。
+  </footer>
+</main>
+</body>
+</html>
