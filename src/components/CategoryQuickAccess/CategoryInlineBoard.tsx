@@ -36,6 +36,15 @@ import LazyImage from '@/components/LazyImage/LazyImage';
 import { useCustomNavigate } from '@/lib/navigation';
 import './CategoryInlineBoard.css';
 
+/**
+ * 合集封面图片首轮加载超时（2026-10-11 用户定稿）：默认 8s → 合集专供 12s。
+ * 成因：合集行随首页挂载、但**渲染最晚**（等 6 组 discover 全到齐才出卡），
+ * 它的 24 张 backdrop 正好排在首屏图片并发（HTTP/1.1 每域 6 连接）的队尾，
+ * 排队时间最易超过 8s 首轮 timeout → 3 次重试用尽落品牌兜底（切页回来才靠
+ * 浏览器缓存恢复）。放宽首轮窗口给队尾图更多排队余量；仅影响本行，不动全局默认。
+ */
+const COLLECTION_IMAGE_TIMEOUT_MS = 12000;
+
 export function CategoryInlineBoard() {
   const navigate = useCustomNavigate();
   const skeletonCount = useSkeletonCount();
@@ -77,6 +86,7 @@ export function CategoryInlineBoard() {
                         key={src}
                         src={src}
                         alt=""
+                        timeoutMs={COLLECTION_IMAGE_TIMEOUT_MS}
                         className={`cqa-board__collage-img${
                           col.covers.length === 3 && i === 2 ? ' cqa-board__collage-img--span' : ''
                         }`}

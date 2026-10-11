@@ -31,9 +31,9 @@
 
 /* ── 缩略图/骨架公共视觉（防分叉）──────────────────
    使用方（共用一条规则，杜绝配色各自漂移）：
-   - .cqa-hotcard__poster--empty （面板卡缺失封面占位）
-     （原 .cqa-trend__poster--empty 已随 CategoryHeatRow 组件删除，2026-10-09）
    - .hero-side-card__cover--skeleton / __title--skeleton    （首页大屏骨架的右卡槽）
+   （原 .cqa-hotcard__poster--empty 面板卡占位随 mega 面板死代码清理删除，2026-10-11；
+     原 .cqa-trend__poster--empty 已随 CategoryHeatRow 组件删除，2026-10-09）
    （原 .home-skeleton-card-img「首页行骨架海报」已于 2026-09-18 删除 —— 首页骨架行
      改为直接渲染真实 <TMDBMovieRow>，其骨架卡走 TMDBMovieRow.css 自己的骨架类。）
    背景 = 项目级 shimmer 渐变（--color-placeholder-shimmer-*）+ rgba(0,0,0,0.25)
