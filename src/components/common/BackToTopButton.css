@@ -13,7 +13,11 @@
 
 .back-to-top-button {
   position: fixed;
-  right: var(--space-lg);
+  /* 2026-10-11 三次修正：不悬浮在内容上——按钮住在内容右缘外的留白区，
+     与内容保持 --fab-breath 呼吸距（随视口增大，封顶 28px），距视口右缘保底
+     space-md 不贴边；留白不够时自动压缩呼吸距，永不叠内容也永不超视口。
+     TV 回退旧值（下方 [data-device=tv]）；移动端/app 媒体档另覆盖。 */
+  right: max(calc(var(--content-edge-gutter, 100px) - var(--space-2xl) - var(--fab-breath, 12px)), var(--space-md));
   bottom: var(--space-2xl);
   z-index: var(--z-float);
   display: flex;
@@ -109,8 +113,9 @@
     0 1px 2px rgb(0 0 0 / 30%);
 }
 
-/* ── TV 端：放大点击区（用 --space-2xl 的 ~1.2 倍） ─── */
+/* ── TV 端：放大点击区（用 --space-2xl 的 ~1.2 倍）+ 回退贴视口旧档 ─── */
 [data-device="tv"] .back-to-top-button {
+  right: var(--space-lg);
   width: calc(var(--space-2xl) * 1.2);
   height: calc(var(--space-2xl) * 1.2);
 }
@@ -193,10 +198,11 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .fab-stack {
-  /* 2026-09-11 用户反馈（四次）：再右移一档（lg→md，12-14→8-9.5px），更贴近视口右缘 */
+  /* 2026-10-11 三次修正：与内容右缘保持 --fab-breath 呼吸距（按钮住在留白区，
+     不悬浮在内容上、不贴视口），留白不够时自动压缩；fab 仅 ≥1024 非 TV 渲染 */
   --fab-size: var(--space-3xl);
   position: fixed;
-  right: var(--space-md);
+  right: max(calc(var(--content-edge-gutter, 100px) - var(--fab-size) - var(--fab-breath, 12px)), var(--space-md));
   bottom: var(--space-2xl);
   z-index: var(--z-float);
   display: flex;

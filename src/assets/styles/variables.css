@@ -100,7 +100,8 @@
   --z-fullscreen: 9999;
   --z-splash: 10000;
   /* 页面/卡片/文字 — 三级灰阶体系 */
-  --color-background: #f5f5f5;             /* 页面底色 */
+  --color-background: #fff;                /* 页面底色（2026-10-11 方案一「纸白分层」：浅色升纯白，
+                                              灰专属模块/占位语义；暗色维持 #141414 不变，用户拍板） */
   --color-surface: #fff;                   /* 卡片/弹窗/输入框背景 */
   --color-surface-hover: rgba(0, 0, 0, 0.05); /* 按钮/卡片 hover */
   --color-hover-bg: rgba(0, 0, 0, 0.05);   /* 通用悬浮背景（与 surface-hover 同值） */
@@ -110,7 +111,7 @@
   /* 辅助/说明文字（2026-09-15 提档：#999 → #6b6b6b）
      原 #999 仅 2.85:1（WCAG AA 正文需 ≥4.5:1），却全站消费 167 处、且多用于
      承载信息（榜单简介 / 设置说明 / 时长）→ 呈现「灰蒙蒙」。新值白底 5.33:1、
-     #f5f5f5 底 4.89:1，达标。契约：只有「禁用 / 占位 / 纯装饰」可低于 4.5:1。 */
+     页面底改 #fff 后同值 5.33:1，达标。契约：只有「禁用 / 占位 / 纯装饰」可低于 4.5:1。 */
   --color-text-tertiary: #6b6b6b;          /* 辅助文字（≥4.5:1） */
   --color-text-disabled: #bfbfbf;          /* 禁用态/占位符/纯装饰图标（唯一允许 <4.5:1 的文字档） */
   --color-text-inverse: #fff;              /* 反色文字（深色背景上的白字） */
@@ -130,19 +131,23 @@
   --color-border-light: #e8e8e8;           /* 浅边框（卡片/分组） */
   --color-border-strong: #bfbfbf;          /* 深边框（卡片 hover 加深） */
   /* 骨架屏 / 占位 — 两色交替扫光
-     2026-09-28 去卡片化配套提档：卡片 surface 底被移除后，占位色直接压页面底
-     --color-background(#f5f5f5)。旧值 placeholder 与页面底同值(ΔE=0 → 等待/失败态
-     隐形)、shimmer ΔL≈3~6(扫光不可见)。新值对页面底 ΔE≥8，三态肉眼可辨；
-     改本组三行即可全站生效（消费方见 --color-skeleton 注释「唯一色源」）。 */
-  --color-placeholder: #e9e9e9;            /* 等待/失败占位底（比页面底深一档） */
-  --color-placeholder-shimmer-a: #ececec;  /* 扫光起始色 */
-  --color-placeholder-shimmer-b: #dcdcdc;  /* 扫光终止色（ΔL≈11，扫光可见） */
-  /* 标签 / 收藏 / 分页 / 输入框 / Tab */
-  --color-tag-bg: #f5f5f5;                 /* 筛选 tag 背景 */
-  --color-favorite-bg: #f5f5f5;            /* 收藏按钮底色 */
+     2026-10-11 方案一「纸白分层」（用户拍板，仅浅色；暗色维持 2026-09-28 档不变）：
+     页面底升 #fff 后，灰只属于模块底与占位/骨架语义，白页上轻/中灰一眼分层；
+     旧值 #e9e9e9 / #ececec↔#dcdcdc 与旧页底 #f5f5f5 只差 1.08~1.26:1 是「灰糊」根因。
+     新值系 demo-bg-system-1（减淡版）；改本组四行即可全站生效（消费方见
+     --color-skeleton 注释「唯一色源」）。 */
+  --color-placeholder: #f0f2f6;            /* 等待/失败占位底 */
+  --color-placeholder-shimmer-a: #f3f4f7;  /* 扫光起始色 */
+  --color-placeholder-shimmer-b: #e8ebf1;  /* 扫光终止色（对页面底 ≈1.35:1，微冷相分层） */
+  --color-placeholder-border: #dde2ea;     /* 失败态内描边（叠占位底给出明确边界） */
+  /* 标签 / 收藏 / 分页 / 输入框 / Tab
+     2026-10-11 同批：三档旧值 #f5f5f5 与旧页底完全同值（去卡化后隐形），
+     改取模块灰档 #f5f6f8，在白页上清晰成块。 */
+  --color-tag-bg: #f5f6f8;                 /* 筛选 tag 背景 */
+  --color-favorite-bg: #f5f6f8;            /* 收藏按钮底色 */
   --color-favorite-active-bg: #fff2e8;     /* 已收藏状态背景 */
   --color-favorite-active: #fa8c16;        /* 已收藏图标色（橙色） */
-  --color-page-btn-bg: #f5f5f5;            /* 分页按钮背景 */
+  --color-page-btn-bg: #f5f6f8;            /* 分页按钮背景 */
   --color-page-btn-hover-bg: rgba(0, 0, 0, 0.05); /* 分页按钮 hover */
   --color-page-info: #666;                 /* 分页"共N条"文字 */
   --color-input-bg: #fff;                  /* 输入框背景 */
@@ -163,7 +168,7 @@
   --color-info-hover: #4096ff;             /* 链接 hover 态 */
   /* 语义色「文字/图标档」（2026-09-15 新增）：一个值同时满足
      「浅底上的文字/图标」与「白字角标的底色」两种角色。 */
-  --color-success-text: #237804;           /* 白底 5.59:1 ／ #f5f5f5 5.12:1 ／ 白字 on it 5.59:1 */
+  --color-success-text: #237804;           /* 白底 5.59:1 ／ 旧 #f5f5f5 底 5.12:1 ／ 白字 on it 5.59:1 */
   --color-warning-text: #a05c00;           /* 5.22 ／ 4.78 ／ 5.22 */
   --color-error-text:   #cf1322;           /* 5.57 ／ 5.11 ／ 5.57（原 error #ff4d4f 仅 3.27） */
   --color-info-text:    #0958d9;           /* 6.16 ／ 5.65（原 info #1677ff 仅 4.10） */
@@ -177,7 +182,7 @@
   --color-warning-border: #ffe58f;         /* 警告描边（2026-09-15 补：IPTV 曾只写 var() fallback，token 从未定义） */
   --color-error-bg: #fdecea;               /* 错误底色（Browse 源状态 badge bad 档） */
   /* 骨架屏动画 — 2026-09-18 色源收敛（P1）：
-     全站骨架**只有一个色源**，即上方 --color-placeholder-shimmer-a/b（#f0f0f0↔#e6e6e6）。
+     全站骨架**只有一个色源**，即上方 --color-placeholder-shimmer-a/b（现值 #f3f4f7↔#e8ebf1）。
      此前并存两套（#e8e8e8↔#f5f5f5 / #f0f0f0↔#e6e6e6），同屏可出现两种灰。
      这里保留原 token 名作**别名**，历史消费方（Player / Detail / TMDBMovieRow /
      Home / CategoryQuickAccess）无需逐个改名；今后换骨架色只改 shimmer 两行。 */
@@ -872,10 +877,11 @@
   --color-border-light: #2b2b2b;
   --color-border-strong: #4a4a4a;
   --color-placeholder: #262626;
-  /* 暗色三态（2026-09-28 同批提档）：对页面底 #141414 拉开到 ΔE≥8，
-     a 提亮与 placeholder 同档、b 微升，扫光在深底上仍可辨。 */
+  /* 暗色三态（2026-09-28 同批提档，2026-10-11 用户拍板**维持不变**，浅色另走方案一纸白分层）：
+     对页面底 #141414 拉开到 ΔE≥8，a 提亮与 placeholder 同档、b 微升，扫光在深底上仍可辨。 */
   --color-placeholder-shimmer-a: #262626;
   --color-placeholder-shimmer-b: #333;
+  --color-placeholder-border: #363636;     /* 失败态描边暗档 = 旧 var(--color-border) 观感不变 */
   --color-tag-bg: #262626;
   --color-favorite-bg: #303030;
   --color-favorite-active-bg: #3a2000;
