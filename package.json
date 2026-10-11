@@ -4,7 +4,7 @@
   "version": "1.30.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "cross-env NODE_OPTIONS=\"--require ./scripts/vite-early-bind.cjs\" vite",
     "postinstall": "node scripts/optimize-deps.mjs",
     "build": "tsc -b && vite build",
     "build:fast": "tsc -b && cross-env VITE_COMPRESS=false vite build",
@@ -116,9 +116,6 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "sharp"
-    ],
-    "patchedDependencies": {
-      "vite@6.4.2": "patches/vite@6.4.2.patch"
-    }
+    ]
   }
 }

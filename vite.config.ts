@@ -269,6 +269,8 @@ window.__vite_plugin_react_preamble_installed__ = true;
     // 注意：'::' 会同时监听 0.0.0.0，即局域网可访问（依赖系统防火墙拦截入站）。
     host: '::',
     open: false,
+    // ⚠️ 改端口/宿主时同步 scripts/vite-early-bind.cjs 的 DEFAULT_PORT/DEFAULT_HOST
+    //（dev 端口提前 bind 补丁，npm/pnpm 通用，替代旧 pnpm patch 方案）。
     // 预热常用模块：dev server 启动后立即 transform 核心模块，
     // 消除「首次打开浏览器 → 逐模块编译」的慢路径（感知上的首屏慢）
     warmup: {
