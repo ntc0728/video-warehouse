@@ -18,10 +18,10 @@ import { Icon } from '../ui/Icon';
 import { isImageLoaded, markImageLoaded } from './imageCache';
 import './LazyImage.css';
 
-/** C2-2（2026-08-04）：图片请求挂起兜底——默认超时 8s（可经 timeoutMs prop 覆盖）。
+/** C2-2（2026-08-04）：图片请求挂起兜底——默认超时 10s（可经 timeoutMs prop 覆盖，2026-10-11 由 8s 放宽）。
  *  请求既不 onLoad 也不 onError（防盗链/连接挂起）时，超时视为失败 → 走 fallbackSrc，
  *  避免 spinner 无限转（「海报一直处于加载中」）。 */
-export const DEFAULT_IMAGE_LOAD_TIMEOUT = 8000;
+export const DEFAULT_IMAGE_LOAD_TIMEOUT = 10000;
 
 /** S4（2026-09-11）：失败**不再终态** —— 有界自动重试。
  *
