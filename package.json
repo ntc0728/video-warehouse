@@ -1,7 +1,7 @@
 {
   "name": "kinotv",
   "private": true,
-  "version": "1.30.0",
+  "version": "1.31.0",
   "type": "module",
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=\"--require ./scripts/vite-early-bind.cjs\" vite",

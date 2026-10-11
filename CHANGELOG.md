@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.31.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.30.0...kinotv-v1.31.0) (2026-10-11)
+
+
+### Features
+
+* **player:** CMS 源面板过滤+并行探测追加、跨源顺延兜底、弹窗选集 epn/季集线回显（routePlayUrl 首帧最高优先） ([7683918](https://github.com/ntc0728/video-warehouse/commit/768391808a013c3a39f68897b3fb707b6e00d62a))
+* **settings:** 错误日志收集与查看（localStorage 上限300/指纹去重、接口与全局捕获、个人设置独立组+时间轴弹窗） ([10e88ca](https://github.com/ntc0728/video-warehouse/commit/10e88ca5a98471089388eb88879cad1230938b28))
+
+
+### Bug Fixes
+
+* **deps:** 重生成合法 vite patch（pnpm patch-commit）并同步 pnpm-lock patchedDependencies——修复 Cloudflare CI frozen install 的 ERR_PNPM_LOCKFILE_CONFIG_MISMATCH/INVALID_PATCH ([d3abb92](https://github.com/ntc0728/video-warehouse/commit/d3abb92aab6c8205fa5d45cc120043f4f7dbb010))
+* **lazy-image:** 图片加载兜底超时 8s 放宽至 10s（慢源防盗链挂起误判失败） ([41f5a68](https://github.com/ntc0728/video-warehouse/commit/41f5a683b3bc52b6ca4c71fcd8a016fe2fb98358))
+* **ui:** 浅色主题纸白分层（页面底升白/占位骨架微冷灰阶/暗色冻结）+ 浮层按钮改内容右缘基准（--content-edge-gutter/--fab-breath/--shuffle-left 四版定稿）+ Detail 转圈轨道可见 + 选集下拉黑框抑制与尺寸收小 ([c1a7ed3](https://github.com/ntc0728/video-warehouse/commit/c1a7ed37fdb92c2162d1e6e6cb755bd7d6c56600))
+* **vite:** patch listen order — bind port before init, not after ([e5a1e20](https://github.com/ntc0728/video-warehouse/commit/e5a1e20955b29fec62e3295002c8362e08fec7ef))
+
+
+### Performance Improvements
+
+* **dev:** vite eager-pretransform 插件——首个请求触发后台并发预变换全部 src 模块，冷启动模块请求由波浪式 50-100ms/个降至 &lt;5ms ([3c2965e](https://github.com/ntc0728/video-warehouse/commit/3c2965e9dcea01f3be52ed85589b4640c6f83c8a))
+
 ## [1.30.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.29.0...kinotv-v1.30.0) (2026-10-10)
 
 
