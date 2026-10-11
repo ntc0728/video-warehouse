@@ -18,6 +18,8 @@ interface PlayerCMSPanelProps {
   compact?: boolean;
   /** 只读模式：源默认选中，点击无操作（直链搜索场景） */
   readOnly?: boolean;
+  /** 聚合探测中（进入播放页初始）：头部计数位改显「搜索源中…」，空 body 不误显「暂无数据源」 */
+  loading?: boolean;
   /** 桌面端（≥1024px）无选季面板模式：CMS tab 一行各占 1/3 空间（与选集面板等宽） */
   seasonAvailable?: boolean;
 }
@@ -34,6 +36,7 @@ export function PlayerCMSPanel({
   onToggle,
   compact = false,
   readOnly = false,
+  loading = false,
   seasonAvailable = true,
 }: PlayerCMSPanelProps) {
   const HeaderTag = compact ? 'div' : 'button';
@@ -107,7 +110,7 @@ export function PlayerCMSPanel({
       >
         <span className="player-panel-icon"><Icon icon={Server} size="sm" /></span>
         <span className="player-panel-title">CMS源</span>
-        <span className="player-panel-info">{selectedSourceIds.length}个源</span>
+        <span className="player-panel-info">{loading && selectedSourceIds.length === 0 ? '搜索源中…' : `${selectedSourceIds.length}个源`}</span>
         {!compact && (
           <span className={`player-panel-arrow ${expanded ? 'expanded' : ''}`}>
             <Icon icon={ChevronDown} size="sm" />
@@ -139,7 +142,7 @@ export function PlayerCMSPanel({
             })}
           </div>
         ) : (
-          <div className="player-panel-empty">暂无数据源</div>
+          <div className="player-panel-empty">{loading ? '正在聚合各源数据…' : '暂无数据源'}</div>
         )}
       </div>
     </div>

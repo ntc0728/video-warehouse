@@ -564,7 +564,12 @@ export default function PlaylistModal({
               const sp = new URLSearchParams();
               sp.set('src', String(data.sourceIndex));
               if (playUrl) sp.set('play', playUrl);
-              if (it.kind === 'ep') sp.set('season', String(it.seasonNumber));
+              if (it.kind === 'ep') {
+                sp.set('season', String(it.seasonNumber));
+                // 2026-10-11：额外携带集号 epn（新开页签 query 兜底），供 Player 在
+                // URL 精确匹配落空时按（季,集号）兜底定位
+                sp.set('epn', String(it.number));
+              }
               const to = videoId
                 ? { pathname: `/play/${videoId}`, search: `?${sp.toString()}` }
                 : null;

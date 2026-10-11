@@ -21,6 +21,7 @@
  * （真实基础信息 12 个条件项 + 2 整行）→ 取典型 INFO_CELL_COUNT=7 / FULL_ROW_COUNT=2 并在此注明。
  * 旧 .detail-top / .detail-hero-side 两栏镜像随方案 A 退役（2026-10-10）。
  */
+import { useEffect, useRef } from 'react';
 import Skeleton from '@/components/common/Skeleton';
 import { useGridCols } from '@/hooks';
 import './DetailSkeleton.css';
@@ -66,6 +67,30 @@ function RecommendCardSkeleton() {
 export default function DetailSkeleton() {
   const cols = useGridCols('--card-cols', 7);
 
+  /** hero 两列等高（镜像真实页 index.tsx 的 sync 逻辑，同一公式同一上限）：
+   *  RO 量文本区高写 --poster-w = 高×2/3 → 海报列永远 2:3、宽高同变零裁切。
+   *  骨架若不跑同款测量，海报列停在视口回退值（1440 下 245px），info 列偏宽
+   *  → 文字换行少 → 骨架比真实页矮，数据到达时高度跳变。 */
+  const heroInfoRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const info = heroInfoRef.current;
+    const hero = info?.closest('.detail-hero') as HTMLElement | null;
+    if (!info || !hero) return;
+    const sync = () => {
+      const h = info.clientHeight;
+      if (h <= 0) return;
+      const w = Math.round(Math.min(330, Math.max(160, (h * 2) / 3)));
+      const cur = parseInt(hero.style.getPropertyValue('--poster-w'), 10);
+      if (!Number.isFinite(cur) || Math.abs(cur - w) > 2) {
+        hero.style.setProperty('--poster-w', `${w}px`);
+      }
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(info);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <div className="detail-skeleton skeleton-scope" role="status" aria-label="加载中">
       {/* ── hero 对开：海报列 | 文本区（真实 .detail-hero 两列几何自动生效）── */}
@@ -73,7 +98,7 @@ export default function DetailSkeleton() {
         <div className="detail-hero-poster detail-skeleton__poster">
           <Skeleton className="detail-skeleton__poster-img" />
         </div>
-        <div className="detail-hero-info detail-skeleton__hero-info">
+        <div ref={heroInfoRef} className="detail-hero-info detail-skeleton__hero-info">
           <div className="detail-hero-body">
             <div className="detail-hero-topline">
               <Skeleton className="detail-skeleton__kicker" />
