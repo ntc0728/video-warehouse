@@ -8,6 +8,8 @@
  */
 const path = require('path');
 const { pathToFileURL } = require('url');
+// dev 端口提前 bind（与 npm run dev 同源的补丁，保证 e2e dev 档行为一致；细节见该文件头注）
+require('./vite-early-bind.cjs');
 import(pathToFileURL(path.resolve(__dirname, '../node_modules/vite/bin/vite.js')).href).catch((err) => {
   console.error(err);
   process.exit(1);
