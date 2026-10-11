@@ -141,6 +141,27 @@
   html:not([data-device="tv"]) { --page-pad-x: 140px; }
 }
 
+/* ── --content-edge-gutter / --fab-breath：浮层按钮的「内容右缘基准」（2026-10-11 用户拍板）───
+   视口右缘到主体内容右缘的实际留白 = 页面留白 + ≥2200 封顶后的居中边距。
+   返回顶部 / 刷新 fab 组 / 换一换等右下浮层改以内容右缘为定位基准（而非视口）；
+   --fab-breath（三次修正 2026-10-11）= 按钮与内容右缘的呼吸间距：不悬浮在内容上，
+   间距随视口增大（1.5vw）但 clamp 12~28px 封顶，消费公式见 BackToTopButton.css
+   （.back-to-top-button / .fab-stack）、HeroBili.css（.hero-bili__shuffle）
+   与启动骨架 bs-shuffle 镜像。
+   TV 无 2200 封顶契约、页面全宽，不定义本组 token（回退各自旧值）。 */
+html:not([data-device="tv"]) {
+  --content-edge-gutter: calc((100vw - min(100vw, 2200px)) / 2 + var(--page-pad-x));
+  --fab-breath: clamp(12px, 1.5vw, 28px);
+  /* 换一换呼吸距的可用留白上限 = G − 48（≈按钮宽上限+贴屏安全距）。
+     ⚠️ 本仓 [vite:css] postcss-calc 解析器既不支持 min() 内嵌 calc()，也不支持
+     calc(<pct> + min())——嵌套形态会被整条静默丢弃（实测 2026-10-11 build warning）；
+     custom property 的值不参与解析，故把整表达式下沉为 token，消费处只写 var()。
+     浏览器运行时按标准 CSS 求值，无副作用。 */
+  --shuffle-max-shift: calc(var(--content-edge-gutter) - 48px);
+  /* 换一换左缘锚定最终值：内容右缘 + 呼吸距（受可用留白上限钳制） */
+  --shuffle-left: calc(100% + min(var(--fab-breath), var(--shuffle-max-shift)));
+}
+
 /* ── HeroBili --hero-banner-h / --hero-side-w（2026-09-22 自 Home.css 生效点 +
    variables.css 兜底收敛至此）───────────────────────────────────────────
    历史双定义陷阱：variables.css :root 兜底按「全视口宽」算，真值在 Home.css

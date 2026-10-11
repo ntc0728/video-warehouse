@@ -139,9 +139,9 @@
     var(--color-placeholder-shimmer-b)
   );
   /* 2026-09-28 三态区分：失败 = 静止 + 1px 内描边；加载中 = 无边界 + 水平扫光动画。
-     去卡片化后封面容器底色不再由卡片 surface 提供，两种状态同为灰底时
-     仅靠「动/静」区分不够直观，补描边给出明确的失败边界。 */
-  box-shadow: inset 0 0 0 1px var(--color-border);
+     2026-10-11 描边改用 --color-placeholder-border（浅 #dde2ea / 暗 #363636，
+     暗档观感与旧 var(--color-border) 一致；浅色与新占位底同族微冷相）。 */
+  box-shadow: inset 0 0 0 1px var(--color-placeholder-border);
   opacity: 1;
   filter: none;
 }

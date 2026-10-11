@@ -477,6 +477,13 @@
 /* 换一换：脱标浮层（absolute 不占布局）——锚定 .hero-bili__right（= 右栏全宽），
    top: 0 与第一行卡顶对齐（2026-09-30 用户裁决，知晓并接受压住右列首卡
    收藏按钮浮现区）。
+   ⚠️ 2026-10-11 四次修正（三次版 right=−fab-breath 方向反了：right 负值外推的是按钮**右缘**，
+   按钮向左延伸致左缘压卡 ≈W−breath，用户反馈「位置没变化」即此）：改用 left 锚定——
+   按钮**左缘** = 容器右缘(=内容右缘) + 呼吸距，天然不叠内容；min() 上限
+   (G − 48)（G=--content-edge-gutter，48 ≈ 按钮宽上限 ≈41 + 贴屏安全距，防留白窄时超出视口），
+   间距随视口增大（--fab-breath clamp 12~28）但不超过可用留白。与 fab 同一口径。
+   旧三次裁决（right=−space-md/−breath 压卡）与更旧「距视口恒 space-md」均废。
+   祖先裁切自查结论不变（三处 overflow 均视口级）。
    水平（2026-09-30 二次裁决）：全档进页面留白区，统一
    right = space-md − page-pad-x（按钮右缘距视口恒 space-md 呼吸）。
    配套：layout-tokens.css 的 --page-pad-x 60px 档起点 1440 → 1024（原 1024–1439
@@ -489,7 +496,10 @@
 .hero-bili__shuffle {
   position: absolute;
   top: 0;
-  right: calc(var(--space-md) - var(--page-pad-x));
+  right: auto;
+  /* 左缘锚定：整表达式已下沉为 --shuffle-left token（本仓 postcss-calc 不吃
+     calc(<pct> + min())，嵌套形态会被构建静默丢弃）；fallback = 贴内容右缘 */
+  left: var(--shuffle-left, 100%);
   z-index: 2;
   display: flex;
   flex-direction: column;

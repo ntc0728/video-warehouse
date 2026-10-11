@@ -515,7 +515,10 @@
 .playlist-query-spinner {
   width: var(--comp-btn-min-height);
   height: var(--comp-btn-min-height);
-  border: 3px solid var(--color-skeleton);
+  /* 2026-10-11 修复「转圈几乎不转」：轨道旧用 --color-skeleton（=shimmer-a，
+     纸白分层后浅档 #f3f4f7 叠白底≈隐形，只剩一段主色弧在转，观感像静止）；
+     改 --color-border（浅 #d9d9d9 / 暗 #363636）使轨道可见，旋转弧完整成环 */
+  border: 3px solid var(--color-border);
   border-radius: 50%;
   animation: querySpin 0.9s linear infinite;
   border-top-color: var(--color-primary);

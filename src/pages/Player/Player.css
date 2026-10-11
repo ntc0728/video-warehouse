@@ -374,7 +374,8 @@
   display: inline-flex;
   gap: var(--space-2xs);
   align-items: center;
-  padding: var(--space-xs) var(--space-sm);
+  /* 2026-10-11 用户要求适当缩小：纵向 padding xs→2xs（高度约 -4px），横向 sm→xs */
+  padding: var(--space-2xs) var(--space-xs);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
   background: transparent;
@@ -389,8 +390,9 @@
 }
 
 .player-episode-select {
-  max-width: 7rem;
-  padding: var(--space-xs) var(--space-sm);
+  /* 2026-10-11 用户要求适当缩小：max-width 7rem→5.5rem，纵向 padding xs→2xs */
+  max-width: 5.5rem;
+  padding: var(--space-2xs) var(--space-xs);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
   background: var(--color-background);
@@ -398,6 +400,15 @@
   font-size: var(--text-sm);
   cursor: pointer;
   outline: none;
+}
+
+/* 2026-10-11 用户报「点下拉框出现黑色边框」：Chromium 对 <select> 鼠标点击也命中
+   :focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=#000）= 黑框。
+   与 SearchBox 同法抑制（保留 TV/projector 遥控焦点框，键盘 Tab 到达 select 同样无环，
+   与站内控件既有取舍一致）。特异性对齐全局规则，本文件后加载取胜。 */
+:root:not([data-device="tv"]):not([data-device="projector"]) .player-episode-select:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 
