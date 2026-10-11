@@ -8,6 +8,7 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { useSettingsStore } from '@/stores';
 import { isNativePlatform } from '@/lib/platform';
 import type { RequestOptions } from '@/types/http';
+import { reportApiError } from './errorLogService';
 
 // 为向后兼容重新导出类型
 export type { CustomRequestConfig, RequestOptions } from '@/types/http';
@@ -119,15 +120,25 @@ httpClient.interceptors.response.use(
     // 重试逻辑（网络错误 / 超时 / 5xx）
     const cfg = config as RequestOptions;
     const retriesLeft = cfg.retries ?? 0;
+    // 429 限流纳入重试（2026-10-11 CMS 聚合并发易触发，重试比直接失败稳定）
     const shouldRetry =
       retriesLeft > 0 &&
-      (!error.response || error.response.status >= 500);
+      (!error.response || error.response.status >= 500 || error.response.status === 429);
 
     if (shouldRetry) {
       cfg.retries = retriesLeft - 1;
       const delay = cfg.retryDelay || DEFAULT_RETRY_DELAY;
       await new Promise((resolve) => setTimeout(resolve, delay));
       return httpClient.request(config);
+    }
+
+    // 2026-10-11 错误日志：重试耗尽后上报一次（设置→个人设置→错误日志弹窗可查）。
+    // 主动取消（切页/超时 signal abort）不是异常，排除；上报失败不影响原 reject 行为。
+    if (error.code !== 'ERR_CANCELED' && config?.url) {
+      reportApiError(
+        String(config.url),
+        error.response ? `HTTP ${error.response.status} ${error.response.statusText || ''}`.trim() : String(error.message || '请求失败'),
+      );
     }
 
     // 规范化错误消息

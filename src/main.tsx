@@ -8,9 +8,14 @@ import './assets/styles/index.css';
 import { preventPinchZoom } from './lib/preventZoom';
 import { preloadInitialRoute } from './components/Layout/routeConfig';
 import { preloadLogoCache } from './services/channelLogo';
+import { installErrorCapture } from './services/errorLogService';
 
 // 移动端阻止双指缩放
 preventPinchZoom();
+
+// 错误日志收集（2026-10-11）：尽早安装，捕捉启动期 JS/Promise 错误；
+// 接口错误由 httpClient 拦截器上报，查看入口在 设置→个人设置→错误日志
+installErrorCapture();
 
 // 首屏加载兜底：路由 chunk 拉取期间渲染全屏 AppLoading。2026-09-22 起它只是
 // 「占位」——启动骨架 #boot-splash（index.html 内联、与目标页同构）在其上方便
