@@ -26,6 +26,11 @@
 }
 
 /* ── hero：真实 .detail-hero 两列几何；__poster-img 吃满 2:3 海报列 ── */
+
+/* --poster-w 不在此处硬写：真实页由 JS ResizeObserver 量 info 高写 h×2/3（上限 330），
+   骨架在 DetailSkeleton.tsx 复用同一套测量逻辑（见 syncPosterW），保证两列自洽同构；
+   静态公式会与骨架自身 info 高脱钩 → 海报比例失真。 */
+
 .detail-skeleton__poster {
   background: none;
 }
@@ -49,9 +54,13 @@
 
 .detail-skeleton__title {
   width: 14em;
-  max-width: 70%;
-  /* 真实标题：clamp(--text-2xl, 2.4vw, --text-3xl) × line-height 1.18（取上限档，与桌面典型一致） */
-  height: calc(var(--text-3xl) * 1.18);
+  max-width: 50%;
+  /* 镜像真实 .detail-hero-logo（2026-10-11 实测）：有 logo 时标题位是 logo 图，
+     max-height = --layout-tabbar-height（桌面典型 ≈69px），远大于纯文字标题行盒
+     （text-3xl×1.18 ≈33px）。宽度 184 vs 高 69 → 骨架按 logo 档预留，否则
+     logo 影片数据到达时 hero 向下顶 ≈ 36px。无 logo 回退文字标题时骨架略高，
+     属 logo/文字两态不可预知的已知取舍（优先覆盖更常见的 featured logo）。 */
+  height: var(--layout-tabbar-height);
 }
 
 .detail-skeleton__meta {

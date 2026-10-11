@@ -88,6 +88,9 @@ interface PlayerState {
   /** 续播恢复目标时间（P1-4/P1-10）：loadProgress 找到历史进度时写入，
    * 驱动「已从上次位置继续」卡片（从头播放入口）；null 表示本次无续播 */
   resumeAt: number | null;
+  /** 源切换提示（2026-10-11 用户定稿）：历史/指定源无数据被改选时由 CMS 源聚合链写入，
+   *  驱动续播卡顶部行（播放器内靠上居中）；与续播卡同生命周期（约 6s 自清） */
+  sourceNotice: string | null;
   /** 视频色彩调整（CSS filter）：亮度/饱和度/对比度，1 为原始值（Issue4 色彩调整弹窗） */
   colorFilter: ColorFilter;
   /** 视频音效调节状态（Issue4 音效调节弹窗）：预设 + 声道平衡 + 音量增强 */
@@ -100,6 +103,7 @@ interface PlayerState {
   setUserPauseRequested: (requested: boolean) => void;
   setErrorMessage: (message: string | null) => void;
   setResumeAt: (time: number | null) => void;
+  setSourceNotice: (notice: string | null) => void;
   setColorFilter: (patch: Partial<ColorFilter>) => void;
   setAudioEffect: (patch: Partial<AudioEffectState>) => void;
   setProgress: (progress: number) => void;
@@ -171,6 +175,7 @@ const initialState = {
   userPauseRequested: false,
   errorMessage: null as string | null,
   resumeAt: null as number | null,
+  sourceNotice: null as string | null,
   colorFilter: { brightness: 1, saturation: 1, contrast: 1 },
   audioEffect: { preset: 'off', balance: 0, gain: 1 } as AudioEffectState,
 };
@@ -187,6 +192,7 @@ export const usePlayerStore = create<PlayerState>()(
       setUserPauseRequested: (userPauseRequested) => set({ userPauseRequested }),
       setErrorMessage: (errorMessage) => set({ errorMessage }),
       setResumeAt: (resumeAt) => set({ resumeAt }),
+      setSourceNotice: (sourceNotice) => set({ sourceNotice }),
   setColorFilter: (patch) => set((state) => ({ colorFilter: { ...state.colorFilter, ...patch } })),
   setAudioEffect: (patch) => set((state) => ({ audioEffect: { ...state.audioEffect, ...patch } })),
       setProgress: (progress) => set({ progress }),
@@ -252,6 +258,7 @@ export const usePlayerStore = create<PlayerState>()(
         userPauseRequested: false,
         errorMessage: null,
         resumeAt: null,
+        sourceNotice: null,
         // 保留用户偏好
         volume: state.volume,
         mutedVolume: state.mutedVolume,

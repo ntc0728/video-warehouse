@@ -905,12 +905,16 @@ skipHistory,
   const isHls = streamType === 'm3u8';
   // P1-4 续播卡片：loadProgress 找到历史进度时写入，提供「从头播放」操作
   const resumeAt = usePlayerStore(s => s.resumeAt);
+  // 源切换提示（2026-10-11 用户定稿）：CMS 聚合改选源时写入，与续播卡同位置同生命周期，
+  // 作为卡片顶部行（先提示换源，续播行在后），替代全局 toast 避免叠加/不居中。
+  const sourceNotice = usePlayerStore(s => s.sourceNotice);
   // P1-6 右键菜单播放/暂停项的文案与图标
   const isPlayingForMenu = usePlayerStore(s => s.isPlaying);
 
   const handleResumeFromStart = useCallback(() => {
     playerCore.seek(0);
     usePlayerStore.getState().setResumeAt(null);
+    usePlayerStore.getState().setSourceNotice(null);
   }, [playerCore]);
 
   // P1-6：桌面点播模式右键菜单（移动端/IPTV 不启用）
@@ -922,12 +926,16 @@ skipHistory,
     setContextMenu({ x: e.clientX, y: e.clientY });
   }, [isMobileLayout, mode]);
 
-  // 续播卡片 6s 自动消失（用户未操作时静默关闭，不打断播放）
+  // 续播卡片 6s 自动消失（用户未操作时静默关闭，不打断播放）；
+  // sourceNotice 与卡片同生命周期（无续播时仅提示行也靠本定时器收起）
   useEffect(() => {
-    if (resumeAt == null) return;
-    const timer = setTimeout(() => usePlayerStore.getState().setResumeAt(null), 6000);
+    if (resumeAt == null && sourceNotice == null) return;
+    const timer = setTimeout(() => {
+      usePlayerStore.getState().setResumeAt(null);
+      usePlayerStore.getState().setSourceNotice(null);
+    }, 6000);
     return () => clearTimeout(timer);
-  }, [resumeAt]);
+  }, [resumeAt, sourceNotice]);
 
   // 移动端更多设置：字幕 / 后台听视频 / 字幕样式（store 运行时字段）
   const subtitleEnabled = usePlayerStore(s => s.subtitleEnabled);
@@ -1297,16 +1305,24 @@ skipHistory,
 
       {/* P1-4 续播卡片：进度恢复后短暂显示，提供「从头播放」操作（6s 自动消失） */}
       {/* P4：原 `mode === 'video'` 迁到能力矩阵 `hasProgressPersist`（点播=true）。逐字等价。 */}
-      {capabilities.hasProgressPersist && resumeAt != null && !hasError && (
-        <div className="up-resume-card" role="status" onClick={(e) => e.stopPropagation()}>
-          <span className="up-resume-card__text">已从上次位置继续播放</span>
-          <button
-            type="button"
-            className="up-resume-card__action"
-            onClick={(e) => { e.stopPropagation(); handleResumeFromStart(); }}
-          >
-            从头播放
-          </button>
+      {/* 2026-10-11：顶部行 = 源切换提示（CMS 聚合改选源时），先于续播行展示，同卡不叠加 */}
+      {capabilities.hasProgressPersist && (resumeAt != null || sourceNotice != null) && !hasError && (
+        <div className={`up-resume-card${sourceNotice != null ? ' up-resume-card--notice' : ''}`} role="status" onClick={(e) => e.stopPropagation()}>
+          {sourceNotice != null && (
+            <span className="up-resume-card__notice">{sourceNotice}</span>
+          )}
+          {resumeAt != null && (
+            <>
+              <span className="up-resume-card__text">已从上次位置继续播放</span>
+              <button
+                type="button"
+                className="up-resume-card__action"
+                onClick={(e) => { e.stopPropagation(); handleResumeFromStart(); }}
+              >
+                从头播放
+              </button>
+            </>
+          )}
         </div>
       )}
 

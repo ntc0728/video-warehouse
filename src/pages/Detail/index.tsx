@@ -766,7 +766,7 @@ export default function DetailPage() {
   }
 
   // 详情页专属骨架：≥1024 两栏（banner + 信息卡）/ 窄屏堆叠，随视口分档
-  if (tmdbLoading) return <div className="page-padding detail-page detail-page--loading"><DetailSkeleton /></div>;
+  if (tmdbLoading) return <div className="page-padding detail-page detail-page--loading content-shell"><DetailSkeleton /></div>;
 
   // ── Error ────────────────────────────────────
   if (tmdbError || !tmdbDetail) {
@@ -1269,6 +1269,8 @@ export default function DetailPage() {
                           from: `/detail/${id}`,
                           sourceIndex: playModal.sourceIndex,
                           seasonNumber: ep.seasonNumber,
+                          // 2026-10-11：集号随 state 透传，Player URL 匹配落空时按（季,集号）兜底
+                          episodeNumber: ep.episode.number,
                           playUrl: ep.episode.sources[0]?.url,
                         },
                       });

@@ -53,6 +53,8 @@ interface UseCMSSourceManagerOptions {
   routePlayUrl?: string;
   /** 详情页「全部」弹窗直达：目标季号（优先对齐初始季，避免首播季号竞态） */
   routeSeasonNumber?: number;
+  /** 详情页「全部」弹窗直达：目标集号（URL 精确匹配落空时按（季,集号）兜底，2026-10-11） */
+  routeEpisodeNumber?: number;
 }
 
 export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
@@ -63,7 +65,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
     setCurrentSrc, setLocalEpisodeId, videoCache,
     routeSourceIndex, activeSourceIndex, skipHistory, onSwitchEpisode, handlePlaySource,
-    routePlayUrl, routeSeasonNumber,
+    routePlayUrl, routeSeasonNumber, routeEpisodeNumber,
   } = opts;
 
   const { setSource, setSources } = usePlayerStore();
@@ -87,17 +89,29 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
   const seasonMapsRef = useRef<Map<number, Map<number, Video>>>(new Map());
   const cmsSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchInitiatedRef = useRef(false);
+  // 聚合探测进行中标记（2026-10-11 用户定稿）：播放器能否正常播放的判定（源死亡
+  // failover / 空态）必须等**所有 CMS 源响应结束**后再做——用首批不完整结果过早
+  // 标记/跳过会误报「播放失败/无数据」。消费方：Player index 的 handlePlayerError
+  // 挂起 + probeSettledSeq 重放。
+  const probeActiveRef = useRef(false);
+  const [probeSettledSeq, setProbeSettledSeq] = useState(0);
   // 缓存剧名/年份，供"按需重建季映射"复用（切源/切季懒加载兜底时无需重新计算）
   const videoTitleRef = useRef<string>('');
   const videoYearRef = useRef<number | undefined>(undefined);
 
   // ── fetchCMSSources ──────────────────────────────
-  const fetchCMSSources = useCallback(async (targetSourceIndex?: number) => {
+  /**
+   * @param targetSourceIndex 目标源下标
+   * @param manualSwitch 缺省 true = 用户在面板手动切源（先清屏 + cmsSwitching 遮罩）；
+   *   初始进入传 false（即使携带 routeSourceIndex 指定源）——只有手动切换才走清屏语义，
+   *   初始进入走「聚合探测 → 面板过滤 → 选择」主链（2026-10-11 用户定稿）。
+   */
+  const fetchCMSSources = useCallback(async (targetSourceIndex?: number, manualSwitch = true) => {
     if (!id) return;
     cmsAbortRef.current?.abort();
     const ctrl = new AbortController();
     cmsAbortRef.current = ctrl;
-    const isSwitching = targetSourceIndex !== undefined;
+    const isSwitching = targetSourceIndex !== undefined && manualSwitch !== false;
     // 领取请求序号：后续所有状态写入只在「仍是最新请求」时生效
     const reqId = ++reqSeqRef.current;
     const isLatest = () => reqSeqRef.current === reqId;
@@ -143,6 +157,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     }
 
     let sourceIdx = targetSourceIndex;
+    // 历史源下标（供聚合后选择与「历史源已无数据」提醒判定）与探测命中集（电影分支复用免重搜）
+    let histIdx: number | undefined;
+    let probeHits: Map<number, VideoDetailResult> | undefined;
 
     // 统一读取历史记录：既用于「未指定源时回退最近播放源」，也用于
     // 「按内容身份（季号+集号）恢复选集/线路进度」，保证不同源进度一致。
@@ -166,7 +183,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       const matchedIdx = histRecord.cmsSourceId
         ? allSrc.findIndex(s => s.id === histRecord.cmsSourceId)
         : allSrc.findIndex(s => s.name === histRecord!.cmsSourceName);
-      if (matchedIdx >= 0) sourceIdx = matchedIdx;
+      if (matchedIdx >= 0) {
+        sourceIdx = matchedIdx;
+        histIdx = matchedIdx;
+      }
     }
 
     // 3) 默认使用设置页中第一个被选中的 CMS 源（ID 持久化 → 解析下标）
@@ -190,15 +210,19 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     const histEpNum = parseEpisodeNumber(histRecord?.episodeLabel);
     const histSeason = histRecord?.seasonNumber;
 
-    // 选集恢复：弹窗直达的 routePlayUrl 精确匹配 > 历史集号 > 默认第一集。
+    // 选集恢复：弹窗直达的 routePlayUrl 精确匹配 > route 集号兜底 > 历史集号 > 默认第一集。
     // routePlayUrl 优先保证「全部」弹窗点的集在首帧就位，杜绝先播其它集导致的
-    // 首播季号/集号竞态写入。
+    // 首播季号/集号竞态写入；集号兜底（2026-10-11）应对 CMS 轮转导致 url 对不上。
     const pickInitialEpisode = (eps?: Episode[]): Episode | undefined => {
       if (!eps?.length) return undefined;
       const sorted = [...eps].sort((a, b) => a.number - b.number);
       if (routePlayUrl) {
         const byUrl = sorted.find(ep => ep.sources?.some(s => s.url === routePlayUrl));
         if (byUrl) return byUrl;
+      }
+      if (routeEpisodeNumber != null && (routeSeasonNumber == null || selectedSeasonRef.current === routeSeasonNumber)) {
+        const byNum = sorted.find(ep => ep.number === routeEpisodeNumber);
+        if (byNum) return byNum;
       }
       if (histEpNum != null) {
         const matched = sorted.find(ep => ep.number === histEpNum);
@@ -207,12 +231,15 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       return sorted[0];
     };
 
-    // 线路恢复：历史 episodeUrl 命中当前源线路时精确回显；跨源未命中则保持默认第一条。
+    // 线路恢复：弹窗直达的 routePlayUrl 精确命中 > 历史 episodeUrl 命中 > 保持默认首线。
+    // 2026-10-11：旧版只认历史 url，弹窗点「线路」时首帧总落在 sources[0]（用户报
+    // 「有概率播第一个线路」的直接来源），routePlayUrl 提到最前。
     const restoreLineIfNeeded = (ep: Episode | undefined) => {
-      if (histRecord?.episodeUrl && ep?.sources.length) {
-        const line = ep.sources.find(s => s.url === histRecord!.episodeUrl);
-        if (line) handlePlaySource(line);
-      }
+      if (!ep?.sources.length) return;
+      const wantUrl = routePlayUrl ?? histRecord?.episodeUrl;
+      if (!wantUrl) return;
+      const line = ep.sources.find(s => s.url === wantUrl);
+      if (line) handlePlaySource(line);
     };
 
     {
@@ -246,6 +273,133 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       return;
     }
 
+    // ── 进入播放页即聚合全部启用源：面板只显示「CMS 接口有返回当前视频数据」的源 ──
+    // （2026-10-11 用户定稿，替代同日「单源+后台探测+继续观看豁免」过渡版）：
+    // 本面板职责 = 纯数据源展示，**无条件适用于所有进入方式**（含继续观看）；
+    // 选中/季集线路回显等逻辑一律排在本聚合之后执行。
+    // 竞速窗口策略：首个命中即上屏并开 1.5s 收尾窗吸收在飞结果，迟到的命中后续
+    // 继续增量上屏；全部失败时等到 allSettled 再走空态。
+    // 历史源被判定无数据 → 不回显它：toast 提醒并换有数据的源，按内容身份（季/集号）续播。
+    if (!isSwitching && id.startsWith('tmdb-')) {
+      probeActiveRef.current = true;
+      // 池顺序 = 设置页勾选顺序（videoSourceIds 为空则全量下标序）
+      const pool = videoSourceIds.length > 0
+        ? videoSourceIds.map(sid => allSrc.findIndex(s => s.id === sid)).filter(i => i >= 0)
+        : allSrc.map((_, i) => i);
+      const hits = new Map<number, VideoDetailResult>();
+      probeHits = hits;
+      const writePanel = () => {
+        if (!isLatest() || ctrl.signal.aborted) return;
+        const ordered = pool.filter(i => hits.has(i)).map(i => hits.get(i)!);
+        setCmsResults(ordered);
+        setSelectedSourceIds(ordered.map(r => r.sourceId).filter(Boolean));
+      };
+      let firstHitResolve: () => void = () => {};
+      const firstHit = new Promise<void>(r => { firstHitResolve = r; });
+      const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+      /**
+       * 单源探测（2026-10-11 稳定性修复，用户报「同一数据时有时无」）：
+       *  ① 错峰发起（每源 +120ms）——全部启用源同打一个 CORS 代理域，瞬发并发易触发
+       *    限流/连接排队，失败被静默当作「无数据」→ 面板缺源；
+       *  ② 非「业务未找到」的失败（网络/超时/限流/异常）重试一次（800ms 后），
+       *    业务确认无数据的源不白白发第二枪（api-abuse 约束）。
+       */
+      const probeOne = async (idx: number, slot: number) => {
+        await sleep(slot * 120);
+        for (let attempt = 0; attempt < 2; attempt++) {
+          if (!isLatest() || ctrl.signal.aborted) return;
+          let res: VideoDetailResult | null = null;
+          try {
+            if (tmdbMediaType === 'tv') {
+              const r = await searchVideoSeasonsFromSingleSource(idx, videoTitle, videoYear, ctrl.signal);
+              if (r.seasons.size > 0) {
+                // 季映射入缓存：选择该源时 apply 链直接取用，不重复请求
+                seasonMapsRef.current.set(idx, r.seasons);
+                const first = r.seasons.values().next().value as Video | undefined;
+                res = {
+                  sourceIndex: idx,
+                  sourceId: allSrc[idx]?.id ?? '',
+                  sourceName: allSrc[idx]?.name ?? '',
+                  video: first ?? null,
+                };
+              } else {
+                res = {
+                  sourceIndex: idx,
+                  sourceId: allSrc[idx]?.id ?? '',
+                  sourceName: allSrc[idx]?.name ?? '',
+                  video: null,
+                  error: r.error ?? '未找到匹配资源',
+                };
+              }
+            } else {
+              res = await searchVideoFromSingleSource(idx, videoTitle, videoYear, ctrl.signal);
+            }
+          } catch { res = null; }
+          if (!isLatest() || ctrl.signal.aborted) return;
+          if (res?.video) {
+            hits.set(idx, res);
+            writePanel();
+            firstHitResolve();
+            return;
+          }
+          const errMsg = res?.error ?? '';
+          const permanentNoData = res !== null && errMsg === '未找到匹配资源';
+          if (permanentNoData || attempt === 1) return;
+          await sleep(800);
+        }
+      };
+      const allDone = Promise.allSettled(pool.map((idx, slot) => probeOne(idx, slot)));
+      // 闸门解除只认「全部池源落定」（allDone）——首批+1.5s 窗口仅决定启动播放的选择
+      // 时机，不影响 failover 挂起；迟到源未定期间若有流死亡，错误继续挂起至全部落定重放。
+      // isLatest 守卫：旧请求被新一轮取代时，其 allDone 回调不得误关新轮的闸门。
+      allDone.then(() => {
+        if (isLatest() && probeActiveRef.current) {
+          probeActiveRef.current = false;
+          setProbeSettledSeq(s => s + 1);
+        }
+      });
+      await Promise.race([allDone, firstHit.then(() => new Promise(r => setTimeout(r, 1500)))]);
+      if (hits.size === 0) await allDone; // 暂无任何命中：等全部落定再定夺空态
+      if (!isLatest() || ctrl.signal.aborted) { finishLoading(); return; }
+
+      // 选择（面板数据落定后才执行）：指定源（有数据）> 历史源（有数据）> 勾选顺序首个
+      const hitList = pool.filter(i => hits.has(i));
+      let selected: number | undefined;
+      if (routeSourceIndex !== undefined && hits.has(routeSourceIndex)) selected = routeSourceIndex;
+      else if (histIdx !== undefined && hits.has(histIdx)) selected = histIdx;
+      else selected = hitList[0];
+      if (selected === undefined) {
+        // 全部启用源都无当前视频数据：空态（面板「无数据源」文案，cmsLoading 已落）。
+        // ⚠️ cmsResults 必须写入每池源的落定记录（video:null）而非清空：Player 空态
+        //   门控（index.tsx :949-950）把「tmdb id + cmsResults 空 + 无季数据」当作
+        //   「仍在聚合」→ 置空会永不落空态（PLAYER-095 回归拖住 loading）。
+        finishLoading();
+        setVideo(null);
+        setSources([]);
+        setCurrentSrc(null);
+        setLocalEpisodeId(undefined);
+        currentSourceNameRef.current = undefined;
+        setCmsResults(pool.map(idx => ({
+          sourceIndex: idx,
+          sourceId: allSrc[idx]?.id ?? '',
+          sourceName: allSrc[idx]?.name ?? '',
+          video: null,
+          error: 'no-data',
+        })));
+        setSelectedSourceIds([]);
+        return;
+      }
+      if (histIdx !== undefined && !hits.has(histIdx) && !skipHistory) {
+        // 提示不再走全局 toast（用户报「未居中/与续播卡叠加」）——写入播放器内续播卡顶部行：
+        // 先显示换源提示、续播完成后其下才出现「已从上次位置继续播放」，同源同卡不叠加。
+        usePlayerStore.getState().setSourceNotice(`上次使用的源「${allSrc[histIdx]?.name ?? '未知'}」已无本片数据，已改用「${allSrc[selected]?.name ?? '其它源'}」并按最近进度续播`);
+      }
+      sourceIdx = selected;
+      activeCmsSourceIndexRef.current = selected;
+      const selectedId = allSrc[selected]?.id;
+      if (selectedId) setActiveSourceId(selectedId);
+    }
+
     // ── 快速恢复路径：有 vodId 时直接调 CMS 详情接口 ──────────
     /**
      * 快速恢复路径：有 vodId 时直接调 CMS 详情接口
@@ -253,14 +407,18 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
      * 注意：routeSourceIndex 指定了具体源时不可走此路径——历史 vodId 属于
      * 历史记录的那个源，跨源 vodId 不通用，会在用户点的源上拉错视频。
      */
-    if (!isSwitching && routeSourceIndex === undefined && histRecord?.vodId) {
+    // ⚠️ sourceIdx === histIdx 守卫（2026-10-11）：聚合选择可能已改选非历史源（历史源无数据），
+    //   vod_id 跨源不通用，绝不能拿历史 vodId 去快取其它源。
+    if (!isSwitching && routeSourceIndex === undefined && sourceIdx === histIdx && histRecord?.vodId) {
       try {
         const svc = await import('@/services/videoService');
         /** 通过 vodId 获取视频详情（传递 signal 支持取消） */
         const detailVideo = await svc.fetchVideoDetail(sourceIdx, histRecord.vodId, ctrl.signal);
         if (!isLatest()) return;
 
-        if (detailVideo) {
+        if (detailVideo && (detailVideo.sources.length > 0 || (detailVideo.episodes?.length ?? 0) > 0)) {
+          // 2026-10-11：detail 命中但无任何可播线/集视同未命中（继续走下方按标题重搜 +
+          // 跨源兜底），避免「有壳无料」停在暂无数据。
           // 设置 CMS 源信息
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
           cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
@@ -277,9 +435,11 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
               onSwitchEpisode(firstEp);
               restoreLineIfNeeded(firstEp);
               // 异步加载季信息（传递 signal 支持取消）
-              searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal).then(result => {
+              // curIdx：const 捕获已定值（:173-177 默认段保证 number），规避闭包内 let 窄化丢失
+              const curIdx = sourceIdx;
+              searchVideoSeasonsFromSingleSource(curIdx, videoTitle, videoYear, ctrl.signal).then(result => {
                 if (!isLatest()) return;
-                seasonMapsRef.current.set(sourceIdx, result.seasons);
+                seasonMapsRef.current.set(curIdx, result.seasons);
                 setCmsSeasons(buildCmsSeasons(result.seasons));
                 if (histRecord?.vodId) {
                   for (const [seasonNum, seasonVid] of result.seasons) {
@@ -295,9 +455,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           }
           if (detailVideo.sources.length > 0) {
             setSources(detailVideo.sources);
-            const firstSrc = (histRecord?.episodeUrl)
-              ? detailVideo.sources.find(s => s.url === histRecord!.episodeUrl) ?? detailVideo.sources[0]
-              : detailVideo.sources[0];
+            // 2026-10-11：线路首帧选择 routePlayUrl > 历史 url > 首线（旧版忽略弹窗指定线路）
+            const firstSrc = (routePlayUrl && detailVideo.sources.find(s => s.url === routePlayUrl))
+              || (histRecord?.episodeUrl && detailVideo.sources.find(s => s.url === histRecord!.episodeUrl))
+              || detailVideo.sources[0];
             setCurrentSrc({ url: firstSrc.url, type: firstSrc.type });
             setSource(firstSrc.url, firstSrc.type);
             currentSourceNameRef.current = firstSrc.name;
@@ -319,7 +480,25 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
         if (!seasonMap) {
           /** 按季搜索 CMS 源（传递 signal 支持取消） */
-          const seasonResult = await searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
+          let seasonResult = await searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
+          // 2026-10-11「继续观看→cms 源无数据」跨源兜底：历史/指定源按标题找不到该剧
+          // （资源轮转/下架）时不再停死在空态——顺延其它源最多 4 次，首个命中即采用。
+          if (seasonResult.seasons.size === 0 && !isSwitching) {
+            for (let i = 0, tried = 0; i < allSrc.length && tried < 4; i++) {
+              if (i === sourceIdx) continue;
+              tried += 1;
+              if (!isLatest() || ctrl.signal.aborted) break;
+              const alt = await searchVideoSeasonsFromSingleSource(i, videoTitle, videoYear, ctrl.signal);
+              if (alt.seasons.size > 0) {
+                seasonResult = alt; sourceIdx = i;
+                // 兜底命中的新源并进面板首位（当前播放源必须在面板；tmdb 初始进入才有聚合面板）
+                if (id.startsWith('tmdb-') && allSrc[i]?.id) {
+                  setSelectedSourceIds(prev => (prev.includes(allSrc[i].id) ? prev : [allSrc[i].id, ...prev]));
+                }
+                break;
+              }
+            }
+          }
           seasonMap = seasonResult.seasons;
           seasonMapsRef.current.set(sourceIdx, seasonMap);
           setCmsSeasons(buildCmsSeasons(seasonMap));
@@ -344,6 +523,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         if (isLatest()) {
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
           cmsSourceNameRef.current = allSrc[sourceIdx]?.name ?? '';
+          // 跨源兜底可能已切换 sourceIdx：同步 CMS tab 选中态（:221 早写的是兜底前的源）
+          if (allSrc[sourceIdx]?.id) setActiveSourceId(allSrc[sourceIdx].id);
 
           // 初始季优先级：弹窗直达的 routeSeasonNumber > 历史「最后播放的季」> 默认。
           // 仅当目标源确实存在该季号时才覆盖，避免源间季号体系不同导致的错配。
@@ -434,8 +615,30 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           return;
         }
       } else {
-        // TMDB 视频：通过标题搜索（传递 signal 支持取消）
-        result = await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
+        // TMDB 视频：优先复用聚合探测已拿到的结果（免重复搜索）；未命中（手动切源等）才现搜
+        result = probeHits?.get(sourceIdx) ?? await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
+      }
+
+      // 2026-10-11 电影跨源兜底（同 TV 分支）：指定/历史源搜不到本片时顺延其它源最多 4 次，
+      // 首个命中即采用并同步面板选中源，杜绝「继续观看→cms 源无数据」死端。
+      if (!result.video && !isSwitching && videoTitle) {
+        for (let i = 0, tried = 0; i < allSrc.length && tried < 4; i++) {
+          if (i === sourceIdx) continue;
+          tried += 1;
+          if (!isLatest() || ctrl.signal.aborted) break;
+          const alt = await searchVideoFromSingleSource(i, videoTitle, videoYear, ctrl.signal);
+          if (alt.video) {
+            result = alt;
+            sourceIdx = i;
+            activeCmsSourceIndexRef.current = i;
+            // 同 TV 分支：兜底命中的新源并进面板首位
+            if (id.startsWith('tmdb-') && allSrc[i]?.id) {
+              setSelectedSourceIds(prev => (prev.includes(allSrc[i].id) ? prev : [allSrc[i].id, ...prev]));
+            }
+            break;
+          }
+        }
+        if (isLatest() && allSrc[sourceIdx]?.id) setActiveSourceId(allSrc[sourceIdx].id);
       }
 
       if (isLatest()) {
@@ -468,9 +671,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
           if (result.video.sources.length > 0) {
             setSources(result.video.sources);
-            const firstSrc = (histRecord?.episodeUrl)
-              ? result.video.sources.find(s => s.url === histRecord!.episodeUrl) ?? result.video.sources[0]
-              : result.video.sources[0];
+            // 2026-10-11：同上，routePlayUrl > 历史 url > 首线
+            const firstSrc = (routePlayUrl && result.video.sources.find(s => s.url === routePlayUrl))
+              || (histRecord?.episodeUrl && result.video.sources.find(s => s.url === histRecord!.episodeUrl))
+              || result.video.sources[0];
             setCurrentSrc({ url: firstSrc.url, type: firstSrc.type });
             setSource(firstSrc.url, firstSrc.type);
             currentSourceNameRef.current = firstSrc.name;
@@ -764,11 +968,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       mod.getVideoSources().then(sources => {
         setSourceNameMap(new Map(sources.map(s => [s.id, s.name])));
         if (id?.startsWith('tmdb-')) {
-          // 面板直接展示设置页启用的源 ID（不再依赖下标）
-          const ids = videoSourceIds.length > 0
-            ? videoSourceIds
-            : (sources[0] ? [sources[0].id] : []);
-          setSelectedSourceIds(ids);
+          // 2026-10-11 用户定稿：TMDB id 的面板（selectedSourceIds）**完全交给** fetchCMSSources
+          // 聚合主链——只展示「接口有返回当前视频数据」的源，探测期间由 loading 文案占位。
+          // 本 effect 绝不能再铺设置页勾选源（旧行为会覆盖聚合过滤结果，且带 lazy-fetch 错觉）。
         } else if (routeSourceIndex !== undefined && sources[routeSourceIndex]) {
           const sourceId = sources[routeSourceIndex].id;
           setSelectedSourceIds([sourceId]);
@@ -789,7 +991,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     if (!id?.startsWith('tmdb-') || !tmdbDetail || cmsLoading) return;
     if (cmsResults.length === 0 && !fetchInitiatedRef.current) {
       fetchInitiatedRef.current = true;
-      fetchCMSSources(routeSourceIndex);
+      // 初始进入（含详情「立即播放」指定源）：manualSwitch=false 走聚合主链，
+      // 不走手动切源的清屏分支（2026-10-11 用户定稿）
+      fetchCMSSources(routeSourceIndex, false);
     }
   }, [id, tmdbDetail, cmsLoading, cmsResults.length, fetchCMSSources, routeSourceIndex]);
 
@@ -799,6 +1003,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     tmdbAbortRef.current?.abort();
     seasonMapsRef.current.clear();
     fetchInitiatedRef.current = false;
+    probeActiveRef.current = false;
     setCmsResults([]);
     setCmsSeasons([]);
     setSelectedSourceIds([]);
@@ -821,5 +1026,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     loadSeason,
     seasonMapsRef,
     activeCmsSourceIndexRef,
+    probeActiveRef,
+    probeSettledSeq,
   };
 }

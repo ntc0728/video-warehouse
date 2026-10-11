@@ -2457,6 +2457,28 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   pointer-events: auto;
 }
 
+/* 源切换提示态（2026-10-11 用户定稿）：提示占整行居上，续播行（文本+按钮）在其下——
+   先显示换源提示再显示「已从上次位置继续播放」，同卡串行不叠加 */
+.up-resume-card--notice {
+  justify-content: center;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-lg);
+}
+
+.up-resume-card__notice {
+  width: 100%;
+  color: var(--color-on-image);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* 两行形态时允许换行限宽，防长提示在窄视频区溢出 */
+.up-resume-card--notice .up-resume-card__notice {
+  max-width: min(72vw, 40rem);
+  white-space: normal;
+}
+
 @keyframes up-resume-in {
   from {
     opacity: 0;

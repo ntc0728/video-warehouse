@@ -123,6 +123,15 @@ export default function PlayerPage() {
     : seasonFromQuery !== undefined && Number.isFinite(seasonFromQuery)
       ? seasonFromQuery
       : undefined;
+  // 2026-10-11（弹窗点集竞态加固）：弹窗点「集」时额外携带集号 epn——
+  // CMS 同名资源多版本/轮转时 routePlayUrl 精确匹配可能落空，按（季,集号）兜底定位，
+  // 杜绝「点了第 N 集却有概率播第 1 集」。
+  const epnFromQuery = searchParams.has('epn') ? Number(searchParams.get('epn')) : undefined;
+  const routeEpisodeNumber = typeof routeState?.episodeNumber === 'number'
+    ? routeState.episodeNumber
+    : epnFromQuery !== undefined && Number.isFinite(epnFromQuery)
+      ? epnFromQuery
+      : undefined;
   const appliedRoutePlayRef = useRef(false);
 
   const { setSource, setSources, sources: playerSources, resetRuntime: resetPlayer } = usePlayerStore();
@@ -240,6 +249,7 @@ export default function PlayerPage() {
     selectedSourceIds, sourceNameMap, activeSourceId, cmsSeasons,
     fetchCMSSources: _fetchCMSSources, handleFetchCMSSourceById, handlePlayCMSSource, loadSeason,
     seasonMapsRef, activeCmsSourceIndexRef,
+    probeActiveRef, probeSettledSeq,
   } = useCMSSourceManager({
     id, video, setVideo, tmdbDetail, tmdbMediaType,
     setTmdbDetail, setTmdbMediaType,
@@ -249,7 +259,7 @@ export default function PlayerPage() {
     setCurrentSrc, setLocalEpisodeId, videoCache,
     routeSourceIndex, activeSourceIndex, skipHistory, onSwitchEpisode: switchToEpisode, handlePlaySource,
     // 弹窗直达：初始选集/季优先按 routePlayUrl / routeSeasonNumber 对齐，避免首播季号竞态
-    routePlayUrl, routeSeasonNumber,
+    routePlayUrl, routeSeasonNumber, routeEpisodeNumber,
   });
 
 
@@ -263,12 +273,22 @@ export default function PlayerPage() {
   });
   const cmsResultsRef = useRef(cmsResults);
   cmsResultsRef.current = cmsResults;
+  // 聚合探测期间的源死亡错误挂起区（2026-10-11 用户定稿：播放失败判定必须在所有
+  // CMS 源响应结束后做）；probeSettledSeq 到达后用完整 cmsResults 重放。
+  const pendingFailoverErrorRef = useRef<Error | null>(null);
 
   const handlePlayerError = useCallback((error: Error) => {
     const msg = error?.message ?? '';
     // 仅对「源死亡」类致命错误触发自动转移；解码/网络抖动等不触发，避免误切
     const isFatal = /源不可用|网络连接失败|频道源不可用|HLS error|媒体解码失败/.test(msg);
     if (!isFatal) return;
+
+    // 聚合探测未全部落定：挂起不处理——此时 cmsResults 不完整，过早标记 tried /
+    // 跨源推进会造成「误报播放失败/无数据」（收尾时由 probeSettledSeq effect 重放）。
+    if (probeActiveRef.current) {
+      pendingFailoverErrorRef.current = error;
+      return;
+    }
 
     const fo = failoverRef.current;
     if (fo.attempts >= MAX_FAILOVER_ATTEMPTS) return; // 上限防环
@@ -303,7 +323,17 @@ export default function PlayerPage() {
       return;
     }
     // Step3：全部失败 → 不拦截，保留默认「源不可用」覆盖层
-  }, [handlePlaySource, handlePlayCMSSource]);
+  }, [handlePlaySource, handlePlayCMSSource, probeActiveRef]);
+
+  // 聚合全部落定 → 重放探测期间挂起的源死亡错误（此时 cmsResults 已是全集）
+  useEffect(() => {
+    if (probeSettledSeq === 0) return;
+    const err = pendingFailoverErrorRef.current;
+    if (err) {
+      pendingFailoverErrorRef.current = null;
+      handlePlayerError(err);
+    }
+  }, [probeSettledSeq, handlePlayerError]);
 
   // ── 初始加载：读取视频数据 ──────────────────────────────
   /** 上一次的视频 ID，用于检测 id 变化 */
@@ -338,6 +368,7 @@ export default function PlayerPage() {
       prevIdRef.current = id;
       // 切换视频时重置故障转移状态，避免残留上一视频的已尝试源集合
       failoverRef.current = { tried: new Set<string>(), attempts: 0 };
+      pendingFailoverErrorRef.current = null;
     }
 
     /**
@@ -624,6 +655,39 @@ export default function PlayerPage() {
       return;
     }
 
+    // 2026-10-11 集号兜底（用户报「弹窗点线路/集有概率播第一个」）：URL 精确匹配落空
+    // （CMS 同名多版本/轮转导致本次搜索结果 url 与弹窗展示不一致）时，
+    // 改用弹窗携带的（季号, 集号）定位；命中后线路按 URL 再试一次，落空则默认首线。
+    if (routeEpisodeNumber != null) {
+      const findSeasonOfNumber = (num: number): number | undefined => {
+        if (!seasonMap) return undefined;
+        const prefer = routeSeasonNumber != null && seasonMap.has(routeSeasonNumber)
+          ? routeSeasonNumber
+          : undefined;
+        if (prefer != null) {
+          const sv = seasonMap.get(prefer);
+          return sv?.episodes?.some((e) => e.number === num) ? prefer : undefined;
+        }
+        for (const [seasonNum, sv] of seasonMap.entries()) {
+          if (sv.episodes?.some((e) => e.number === num)) return seasonNum;
+        }
+        return undefined;
+      };
+      const seasonOfNum = findSeasonOfNumber(routeEpisodeNumber);
+      if (seasonOfNum != null && seasonOfNum !== selectedSeason && seasonMap?.has(seasonOfNum)) {
+        handleSelectSeason(seasonOfNum);
+        return;
+      }
+      const numEp = video.episodes?.find((e) => e.number === routeEpisodeNumber);
+      if (numEp?.sources.length) {
+        switchToEpisode(numEp);
+        const numLine = numEp.sources.find((s) => s.url === routePlayUrl) ?? numEp.sources[0];
+        if (numLine) handlePlaySource(numLine);
+        appliedRoutePlayRef.current = true;
+        return;
+      }
+    }
+
     // video 仍是默认季但 seasonMap 已有数据：反查季后切换，再等待匹配
     if (seasonMap) {
       const seasonOfUrl = findSeasonOfUrl(routePlayUrl);
@@ -632,7 +696,10 @@ export default function PlayerPage() {
         return;
       }
     }
-  }, [video, routePlayUrl, switchToEpisode, handlePlaySource, handleSelectSeason, selectedSeason, routeSourceIndex, routeSeasonNumber]);
+    // cmsSeasons 入依赖：快速恢复路径的季映射是异步补写（setVideo 时 seasonMap 未就绪，
+    // 本 effect 首跑只能空转），季数据到达后需重跑一次才能跨季匹配；
+    // 旧版缺此触发器是「点了其它季的集但有概率播首集」的根因之一。
+  }, [video, routePlayUrl, routeEpisodeNumber, switchToEpisode, handlePlaySource, handleSelectSeason, selectedSeason, routeSourceIndex, routeSeasonNumber, cmsSeasons]);
 
   const activeEpId = localEpisodeId;
 
@@ -949,6 +1016,7 @@ export default function PlayerPage() {
               activeSourceId={activeSourceId}
               onPlaySource={handlePlayCMSSource}
               onFetchSource={handleFetchCMSSourceById}
+              loading={cmsLoading}
               expanded={expandedPanels.cms}
               onToggle={() => togglePanel('cms')}
               compact={isCompact}
@@ -1030,6 +1098,7 @@ export default function PlayerPage() {
               activeSourceId={activeSourceId}
               onPlaySource={handlePlayCMSSource}
               onFetchSource={handleFetchCMSSourceById}
+              loading={cmsLoading}
               expanded={expandedPanels.cms}
               onToggle={() => togglePanel('cms')}
               compact={isCompact}
@@ -1137,6 +1206,7 @@ export default function PlayerPage() {
             activeSourceId={activeSourceId}
             onPlaySource={handlePlayCMSSource}
             onFetchSource={handleFetchCMSSourceById}
+            loading={cmsLoading}
             expanded={expandedPanels.cms}
             onToggle={() => togglePanel('cms')}
             compact={isCompact}
