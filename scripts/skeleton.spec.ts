@@ -30,6 +30,7 @@
  * 常为空）、不依赖 loading 时序，一次注入可在多个视口下反复读数。
  */
 import { test, expect } from './fixtures/mock-tmdb';
+import { MOVIE_DETAIL } from './fixtures/tmdb-mock-data';
 import type { Page } from '@playwright/test';
 
 const PROBE_ID = '__skeleton_probe';
@@ -403,6 +404,69 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     await expect(page.locator('.detail-skeleton__rec-card .video-card-cover')).toHaveCount(
       await page.locator('.detail-skeleton__rec-card.video-card').count(),
     );
+  });
+
+  /**
+   * SKEL-019：Detail hero 骨架 ↔ 真实页高宽对齐（契约 D：几何对齐，2026-10-11）。
+   *
+   * 背景：骨架与真实 hero 曾多次出现几十 px 的高度跳变（数据到达瞬间内容抽动）。
+   * 两侧已共用同一套几何机制：真实结构类 + 同款 JS 测量（RO 量 info 高写
+   * --poster-w = 高×2/3），残余偏差只来自内容近似（标题行数/tagline/展开钮）。
+   *
+   * 测量基准（2026-10-11 实测，典型 3 行简介）：1280/1440/1920 三档下
+   * hero 高偏差 16–20px、海报宽偏差 7–10px。容差取实测 + 渲染抖动余量。
+   * 断言用典型长内容覆盖响应（简介撞满 3 行鉗制），避免短简介 mock 把骨架
+   * 「按典型设计」的预留误判成跳变。
+   */
+  test('SKEL-019: Detail hero 骨架与真实页高宽对齐（典型内容，高≤28px/宽≤20px）', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const typicalDetail = {
+      ...MOVIE_DETAIL,
+      overview:
+        '一个陷入存在主义危机的白领与一个张扬的肥皂销售员组建了一个地下搏击俱乐部，它逐渐演变成远超他们想象的庞大事物。' +
+        '影片在梦境与现实之间穿梭，以多重反转解构消费主义、男性身份与自我救赎，结尾的爆破把叙事推到高潮。' +
+        '这是一段足够长的典型简介，用于验证骨架与真实页在 3 行鉗制态下的高度对齐。',
+    };
+    // 真实尺寸 logo 图（默认 fixture 将 image.tmdb.org 拦成 1×1 gif，量不到真实几何）：
+    // 返回 400×150 SVG（intrinsic 8:3），让真实页渲染出 ≈184×69 的 logo，
+    // 与按 logo 档预留的骨架 title 槽对齐。
+    await page.route('**/image.tmdb.org/**', async (route) => {
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="150"><rect width="400" height="150" fill="#888"/></svg>';
+      await route.fulfill({ status: 200, contentType: 'image/svg+xml', body: svg });
+    });
+    // 窄于 fixture 的 detail 路由（后注册优先）；正则不匹配 /movie/550/images；延迟兼撑开骨架窗口
+    await page.route(/\/movie\/550(\?|$)/, async (route) => {
+      await new Promise((r) => setTimeout(r, 1500));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(typicalDetail),
+      });
+    });
+    await page.goto('/detail/tmdb-movie-550', { waitUntil: 'domcontentloaded' });
+
+    // 骨架窗口：量 hero 高 + 海报宽（等骨架内 RO 收敛 --poster-w）
+    const skelHero = page.locator('.detail-skeleton__hero');
+    await expect(skelHero).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(300);
+    const skelHeroBox = await skelHero.boundingBox();
+    const skelPosterBox = await page.locator('.detail-skeleton__poster').boundingBox();
+    expect(skelHeroBox).not.toBeNull();
+    expect(skelPosterBox).not.toBeNull();
+
+    // 真实窗口：骨架被真实页替换（section.detail-hero），等入场动画 + RO 收敛
+    const realHero = page.locator('section.detail-hero');
+    await expect(realHero).toBeVisible({ timeout: 15000 });
+    await page.waitForTimeout(1500);
+    const realHeroBox = await realHero.boundingBox();
+    const realPosterBox = await page.locator('section.detail-hero > .detail-hero-poster').boundingBox();
+    expect(realHeroBox).not.toBeNull();
+    expect(realPosterBox).not.toBeNull();
+
+    // 高偏差 ≤28px（2026-10-11 实测 logo 档 13px）；海报列宽偏差 ≤20px
+    // （--poster-w = info 高×2/3，宽度偏差几何上由高偏差传导，28×2/3≈18.7 → 取 20）
+    expect(Math.abs(realHeroBox!.height - skelHeroBox!.height)).toBeLessThanOrEqual(28);
+    expect(Math.abs(realPosterBox!.width - skelPosterBox!.width)).toBeLessThanOrEqual(20);
   });
 
   test('SKEL-014: Browse 首屏 chrome 骨架（左栏/顶栏）+ 结果网格骨架', async ({ page }) => {

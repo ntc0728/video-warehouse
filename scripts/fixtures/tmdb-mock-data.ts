@@ -38,7 +38,9 @@ const TRENDING_RESULTS = Array.from({ length: 20 }, (_, i) => ({
 
 // ── Movie Detail 响应 ─────────────────────────────────────
 
-const MOVIE_DETAIL = {
+// export 供骨架对齐测试（SKEL-016）以典型长内容覆盖响应（spread + 改 overview），
+// 不另抄一份数据防漂移；其余消费方仍走 matchMockRoute。
+export const MOVIE_DETAIL = {
   id: 550,
   title: '搏击俱乐部',
   original_title: 'Fight Club',

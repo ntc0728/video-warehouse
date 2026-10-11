@@ -85,14 +85,14 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 
 | 档位 | 命令 | 用例数 | spec 数 |
 | --- | --- | --- | --- |
-| 全仓枚举 | `npx playwright test --list` | **244** | 22 |
+| 全仓枚举 | `npx playwright test --list` | **245** | 22 |
 | 默认套 | `npm run test:e2e` | **132** | 16 |
 | ├ Stage A（dev 行为套） | `e2e-suite.mjs` 阶段 A | 108 | 12 |
 | └ Stage B（preview 播放器系） | `e2e-suite.mjs` 阶段 B | 24 | 4 |
 | 发版回归组 | `npm run test:regression` | **121** | 13 |
 | 冒烟组（与改动侦测取交集） | `npm run test:smoke` | 37 | 3 |
 | 按需 | `npm run test:e2e:shots` | 29 | 1 |
-| 按需 | `npm run test:e2e:skeleton` | 37 | 2 |
+| 按需 | `npm run test:e2e:skeleton` | 38 | 2 |
 | 按需 | `npm run test:e2e:boot-iso` | 42 | 1 |
 | 按需 | `npm run test:e2e:subpages` | 4 | 2 |
 
@@ -106,7 +106,7 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 | `scripts/regression.spec.ts` | 30 | 默认套 A（dev 行为套） |
 | `scripts/boot-splash-shots.spec.ts` | 29 | 按需 `test:e2e:shots` |
 | `scripts/boot-splash.spec.ts` | 19 | 按需 `test:e2e:skeleton` |
-| `scripts/skeleton.spec.ts` | 18 | 按需 `test:e2e:skeleton` |
+| `scripts/skeleton.spec.ts` | 19 | 按需 `test:e2e:skeleton` |
 | `scripts/browse.spec.ts` | 13 | 默认套 A（dev 行为套） |
 | `scripts/home.spec.ts` | 13 | 默认套 A（dev 行为套） |
 | `scripts/iptv-player.spec.ts` | 11 | 默认套 B（preview 播放器系） |
