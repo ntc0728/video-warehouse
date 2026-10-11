@@ -116,6 +116,9 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "sharp"
-    ]
+    ],
+    "patchedDependencies": {
+      "vite@6.4.2": "patches/vite@6.4.2.patch"
+    }
   }
 }
