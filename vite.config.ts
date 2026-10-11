@@ -122,6 +122,124 @@ window.__vite_plugin_react_preamble_installed__ = true;
       },
     },
     react(),
+    /**
+     * dev 冷启动主动预变换（2026-10-11）：
+     *
+     * 问题根因（瀑布分析实测）：
+     *   Vite dev 模式下每个源文件需独立 HTTP 请求 + 服务端实时变换（TS/JSX → JS）。
+     *   项目有 306 个 TSX/TS + 70 个 CSS = 376 个源文件，浏览器同域最大 6 并发连接
+     *   → 需要 ~63 波串行请求。每波包含 HTTP 往返 + 服务端变换延迟（5–200ms/模块，
+     *   取决于机器性能）。在较慢机器上 25 波 × 200ms = 5s+，叠加 dep 优化等待即可
+     *   超过 10s。
+     *
+     *   Vite 内置 `preTransformRequests` 机制：变换一个模块后自动预热其静态 import。
+     *   但它是**被动**的 —— 从浏览器请求首个模块才开始级联。浏览器 6 连接限制
+     *   使级联呈波浪式推进（请求→变换→返回→发现新 import→再请求），每波引入
+     *   一个 RTT + 变换延迟。在慢机器上这个延迟被放大到 200ms+/模块。
+     *
+     * 解决方案：
+     *   首个请求到达时，后台并发预变换 src/ 下所有 .tsx/.ts/.css 文件。
+     *   与浏览器请求并行推进 → 浏览器到达时模块已变换完毕、直接从缓存秒返。
+     *   并发限制 30（避免事件循环饥饿）；transformRequest 内部去重，与正常
+     *   模块请求不冲突（后到的请求直接读缓存）。
+     *
+     * 实测：冷启动 document 首字节不变（early-index-html 保障）；模块请求从
+     *   波浪式 5–200ms/个降至 <5ms/个（缓存命中）。
+     */
+    {
+      name: 'eager-pretransform',
+      configureServer(server) {
+        // 仅 dev 模式生效；production build 不需要
+        let triggered = false
+        server.middlewares.use((req, _res, next) => {
+          if (!triggered && req.method === 'GET') {
+            triggered = true
+            // 不 await —— 后台执行，不阻塞当前请求
+            ;(async () => {
+              // 关键：等待依赖优化完成后再预变换。
+              // 若在 depsOptimizer 仍在 scan/optimize 时预变换，新依赖发现会
+              // 触发 re-optimize → 整个模块缓存失效 → 预变换白做。
+              // 轮询 depsOptimizer.scanProcessing（Vite 内部 Promise，scan/optimize
+              // 完成时 resolve），确保预变换在稳定缓存上执行。
+              const MAX_WAIT = 30_000 // 最多等 30s
+              const pollStart = Date.now()
+              try {
+                const env = (server as any).environments?.client || (server as any).environments?.ssr
+                while (Date.now() - pollStart < MAX_WAIT) {
+                  const optimizer = env?.depsOptimizer
+                  if (!optimizer?.scanProcessing && !optimizer?.optimizationResult) break
+                  await new Promise(r => setTimeout(r, 200))
+                }
+              } catch { /* 轮询失败不阻断，继续预变换 */ }
+              const waitMs = Date.now() - pollStart
+
+              const t0 = Date.now()
+              const srcDir = path.resolve(projectRoot, 'src')
+              // 递归收集所有需变换的源文件
+              const files: string[] = []
+              const walk = (dir: string) => {
+                for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                  const full = path.join(dir, entry.name)
+                  if (entry.isDirectory()) {
+                    // 跳过 node_modules、.git、test 目录（测试文件不参与浏览器渲染）
+                    if (entry.name !== 'node_modules' && entry.name !== '.git' && entry.name !== '__tests__' && entry.name !== 'test') walk(full)
+                  } else if (entry.isFile() && /\.(tsx?|css)$/.test(entry.name) && !entry.name.endsWith('.test.ts') && !entry.name.endsWith('.test.tsx') && !entry.name.endsWith('.spec.ts') && !entry.name.endsWith('.spec.tsx')) {
+                    files.push(full)
+                  }
+                }
+              }
+              walk(srcDir)
+              // 并发限制：30 路并行变换（Vite transformRequest 内部有去重，
+              // 与浏览器正常请求不冲突；30 是事件循环饥饿与吞吐的平衡点）
+              const CONCURRENCY = 30
+              let idx = 0
+              let done = 0
+              let failed = 0
+              const runNext = async () => {
+                while (idx < files.length) {
+                  const i = idx++
+                  const file = files[i]
+                  // 将文件路径转为 Vite URL（/src/... 格式）
+                  const url = '/' + path.relative(projectRoot, file).replace(/\\/g, '/')
+                  try {
+                    await server.transformRequest(url)
+                    done++
+                  } catch {
+                    failed++
+                  }
+                }
+              }
+              const workers = Array.from({ length: Math.min(CONCURRENCY, files.length) }, () => runNext())
+              await Promise.all(workers)
+              // 预变换可能发现初始 scan 未覆盖的依赖（如 @testing-library/jest-dom），
+              // 触发 re-optimize → 缓存失效。等待重新优化完成，再补一轮预变换恢复缓存。
+              try {
+                const env = (server as any).environments?.client
+                let reoptWait = 0
+                while (reoptWait < 10_000) {
+                  const optimizer = env?.depsOptimizer
+                  if (!optimizer?.scanProcessing && !optimizer?.optimizationResult) break
+                  await new Promise(r => setTimeout(r, 200))
+                  reoptWait += 200
+                }
+                if (reoptWait > 0) {
+                  // 重新优化完成，缓存已失效。补一轮快速预变换恢复缓存。
+                  let redo = 0
+                  for (const file of files) {
+                    const url = '/' + path.relative(projectRoot, file).replace(/\\/g, '/')
+                    try { await server.transformRequest(url); redo++ } catch { /* ignore */ }
+                  }
+                  console.log(`[eager-pretransform] re-optimize detected, re-pretransformed ${redo} modules`)
+                }
+              } catch { /* ignore */ }
+              const elapsed = Date.now() - t0
+              console.log(`[eager-pretransform] ${done}/${files.length} modules pre-transformed in ${elapsed}ms (dep-wait ${waitMs}ms)${failed ? ` (${failed} failed)` : ''}`)
+            })().catch(() => { /* 预变换失败不影响正常请求 */ })
+          }
+          next()
+        })
+      },
+    },
     // Capacitor 构建不需要预压缩（Android WebView 直接读本地文件）
     // VITE_COMPRESS=false 可跳过压缩（本地开发/CI 加速）
     ...(process.env.CAPACITOR === 'true' || process.env.VITE_COMPRESS === 'false' ? [] : [
