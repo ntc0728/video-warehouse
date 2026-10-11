@@ -2202,4 +2202,136 @@ html .settings-page .settings-sidenav {
   color: var(--color-warning-text);
 }
 
+/* ═══ 错误日志设置组（2026-10-11 新增，个人设置页独立 section）═══
+   组结构：.settings-personal-section > 标题（错误日志）+ card body 内一行；
+   行 = .settings-row--log [主区按钮（点开弹窗，无右箭头）+ 清除按钮]；
+   弹窗复用 .changelog-modal + .changelog-content 时间轴版式（.el-* 为条目修饰）。
+   两按钮带 .no-press：豁免 index.css 全局「内容缩放」按压缩放（子元素 scale 会让
+   提示语位移；其 .settings-page 豁免类实际不存在），非新增视觉行为。 */
+.settings-row--log {
+  gap: var(--space-md);
+  padding: 0;
+}
+.settings-row__main {
+  display: flex;
+  flex: 1;
+  gap: var(--space-lg);
+  align-items: center;
+  min-width: 0;
+  padding: var(--space-lg) 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* 零位移兜底（2026-10-11 用户反馈「查看日志与提示文本点击时位移距离不一致」）：
+   两行文本同受某个祖先 scale 时，离变换原点（≈容器中心）越远位移越大——正是
+   「不一致」的几何特征。除 .no-press 豁免现有全局按压缩放外，再对本行主体/
+   清除按钮及其子孙结构性压死 scale/transform，覆盖任何未盘点到的现存量或未来
+   新增的按压规则（选择器特异性难逐一比拼，此处显式 !important）。 */
+.settings-row--log .settings-row__main,
+.settings-row--log .settings-row__main > *,
+.settings-row--log .settings-row__main:active,
+.settings-row--log .settings-row__main:active > *,
+.settings-row--log .settings-row__clear:active {
+  scale: none !important;
+  transform: none !important;
+}
+
+/* 清除日志按钮：用户要求点击/hover 均不得出现黑色边框——
+   hover 只变底色不变描边色；:focus 去默认 outline，:focus-visible 抑制全局
+   桌面焦点环（--color-primary 浅色=#000 即黑框，同 player-episode-select / SearchBox 先例）；
+   TV/projector 遥控焦点框保留不改写。 */
+.settings-row__clear {
+  flex-shrink: 0;
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  outline: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.settings-row__clear:focus {
+  outline: none;
+  box-shadow: none;
+}
+:root:not([data-device="tv"]):not([data-device="projector"]) .settings-row__clear:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.settings-row__clear:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+.settings-row__clear:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* 弹窗内条目（挂在 .changelog-content .cl-item 基础上修饰） */
+.el-item {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+}
+.el-kind {
+  flex-shrink: 0;
+  margin-top: var(--space-2xs);
+  padding: var(--space-2xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-tag-bg);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.el-kind--api {
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+.el-kind--js,
+.el-kind--promise {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+.el-main {
+  min-width: 0;
+}
+.el-msg {
+  display: -webkit-box;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  overflow: hidden;
+  word-break: break-all;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+.el-count {
+  margin-left: var(--space-2xs);
+  color: var(--color-error-text);
+  font-weight: 600;
+}
+.el-src {
+  margin-top: var(--space-2xs);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  word-break: break-all;
+}
+.el-empty {
+  margin: 0;
+  padding: var(--space-lg) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
 

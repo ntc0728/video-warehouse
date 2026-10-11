@@ -4,6 +4,7 @@ import { Button, ConfirmDialog, toast } from '@/components/ui';
 import { useSettingsStore } from '@/stores';
 import { useUserStore } from '@/stores';
 import ProfileHeader from '../ProfileHeader';
+import ErrorLogRow from '../components/ErrorLogRow';
 import { exportBackup, parseBackup, applyBackup } from '../settingsBackup';
 import { clearAllCaches } from '@/lib/clearCaches';
 import { Icon } from "@/components/ui/Icon";
@@ -116,6 +117,9 @@ export default function PersonalTab() {
         </div>
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={handleImportFile} />
       </section>
+
+      {/* 错误日志（2026-10-11）：独立设置组（自带 section 壳），行主体开弹窗 + 最右清除按钮 */}
+      <ErrorLogRow />
 
       {/* 恢复默认配置 */}
       <section className="settings-personal-section">
