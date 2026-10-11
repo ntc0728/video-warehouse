@@ -7,7 +7,7 @@
 ```bash
 npm run dev          # 开发服务器 (127.0.0.1:3001)
 npm run build        # 生产构建（tsc -b && vite build）
-npm run lint:all     # ESLint + Stylelint
+npm run lint:all     # 8 门总闸：design / css / json / version-sync / test-map / lock-pnpm / eslint / build
 npm run test         # Vitest 单元测试
 npx playwright test  # E2E 测试（TMDB Mock 默认启用，-RealApi 关闭）
 ```

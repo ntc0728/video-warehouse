@@ -6,8 +6,9 @@
  * 一次只能看到一个门的结果，修完再跑才能发现下一个门还有问题。
  * 本脚本顺序跑完全部检查（每步失败也继续），最后汇总报告，任一失败 exit 1。
  *
- * 门禁清单（**7 门**，2026-09-23）：
- *   lint:design / lint:css / lint:json / lint:version-sync / **lint:test-map** / lint(eslint) / build。
+ * 门禁清单（**8 门**，2026-10-11）：
+ *   lint:design / lint:css / lint:json / lint:version-sync / lint:test-map /
+ *   **lint:lock-pnpm** / lint(eslint) / build。
  * - `lint:version-sync`（2026-09-23 新增）= `sync-android-version.mjs --check`，拦 `capacitor.config.ts`
  *   版本号漂移（CI 只在临时 checkout 里 sync、不回写仓库，故仓库副本会长期落后）。
  * - `lint:test-map`（2026-09-23 新增）= `test-count-report.mjs --check`，拦**测试映射腐化**：
@@ -15,6 +16,12 @@
  *   grep 的某个 `|` 片段永远不命中（编号合并成 `BROWSE-020/023/025` 后写 `BROWSE-023` 即此）/
  *   档位恒等式被破坏 / `docs/agents/testing.md` 的生成块过期。它只跑 `playwright --list`（1–2s），
  *   不起浏览器。补映射或加删用例后跑 `npm run test:count -- --write` 同步文档即可。
+ * - `lint:lock-pnpm`（2026-10-11 新增）= `pnpm install --frozen-lockfile --lockfile-only`，拦
+ *   **pnpm 依赖配置漂移**：package.json 的 pnpm.* 配置（patchedDependencies 等）与
+ *   pnpm-lock.yaml 不一致。背景：本仓日常走 npm run（lint-all 内部虽用 pnpm run 也只是转发，
+ *   不读 lock/不 apply patch），而 Cloudflare 部署 CI 的 `pnpm install` 默认 frozen——
+ *   2026-10-11 的 vite patch 漂移就是首爆在部署环节（见 changelogs/2026-10-11.md）。
+ *   `--lockfile-only` 不碰 node_modules、不下载（命中锁时 <1s，需重算时 ~7s），零副作用。
  *
  * ── 受限沙箱（WorkBuddy / CodeBuddy）适配，2026-09-22 ─────────────────────────
  * 1. 子进程一律走**异步 `spawn`**：沙箱 node 语言 shim 会拦截同步子进程创建，
@@ -40,6 +47,7 @@ const steps = [
   { name: 'lint:json (重复 key)', cmd: 'node scripts/json-dup-key-check.mjs' },
   { name: 'lint:version-sync (版本漂移)', cmd: 'pnpm run lint:version-sync' },
   { name: 'lint:test-map (测试映射/计数漂移)', cmd: 'pnpm run lint:test-map' },
+  { name: 'lint:lock-pnpm (pnpm 配置/lock 一致性)', cmd: 'pnpm install --frozen-lockfile --lockfile-only' },
   { name: 'lint (eslint)', cmd: 'pnpm run lint' },
   {
     name: 'build',

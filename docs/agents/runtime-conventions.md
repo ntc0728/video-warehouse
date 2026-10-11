@@ -101,7 +101,7 @@ Browse 逻辑分页（算术定位 + 多触发器等值 + 跨页去重 + 三段�
 - **计数事实源（2026-09-23 收敛为单一来源）**：数字只认 `docs/agents/testing.md` 的
   **「📊 口径与映射总表」生成块**——由 `npm run test:count -- --write` 从
   `run-tests.ps1` 映射表 + `e2e-suite.mjs` 阶段名单 + `playwright test --list` 实算生成，
-  由 `lint:test-map`（`lint:all` 第 7 门）校验不过期。**别在任何文档里手写这些数字**
+  由 `lint:test-map`（`lint:all` 固定门）校验不过期。**别在任何文档里手写这些数字**
   （历史教训：同一份「116 条 / 16 spec」在 4 处各写一份，早已漂移；`home 列 46` 实际只有 13）。
   现况：默认套 `test:e2e` = 132 条 / 16 spec（A dev 108/12 + B preview 24/4）、
   回归组 `test:regression` = 121 条 / 13 spec、全仓 `--list` = 246 条 / 22 spec。

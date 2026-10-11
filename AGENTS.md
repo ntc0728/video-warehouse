@@ -70,7 +70,7 @@
 ```bash
 npm run dev          # 开发服务器（127.0.0.1:3001，双栈监听，localhost 直连 ::1 无 IPv6 回退）
 npm run build        # 生产构建（tsc -b && vite build）；沙箱清 dist 撞批量删除保护时用 npx tsc -b && npx vite build --emptyOutDir false
-npm run lint:all     # 7 门总闸：design / css / json / version-sync / test-map / eslint / build
+npm run lint:all     # 8 门总闸：design / css / json / version-sync / test-map / lock-pnpm / eslint / build
 npm run test         # Vitest 单元测试
 npm run test:changed # E2E 增量（按「未提交改动」跑相关 spec；命中 >3 spec 会 exit 2 拦下，-Full 放行）
 npm run test:count   # 用例计数/映射一致性报告（不跑浏览器，1–2s）；`-- --write` 同步 testing.md

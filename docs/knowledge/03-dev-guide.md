@@ -83,7 +83,7 @@ npm run test:regression # 回归组（13 个 spec / 121 条，含 -Full -Retries
   **详情页改动** = `detail.spec.ts` + `regression.spec.ts`（其「详情页回归」段）；**代理配置子页** = `proxy-setup.spec.ts`。
   完整「源文件 → spec → 用例数」事实表见 `docs/agents/testing.md` 的生成块（`npm run test:count` 产出）。
 - **计数与映射一律不手写**：`npm run test:count -- --write` 生成 `testing.md` 的口径总表；
-  `npm run lint:test-map`（`lint:all` 第 7 门）校验「引用的 spec 存在 / pattern 基路径存在 /
+  `npm run lint:test-map`（`lint:all` 固定门）校验「引用的 spec 存在 / pattern 基路径存在 /
   grep 片段真命中 / 档位恒等式 / 文档未过期」。当前口径：全仓 246 条 / 22 spec，默认套 132 条 / 16 spec，
   回归组 121 条 / 13 spec（2026-09-23 `--list` 实测）。`scripts/backup-specs/` 旧测试备份不在 `testDir` 覆盖内。
 - **跑前须知**：E2E 端口由 **OS 动态分配**，跑批器自建 server 并做 HTTP 200 探活，**不需要你先起 `npm run dev`**

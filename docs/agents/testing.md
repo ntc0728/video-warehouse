@@ -78,7 +78,7 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 > `npx playwright test --list` 取**真实**用例数，然后写回本文件的生成块。
 > `npm run lint:test-map`（同一脚本的 `--check`）校验五项：① 映射引用的 spec 文件存在
 > ② pattern 基路径存在 ③ grep 每个 `|` 片段都真的命中 ④ 档位恒等式成立 ⑤ 本文件生成块未过期。
-> 已挂进 `npm run lint:all`（第 7 门）。**改映射 / 加删用例后跑 `npm run test:count -- --write`。**
+> 已挂进 `npm run lint:all`（`lint:test-map` 门，2026-09-23 起）。**改映射 / 加删用例后跑 `npm run test:count -- --write`。**
 
 <!-- test-counts:begin ⚙️ 由 scripts/test-count-report.mjs --write 生成，勿手改数字 -->
 #### ① 档位汇总
@@ -253,7 +253,7 @@ bug 只在漂移数据下暴露。需要验证分页行为时，route 层把 dis
 | `npm run test:e2e:shots` | 启动骨架截图取证 | dev、人工核查用（不进默认套） |
 | `npm run test:e2e:report` | 打开上次 HTML 报告 | — |
 | `npm run test:count` | 用例计数/映射一致性报告（**不跑浏览器**，1–2s） | 读映射表 + `--list` 枚举；`-- --write` 同步 `testing.md` 生成块；`-- --check` 只校验 |
-| `npm run lint:test-map` | `test:count -- --check`，`lint:all` 第 7 门 | 死 spec 引用 / 死 pattern / 死 grep 片段 / 档位恒等式 / 文档过期 |
+| `npm run lint:test-map` | `test:count -- --check`，`lint:all` 固定门 | 死 spec 引用 / 死 pattern / 死 grep 片段 / 档位恒等式 / 文档过期 |
 | `node scripts/e2e-suite.mjs --only <spec> [-g 子串] [--dev]` | 调试**单个** spec | 默认 preview（需最新 dist），`--dev` 走源码态；自带清场+健康轮询 |
 
 > 底层跑批器：`node scripts/e2e-skeleton.mjs [spec… | -g 过滤]`（preview 默认，`--dev`/`--all` 可切）。
@@ -380,7 +380,7 @@ node scripts/e2e-skeleton.mjs -g SKEL-011
 | `lint`（eslint） | 33.6s | **15.8s** |
 | `npm run build` | 60.2s | **40.8s** |
 | `build:fast` | 34.8s | — |
-| `lint:all`（2026-09-23 起 6 门） | 46.3s | — |
+| `lint:all`（2026-10-11 起 8 门，新增 `lint:lock-pnpm` <1s；表内为旧门数时代快照） | 46.3s | — |
 | `test`（vitest） | 54.6s | 29.5s |
 | `sync:android-version` | 3.4s | — |
 | `dev` 首启（vite） | 12.9s（依赖预打包坏缓存放大） | **5.2–6.5s** |
@@ -448,7 +448,7 @@ node scripts/e2e-skeleton.mjs -g SKEL-011
 - ⚠️ **段号是正则**：`.` 必须转义（`1.2` 的 `.` 会通配任意字符，误命中含 `1023px` 等 1?2 序列的其他段标题），写 `1\.2`
 - ⚠️ **编号也可能是子串陷阱**：spec 里把编号合并成 `BROWSE-020/023/025: …` 时，映射写 `BROWSE-023` **永远不命中**（`--grep` 是子串正则，标题里没有 `BROWSE-023` 这串）；要写就写段首那一个（`BROWSE-020`）或用段号
 - **改完映射必须跑 `npm run test:count`（可加 `-- --write` 同步文档）**：它逐片段验证命中数。
-  `npm run lint:test-map`（同一脚本 `--check`）已挂进 `lint:all` 第 7 门，会拦下
+  `npm run lint:test-map`（同一脚本 `--check`）已挂进 `lint:all`（固定门），会拦下
   「引用不存在的 spec / pattern 基路径不存在 / 死 grep 片段 / 档位恒等式不成立 / 本文档生成块过期」
 - **映射覆盖范围（本表由脚本生成，别手抄）**：`$uiPrecisionMap` 覆盖共享组件（HeroBanner/CategoryQuickAccess/Layout/StickyHeader/SearchBox/VideoCard/LazyImage/RecordShell/StatusTabs/StillsLightbox/IPTVChannelCard/EPGProgramList/SourceManager/TokenRequired/ui/UniversalPlayer/FilterBar）+ 高频页面文件；`$logicTestMap` 统一 `{spec, grep}` 结构，`spec` 含 `"vitest"` 标记触发单测，关键服务/Store 文件联动对应页面 E2E 段；未命中精粒度的文件落 `$uiTestMap` 粗粒度兜底（见上方 ③ 表「（兜底）」行）
 - **映射失效检测（两道，互补）**：① `run-tests.ps1` 运行时自检——剥离 `/* */` 与 `//` 注释后匹配，**整条 grep**
