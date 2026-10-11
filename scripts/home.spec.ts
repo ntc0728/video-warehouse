@@ -381,69 +381,35 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
 // 1.3c 宽屏分类面板
 // ═══════════════════════════════════════════════════════════════
 
-test.describe('1.3c 宽屏分类面板', () => {
-  // mega 面板自门控：useIsWideDesktop() = (min-width: 1281px)。默认 viewport 1280 不渲染面板，
-  // 必须显式 ≥1440 才触发 hover 展开逻辑（防御性，避免依赖 config 默认视口）。
+test.describe('1.3c 宽屏分类入口（合集推荐行现态）', () => {
+  // 2026-10-11 同步 4a986d2「首页大屏整改」：顶栏 chips（.cqa-nav）与 mega 面板已退役，
+  // 宽屏分类入口 = CategoryInlineBoard「合集推荐」行（点击跳 /chart?collection=key），
+  // <1024 回退圆卡。本组断言现态，并锁定「旧 mega 链任何页面都不复生」。
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  // 面板 hover 可能因趋势数据后续更新触发 re-render 被瞬间收起：
-  // 先等页面数据稳定（首页 .tmdb-movierow / 其他页各自稳定元素出现 = 趋势数据已就绪，不再 re-render），
-  // 再单次 hover 并轮询面板出现。替代固定 waitForTimeout（3000ms 睡眠）与重试 hover（会震荡）。
-  // 等页面异步数据彻底就绪（首页 .tmdb-movierow；browse 结果区；settings 页）再 hover，
-  // 避免 hover 过早触发面板后首页数据后续更新 re-render 把面板收起（mouseleave 误触发）。
-  // 2026-10-09：原 `.cqa-heat-row` 就绪信号已随首页左栏（09-29 删栏）及组件清理移除。
-  const waitPageReady = async (page: import('@playwright/test').Page) => {
-    await expect.poll(
-      async () => page.locator('.tmdb-movierow, .browse-results-body, .browse-card--results, .settings-page, .category-quick-access__card').first().count(),
-      { timeout: 10000 },
-    ).toBeGreaterThan(0);
+  // 等首页异步数据稳定（首行 .tmdb-movierow 已渲染），避免 re-render 窗口期误断。
+  // 2026-10-11：原 waitPageReady/openPanel/openPanelOverlay（hover .cqa-nav 触发 mega）
+  // 随顶栏 chips 退役删除——现态无 mega 触发源，面板 overlay 恒不出现。
+  const waitHomeReady = async (page: import('@playwright/test').Page) => {
+    await expect(page.locator('.home-page:not(.home-skeleton) .tmdb-movierow').first()).toBeVisible({ timeout: 10000 });
   };
-  // hover 开面板：反复 hover 直到面板出现。数据刷新导致 re-render 瞬间收起时，poll 发现面板消失会重新 hover 撑住，
-  // 待数据稳定后面板常驻即通过。替代固定 waitForTimeout + 单次 hover（后者在竞态下 15s 超时）。
-  const openPanel = async (page: import('@playwright/test').Page, n: number) => {
-    await waitPageReady(page);
-    await page.mouse.move(2, 2); // 移开光标，确保无残留面板
-    await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 3000 }).toBe(0).catch(() => {});
-    await expect.poll(async () => {
-      if ((await page.locator('.cqa-overlay .cqa-hotcard').count()) === 0) {
-        await page.locator('.cqa-nav__item').nth(n).hover();
-      }
-      return page.locator('.cqa-overlay .cqa-hotcard').count();
-    }, { timeout: 10000 }).toBeGreaterThan(0);
-  };
-  const openPanelOverlay = async (page: import('@playwright/test').Page, n: number) => {
-    await waitPageReady(page);
-    await page.mouse.move(2, 2);
-    await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 3000 }).toBe(0).catch(() => {});
-    await expect.poll(async () => {
-      if ((await page.locator('.cqa-overlay').count()) === 0) {
-        await page.locator('.cqa-nav__item').nth(n).hover();
-      }
-      return page.locator('.cqa-overlay').count();
-    }, { timeout: 10000 }).toBeGreaterThan(0);
-  };
-  test('面板入口与常驻布局（070 chips/071 热度榜/074 全部分类/083 完整榜单）', async ({ page }) => {
+  test('分类入口与常驻布局（070 chips 退役回归/074 合集跳转/083 详情入口）', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    // 070: chips 融合顶栏、8 入口、热度徽标移除、默认 overlay 收起
+    // 070'：旧 mega 入口不得存在——顶栏 chips 与面板 overlay 均恒 0（锁定退役态）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
-    const navItems = page.locator('.cqa-nav__item');
-    expect(await navItems.count()).toBe(8); // 7 分类 chip + 全部分类
-    expect(await page.locator('.cqa-nav__item svg').count()).toBeGreaterThanOrEqual(8);
-    expect(await page.locator('.cqa-nav__heat').count()).toBe(0);
+    await waitHomeReady(page);
+    expect(await page.locator('.sticky-header .cqa-nav').count()).toBe(0);
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
 
-    // 074: 「全部分类」跳转 /browse
-    await page.locator('.cqa-nav__more').click();
-    await expect(page).toHaveURL(/\/browse/, { timeout: 5000 });
-    const url1 = new URL(page.url());
-    expect(url1.pathname).toBe('/browse');
-    expect(url1.searchParams.get('category')).toBe('all');
+    // 074'：现态分类入口 = 合集推荐行，点首卡跳 /chart?collection=
+    await expect(page.locator('.cqa-board')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.cqa-board__collection').first()).toBeVisible();
+    await page.locator('.cqa-board__collection').first().click();
+    await expect(page).toHaveURL(/\/chart\?collection=/, { timeout: 5000 });
+    await page.waitForSelector('.chart-row', { timeout: 10000 });
 
-    // 083: 点 banner 右侧卡前往影片详情
-    // （2026-10-09：原左栏趋势行点击随左栏删除迁移到 .hero-side-card——同为首页常驻 /detail 入口）
+    // 083'：点 banner 右侧卡前往影片详情（首页常驻 /detail 入口，沿用原测点）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.hero-side-card', { timeout: 10000 });
     await page.locator('.hero-side-card').first().click();
@@ -451,188 +417,69 @@ test.describe('1.3c 宽屏分类面板', () => {
     await page.waitForSelector('.detail-hero', { timeout: 10000 });
   });
 
-  test('mega 展开/子分类切换/跳转/tooltip（072/073/077/079/087）', async ({ page }) => {
+  test('合集推荐行渲染与跳转（072 行标题/073 拼贴卡/077 跳转参数/087 骨架同构）', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-
-    // 072: 悬停「电影」chip → mega 面板展开
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
-    // 等趋势数据就绪（首行 .tmdb-movierow 渲染 = 首页异步数据稳定），避免 hover 过早触发后 re-render 误收起面板。
-    // 2026-10-09：原 `.cqa-heat-row` 就绪信号已随首页左栏（09-29 删栏）及组件清理迁移到首行卡片。
-    await expect(page.locator('.home-page:not(.home-skeleton) .tmdb-movierow').first()).toBeVisible({ timeout: 10000 });
-    await openPanel(page, 1);
-    expect(await page.locator('.cqa-overlay').count()).toBe(1);
-    expect(await page.locator('.cqa-panel__heat').count()).toBe(1);
-    expect(await page.locator('.cqa-subgenres__chip').count()).toBeGreaterThanOrEqual(2);
-    expect(await page.locator('.cqa-hotcard').count()).toBe(9);
-    expect(await page.locator('.app-shell .cqa-overlay').count()).toBe(1);
+    await waitHomeReady(page);
+    const board = page.locator('.cqa-board');
+    await expect(board).toBeVisible({ timeout: 10000 });
 
-    // 073: 点子分类 chip 面板不消失（仍为 9 卡）
-    await page.locator('.cqa-subgenres__chip').nth(1).click();
-    await expect(page.locator('.cqa-overlay')).toBeVisible({ timeout: 8000 });
-    expect(await page.locator('.cqa-hotcard').count()).toBe(9);
+    // 072'：行标题「合集推荐」；卡数 ≥1（6 组 discover 全到齐才出卡，单组失败 skip 的 store 口径）
+    await expect(page.locator('.cqa-board .tmdb-movierow-title')).toHaveText('合集推荐');
+    const collectionCount = await page.locator('.cqa-board__collection').count();
+    expect(collectionCount).toBeGreaterThanOrEqual(1);
 
-    // 077: 面板条目跳转影片详情
-    // （2026-10-09：原左栏趋势行点击随左栏删除迁移到面板卡——面板卡同为 /detail 入口）
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await openPanel(page, 1);
-    await page.locator('.cqa-overlay .cqa-hotcard').first().click();
-    await expect(page).toHaveURL(/\/detail\//, { timeout: 5000 });
-    await page.waitForSelector('.detail-hero', { timeout: 10000 });
+    // 073'：每张合集卡 = 2×2 拼贴封面（格数 ≥1）+ 名称行非空（拼贴形状回归锁）
+    const firstCard = page.locator('.cqa-board__collection').first();
+    expect(await firstCard.locator('.cqa-board__collage-img').count()).toBeGreaterThanOrEqual(1);
+    expect(((await firstCard.locator('.cqa-board__name').textContent()) ?? '').trim().length).toBeGreaterThan(0);
 
-    // 079: 面板口径 ⓘ 与副标题
-    // （2026-10-09：topstrip 改「纯公告条」，「趋势口径 tooltip」部分随 `.home-topstrip__stat`
-    //  宿主元素删除；面板内 InfoTip 断言保留。就绪信号改首行 .tmdb-movierow。）
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.home-page:not(.home-skeleton) .tmdb-movierow').first()).toBeVisible({ timeout: 10000 });
-    await openPanel(page, 1);
-    await expect(page.locator('.cqa-panel__sub')).toHaveText(/点卡片看详情/);
-    await expect(page.locator('.cqa-panel__heat')).toBeVisible();
-    await expect(page.locator('.cqa-overlay .cqa-info-tip')).toHaveCount(1);
+    // 077'：点击合集卡 → /chart?collection= 带 key，榜单行就绪
+    await page.locator('.cqa-board__collection').nth(collectionCount > 1 ? 1 : 0).click();
+    await expect(page).toHaveURL(/\/chart\?collection=\w+/, { timeout: 5000 });
+    await page.waitForSelector('.chart-row', { timeout: 10000 });
 
-    // 087: 切子分类 → 清空旧网格、走居中「小电视 + 加载中」态
-    // 2026-09-10 面板改为「切分类/子分类统一清空」（原「保留旧网格 + 降沉遮罩」的
-    // .cqa-panel__refresh 已成死代码被移除），故断言改为 .cqa-panel__loading 的文案。
-    await page.route('**/api.tmdb.org/3/discover/movie**', async (route) => {
-      await new Promise((r) => setTimeout(r, 600));
+    // 087'：discover 延迟 800ms → 骨架与真实卡同构（拼贴灰块出现；数据到达后换真实卡、骨架消失）
+    await page.route('**/api.tmdb.org/3/discover/**', async (route) => {
+      await new Promise((r) => setTimeout(r, 800));
       await route.fallback();
     });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    await openPanel(page, 1);
-    await page.locator('.cqa-subgenres__chip').nth(1).click();
-    await page.waitForSelector('.cqa-panel__loading', { timeout: 5000 });
-    await expect(page.locator('.cqa-panel__loading')).toContainText('正在获取');
-    await page.waitForSelector('.cqa-panel__loading', { state: 'detached', timeout: 10000 });
-    expect(await page.locator('.cqa-hotcard').count()).toBe(9);
+    await expect(page.locator('.cqa-board__sk').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.cqa-board__sk')).toHaveCount(0, { timeout: 15000 });
   });
 
-  test('面板交互稳定性（075 1280回归/076 点击外部收起/080 旧网格/081 分页/082 竖排/084 滚动收起/085 跨页/086 browse）', async ({ page }) => {
-    // 075: 900 视口回归——仍渲染圆卡分支，不命中宽屏面板
-    //（2026-09-10 用户拍板宽屏起点为 1024（含端点），圆卡回退区间 768–1023）
+  test('入口分支互斥与退役链回归锁（075 窄屏圆卡/076 宽屏互斥/084-086 全站无 mega 入口）', async ({ page }) => {
+    // 075'：900 窄屏——圆卡分支渲染；合集行与旧 chips 都不出现
     await page.setViewportSize({ width: 900, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.category-quick-access__card').first()).toBeVisible({ timeout: 8000 });
+    expect(await page.locator('.cqa-board').count()).toBe(0);
     expect(await page.locator('.cqa-nav').count()).toBe(0);
-    await expect(page.locator('.category-quick-access__card').first()).toBeVisible();
 
+    // 076'：1440 宽屏——只渲染合集行，圆卡不渲染（两分支互斥）
     await page.setViewportSize({ width: 1440, height: 900 });
-
-    // 076: 点击面板以外区域收起；「首页」chip 不展开面板
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('.home-page:not(.home-skeleton) .tmdb-movierow').first()).toBeVisible({ timeout: 10000 });
-    await openPanelOverlay(page, 1);
-    // 2026-09-11：原点击目标 `.cqa-heat-row__title` 已随榜头删除，改点顶部过渡带（同为面板外）
-    await page.locator('.home-topstrip__inner').click();
-    await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 5000 }).toBe(0);
-    await page.locator('.cqa-nav__item').first().hover();
-    await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 5000 }).toBe(0);
+    await waitHomeReady(page);
+    await expect(page.locator('.cqa-board')).toBeVisible({ timeout: 10000 });
+    expect(await page.locator('.category-quick-access__card').count()).toBe(0);
 
-    // 080: 子分类切换保留旧网格
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('.home-page:not(.home-skeleton) .tmdb-movierow').first()).toBeVisible({ timeout: 10000 });
-    await openPanel(page, 1);
-    await page.locator('.cqa-subgenres__chip').nth(1).click();
-    const gridCards = page.locator('.cqa-panel__grid .cqa-hotcard');
-    await expect(gridCards.first()).toBeAttached();
-    await expect.poll(() => page.locator('.cqa-panel__grid .cqa-hotcard').count(), { timeout: 5000 }).toBe(9);
-
-    // 081: 面板分页 → 末页「查看更多」跳 browse
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('.home-page:not(.home-skeleton) .tmdb-movierow').first()).toBeVisible({ timeout: 10000 });
-    await openPanel(page, 1);
-    const pager = page.locator('.cqa-panel__pager');
-    await expect(pager).toBeVisible();
-    await expect(page.locator('.cqa-panel__pager-ind')).toHaveText('1 / 3');
-    await expect(page.locator('.cqa-panel__pager-btn').first()).toBeDisabled();
-    const firstTitle = await page.locator('.cqa-hotcard__t').first().textContent();
-    await page.getByLabel('下一页').click();
-    await expect(page.locator('.cqa-panel__pager-ind')).toHaveText('2 / 3');
-    await expect(page.locator('.cqa-hotcard__rank').first()).toHaveText('10');
-    const secondTitle = await page.locator('.cqa-hotcard__t').first().textContent();
-    expect(secondTitle).not.toBe(firstTitle);
-    await page.getByLabel('下一页').click();
-    await expect(page.locator('.cqa-panel__pager-ind')).toHaveText('3 / 3');
-    await expect(page.locator('.cqa-panel__pager-btn--more')).toHaveText(/查看更多/);
-    await page.locator('.cqa-panel__pager-btn--more').click();
-    await expect(page).toHaveURL(/\/browse/, { timeout: 5000 });
-    const url3 = new URL(page.url());
-    expect(url3.pathname).toBe('/browse');
-    expect(url3.searchParams.get('category')).toBe('movie');
-    expect(url3.searchParams.get('mediaType')).toBe('movie');
-
-    // 082: 面板网格竖向排列
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('.home-page:not(.home-skeleton) .tmdb-movierow').first()).toBeVisible({ timeout: 10000 });
-    await openPanel(page, 1);
-    const cards = page.locator('.cqa-hotcard');
-    const [b1, b2, b4] = await Promise.all([
-      cards.nth(0).boundingBox(),
-      cards.nth(1).boundingBox(),
-      cards.nth(3).boundingBox(),
-    ]);
-    expect(b1).toBeTruthy();
-    expect(Math.abs(b1!.x - b2!.x)).toBeLessThan(4);
-    expect(b2!.y).toBeGreaterThan(b1!.y);
-    expect(b4!.x - b1!.x).toBeGreaterThan(b1!.width / 2);
-
-    // 084: 页面向下滚动 → 面板立即收起
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('.home-page:not(.home-skeleton) .tmdb-movierow').first()).toBeVisible({ timeout: 10000 });
-    await openPanelOverlay(page, 1);
+    // 084'：首页滚动也不会出现旧面板 overlay（全局已无触发源）
     await page.evaluate(() => {
       const el = (document.querySelector('.custom-scrollbar-container') ||
         document.querySelector('[class*="scroll"]')) as HTMLElement | null;
       if (el) el.scrollTop = 400;
     });
-    await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 5000 }).toBe(0);
+    expect(await page.locator('.cqa-overlay').count()).toBe(0);
 
-    // 085: 其他页面 hover/点 chip 开面板；「首页」chip 收起+回首页
-    await page.goto('/browse', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
-    // /browse 数据就绪后再 hover，避免早期 re-render 误收起面板
-    await expect(page.locator('.browse-results-body, .browse-card--results').first()).toBeVisible({ timeout: 10000 });
-    await openPanel(page, 1);
-    expect(await page.locator('.cqa-overlay').count()).toBe(1);
-    await page.locator('.cqa-nav__item').first().click();
-    await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 5000 }).toBe(0);
-    expect(new URL(page.url()).pathname).toBe('/');
-    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    const urlBefore = page.url();
-    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 10000 });
-    await openPanel(page, 2);
-    await page.locator('.cqa-nav__item').nth(2).click();
-    await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 5000 }).toBe(1);
-    expect(page.url()).toBe(urlBefore);
-    await page.locator('.cqa-nav__item').first().click();
-    await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 5000 }).toBe(0);
-    expect(new URL(page.url()).pathname).toBe('/');
-
-    // 086: browse 页 hover chip 开面板且 URL 不变
+    // 085/086'：browse/settings 同样不再出现顶栏 chips（退役是全站性，非仅首页）
     await page.goto('/browse?category=movie', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.sticky-header .cqa-nav', { timeout: 10000 });
-    await expect(page.locator('.cqa-nav__item').first()).toBeVisible({ timeout: 8000 });
     await expect(page.locator('.browse-results-body, .browse-card--results').first()).toBeVisible({ timeout: 10000 });
-    const urlBefore2 = page.url();
-    await openPanel(page, 2);
-    expect(await page.locator('.cqa-overlay').count()).toBe(1);
-    expect(page.url()).toBe(urlBefore2);
-    await page.locator('.sticky-header__brand').hover();
-    await expect.poll(() => page.locator('.cqa-overlay').count(), { timeout: 5000 }).toBe(0);
+    expect(await page.locator('.sticky-header .cqa-nav').count()).toBe(0);
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 10000 });
+    expect(await page.locator('.sticky-header .cqa-nav').count()).toBe(0);
   });
 });
 
