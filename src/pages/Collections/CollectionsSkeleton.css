@@ -28,16 +28,51 @@
   padding: var(--space-md) 0;
 }
 
+/* 影视卡：复用真实 .video-card / .video-card--portrait 壳（封面 2:3 由真实类给出），
+   骨架只补灰块；卡片高度 = 纯封面（真实卡 info 区对竖版已 display:none）。 */
 .collections-skeleton__card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
   min-width: 0;
 }
 
 .collections-skeleton__video-cover {
-  aspect-ratio: 2 / 3;
-  border-radius: var(--radius-md);
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+/* 顶部两角标（左上评分 / 右上收藏） */
+.collections-skeleton__badge {
+  position: absolute;
+  z-index: 4;
+  border-radius: var(--radius-sm);
+}
+
+.collections-skeleton__badge--tl {
+  top: var(--space-xs);
+  left: var(--space-xs);
+  width: 2.5em;
+  height: 1.4em;
+}
+
+.collections-skeleton__badge--tr {
+  top: var(--space-xs);
+  right: var(--space-xs);
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  border-radius: var(--radius-full);
+}
+
+/* 封面底部：左标题条 + 右侧竖排 meta 占位（复用真实 portrait__bottom 的 flex/渐变） */
+.collections-skeleton__portrait-title {
+  width: 70%;
+  height: 1.4em;
+  font-size: var(--text-xs);
+}
+
+.collections-skeleton__portrait-meta {
+  width: 2.2em;
+  height: 2.8em;
+  font-size: var(--text-xs);
 }
 
 /* 频道封面比例与真实 .iptv-card-cover 同档：基础 3/2 → ≥768 16/10 → ≥1024 16/9 */

@@ -158,7 +158,7 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   cursor: grabbing;
 }
 
-/* 骨架屏 — 与真实卡片结构同构（封面 + 四角标 + 标题） */
+/* 骨架屏 — 与真实卡片结构同构（封面 + 顶部两角标 + 封面底部左标题条/右竖排 meta） */
 .tmdb-movierow-skeleton {
   display: flex;
   flex-direction: column;

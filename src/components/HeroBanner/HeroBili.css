@@ -334,9 +334,11 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   transform: scale(1.04);
 }
 
-/* 四角标（2026-10-09 用户要求）：UI 样式与首页下方 video card 封面角标一致
-   （VideoCard.css .video-card-rating / __year-badge / __type：黑底胶囊 --radius-sm
-   + --text-xs + blur），位置口径不变（评分左上 / 年份左下 / 类型右下）。
+/* 角标胶囊（2026-10-09 用户要求）：UI 样式与首页下方 video card 封面角标一致
+   （VideoCard.css .video-card-rating / .video-card-badge-item：黑底胶囊 --radius-sm
+   + --text-xs + blur）。
+   2026-11-04：评分仍为左上绝对定位；年份/类型改为右下竖排 meta 内的静态项
+   （类型在上、年份在下，见下方 `--year/--type { position: static }`）。
    原 text-shadow 裸字方案随胶囊底色一并移除。 */
 .hero-side-card__corner {
   position: absolute;
@@ -370,7 +372,8 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
 }
 
 .hero-side-card__corner--year {
-  /* 对齐 .video-card-year-badge：浅黑底 + 80% 白字 + 紧 padding */
+  /* 对齐 .video-card-badge-item 的中性深玻璃底；此处刻意浅一档（0.55 vs 0.6），
+     因为 HeroBili 年份与类型竖排堆叠、视觉重量需低于类型胶囊。 */
   padding: var(--space-3xs) var(--space-xs);
   background: rgba(0, 0, 0, 0.55);
   color: rgba(255, 255, 255, 0.8);
