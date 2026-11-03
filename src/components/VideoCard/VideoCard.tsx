@@ -45,8 +45,9 @@ interface VideoCardProps {
   navigateTo?: string;
   /** 自定义导航 state，与 navigateTo 配合使用 */
   navigateState?: Record<string, unknown>;
-  /** 观看状态（收藏页传入）：传入时封面角标改为「左下=年份+类型合并、右下=观看状态」；
-   *  不传时保持默认「左下=年份、右下=类型」。仅竖版卡片使用，其他页面零影响。 */
+  /** 观看状态（收藏页传入）：传入时封面右下 meta 额外显示「观看状态」
+   *  （竖排顺序：观看状态 → 类型 → 年份）；不传则只显示 类型 → 年份。
+   *  仅竖版卡片使用，其他页面零影响。 */
   status?: 'unwatched' | 'watching' | 'watched';
   /** 封面旧图→新图交叉淡入（首页卡片封面切换用），透传给 LazyImage。 */
   crossfadeOnChange?: boolean;
@@ -197,13 +198,8 @@ const VideoCard = memo(function VideoCard({
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
-    // 横版卡不参与跑马灯（历史/继续观看行保持单行截断）
-    if (variant === 'landscape') {
-      setIsOverflow(false);
-      el.style.removeProperty('--marquee-distance');
-      el.style.removeProperty('--marquee-duration');
-      return;
-    }
+    // 2026-11-03：横版卡标题移至封面左下角，同样启用无缝跑马灯
+    // （原实现横版恒不滚动、单行截断；现与竖版同机制，仅作用元素不同）
     let cancelled = false;
     let rafId = 0;
 
@@ -304,7 +300,7 @@ const VideoCard = memo(function VideoCard({
   return (
     <Link
       to={navigateTo || `/detail/${video.id}`}
-      className={`video-card ${variant === 'landscape' ? 'video-card--landscape' : ''}${skipAnimations ? '' : ' animate-card-enter'} ${batchMode ? 'video-card--batch' : ''}`}
+      className={`video-card video-card--${variant}${skipAnimations ? '' : ' animate-card-enter'} ${batchMode ? 'video-card--batch' : ''}`}
       style={skipAnimations ? undefined : stagger}
       state={{ from: location.pathname + location.search, ...navigateState }}
       tabIndex={isTV ? 0 : undefined}
@@ -363,36 +359,47 @@ const VideoCard = memo(function VideoCard({
           </button>
         )}
 
-        {/* 封面角标：传 status（收藏页）→ 左下=年份+类型合并、右下=观看状态；
-            不传（Browse/Home/Detail 等）→ 原布局：左下=年份、右下=类型 */}
-        {!batchMode && status ? (
-          <>
-            <span className="video-card-badges-bl">
-              {video.year && <span className="video-card-badge-item">{video.year}</span>}
+        {/* 竖版封面底部（2026-11-04 用户定稿）：
+            · 左下 = 标题（单行 ellipsis + 跑马灯）
+            · 右下 = 竖排 meta：类型 → 年份；收藏页最上再加观看状态
+            info 区不再重复标题（标题只在封面内出现一次）。 */}
+        {!batchMode && variant !== 'landscape' && (
+          <div className="video-card-portrait__bottom">
+            <div className="video-card-portrait__title-wrap">
+              <div
+                ref={titleRef}
+                className={`video-card-title video-card-portrait__title ${isOverflow ? 'video-card-title--overflow' : ''}`}
+              >
+                <span className="video-card-title-track">
+                  <span className="video-card-title-text">
+                    {highlightQuery ? highlightedTitle : titleText}
+                  </span>
+                  {isOverflow && (
+                    <span className="video-card-title-text" aria-hidden>
+                      {highlightQuery ? highlightedTitle : titleText}
+                    </span>
+                  )}
+                </span>
+              </div>
+            </div>
+            <div className="video-card-portrait__meta">
+              {status && (
+                <span className={`video-card-status status--${status}`}>
+                  {STATUS_LABELS[status]}
+                </span>
+              )}
               {video.type && (
-                <span className="video-card-badge-item video-card-badge-item--type">
+                <span className="video-card-badge-item video-card-portrait__type">
                   {typeLabels[video.type] || video.type}
                 </span>
               )}
-            </span>
-            <span className={`video-card-status status--${status}`}>
-              {STATUS_LABELS[status]}
-            </span>
-          </>
-        ) : (
-          <>
-            {/* 年份 — 左下角（批量模式下隐藏） */}
-            {!batchMode && video.year && (
-              <span className="video-card-year-badge">{video.year}</span>
-            )}
-
-            {/* 类型 — 右下角（批量模式下隐藏） */}
-            {!batchMode && video.type && (
-              <span className="video-card-type">
-                {typeLabels[video.type] || video.type}
-              </span>
-            )}
-          </>
+              {video.year && (
+                <span className="video-card-badge-item video-card-portrait__year">
+                  {video.year}
+                </span>
+              )}
+            </div>
+          </div>
         )}
 
         {/* 横版封面叠加层：源+集数徽章 + 底部渐变进度 */}
@@ -402,6 +409,35 @@ const VideoCard = memo(function VideoCard({
             {overlayLabel && (
               <span className="video-card-landscape__source-badge">{overlayLabel}</span>
             )}
+
+            {/* 左下角：标题（2026-11-03 用户定稿 —— 横版标题移入封面内左下角，
+                支持无缝跑马灯；标题与年份/类型同一行，年份在类型左侧，间距 --space-xs） */}
+            <div className="video-card-landscape__bottom">
+              <div className="video-card-landscape__title-wrap">
+                <div
+                  ref={variant === 'landscape' ? titleRef : undefined}
+                  className={`video-card-title video-card-landscape__title ${isOverflow ? 'video-card-title--overflow' : ''}`}
+                >
+                  <span className="video-card-title-track">
+                    <span className="video-card-title-text">
+                      {highlightQuery ? highlightedTitle : titleText}
+                    </span>
+                    {isOverflow && (
+                      <span className="video-card-title-text" aria-hidden>
+                        {highlightQuery ? highlightedTitle : titleText}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+              {/* 右下角：仅年份（2026-11-04 用户要求：继续观看卡删除类型标签） */}
+              <div className="video-card-landscape__meta">
+                {!batchMode && video.year && (
+                  <span className="video-card-badge-item video-card-landscape__year">{video.year}</span>
+                )}
+              </div>
+            </div>
+
             {/* 底部进度条 + 右侧时间 */}
             {progress !== undefined && duration !== undefined && duration > 0 && (() => {
               const pct = progress / duration;
@@ -431,26 +467,8 @@ const VideoCard = memo(function VideoCard({
       </div>
 
       <div className="video-card-info">
-        <div className="video-card-title-wrap">
-          <div
-            ref={titleRef}
-            className={`video-card-title ${isOverflow ? 'video-card-title--overflow' : ''}`}
-          >
-            {/* 两份文本：第二份仅用于无缝衔接（滚完第一份后补位），对读屏隐藏。
-                完整标题由外层 Link 的 aria-label 提供，故不再挂原生 title tooltip
-                —— hover 时跑马灯已在滚动，tooltip 只会重叠干扰。 */}
-            <span className="video-card-title-track">
-              <span className="video-card-title-text">
-                {highlightQuery ? highlightedTitle : titleText}
-              </span>
-              {isOverflow && (
-                <span className="video-card-title-text" aria-hidden>
-                  {highlightQuery ? highlightedTitle : titleText}
-                </span>
-              )}
-            </span>
-          </div>
-        </div>
+        {/* 2026-11-04：竖版标题已移入封面左下角，info 区不再渲染标题（避免重复）。
+            竖版 info 因此无内容 → CSS 置 display:none；仅横版保留 timeLabel。 */}
         {variant === 'landscape' && timeLabel && (
           <span className="video-card__time-inline">{timeLabel}</span>
         )}

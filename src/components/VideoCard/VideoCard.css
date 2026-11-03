@@ -352,24 +352,54 @@
   pointer-events: auto;
 }
 
-/* ── 收藏页角标重组（status prop 分支）：左下=年份+类型合并、右下=观看状态 ── */
+/* ── 竖版封面底部（2026-11-04 用户定稿）────────────────────────
+   左下 = 标题（单行 ellipsis + 跑马灯），右下 = 竖排 meta（观看状态 → 类型 → 年份）。
+   标题不再占 info 区；flex 布局天然保证标题不压住右下标签。 */
 
-.video-card-badges-bl {
+.video-card-portrait__bottom {
   position: absolute;
-  bottom: var(--space-xs);
-  left: var(--space-xs);
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 4;
   display: flex;
-  flex-wrap: wrap;
   gap: var(--space-xs);
-  align-items: center;
-  max-width: 75%;
+  align-items: flex-end;
+  padding: var(--space-2xl) var(--space-xs) var(--space-xs);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.86) 0%,
+    rgba(0, 0, 0, 0.5) 42%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
-/* 年份 + 类型徽标（2026-09-15 改口径）：原为危险红底 —— 红色同时表示
-   「危险 / LIVE / 年份 / 类型」，色义过载且红底白字仅 3.76:1。
-   现统一为**中性深玻璃底 + 白字**：底色与封面图无关，最坏（纯白封面）仍有
-   5.74:1（rgba(0,0,0,.6)）；红色从此只表示危险与 LIVE。 */
+.video-card-portrait__title-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.video-card-portrait__title {
+  margin: 0;
+  color: var(--color-on-image);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.4;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* 右下 meta：竖排、右对齐 */
+.video-card-portrait__meta {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  align-items: flex-end;
+}
+
+/* 年份 + 类型徽标（中性深玻璃底 + 白字，红色只留给危险 / LIVE） */
 .video-card-badge-item {
   padding: var(--space-3xs) var(--space-xs);
   border-radius: var(--radius-sm);
@@ -381,15 +411,9 @@
   backdrop-filter: blur(4px);
 }
 
-/* ── 观看状态徽标（2026-09-15 改口径）：原为 Tailwind 硬编码色 + 0.85 半透明，
-   叠在封面图上最坏仅 2.04:1 且不随主题翻转。现改用语义 *-text 档**不透明**底
-   + 白字：未观看 #0958d9 6.16:1 / 正在看 #a05c00 5.22:1 / 已看完 #237804 5.59:1，
-   任意封面图下恒定达标，且与收藏/历史页的状态圆点同源同色。 */
+/* ── 观看状态徽标（2026-09-15 改口径）：语义 *-text 档**不透明**底 + 白字，
+   任意封面图下恒定达标；现改为 meta 竖排内的静态项（不再绝对定位右下）。 */
 .video-card-status {
-  position: absolute;
-  right: var(--space-xs);
-  bottom: var(--space-xs);
-  z-index: 4;
   padding: var(--space-2xs) var(--space-xs);
   border-radius: var(--radius-sm);
   color: var(--color-on-image);
@@ -407,41 +431,19 @@
   background: var(--color-success-text);
 }
 
-/* ── 收藏页角标移动端重排（status 分支）──
-   桌面（默认）：左下=年份+类型并排、右下=观看状态；
-   移动：年份靠左下、类型靠右下（badges-bl 撑满底部宽度 + type 右对齐）、
-   观看状态叠在类型上方（bottom 按类型徽标高度推算，保持间距） */
-@media (width <= 767px) {
-  .video-card-badges-bl {
-    right: var(--space-xs);
-    width: auto;
-    max-width: none;
-  }
-  .video-card-badges-bl .video-card-badge-item--type {
-    margin-left: auto;
-  }
-  .video-card-status {
-    bottom: calc(var(--space-xs) + var(--space-xs) + var(--space-3xs) * 2 + var(--text-xs) * 1.3);
-  }
-}
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
-
-  html[data-device="app"] .video-card-badges-bl {
-    right: var(--space-xs);
-    width: auto;
-    max-width: none;
-  }
-  html[data-device="app"] .video-card-badges-bl .video-card-badge-item--type {
-    margin-left: auto;
-  }
-  html[data-device="app"] .video-card-status {
-    bottom: calc(var(--space-xs) + var(--space-xs) + var(--space-3xs) * 2 + var(--text-xs) * 1.3);
-  }
+/* 竖版 meta 为竖排，窄屏天然适配（原「年份靠左下、类型靠右下、状态叠上方」
+   的移动端重排规则随 2026-11-04 结构统一一并删除）。 */
 
 /* ── 信息区：标题 ──────────────────────────────── */
 
 .video-card-info {
   padding: var(--space-xs) var(--space-sm);
+}
+
+/* 竖版标题已移入封面左下角（2026-11-04），info 区对竖版不再有内容 → 收起，
+   避免留下一条空白 padding（横版仍用 info 区显示 timeLabel）。 */
+.video-card--portrait .video-card-info {
+  display: none;
 }
 
 .video-card-title-wrap {
@@ -560,7 +562,9 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 .video-card--landscape .video-card-info {
   display: flex;
   gap: var(--space-xs);
-  justify-content: space-between;
+  /* 2026-11-03：横版标题已移入封面，info 区只剩时间标签 →
+     原来的 space-between 会把它顶到最左，改为右对齐保持「时间在右」语义。 */
+  justify-content: flex-end;
   align-items: baseline;
   padding: var(--space-xs) var(--space-sm) var(--space-sm);
 }
@@ -592,7 +596,8 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   transform: none;
 }
 
-/* 横版卡片：隐藏年份和类型角标 */
+/* 横版卡片：竖版旧四角标（左下年份 / 右下类型）已随 2026-11-04 角标统一移除，
+   标题移入封面左下、年份移入右下（继续观看卡不再显示类型）。批量模式下统一隐藏。 */
 .video-card--landscape .video-card-year-badge,
 .video-card--landscape .video-card-type {
   display: none;
@@ -686,7 +691,6 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 .video-card-rating,
 .video-card-year-badge,
 .video-card-type,
-.video-card-badges-bl,
 .video-card-status,
 .video-card-landscape__source-badge,
 .video-card-landscape__progress-overlay {
@@ -697,7 +701,7 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 .video-card-cover:has(.lazy-image-placeholder) > .video-card-rating,
 .video-card-cover:has(.lazy-image-placeholder) > .video-card-year-badge,
 .video-card-cover:has(.lazy-image-placeholder) > .video-card-type,
-.video-card-cover:has(.lazy-image-placeholder) > .video-card-badges-bl,
+.video-card-cover:has(.lazy-image-placeholder) .video-card-portrait__meta,
 .video-card-cover:has(.lazy-image-placeholder) > .video-card-status,
 .video-card-cover:has(.lazy-image-placeholder) > .video-card-landscape__source-badge,
 .video-card-cover:has(.lazy-image-placeholder) > .video-card-landscape__progress-overlay,
@@ -727,4 +731,129 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   opacity: 0;
   pointer-events: none;
   transform: scale(0.8);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   横版卡封面内文字层（2026-11-03 用户定稿）
+   ───────────────────────────────────────────────────────────────────────
+   布局：封面底部一行 flex —— [标题（左，可跑马灯）][年份][类型]，靠右下对齐；
+   标题区自动占满剩余宽度并可溢出滚动；年份/类型间距 --space-xs。
+   底部整体压一层向上渐变，保证白字在任意封面图上的可读性。
+   ═══════════════════════════════════════════════════════════════════════ */
+.video-card-landscape__bottom {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 5;
+  display: flex;
+  gap: var(--space-xs);
+  align-items: flex-end;
+  padding: var(--space-xl) var(--space-xs) var(--space-xs);
+  /* 渐变遮罩：上透下实，标题压在最底部 */
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.86) 0%,
+    rgba(0, 0, 0, 0.55) 42%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* 标题区：占满左半，溢出隐藏 + 跑马灯（复用竖版 title-track 机制） */
+.video-card-landscape__title-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.video-card-landscape__title {
+  /* 覆盖竖版规则：白字、更小字号、无外边距 */
+  margin: 0;
+  color: var(--color-on-image);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.4;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* 右侧元信息：年份（类型左侧）+ 类型，水平排列、右下对齐 */
+.video-card-landscape__meta {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+/* 年份/类型胶囊：半透明深底，比竖版更小一号（封面高度有限） */
+.video-card-landscape .video-card-landscape__year {
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--color-on-image);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+
+/* 进度条回到封面底部（2026-11-04 用户要求：标题在进度条上方，不覆盖进度条）。
+   桌面：进度条贴底全宽，时间文本在条上方右侧；移动端：时间文本在封面居中显示。 */
+.video-card--landscape .video-card-landscape__progress-overlay {
+  top: auto;
+  bottom: 0;
+  height: auto;
+}
+
+.video-card--landscape .video-card-landscape__progress-text {
+  top: auto;
+  right: var(--space-sm);
+  bottom: calc(var(--space-xs) + var(--space-2xs));
+}
+
+/* 标题行让出进度条高度：padding-bottom = 进度条高 + 呼吸 */
+.video-card--landscape .video-card-landscape__bottom {
+  padding-bottom: calc(var(--space-xs) * 2);
+}
+
+@media (width <= 767px) {
+  .video-card--landscape .video-card-landscape__progress-overlay {
+    inset: 0;
+  }
+
+  .video-card--landscape .video-card-landscape__progress-bar-wrap {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+
+  .video-card--landscape .video-card-landscape__progress-text {
+    inset: 50% auto auto 50%;
+    padding: var(--space-2xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: rgba(0, 0, 0, 0.55);
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* 移动端收窄：标题字号与间距同步缩一档 */
+@media (width <= 767px) {
+  .video-card-landscape__bottom {
+    gap: var(--space-2xs);
+    padding: var(--space-lg) var(--space-2xs) var(--space-2xs);
+  }
+
+  .video-card-landscape__title {
+    font-size: var(--text-2xs);
+  }
+}
+
+/* TV 端放大 */
+[data-device="tv"] .video-card-landscape__title {
+  font-size: var(--text-sm);
+}
+
+[data-device="tv"] .video-card-landscape__bottom {
+  padding: var(--space-2xl) var(--space-sm) var(--space-sm);
 }

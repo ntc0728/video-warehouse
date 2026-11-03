@@ -128,8 +128,9 @@ function getVideo(item: {
 }
 
 /** 骨架卡片（错开动画延迟，避免同步闪烁）
- *  - 默认竖版（2:3）：镜像 .video-card portrait 结构 — 封面 + 左上评分角标 + 右上收藏点 + 左下年份 + 右下类型 + 底部标题
- *  - landscape：横版（16:9）继续观看卡，仅封面 + 左上源徽章占位 + 底部标题
+ *  - 默认竖版（2:3）：镜像 .video-card--portrait 结构 — 封面 + 左上评分 / 右上收藏 +
+ *    封面底部「左标题条 + 右侧竖排 meta 占位」（2026-11-04 角标统一后）
+ *  - landscape：横版（16:9）继续观看卡，仅封面 + 左上源徽章占位 + info 区时间条
  *
  * 张数默认按「列数 × 1.5」派生（覆盖一屏 + 半屏溢出，镜像真实横滚行
  * 「一屏整卡 + 可横向滚」的观感）；列数读 CSS token（--row-cols / --continue-cols），
@@ -155,16 +156,17 @@ export function SkeletonCards({ count, landscape = false }: { count?: number; la
               /* 横版：左上源徽章占位（对齐继续观看卡 overlayLabel） */
               <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tl" />
             ) : (
-              /* 竖版四角标：左上评分 / 右上收藏 / 左下年份 / 右下类型 */
+              /* 竖版（2026-11-04 角标统一后）：左上评分 / 右上收藏 /
+                 底部左标题条 + 右侧竖排 meta 占位（对齐真实卡结构） */
               <>
                 <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tl" />
                 <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tr" />
-                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--bl" />
-                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--br" />
+                <span className="tmdb-movierow-skeleton-portrait-title" />
+                <span className="tmdb-movierow-skeleton-portrait-meta" />
               </>
             )}
           </div>
-          <div className="tmdb-movierow-skeleton-title" />
+          {landscape && <div className="tmdb-movierow-skeleton-title" />}
         </div>
       ))}
     </>

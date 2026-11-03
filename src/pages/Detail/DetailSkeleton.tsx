@@ -48,16 +48,16 @@ const STILL_COUNT = 6;
 const RECOMMEND_SECTIONS = ['相关推荐', '你可能还喜欢'] as const;
 const RECOMMEND_MAX_ITEMS = 12;
 
-/** 竖版海报卡（镜像 VideoCard 壳：封面 2:3 + 标题行），推荐网格用 */
+/** 竖版海报卡（镜像 VideoCard 2026-11-04 结构：封面 2:3 + 封面底部左标题条），推荐网格用 */
 function RecommendCardSkeleton() {
   return (
-    <div className="video-card detail-skeleton__rec-card">
+    <div className="video-card video-card--portrait detail-skeleton__rec-card">
       <div className="video-card-cover">
         <Skeleton className="detail-skeleton__rec-cover" />
-      </div>
-      <div className="video-card-info">
-        <div className="video-card-title-wrap">
-          <Skeleton className="detail-skeleton__rec-title" />
+        <div className="video-card-portrait__bottom">
+          <div className="video-card-portrait__title-wrap">
+            <Skeleton className="detail-skeleton__rec-title" />
+          </div>
         </div>
       </div>
     </div>

@@ -182,8 +182,8 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   aspect-ratio: 2 / 3;
 }
 
-/* 角标占位：对齐 .video-card-rating（左上）/ .video-card-fav-btn（右上）/
-   .video-card-year-badge（左下）/ .video-card-type（右下）位置 */
+/* 顶部两角标：对齐 .video-card-rating（左上）/ .video-card-fav-btn（右上）。
+   旧 --bl / --br（左下年份 / 右下类型）已随 2026-11-04 角标统一移除。 */
 .tmdb-movierow-skeleton-badge {
   position: absolute;
   display: block;
@@ -207,18 +207,28 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   border-radius: 50%;
 }
 
-.tmdb-movierow-skeleton-badge--bl {
-  bottom: var(--space-3xs);
-  left: var(--space-3xs);
-  width: var(--space-lg);
-  height: var(--icon-2xs);
+/* 竖版封面底部占位（2026-11-04 角标统一后）：
+   左侧标题条 + 右侧竖排 meta（对齐 .video-card-portrait__bottom 的 flex 结构）。 */
+.tmdb-movierow-skeleton-portrait-title {
+  position: absolute;
+  bottom: var(--space-xs);
+  left: var(--space-xs);
+  width: 52%;
+  height: var(--icon-xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
+  animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
-.tmdb-movierow-skeleton-badge--br {
-  right: var(--space-3xs);
-  bottom: var(--space-3xs);
-  width: var(--space-xl);
-  height: var(--icon-2xs);
+.tmdb-movierow-skeleton-portrait-meta {
+  position: absolute;
+  right: var(--space-xs);
+  bottom: var(--space-xs);
+  width: var(--space-2xl);
+  height: calc(var(--icon-xs) * 2 + var(--space-2xs));
+  border-radius: var(--radius-sm);
+  background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
+  animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
 .tmdb-movierow-skeleton-title {

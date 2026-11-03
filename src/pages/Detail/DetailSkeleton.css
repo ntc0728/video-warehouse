@@ -197,7 +197,7 @@
 }
 
 .detail-skeleton__rec-title {
-  width: 78%;
-  height: 1.5em;
-  font-size: var(--text-sm);
+  width: 70%;
+  height: 1.4em;
+  font-size: var(--text-xs);
 }

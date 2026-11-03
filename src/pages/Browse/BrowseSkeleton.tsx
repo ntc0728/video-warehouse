@@ -34,15 +34,17 @@ export default function BrowseSkeleton() {
           <div key={i} className="video-card browse-skeleton__card">
             <div className="video-card-cover">
               <Skeleton className="browse-skeleton__cover" />
-              {/* 四角标：镜像真实 VideoCard — 左上评分 / 右上收藏 / 左下年份 / 右下类型 */}
+              {/* 镜像真实 VideoCard（2026-11-04 角标统一后）：
+                  左上评分 / 右上收藏 / 封面底部左标题 + 右侧竖排 meta */}
               <span className="browse-skeleton__badge browse-skeleton__badge--tl" />
               <span className="browse-skeleton__badge browse-skeleton__badge--tr" />
-              <span className="browse-skeleton__badge browse-skeleton__badge--bl" />
-              <span className="browse-skeleton__badge browse-skeleton__badge--br" />
-            </div>
-            <div className="video-card-info">
-              <div className="video-card-title-wrap">
-                <Skeleton className="browse-skeleton__title" />
+              <div className="video-card-portrait__bottom">
+                <div className="video-card-portrait__title-wrap">
+                  <Skeleton className="browse-skeleton__portrait-title" />
+                </div>
+                <div className="video-card-portrait__meta">
+                  <Skeleton className="browse-skeleton__portrait-meta" />
+                </div>
               </div>
             </div>
           </div>

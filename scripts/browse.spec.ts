@@ -397,7 +397,10 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('2.9 移动端筛选面板底部操作区', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+  // 2026-11-04：竖版卡标题移入封面后卡片变矮（info 区收起），390×844 下
+  // Browse 内容总高仅 1064、最大滚动 268 < BackToTopButton 阈值 280 →
+  // 圆钮永远不出现。视口降到 700 让内容可滚过阈值，drawer 几何断言不受影响。
+  test.use({ viewport: { width: 390, height: 700 } });
 
   test('BROWSE-081/082: 底部操作区真固定（不随面板滚动）+ 挡住它的返回顶部圆钮不参与绘制', async ({ page }) => {
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
@@ -405,9 +408,12 @@ test.describe('2.9 移动端筛选面板底部操作区', () => {
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
 
     // 前置：先滚过返回顶部圆钮的显示阈值，让它进入可见态（复现「圆钮盖住完成按钮」的场景）
+    // 2026-11-04：竖版卡标题移入封面后卡片变矮、Browse 内容总高下降，
+    // 固定 2000px 可能被 scrollHeight 钳住（滚不到阈值）→ 改为滚到底，
+    // 语义仍是「滚过阈值」，且不依赖内容总高。
     const scroller = page.locator('.app-shell__scroll');
     await expect(scroller).toBeVisible({ timeout: 5000 });
-    await scroller.evaluate((el) => { el.scrollTop = 2000; });
+    await scroller.evaluate((el) => { el.scrollTop = el.scrollHeight; });
     await expect.poll(() => page.locator('.back-to-top-button').count(), { timeout: 2500 }).toBeGreaterThan(0);
 
     const trigger = page.locator('.bmb-filter-trigger');

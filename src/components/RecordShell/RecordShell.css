@@ -961,6 +961,17 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .record-filter-chip--status .record-filter-chip__dot {
     background-color: var(--chip-dot-color, var(--color-text-tertiary));
   }
+  /* 选中态圆点改反色（2026-11-04 用户反馈「选中 chip 左侧圆点看不清」）：
+     选中底 = --color-primary（亮 #000 / 暗 #fff），状态色圆点在其上对比不足；
+     反色（亮→白点 / 暗→深点）保证双主题都可辨认。未选中仍保留状态色语义。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .record-inline-filter .record-filter-chip--status.is-active .record-filter-chip__dot,
+  html:not([data-device="app"]):not([data-device="tv"])
+    .record-status .status-tab--active .status-tab__dot,
+  html:not([data-device="app"]):not([data-device="tv"])
+    .record-status--fused .status-tab--active .status-tab__dot {
+    background-color: var(--color-text-inverse);
+  }
   /* chip label：flex:1 撑满中段（镜像 .record-status--fused 的 status-tab
      「> span:not(dot):not(count)」规则）→ 计数徽章被推到按钮右缘，
      与 fused status-tabs 的「label 左 / count 右」布局完全一致。 */

@@ -29,7 +29,7 @@
   border-radius: 0;
 }
 
-/* 四角标：位置与真实 .video-card-rating / -fav-btn / -year-badge / -type 同为 --space-xs 内缩 */
+/* 顶部两角标：位置与真实 .video-card-rating / -fav-btn 同为 --space-xs 内缩 */
 .browse-skeleton__badge {
   position: absolute;
   z-index: 4;
@@ -51,24 +51,16 @@
   border-radius: var(--radius-full);
 }
 
-.browse-skeleton__badge--bl {
-  bottom: var(--space-xs);
-  left: var(--space-xs);
-  width: 2.2em;
+/* 封面底部：左标题条 + 右侧竖排 meta 占位（复用真实 .video-card-portrait__bottom
+   的 flex / padding / 渐变，骨架只补灰块尺寸）。 */
+.browse-skeleton__portrait-title {
+  width: 70%;
   height: 1.4em;
+  font-size: var(--text-xs);
 }
 
-.browse-skeleton__badge--br {
-  right: var(--space-xs);
-  bottom: var(--space-xs);
+.browse-skeleton__portrait-meta {
   width: 2.2em;
-  height: 1.4em;
-}
-
-/* 标题行：与真实 .video-card-title 同字体档与行高（--text-sm × 1.5），
-   保证标题区高度一致，交接无纵向跳动。 */
-.browse-skeleton__title {
-  width: 78%;
-  height: 1.5em;
-  font-size: var(--text-sm);
+  height: 2.8em;
+  font-size: var(--text-xs);
 }

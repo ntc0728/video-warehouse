@@ -387,9 +387,9 @@ export default function HeroBili({
 
 /**
  * HeroSideCard — 单张横版卡（封面出血，标题浮在图底）
- * - 左上评分 / 右上收藏（悬浮显现）/ 左下年份 / 右下类型
+ * - 左上评分 / 右上收藏（悬浮显现）/ 封面底部左标题 + 右下竖排 meta（类型在上、年份在下）
  * - 整卡为 <Link>（支持右键新标签页打开详情）；收藏命中时 toggle + preventDefault 不跳转
- * - 卡高由 grid 行均分（双 16:9 精确解），标题不再参与布局流
+ * - 卡高由 grid 行均分（双 16:9 精确解），标题与 meta 同一 flex 行，互不覆盖
  * - 标题方案 A（2026-09-30 用户确认）：默认单行 ellipsis 兜底，
  *   hover/键盘聚焦整卡且文本溢出时切换双段无缝跑马灯（4.5s），
  *   移出/失焦即停；reduced-motion 降级静态 ellipsis
