@@ -1,16 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════
    HeroBili — 首页 Hero B 站风（≥1024px 桌面专用，TV 不启用）
-   2026-09-07 曾 1280 → 1440，同日回退 1440 → 1280。
    2026-09-10 用户要求「首页视口 ≥1024 就显示新的 UI 布局」：1280 → 1024。
-   布局：左 banner（minmax(0,1fr)）+ 右竖版卡（--hero-side-w，1024–1280 为 2 列、
-   ≥1281 为 3 列）+ 脱标换一换浮层
-   全部尺寸走 token（variables.css「--page-pad-x 分档 + HeroBili token」节）：
-   右栏 = 内容宽 × 56%；banner 高度 = 内容宽 × 系数，**系数按右栏列数分档**
-   （2026-09-10 第七轮简化为两档：2 列档 0.60 / 3 列档 0.40，
-   实际由 layout-tokens.css 的 --hero-banner-h / --hero-side-w 分档提供
-   （2026-09-22 单真源收敛；2026-09-29 分母改为全内容宽，见该文件注释）。
-   卡片封面恒 16:9，卡高由列宽派生 → 列数变化时卡片比例不变。
-   ⚠️ ≤1023 档例外：网格改 1:1（各 50%）、右卡降为 2 列 × 2 行，见下方分档块。
+   2026-11-04 用户定稿：左 banner : 右 cards = 视觉 6:4，banner 与右卡均 16:9，
+   下沿齐平。双 16:9 方程的最小整数解 = 2 列 × 3 行（6 张），比例与视口宽度
+   无关，≥1024 全档统一；右栏宽度由 layout-tokens.css 的 gap 补偿公式给出。
+   banner 高度改由自身 aspect-ratio 派生，右栏卡片 3 行 stretch 到同一行高。
+   ⚠️ ≤1023 不渲染本组件（HeroBanner 走 Classic）；下方仅保留骨架兼容块。
    ═══════════════════════════════════════════════════════════════════════ */
 
 .hero-bili {
@@ -42,12 +37,13 @@
 
 .hero-bili__banner {
   position: relative;
-  /* 2026-10-10 用户要求「图片与图片对齐」：banner 下沿对齐右栏第二行【封面】下沿
-     （而非第二行标题条下沿）。网格行高 = 右栏两行卡总高（2 封面 + 2 标题条 + 行gap），
-     banner 取 100% 再减一个标题条高 → 下沿正好落在第二行封面底，第二行标题条悬于其下。
-     token 降级为 min-height 兜底（同减一个标题条，与 height 口径一致；骨架共用本类）。 */
-  height: calc(100% - var(--hero-title-bar-h));
-  min-height: calc(var(--hero-banner-h) - var(--hero-title-bar-h));
+  /* 2026-11-04 双 16:9 精确解：banner 自己按 16:9 派生高度，grid stretch 让
+     右栏 3 行卡片撑到同一行高；精确解公式已在 layout-tokens.css 把 gap 补偿
+     进 --hero-side-w，故单卡行高恰好也是 16:9。
+     ⚠️ 不再用 min-height: var(--hero-banner-h)：它会与 aspect-ratio 形成
+     「谁先撑高谁」的循环依赖，且旧反推公式属于 2×2/3×3 档，已作废。
+     内部图片/遮罩/文案全为 absolute，aspect-ratio 提供唯一的固有高度。 */
+  aspect-ratio: 16 / 9;
   border-radius: var(--hero-card-radius);
   /* 兜底深色：图片未就绪的透明窗口露深色不露白（与 HeroBanner 同源） */
   background: var(--color-media-surface);
@@ -220,67 +216,40 @@
   font-size: var(--text-xs);
 }
 
-/* ── 右：3×2 竖版卡 + 脱标换一换 ────────────────────────────────────── */
+/* ── 右：2 列 × 3 行横版卡 + 脱标换一换 ─────────────────────────────── */
 
 .hero-bili__right {
-  /* 换一换浮层的定位参照系（2026-09-30：占位列已删除，右栏卡网格独占
-     --hero-side-w 全宽 —— 卡片右侧直接顶到内容宽右缘，不再被按钮列吃掉
-     space-sm gap + 按钮宽）。 */
   position: relative;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 
 .hero-bili__cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, auto);
+  /* 2026-11-04 用户定稿：≥1024 全档 2 列 × 3 行 = 6 张，无 2560 分档。
+     与 useHeroSideCols / useHeroSideRows 同步（JS 为唯一真源）。
+     flex:1 + 三行 minmax(0,1fr)：右栏继承 banner 派生的行高并均分 3 行，
+     精确解保证每行卡仍是 16:9、下沿恒齐平。 */
+  flex: 1 1 auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
   gap: var(--hero-side-gap);
-  /* ⚠️ 2026-09-10 第六轮：原为 `height: var(--hero-banner-h)` + `rows: repeat(2, minmax(0,1fr))`
-     —— 行高恒 = bannerH/2、与列数解耦，列数一减卡片就变宽而高度不动 →
-     宽高比失控（实测 w1152 1 列 443×113.6 = 3.9:1、w1280 2 列 252×130.6 = 1.93:1）。
-     现改为：**高度由卡片自身 16:9 比例派生**（见 .hero-side-card__cover），
-     cards 区高度 = 2 行卡片实际高度之和；--hero-banner-h 已按列数分档反推
-     （Home.css 覆盖），使 banner 与右栏下沿仍严格齐平。 */
-  height: auto;
+  min-height: 0;
 }
 
-/* ── 右卡排列的视口分档（2026-09-10 三次拍板：满格矩形，不跨列不留空槽）─────────
-   卡数恒为「列数 × 2 行」，改列数即改卡数（JS 真源 = useHeroSideCols）。
-   ⚠️ 本段断点必须与 `src/hooks/useHeroSideCols.ts` 严格一致，否则卡片数与网格列数
-   不一致 → 出现空槽或第 3 行：
-
-   · ≥1281      → 3 列 × 2 行 = 6 张 —— 即 .hero-bili__cards 基础形态，本段无需规则
-   · 1024–1280  → 2 列 × 2 行 = 4 张 —— 见下 A 档
-   · ≤1023      → 2 列 × 2 行 = 4 张 —— 见下移动端块
-
-   ⚠️ 2026-09-10 第七轮：**删去原 1024–1152 的「1 列」B 档**。卡片持
-   `aspect-ratio: 16/9` 后卡高由列宽派生，1 列会使单卡宽 685–813px → 2 行卡总高
-   837–981px，比任何合理 banner 都高出 636–745px；若把 banner 拉到齐平则其宽高比
-   跌到 0.88:1（竖条）。即「降列数」与「封面保持比例」在 1 列下无法共存，
-   故 1024–1280 统一 2 列，banner 得以维持 ~1.66:1 的正常横幅形状。
-   banner 系数随之由三档简化为两档（见 Home.css 的 --hero-banner-h 覆盖）。
-   ⚠️ 移动端块用 `(width <= 1023px)` 而非 `<= 1024px` —— 1024 属桌面 2 列档，
-   若用 `<=1024` 会让 1024 落进移动块，与需求冲突。 */
-
-/* A 档：1024–1280 → 2 列（右栏较窄，降列换宽卡，避免 3 列把封面与标题挤死） */
-@media (width >= 1024px) and (width <= 1280px) {
-  html:not([data-device="tv"]) .hero-bili__cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* 全档统一 6 张：JS 按 2×3 渲染，CSS nth-child 为双保险；
+   ≤1023 本组件不渲染，该规则仅服务复用真实类名的骨架兼容块。 */
+html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7) {
+  display: none;
 }
 
 @media (width <= 1023px) {
-  /* 网格左右 1:1（用户要求）：原为 minmax(0,1fr) / --hero-side-w(=内容宽 56%)，
-     实际约 44% : 56%；本档改为两列等宽 50% : 50%。 */
+  /* 骨架兼容档：真实 HeroBili 在 <1024 不渲染（HeroBanner 分流到 Classic）。
+     此处只保留网格等宽 + 2 列 × 3 行，避免骨架沿用已作废的 1:1 旧形态。 */
   html:not([data-device="tv"]) .hero-bili__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  html:not([data-device="tv"]) .hero-bili__cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  /* 移动端 2 列 × 2 行 = 4 张（JS 已按 ≤1023 渲染 4 张，此处 nth-child 为双保险） */
-  html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 5) {
-    display: none;
   }
 }
 
@@ -288,15 +257,13 @@
    2026-09-28 去卡片化：边框/圆角/底色/投影随外层 .hero-bili 卡一并移除
    （本组件仅 >=1024 桌面渲染），封面直接铺页面底色。 */
 .hero-side-card {
-  /* 角标尺寸档（2026-09-10）：右栏卡片封面只有 ~100px 高（16:9 × 178px 宽），
-     --text-xs（12.66→11.09）的四角文字与 --icon-lg（圆形收藏钮）相对封面偏重，
-     统一收 10%。取 0.9 而非直接用 --text-2xs：后者在 1024 档一次性掉 14%、
-     在 1920 档只掉 1%，同一收窄幅度在各视口表现不一致。 */
   --hero-corner-fs: calc(var(--text-xs) * 0.9);
   --hero-corner-fav: calc(var(--icon-lg) * 0.9);
   position: relative;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  min-height: 0;
   color: inherit;
   text-decoration: none;
   overflow: hidden;
@@ -313,13 +280,16 @@
   outline-offset: 2px;
 }
 
-/* 封面：16:9 横版（与卡片本身的横幅语义一致 —— 封面数据源本就是 backdrop 横图，
-   见 HeroBili.tsx itemCardCoverUrl）。高度随列宽派生，宽度撑满卡片。
-   ⚠️ 本行是「列数变化时卡片不被压扁」的根因修复：卡高改为由**列宽**派生，
-   而非旧版的 `flex: 1 1 0` 弹性拉伸（旧法会让卡片宽度变了高度不变 → 比例失控）。 */
+/* 封面与卡片同为 16:9：行高由 grid 均分（layout-tokens.css 的精确解保证），
+   封面撑满整卡。 */
 .hero-side-card__cover {
   position: relative;
-  aspect-ratio: 16 / 9;
+  /* 2026-11-04：卡片行高由 grid 均分（精确解使其恰好 16:9），封面撑满整卡。
+     flex:1 + min-height:0 让 flex 子项随 grid 行高伸缩；不再用 aspect-ratio
+     自主派生，避免「卡片内容高 > 分配行高」时把行顶开、破坏下沿齐平。 */
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -418,19 +388,29 @@
 
 /* 标题条 · 方案 A（2026-09-30 用户确认 demos/hero-title-marquee-demo.html）：
    默认单行 ellipsis 兜底 + hover/focus 溢出时跑马灯，双层结构：
-   ① .hero-side-card__title 容器 + ② fallback 兜底层（block nowrap ellipsis，
-   恒单行 → 标题条高度 = 2×space-xs + 1.4×hero-title-size 恒定，layout-tokens.css
-   的 --hero-banner-h 三档系数（0.314/0.24/0.2788）按此单行基准推导，
-   齐平不变量「banner 下沿 = 第二行卡下沿」不受跑马灯影响；
+   ① .hero-side-card__title 容器 + ② fallback 兜底层（block nowrap ellipsis），
    ③ marquee 跑马灯层：absolute 覆盖标题条（不占布局，切换零跳动），
-   .is-marquee 时显示，双段等长无缝循环 4.5s（复刻原跑马灯参数）。 */
+   .is-marquee 时显示，双段等长无缝循环 4.5s（复刻原跑马灯参数）。
+   2026-11-03 封面出血：标题浮在封面图底部（渐变压暗 + 白字），不占卡片下行；
+   2026-11-04 起卡高由 grid 行均分（双 16:9 精确解），标题恒不参与布局流。 */
 .hero-side-card__title {
-  position: relative;
-  padding: var(--space-xs) var(--space-sm);
-  color: var(--color-text);
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  padding: var(--space-2xl) var(--space-xs) var(--space-xs);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.88) 0%,
+    rgba(0, 0, 0, 0.5) 46%,
+    transparent 100%
+  );
+  color: var(--color-on-image);
   font-size: var(--hero-title-size);
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.4;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
 }
 
 .hero-side-card__title-fallback {
@@ -447,14 +427,23 @@
   inset: 0;
   display: none;
   align-items: center;
-  padding: inherit;
-  background: var(--color-background);
+  /* 2026-11-03：不再 padding:inherit —— 浮层的 padding 顶部含渐变区（--space-2xl），
+     继承会让跑马灯文字垂直错位。改为与标题内容区一致的左右内边距。 */
+  padding: 0 var(--space-xs);
+  /* 背景透明：原标题区铺页面底色，现在标题浮在封面图上，再铺底色会盖出方块。 */
+  background: transparent;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .hero-side-card__title.is-marquee .hero-side-card__title-marquee {
   display: flex;
+}
+
+/* 2026-11-03 封面出血后 marquee 层背景已透明（否则会盖住封面图），
+   改为「跑马灯启用时隐藏 fallback」，避免两层文字重影。 */
+.hero-side-card__title.is-marquee .hero-side-card__title-fallback {
+  visibility: hidden;
 }
 
 .hero-side-card__title-track {

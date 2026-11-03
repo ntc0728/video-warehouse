@@ -94,17 +94,18 @@ test.describe('启动骨架：视口填充与路由感知', () => {
   //   真实页左栏已于 2026-09-29 删除，boot-splash 的 .bs-rail/.bs-heat* 左栏骨架同日清理，
   //   断言对象已不存在。）
 
-  test('BOOT: home ≥1024 hero 带右卡网格（1024–1280 → 2 列×2 行 = 4 张）', async ({ page }) => {
-    // 默认视口 1280×720 落在 2 列档（useHeroSideCols 同源断点）
+  // 2026-11-04：≥1024 全档统一 2 列×3 行 = 6 张，不再按 2560 切档。
+  test('BOOT: home hero 右卡网格（2 列×3 行 = 6 张）', async ({ page }) => {
+    // 默认视口 1280×720 落在宽屏档（useIsWideDesktop 同源断点）
     await holdSplash(page, '/');
     const right = page.locator('#boot-splash .bs-herobili__right');
     await expect(right).toBeVisible();
-    await expect(page.locator('#boot-splash .bs-herocard')).toHaveCount(4);
+    await expect(page.locator('#boot-splash .bs-herocard')).toHaveCount(6);
     await expect(page.locator('#boot-splash .bs-shuffle')).toBeVisible();
   });
 
-  test('BOOT: home ≥1281 右卡升 3 列×2 行 = 6 张', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
+  test('BOOT: home ≥2560 右卡仍为 2 列×3 行 = 6 张', async ({ page }) => {
+    await page.setViewportSize({ width: 2560, height: 1440 });
     await holdSplash(page, '/');
     await expect(page.locator('#boot-splash .bs-herocard')).toHaveCount(6);
   });

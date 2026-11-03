@@ -25,7 +25,7 @@ import { buildContinueItems } from './continueItems';
 import HomeTopStrip from './HomeTopStrip';
 import { useIsMobile, useIsTV, useIsTVLike, useIsMobileLayout } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
-import { useHeroSideCols } from '@/hooks/useHeroSideCols';
+import { useHeroSideCols, useHeroSideRows } from '@/hooks/useHeroSideCols';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useShallow } from 'zustand/react/shallow';
 import { usePullToRefresh } from '@/components/ui/PullToRefresh';
@@ -188,10 +188,11 @@ export default function HomePage() {
   // 无历史在骨架期提前收行，切换时几何与真实页逐像素一致，零位移。
   const showContinueRow = userDataLoading || continueItems.length > 0;
 
-  // HeroBili 右栏卡张数 = 列数 × 2 行（useHeroSideCols 已是该区列数的 JS 真源）。
+  // HeroBili 右栏卡张数 = 列数 × 行数（useHeroSideCols / useHeroSideRows 为该区唯一真源）。
   // 横滚行骨架不再自己算张数：2026-09-18 起骨架直接渲染真实 <TMDBMovieRow>，
   // 其内部 SkeletonCards 已按 --row-cols / --continue-cols 派生张数。
   const heroSideCols = useHeroSideCols();
+  const heroSideRows = useHeroSideRows();
 
   // 事件 handler（同样须在提前 return 之前，保持 hook 数恒定）
   const handleBannerItemClick = useCallback((item: { id: string | number }) => {
@@ -476,12 +477,15 @@ export default function HomePage() {
           </div>
           <div className="hero-bili__right">
             <div className="hero-bili__cards">
-              {/* 张数 = useHeroSideCols() × 2 行（≥1281 为 3 列 = 6 张；
-                  1024–1280 为 2 列 = 4 张），与真实 HeroBili 右栏列数同源 */}
-              {Array.from({ length: heroSideCols * 2 }).map((_, i) => (
+              {/* 张数 = useHeroSideCols() × useHeroSideRows()，与真实 HeroBili 右栏同源。
+                  2026-11-04：≥1024 全档 2 列 × 3 行 = 6 张（双 16:9 精确解）。
+                  卡结构同步「封面出血」——标题改为封面内浮层占位（绝对定位），
+                  不再占独立的下行 title 条，故骨架卡高 = 纯封面 16:9。 */}
+              {Array.from({ length: heroSideCols * heroSideRows }).map((_, i) => (
                 <div key={i} className="hero-side-card">
-                  <span className="hero-side-card__cover hero-side-card__cover--skeleton thumbnail-skeleton-bg" />
-                  <span className="hero-side-card__title hero-side-card__title--skeleton thumbnail-skeleton-bg" />
+                  <span className="hero-side-card__cover hero-side-card__cover--skeleton thumbnail-skeleton-bg">
+                    <span className="hero-side-card__title-skeleton-bar" />
+                  </span>
                 </div>
               ))}
             </div>

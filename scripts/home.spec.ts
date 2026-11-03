@@ -493,6 +493,7 @@ test.describe('1.3d 宽屏 HeroBili 卡', () => {
     await page.route('**/test-backdrop-6.jpg**', (route) => route.fulfill({ status: 404, body: '' }));
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.hero-side-card', { timeout: 10000 });
+    // 2026-11-04：≥1024 全档统一 2 列 × 3 行 = 6 张（双 16:9 精确解）。
     await expect(page.locator('.hero-side-card')).toHaveCount(6, { timeout: 8000 });
     const border = await page.locator('.hero-side-card').first().evaluate((el) => {
       const cs = getComputedStyle(el);
@@ -508,6 +509,36 @@ test.describe('1.3d 宽屏 HeroBili 卡', () => {
     await expect(
       page.locator('.hero-side-card .lazy-image-container.error .lazy-image-fallback--brand'),
     ).toContainText('kinoTV');
+  });
+
+  // 2026-11-04 用户报「≥2560 hero-bili__cards 内 card 封面比例失调」的回归锁。
+  // 根因：--hero-grid-w 旧式 min(100vw,2200px) − 2×page-pad-x 是「先封顶再扣留白」，
+  // 而 hero 真实宽是 min(100vw − 2×page-pad-x, 2200px)。封顶后两者相差 2×page-pad-x
+  // （≥2560 达 280px）→ 右栏 token 偏窄，banner 按 1fr 吃剩余被撑宽、
+  // 右卡被压到 ≈1.42:1。此用例在 2560 同时锁 banner / 卡比例与下沿齐平。
+  test('HOME-090: ≥2560 HeroBili 双 16:9 + 下沿齐平（token 分母回归锁）', async ({ page }) => {
+    await page.setViewportSize({ width: 2560, height: 1440 });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.hero-side-card', { timeout: 10000 });
+    const geo = await page.evaluate(() => {
+      const banner = document.querySelector('.hero-bili__banner') as HTMLElement | null;
+      const cards = document.querySelector('.hero-bili__cards') as HTMLElement | null;
+      const cover = cards?.querySelector('.hero-side-card__cover') as HTMLElement | null;
+      if (!banner || !cards || !cover) return null;
+      const b = banner.getBoundingClientRect();
+      const c = cards.getBoundingClientRect();
+      const k = cover.getBoundingClientRect();
+      return {
+        bannerRatio: b.width / b.height,
+        cardRatio: k.width / k.height,
+        delta: Math.abs(c.bottom - b.bottom),
+      };
+    });
+    expect(geo, 'HeroBili 结构缺失（banner / cards / cover）').not.toBeNull();
+    // 容差 2%：100vw 含纵向滚动条宽度，真实内容盒略窄（既有近似，非本次回归）。
+    expect(Math.abs(geo!.bannerRatio - 16 / 9), `banner 比例 ${geo!.bannerRatio.toFixed(3)}`).toBeLessThan(0.02);
+    expect(Math.abs(geo!.cardRatio - 16 / 9), `卡封面比例 ${geo!.cardRatio.toFixed(3)}`).toBeLessThan(0.02);
+    expect(geo!.delta, `下沿差 ${geo!.delta.toFixed(2)}px`).toBeLessThan(2);
   });
 });
 

@@ -3,7 +3,12 @@ export { useNetworkSpeed } from './useNetworkSpeed';
 export { useNetworkQuality } from './useNetworkQuality';
 export { useIsMobile, useIsDesktop, useIsTV, useIsProjector, useIsTVLike, useMediaQuery, useIsRealMobile } from './useMediaQuery';
 export { useIsWideDesktop } from './useIsWideDesktop';
-export { useHeroSideCols, type HeroSideCols } from './useHeroSideCols';
+export {
+  useHeroSideCols,
+  useHeroSideRows,
+  type HeroSideCols,
+  type HeroSideRows,
+} from './useHeroSideCols';
 export { useDocumentTitle, useRouteTitleImmediate, getRouteTitle, APP_NAME } from './useDocumentTitle';
 export { useCollapseOnScroll } from './useCollapseOnScroll';
 export { useDelayedFlag } from './useDelayedFlag';

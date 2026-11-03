@@ -455,18 +455,23 @@ html[data-device="app"] .home-disclaimer {
 
   /* 右卡封面：真实 .hero-side-card__cover 已给 aspect-ratio，span 需显式块级化 */
   .hero-side-card__cover--skeleton {
+    position: relative;
     display: block;
   }
 
-  /* 右卡标题条：用 .home-skeleton 前缀提高特异性，压过 .hero-side-card__title 的
-     padding / line-height / nowrap（仅骨架态生效，真实卡不受影响）。 */
-  .home-skeleton .hero-side-card__title--skeleton {
+  /* 右卡标题占位（2026-11-03 封面出血后）：改为封面内的浮层灰条，
+     绝对定位于封面底部（镜像真实 .hero-side-card__title 的浮层 position/padding）。
+     不再占独立下行，骨架卡高 = 纯封面 16:9。 */
+  .home-skeleton .hero-side-card__title-skeleton-bar {
+    position: absolute;
+    right: var(--space-xs);
+    bottom: var(--space-xs);
+    left: var(--space-xs);
     display: block;
-    height: var(--text-sm);
-    margin: var(--space-xs) var(--space-sm);
-    padding: 0;
+    height: var(--text-xs);
     border-radius: var(--radius-sm);
-    white-space: normal;
+    background: var(--color-skeleton);
+    opacity: 0.72;
   }
 
   /* 换一换占位（2026-10-10 二次镜像修复）：骨架 span 挂真实 .hero-bili__shuffle
@@ -498,13 +503,12 @@ html[data-device="app"] .home-disclaimer {
     pointer-events: none;
   }
 
-  /* 1024–1280：右卡 2 列 × 2 行 = 4 张（与 HeroBili.css 的 A 档同步），
-     故渲染的 6 张里隐藏后两张，避免骨架出现真实布局没有的第 3 行。
+  /* 2026-11-04：全档 2 列 × 3 行 = 6 张，无 2560 分档。
+     JS 侧已按 heroSideCols × heroSideRows 渲染正确张数，此处 nth-child 仅为双保险：
+     多渲染的卡（若有）隐藏，避免出现真实布局没有的第 4 行。
      ⚠️ 嵌套 @media 必须置于本块末位：order/order 要求 rules 先于 at-rules。 */
-  @media (width <= 1280px) {
-    .home-skeleton .hero-bili__cards > .hero-side-card:nth-child(n + 5) {
-      display: none;
-    }
+  .home-skeleton .hero-bili__cards > .hero-side-card:nth-child(n + 7) {
+    display: none;
   }
 }
 

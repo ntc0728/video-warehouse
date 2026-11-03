@@ -289,10 +289,10 @@
       /* HeroBili 融合卡（2026-09-22 单真源收敛）：右栏宽直接消费注入的
          layout-tokens.css --hero-side-w（与真实页同一份分档公式，不再手抄第二套）；
          <1024 非宽屏档 banner 走 aspect-ratio，不读该 token。
-         2026-09-30：banner 高改由 flex stretch 对齐右栏（宽屏档 flex row 内
-         align-items:stretch 天然等高，与真实页 .hero-bili__banner height:100%
-         同语义），不再消费 --hero-banner-h——其新公式引用 --space-xs 等 bundle
-         token，注入侧无定义，消费会 invalid。卡壳 padding 镜像真实 .hero-bili。 */
+         2026-11-04：banner 恒按 16:9 派生高度（与真实 HeroBili 同语义），
+         右栏 flex stretch 到 banner 行高、3 行卡均分；不再消费 --hero-banner-h
+         （注入侧无 --space-md / --hero-side-gap 定义，消费会 invalid）。
+         卡壳 padding 镜像真实 .hero-bili。 */
       .bs-herobili {
         padding: 7px 9.5px 9.5px;
         background: #fff;
@@ -313,7 +313,7 @@
          仅脚本就绪（data-shape-ready）后隐藏——无 JS / 脚本失败的兜底仍留提示。 */
       #boot-splash[data-shape="home"][data-shape-ready] .bs-tip { display: none; }
       .bs-herobili__right { display: none; }
-      .bs-herocards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(7.2px, calc(4px + 0.4167vw), 12px); }
+      .bs-herocards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: clamp(7.2px, calc(4px + 0.4167vw), 12px); }
       .bs-herocard { display: flex; flex-direction: column; overflow: hidden; background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; }
       .bs-herocard__cover { display: block; aspect-ratio: 16 / 9; background: #f3f4f7; }
       .bs-herocard__title { display: block; height: 0.75rem; margin: 8px 10px; background: #f3f4f7; border-radius: 6px; }
@@ -321,19 +321,25 @@
 
       @media (width >= 1024px) {
         /* 宽屏档 hero：右栏宽直接消费注入的 layout-tokens 分档 token（与真实页同一真源）；
-           banner 高走 flex stretch（见上注），不再消费 --hero-banner-h */
+           banner 恒保持 16:9 固有高度，右栏 stretch 到同一行高 */
         #boot-splash:not([data-cols="tv"]) .bs-herobili {
           --bs-side-w: var(--hero-side-w);
         }
         #boot-splash:not([data-cols="tv"]) .bs-herobili__grid { flex-direction: row; align-items: stretch; }
-        #boot-splash:not([data-cols="tv"]) .bs-herobili__banner { flex: 1 1 0; min-width: 0; max-height: none; aspect-ratio: auto; }
+        #boot-splash:not([data-cols="tv"]) .bs-herobili__banner { flex: 1 1 0; min-width: 0; max-height: none; }
         #boot-splash:not([data-cols="tv"]) .bs-herobili__right {
           position: relative;
-          display: grid;
+          display: flex;
+          flex-direction: column;
           flex: 0 0 var(--bs-side-w);
+          min-height: 0;
           /* 2026-09-30 镜像真实布局：换一改脱标浮层，右栏卡网格独占全宽（单轨） */
           grid-template-columns: minmax(0, 1fr);
         }
+        #boot-splash:not([data-cols="tv"]) .bs-herocards { flex: 1 1 auto; min-height: 0; }
+        #boot-splash:not([data-cols="tv"]) .bs-herocard { min-height: 0; }
+        #boot-splash:not([data-cols="tv"]) .bs-herocard__cover { flex: 1 1 auto; min-height: 0; }
+        #boot-splash:not([data-cols="tv"]) .bs-herocard__title { display: none; }
         #boot-splash:not([data-cols="tv"]) .bs-shuffle {
           position: absolute;
           top: 0;
@@ -361,8 +367,7 @@
         .bs-shuffle i { display: block; width: 17px; height: 17px; background: #f3f4f7; border-radius: 4px; }
         .bs-shuffle i:last-child { width: 14px; height: 37px; border-radius: 3px; }
       }
-      /* 右卡列数（useHeroSideCols 同源断点）：1024–1280 → 2 列×2 行；≥1281 → 3 列×2 行 */
-      @media (width >= 1281px) { #boot-splash:not([data-cols="tv"]) .bs-herocards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+      /* 右卡分档（useHeroSideCols/useHeroSideRows 同源，2026-11-04）：≥1024 全档 2 列×3 行 = 6 张 */
 
       html[data-theme="dark"] .bs-home__strip i,
       html[data-theme="dark"] .bs-herobili__banner,
@@ -500,20 +505,25 @@
       (function() {
         try {
           var raw = localStorage.getItem('app-settings');
-          if (raw) {
-            var state = JSON.parse(raw);
-            var theme = state.state && state.state.theme;
-            if (theme === 'dark') {
-              document.documentElement.setAttribute('data-theme', 'dark');
-            } else if (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-              document.documentElement.setAttribute('data-theme', 'dark');
-            }
-            /* 阶段 C 首帧防闪：手动档 uiScale>0 时在 React mount 前预写内联 --ui-scale，
-               避免 ≥1920 大屏首帧闪自动档值；0=自动时不写，交回 @media 判定。 */
-            var uiScale = state.state && state.state.uiScale;
-            if (typeof uiScale === 'number' && uiScale > 0) {
-              document.documentElement.style.setProperty('--ui-scale', String(uiScale));
-            }
+          var state = raw ? JSON.parse(raw) : null;
+          var theme = state && state.state && state.state.theme;
+          /* 2026-11-03：默认主题改为 dark（DEFAULT_SETTINGS.theme = 'dark'）。
+             以下三种情况都要在 React 挂载前写 data-theme，否则首帧走浅色、
+             挂载后才切深色 → 闪一下：
+               ① 显式 dark            ② system 且系统偏好深色
+               ③ 无持久化 / 无 theme（首次访问、清缓存）→ 与 store 默认值对齐 */
+          if (
+            theme === 'dark' ||
+            (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ||
+            !theme
+          ) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          }
+          /* 阶段 C 首帧防闪：手动档 uiScale>0 时在 React mount 前预写内联 --ui-scale，
+             避免 ≥1920 大屏首帧闪自动档值；0=自动时不写，交回 @media 判定。 */
+          var uiScale = state && state.state && state.state.uiScale;
+          if (typeof uiScale === 'number' && uiScale > 0) {
+            document.documentElement.style.setProperty('--ui-scale', String(uiScale));
           }
         } catch(e) {}
       })();
@@ -699,8 +709,8 @@
           wrap.appendChild(cards);
           return wrap;
         }
-        /* HeroBili 融合卡：banner（提示居中区）+ 右卡网格（列数×2 行，
-           useHeroSideCols 同源断点：1024–1280 → 2 列，≥1281 → 3 列）+ 换一换竖条 */
+        /* HeroBili 融合卡：banner（提示居中区）+ 右卡网格（全档 2 列×3 行 = 6 张，
+           useHeroSideCols / useHeroSideRows 同源）+ 换一换竖条 */
         function heroBili(wide) {
           var card = el('bs-herobili', 'div');
           var gridBox = el('bs-herobili__grid', 'div');
@@ -708,8 +718,7 @@
           if (wide) {
             var right = el('bs-herobili__right', 'div');
             var cards = el('bs-herocards', 'div');
-            var cols = window.matchMedia('(min-width: 1281px)').matches ? 3 : 2;
-            for (var i = 0; i < cols * 2; i++) {
+            for (var i = 0; i < 6; i++) {
               var c = el('bs-herocard', 'div');
               c.appendChild(el('bs-herocard__cover'));
               c.appendChild(el('bs-herocard__title'));

@@ -1117,7 +1117,7 @@ function HeroBannerClassic({
 /**
  * HeroBanner — 首页 Hero 分支入口
  *
- * ≥1024px 宽屏桌面（非 TV）：渲染 B 站风 HeroBili（左 banner + 右竖版卡 + 换一换）；
+ * ≥1024px 宽屏桌面（非 TV）：渲染 B 站风 HeroBili（左 16:9 banner + 右 2×3 横版卡 + 换一换）；
  * <1024px / TV / 空数据：走 HeroBannerClassic 渲染路径。
  * 空数据回落 Classic：Classic 的空态骨架/「暂无推荐」文案保持原行为，
  * HeroBili 不重复实现空态（宽屏整页骨架由 Home 的 home-skeleton-hero 承接）。
