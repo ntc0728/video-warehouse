@@ -14,10 +14,7 @@ import { BackToTopButton, LazyBlock } from '@/components/common';
 import TMDBMovieRow, { SkeletonCards } from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import CategoryQuickAccess, {
-  CategoryInlineBoard,
-  CategoryInlineBoardSkeleton,
-} from '@/components/CategoryQuickAccess';
+import CategoryQuickAccess from '@/components/CategoryQuickAccess';
 import type { CategoryKey } from '@/components/CategoryQuickAccess';
 import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/constants';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
@@ -105,9 +102,6 @@ export default function HomePage() {
   usePullToRefresh(
     async () => {
       await useTMDBStore.getState().fetchAllHomeData({ force: true });
-      // 合集行（2026-09-30 独立接口）跟随下拉刷新：force 绕过 60min TTL，
-      // 返回 Promise 让下拉浮层等到真实结束。
-      await useTMDBStore.getState().ensureHomeCollections({ force: true });
       // 2026-09-16：fetchAllHomeData 把各区块失败写进 errors 后**正常 resolve**（不 reject），
       // 且 TMDBMovieRow 只在 items 为空时才渲染错误行（TMDBMovieRow/index.tsx:437-448）——
       // 于是「已有旧数据 + 刷新整批失败」时用户完全看不到失败（浮层照样回弹「刷新成功」）。
@@ -283,13 +277,6 @@ export default function HomePage() {
     for (const k of need) void s.ensureHomeBlock(k);
   }, [hasToken, trending, nowPlaying, errors.trending, errors.nowPlaying]);
 
-  // 合集行数据拉取（2026-09-30 独立接口，用户定稿）：随首页挂载即取，
-  // **不等合集行滚入视口**；ensureHomeCollections 幂等（TTL 60min + 在飞去重）。
-  useEffect(() => {
-    if (!hasToken) return;
-    void useTMDBStore.getState().ensureHomeCollections();
-  }, [hasToken]);
-
   // I2：TTL 过期定时检查——若用户停留在首页超过 60min，
   // 用定时器兜底触发过期刷新（visibilitychange 只在切 Tab 时生效）。
   // 2026-09-16 视口懒加载：只遍历「已加载（有数据）」区块，TTL 判定在 ensureHomeBlock 内
@@ -408,7 +395,7 @@ export default function HomePage() {
   //   · <1024 / TV：与 HeroBannerClassic 同构 —— 卡片内 16:9 单图 banner + 7 行卡片
   //     （缩略图列已删除，骨架不再有缩略图槽）。
   //   · ≥1024 非 TV：与真实大屏布局同构 —— 顶部过渡带 + HeroBili「banner + 右卡网格
-  //     + 换一换」+ CQA 合并体 + 7 行卡片（2026-09-29 左栏删除，改单列纵向流）。
+  //     + 换一换」+ 7 行卡片（2026-09-29 左栏删除，改单列纵向流）。
   //
   // ⚠️ 2026-09-18（用户「骨架必须与页面正常显示的元素结构一致」）—— 三条收敛：
   //  ① 7 行**直接渲染真实组件** <TMDBMovieRow isLoading>：卡片模块外壳（padding /
@@ -416,8 +403,7 @@ export default function HomePage() {
   //     gap + padding、卡片 flex 宽度公式全部由 TMDBMovieRow.css / Home.css 唯一决定。
   //     旧实现把这整套手抄成 .home-skeleton-row / -card 系列（Home.css 里甚至写着
   //     「缺这层外壳会矮 26.6px」这类补偿注释）—— 第二套几何真源，改了真实行就漂移。
-  //  ② CQA 合集行**直接渲染真实组件** <CategoryInlineBoardSkeleton />：与真实
-  //     合集行同类名同几何（6 张骨架卡，无固定高度自然等高）。
+  //  ② 合集推荐行已删除（2026-11-04 用户要求），骨架不再渲染该行。
   //  ③ 补上「继续观看」行（此前骨架完全没有）：真实页在
   //     (userDataLoading || continueItems.length > 0) 时渲染，首屏必然存在，
   //     原骨架漏掉它 → 数据到达时凭空多出一整行。
@@ -502,8 +488,6 @@ export default function HomePage() {
         </div>
       </section>
       {showContinueRow && homeSkeletonContinueRow}
-      {/* CQA 合集行骨架（与真实合集行等高） */}
-      <CategoryInlineBoardSkeleton />
       {homeSkeletonRows}
     </>
   ) : (
@@ -603,9 +587,9 @@ export default function HomePage() {
       )}
       <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}${coldSkeletonShownRef.current ? ' home-page--from-skeleton' : ''}`}>
         {isWide ? (
-          /* ── 大屏单列纵向流（2026-09-29 用户确认）：Hero → 继续观看 → CQA 合集行
-             → 推荐行。原「方案 C 两栏 + 左栏今日趋势」已删除，
-             左栏角色并入 CategoryInlineBoard（合集行，2026-09-30 用户确认改合集形态）。
+          /* ── 大屏单列纵向流：Hero → 继续观看 → 推荐行。
+             原「方案 C 两栏 + 左栏今日趋势」与「CQA 合集行」均已删除
+             （合集行于 2026-11-04 按用户要求移除）。
              ⚠️ HeroBanner 的祖先绝不能带 transform 动画（其缩略图/背景是 GPU 合成层，
              祖先 transform 会触发重绘闪烁，见 docs/agents/patterns.md「页面进入过渡统一约定」）。
              因此 `.home-page__content` 的进入动画只包内容行，Hero 与其平级放在外层。 */
@@ -637,9 +621,6 @@ export default function HomePage() {
                 />
               </div>
             )}
-            {/* CQA 合集行（数据 = useTMDBStore 合集桶，随首页挂载拉取、全到齐才显示；
-                点击跳 /chart?collection=<key>，跳转在组件内完成） */}
-            <CategoryInlineBoard />
             {renderHomeRows()}
             <BackToTopButton />
           </div>

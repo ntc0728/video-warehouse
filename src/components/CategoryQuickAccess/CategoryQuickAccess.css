@@ -3,8 +3,9 @@
    ───────────────────────────────────────────────────────────────────────
    宽屏 mega 面板样式分支（≥1024 的 .cqa-nav / .cqa-overlay / .cqa-panel /
    .cqa-hotcard / .cqa-subgenres / .cqa-info-tip 等）已随 2026-10-11 死代码清理
-   整体移除——对应 JS 组件（Nav/Panel/overlay store/categoryPanelData）同批删除，
-   宽屏分类入口 = CategoryInlineBoard 合集行（CategoryInlineBoard.css）。
+   整体移除——对应 JS 组件（Nav/Panel/overlay store/categoryPanelData）同批删除；
+   宽屏分类入口（CategoryInlineBoard 合集行）亦于 2026-11-04 删除，
+   本组件现仅服务 <1024 窄屏圆卡。
    ═══════════════════════════════════════════════════════════════════════ */
 
 .category-quick-access {

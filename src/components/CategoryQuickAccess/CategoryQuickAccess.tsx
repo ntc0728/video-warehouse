@@ -3,8 +3,9 @@
  * ───────────────────────────────────────────────────────────────────
  * 历史：曾有宽屏 mega 面板三件套（CategoryQuickAccessNav 顶栏 chips /
  * CategoryQuickAccessPanel overlay / useCategoryOverlayStore + categoryPanelData），
- * 随 2026-09-30「首页大屏整改」（4a986d2，CategoryInlineBoard 合集行接管分类入口）
- * 退役；本文件与 AppLayout 挂载点、CSS ≥1024 分支于 2026-10-11 死代码清理一并删除。
+ * 随 2026-09-30「首页大屏整改」（4a986d2）退役；曾短暂由 CategoryInlineBoard
+ * 合集行接管宽屏入口，该合集行亦于 2026-11-04 按用户要求删除。
+ * 本文件与 AppLayout 挂载点、CSS ≥1024 分支于 2026-10-11 死代码清理一并删除。
  * home.spec 1.3c 保留「.cqa-nav / .cqa-overlay 恒不存在」的退役回归锁。
  */
 import {
@@ -46,7 +47,7 @@ interface CategoryQuickAccessProps {
   onCategorySelect: (category: CategoryKey) => void;
 }
 
-/** 全端彩色圆卡入口（宽屏首页由 CategoryInlineBoard 合集行接管后本组件不再渲染，
+/** 全端彩色圆卡入口（宽屏首页不再渲染分类入口——合集行已于 2026-11-04 删除，
  *  条件见 Home 的 isWide 分支） */
 export default function CategoryQuickAccess({ onCategorySelect }: CategoryQuickAccessProps) {
   const isMobile = useIsMobile();

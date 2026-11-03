@@ -232,9 +232,8 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
           )}
         </div>
         <div className="sticky-header__center">
-          {/* 分类 chips 已合并进首页 CQA 常驻面板（CategoryInlineBoard，2026-09-29），
-              顶栏不再挂载 CategoryQuickAccessNav；mega 面板（AppLayout 全局挂载）
-              因 activeKey 恒空自门控不渲染。 */}
+          {/* 分类 chips 已随 CategoryQuickAccessNav 退役删除（2026-09-29）；
+              后续接管的首页合集行亦于 2026-11-04 删除，顶栏不再挂载分类入口。 */}
           {/* 中央常驻搜索框：不再用 key={location.pathname} 强制重挂载——
              原先每次导航都销毁重建 SearchBox，会触发整棵搜索框子树重渲染与下拉态丢失，
              造成肉眼可见的卡顿；改用 SearchBox 内部的 useEffect 按 defaultValue/urlQ/pathname

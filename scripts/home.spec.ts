@@ -5,9 +5,10 @@
  *
  * 覆盖: HOME-001~005, 010~012, 020, 022(循环), 024b, 060~061,
  *       030~031~035, 040~041, 045~046, 055~056,
- *       070~071~074~083, 072~073~077~079~087, 075~076~080~081~082~084~085~086,
- *       088
+ *       070~071~074~083, 075~076~080~081~082~084~085~086,
+ *       088, 090
  * 合并前 46 条 → 合并后 12 条（仅合并、断言并集完整保留）。
+ * 2026-11-04：首页合集推荐行（072/073/077/079/087）随组件删除一并移除。
  */
 import { test, expect } from './fixtures/mock-tmdb';
 
@@ -381,10 +382,9 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
 // 1.3c 宽屏分类面板
 // ═══════════════════════════════════════════════════════════════
 
-test.describe('1.3c 宽屏分类入口（合集推荐行现态）', () => {
-  // 2026-10-11 同步 4a986d2「首页大屏整改」：顶栏 chips（.cqa-nav）与 mega 面板已退役，
-  // 宽屏分类入口 = CategoryInlineBoard「合集推荐」行（点击跳 /chart?collection=key），
-  // <1024 回退圆卡。本组断言现态，并锁定「旧 mega 链任何页面都不复生」。
+test.describe('1.3c 宽屏分类入口（合集行已删除）', () => {
+  // 2026-11-04 用户要求删除首页「合集推荐」行：宽屏不再有分类入口（<1024 回退圆卡）。
+  // 本组锁定「旧 mega 链 / 合集行任何页面都不复生」。
   test.use({ viewport: { width: 1440, height: 900 } });
 
   // 等首页异步数据稳定（首行 .tmdb-movierow 已渲染），避免 re-render 窗口期误断。
@@ -393,7 +393,7 @@ test.describe('1.3c 宽屏分类入口（合集推荐行现态）', () => {
   const waitHomeReady = async (page: import('@playwright/test').Page) => {
     await expect(page.locator('.home-page:not(.home-skeleton) .tmdb-movierow').first()).toBeVisible({ timeout: 10000 });
   };
-  test('分类入口与常驻布局（070 chips 退役回归/074 合集跳转/083 详情入口）', async ({ page }) => {
+  test('分类入口与常驻布局（070 chips 退役回归/074 合集行已删/083 详情入口）', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
 
     // 070'：旧 mega 入口不得存在——顶栏 chips 与面板 overlay 均恒 0（锁定退役态）
@@ -402,12 +402,8 @@ test.describe('1.3c 宽屏分类入口（合集推荐行现态）', () => {
     expect(await page.locator('.sticky-header .cqa-nav').count()).toBe(0);
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
 
-    // 074'：现态分类入口 = 合集推荐行，点首卡跳 /chart?collection=
-    await expect(page.locator('.cqa-board')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('.cqa-board__collection').first()).toBeVisible();
-    await page.locator('.cqa-board__collection').first().click();
-    await expect(page).toHaveURL(/\/chart\?collection=/, { timeout: 5000 });
-    await page.waitForSelector('.chart-row', { timeout: 10000 });
+    // 074'：合集推荐行已删除（2026-11-04 用户要求）——宽屏不再渲染该入口
+    expect(await page.locator('.cqa-board').count()).toBe(0);
 
     // 083'：点 banner 右侧卡前往影片详情（首页常驻 /detail 入口，沿用原测点）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -417,39 +413,7 @@ test.describe('1.3c 宽屏分类入口（合集推荐行现态）', () => {
     await page.waitForSelector('.detail-hero', { timeout: 10000 });
   });
 
-  test('合集推荐行渲染与跳转（072 行标题/073 拼贴卡/077 跳转参数/087 骨架同构）', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await waitHomeReady(page);
-    const board = page.locator('.cqa-board');
-    await expect(board).toBeVisible({ timeout: 10000 });
-
-    // 072'：行标题「合集推荐」；卡数 ≥1（6 组 discover 全到齐才出卡，单组失败 skip 的 store 口径）
-    await expect(page.locator('.cqa-board .tmdb-movierow-title')).toHaveText('合集推荐');
-    const collectionCount = await page.locator('.cqa-board__collection').count();
-    expect(collectionCount).toBeGreaterThanOrEqual(1);
-
-    // 073'：每张合集卡 = 2×2 拼贴封面（格数 ≥1）+ 名称行非空（拼贴形状回归锁）
-    const firstCard = page.locator('.cqa-board__collection').first();
-    expect(await firstCard.locator('.cqa-board__collage-img').count()).toBeGreaterThanOrEqual(1);
-    expect(((await firstCard.locator('.cqa-board__name').textContent()) ?? '').trim().length).toBeGreaterThan(0);
-
-    // 077'：点击合集卡 → /chart?collection= 带 key，榜单行就绪
-    await page.locator('.cqa-board__collection').nth(collectionCount > 1 ? 1 : 0).click();
-    await expect(page).toHaveURL(/\/chart\?collection=\w+/, { timeout: 5000 });
-    await page.waitForSelector('.chart-row', { timeout: 10000 });
-
-    // 087'：discover 延迟 800ms → 骨架与真实卡同构（拼贴灰块出现；数据到达后换真实卡、骨架消失）
-    await page.route('**/api.tmdb.org/3/discover/**', async (route) => {
-      await new Promise((r) => setTimeout(r, 800));
-      await route.fallback();
-    });
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.cqa-board__sk').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('.cqa-board__sk')).toHaveCount(0, { timeout: 15000 });
-  });
-
-  test('入口分支互斥与退役链回归锁（075 窄屏圆卡/076 宽屏互斥/084-086 全站无 mega 入口）', async ({ page }) => {
+  test('入口分支互斥与退役链回归锁（075 窄屏圆卡/076 宽屏无入口/084-086 全站无 mega 入口）', async ({ page }) => {
     // 075'：900 窄屏——圆卡分支渲染；合集行与旧 chips 都不出现
     await page.setViewportSize({ width: 900, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -458,11 +422,11 @@ test.describe('1.3c 宽屏分类入口（合集推荐行现态）', () => {
     expect(await page.locator('.cqa-board').count()).toBe(0);
     expect(await page.locator('.cqa-nav').count()).toBe(0);
 
-    // 076'：1440 宽屏——只渲染合集行，圆卡不渲染（两分支互斥）
+    // 076'：1440 宽屏——合集行已删、圆卡也不渲染（宽屏无分类入口）
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await waitHomeReady(page);
-    await expect(page.locator('.cqa-board')).toBeVisible({ timeout: 10000 });
+    expect(await page.locator('.cqa-board').count()).toBe(0);
     expect(await page.locator('.category-quick-access__card').count()).toBe(0);
 
     // 084'：首页滚动也不会出现旧面板 overlay（全局已无触发源）

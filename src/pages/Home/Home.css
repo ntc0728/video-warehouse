@@ -712,9 +712,9 @@ html[data-device="app"] .home-disclaimer {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   大屏布局（2026-09-29 整改）：单列纵向流 Hero → 继续观看 → CQA 合并体 → 推荐行。
-   原「方案 C 两栏」（.home-two-col 左栏「今日趋势 TOP 20」sticky + 右列）整块删除，
-   左栏角色并入 CategoryInlineBoard 常驻面板（CategoryInlineBoard.css）。
+   大屏布局：单列纵向流 Hero → 继续观看 → 推荐行。
+   原「方案 C 两栏」（.home-two-col 左栏「今日趋势 TOP 20」sticky + 右列）已删除；
+   原「CQA 合集行」（CategoryInlineBoard）已于 2026-11-04 按用户要求删除。
    宽度收口全部由既有规则承担：HeroBili 走 `.home-page > .hero-bili` 2200 封顶居中，
    过渡带 / .home-page__content 各自已有 max-width 封顶，此处无需新增规则。
    ═══════════════════════════════════════════════════════════════════════ */

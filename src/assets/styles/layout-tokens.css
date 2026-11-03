@@ -116,9 +116,9 @@
 :root[data-device="app"] { --chart-cols: 1; }
 
 /* ── --home-rail-w：已删除（2026-09-29）──────────────────────────────────────
-   首页左栏「今日趋势 TOP 20」删除（两栏 .home-two-col 改单列纵向流，
-   左栏角色并入 CategoryInlineBoard 常驻面板），本 token 无剩余消费方，
-   定义随之移除；hero 公式分母同步去掉 rail + 栏间 gap 项（见下方 HeroBili 节）。 */
+   首页左栏「今日趋势 TOP 20」删除（两栏 .home-two-col 改单列纵向流），
+   本 token 无剩余消费方，定义随之移除；
+   hero 公式分母同步去掉 rail + 栏间 gap 项（见下方 HeroBili 节）。 */
 
 /* ── --page-pad-x 分档覆盖（2026-09-22 自 variables.css 迁入）──────────────
    迁移动因：下方 --hero-banner-h/--hero-side-w 公式需消费它，且启动骨架（注入
