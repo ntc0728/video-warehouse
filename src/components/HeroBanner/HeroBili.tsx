@@ -36,6 +36,8 @@ interface HeroBiliItem {
   name?: string;
   backdropPath?: string | null;
   posterPath?: string | null;
+  /** banner 简介（TMDB overview；缺省不渲染简介块） */
+  overview?: string;
   backdrop_path?: string;
   poster_path?: string;
   voteAverage?: number;
@@ -305,6 +307,15 @@ export default function HeroBili({
               )}
               <span className="hero-bili__type">{itemTypeLabel(activeItem)}</span>
             </div>
+            {/* banner 简介（2026-11-04 用户要求：左下按钮上方；样式参考
+                demos/home-cinematic-2026-11-03.html）。文案来自 TMDB overview，
+                超长截断；小视口降到单行，避免左下块高过按钮。 */}
+            {activeItem.overview ? (
+              <p className="hero-bili__desc">
+                {activeItem.overview.slice(0, 160)}
+                {activeItem.overview.length > 160 ? '…' : ''}
+              </p>
+            ) : null}
             {(onItemClick || onContinuePlay) && (
               <div className="hero-banner__actions">
                 {hasHistory && onContinuePlay && (
@@ -459,33 +470,40 @@ function HeroSideCard({ item }: { item: HeroBiliItem }) {
         >
           <Icon icon={Heart} size="xs" fill="currentColor" />
         </button>
-        {itemYear(item) !== undefined && (
-          <span className="hero-side-card__corner hero-side-card__corner--year">
-            {itemYear(item)}
-          </span>
-        )}
-        <span className="hero-side-card__corner hero-side-card__corner--type">
-          {itemTypeLabel(item)}
-        </span>
-      </div>
-      <div
-        ref={titleRef}
-        className={`hero-side-card__title${marquee ? ' is-marquee' : ''}`}
-        onMouseEnter={handleTitleEnter}
-        onMouseLeave={handleTitleLeave}
-      >
-        {/* 兜底层：恒单行 ellipsis（标题条高度恒定，banner 齐平基准不受跑马灯影响） */}
-        <span className="hero-side-card__title-fallback">{title}</span>
-        {/* 跑马灯层：absolute 覆盖标题条（不占布局，切换零跳动），跑马灯时才显示 */}
-        <span className="hero-side-card__title-marquee" aria-hidden="true">
-          <span className="hero-side-card__title-track">
-            <span className="hero-side-card__title-seg">{title}</span>
-            {/* 第二段只在跑马灯时渲染——短标题不会出现「两个标题」 */}
-            {marquee && (
-              <span className="hero-side-card__title-seg" aria-hidden="true">{title}</span>
+
+        {/* 底部一行：左标题 + 右元信息（flex 天然保证标题不覆盖右下标签）。
+            2026-11-04 用户定稿：右下改竖排「类型在上、年份在下」。 */}
+        <div className="hero-side-card__bottom">
+          <div
+            ref={titleRef}
+            className={`hero-side-card__title${marquee ? ' is-marquee' : ''}`}
+            onMouseEnter={handleTitleEnter}
+            onMouseLeave={handleTitleLeave}
+          >
+            {/* 兜底层：恒单行 ellipsis（标题条高度恒定，banner 齐平基准不受跑马灯影响） */}
+            <span className="hero-side-card__title-fallback">{title}</span>
+            {/* 跑马灯层：absolute 覆盖标题条（不占布局，切换零跳动），跑马灯时才显示 */}
+            <span className="hero-side-card__title-marquee" aria-hidden="true">
+              <span className="hero-side-card__title-track">
+                <span className="hero-side-card__title-seg">{title}</span>
+                {/* 第二段只在跑马灯时渲染——短标题不会出现「两个标题」 */}
+                {marquee && (
+                  <span className="hero-side-card__title-seg" aria-hidden="true">{title}</span>
+                )}
+              </span>
+            </span>
+          </div>
+          <div className="hero-side-card__meta">
+            <span className="hero-side-card__corner hero-side-card__corner--type">
+              {itemTypeLabel(item)}
+            </span>
+            {itemYear(item) !== undefined && (
+              <span className="hero-side-card__corner hero-side-card__corner--year">
+                {itemYear(item)}
+              </span>
             )}
-          </span>
-        </span>
+          </div>
+        </div>
       </div>
     </Link>
   );

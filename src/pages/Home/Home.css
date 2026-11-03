@@ -459,15 +459,14 @@ html[data-device="app"] .home-disclaimer {
     display: block;
   }
 
-  /* 右卡标题占位（2026-11-03 封面出血后）：改为封面内的浮层灰条，
-     绝对定位于封面底部（镜像真实 .hero-side-card__title 的浮层 position/padding）。
-     不再占独立下行，骨架卡高 = 纯封面 16:9。 */
+  /* 右卡标题占位（2026-11-04 角标重排后）：封面底部左侧灰条（约 58% 宽），
+     镜像「左标题 + 右类型/年份竖排」的真实结构。 */
   .home-skeleton .hero-side-card__title-skeleton-bar {
     position: absolute;
-    right: var(--space-xs);
     bottom: var(--space-xs);
     left: var(--space-xs);
     display: block;
+    width: 58%;
     height: var(--text-xs);
     border-radius: var(--radius-sm);
     background: var(--color-skeleton);
