@@ -465,12 +465,13 @@ export default function HomePage() {
             <div className="hero-bili__cards">
               {/* 张数 = useHeroSideCols() × useHeroSideRows()，与真实 HeroBili 右栏同源。
                   2026-11-04：≥1024 全档 2 列 × 3 行 = 6 张（双 16:9 精确解）。
-                  卡结构同步「封面出血」——标题改为封面内浮层占位（绝对定位），
-                  不再占独立的下行 title 条，故骨架卡高 = 纯封面 16:9。 */}
+                  卡结构同步「封面出血」+ 角标重排：封面底部左标题条 + 右侧竖排 meta 灰块，
+                  卡高 = 纯封面 16:9（标题/meta 均为浮层，不占布局流）。 */}
               {Array.from({ length: heroSideCols * heroSideRows }).map((_, i) => (
                 <div key={i} className="hero-side-card">
                   <span className="hero-side-card__cover hero-side-card__cover--skeleton thumbnail-skeleton-bg">
                     <span className="hero-side-card__title-skeleton-bar" />
+                    <span className="hero-side-card__meta-skeleton" />
                   </span>
                 </div>
               ))}

@@ -417,11 +417,6 @@
   display: none;
 }
 
-.video-card-title-wrap {
-  width: 100%;
-  overflow: hidden;
-}
-
 .video-card-title {
   margin: 0;
   color: var(--color-text);
@@ -540,12 +535,6 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   justify-content: flex-end;
   align-items: baseline;
   padding: var(--space-xs) var(--space-sm) var(--space-sm);
-}
-
-.video-card--landscape .video-card-title-wrap {
-  flex: 1 1 0;
-  min-width: 0;
-  overflow: hidden;
 }
 
 .video-card--landscape .video-card-title {
@@ -701,8 +690,9 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 /* ═══════════════════════════════════════════════════════════════════════
    横版卡封面内文字层（2026-11-03 用户定稿）
    ───────────────────────────────────────────────────────────────────────
-   布局：封面底部一行 flex —— [标题（左，可跑马灯）][年份][类型]，靠右下对齐；
-   标题区自动占满剩余宽度并可溢出滚动；年份/类型间距 --space-xs。
+   布局：封面底部一行 flex —— [标题（左，可跑马灯）][年份]，靠右下对齐；
+   标题区自动占满剩余宽度并可溢出滚动；年份间距 --space-xs。
+   （2026-11-04 用户要求继续观看卡删除类型标签，故只剩年份。）
    底部整体压一层向上渐变，保证白字在任意封面图上的可读性。
    ═══════════════════════════════════════════════════════════════════════ */
 .video-card-landscape__bottom {
@@ -740,7 +730,7 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
-/* 右侧元信息：年份（类型左侧）+ 类型，水平排列、右下对齐 */
+/* 右侧元信息：年份（继续观看卡已删类型标签），右下对齐 */
 .video-card-landscape__meta {
   display: flex;
   flex: 0 0 auto;
@@ -748,7 +738,7 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   align-items: center;
 }
 
-/* 年份/类型胶囊：半透明深底，比竖版更小一号（封面高度有限） */
+/* 年份胶囊：半透明深底，比竖版更小一号（封面高度有限） */
 .video-card-landscape .video-card-landscape__year {
   padding: var(--space-3xs) var(--space-xs);
   border-radius: var(--radius-sm);

@@ -1,7 +1,7 @@
 /* Browse 结果区专属骨架 — 几何对齐真实 VideoCard。
-   卡片壳（.video-card / .video-card-cover / .video-card-info / .video-card-title-wrap）
-   直接复用 VideoCard.css 的真实类，故本文件只写「骨架私有」的部分：
-   灰块尺寸、角标位置、以及关掉真实卡的交互态。
+   卡片壳（.video-card / .video-card-cover / .video-card-portrait__bottom /
+   __title-wrap / __meta）直接复用 VideoCard.css 的真实类，故本文件只写
+   「骨架私有」的部分：灰块尺寸、角标位置、以及关掉真实卡的交互态。
    排序条/左栏首屏 chrome 骨架在 BrowseChromeSkeleton.css（2026-09-23）。 */
 
 /* 骨架层不可交互：真实 .video-card 是 <a>，带 hover 位移 / 描边 / 光泽扫光，

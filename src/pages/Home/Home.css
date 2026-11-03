@@ -473,6 +473,19 @@ html[data-device="app"] .home-disclaimer {
     opacity: 0.72;
   }
 
+  /* 右卡右下 meta 占位（2026-11-04）：竖排两条灰块，镜像类型 + 年份胶囊 */
+  .home-skeleton .hero-side-card__meta-skeleton {
+    position: absolute;
+    right: var(--space-xs);
+    bottom: var(--space-xs);
+    display: block;
+    width: 2.2em;
+    height: 2.8em;
+    border-radius: var(--radius-sm);
+    background: var(--color-skeleton);
+    opacity: 0.72;
+  }
+
   /* 换一换占位（2026-10-10 二次镜像修复）：骨架 span 挂真实 .hero-bili__shuffle
      基类 → 脱标浮层定位（top 与第一行卡顶对齐、right = space-md − page-pad-x）、
      padding/border/radius/flex-column/gap 全部继承真实，本处**只补内容条**：
