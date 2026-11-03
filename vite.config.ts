@@ -175,20 +175,42 @@ window.__vite_plugin_react_preamble_installed__ = true;
 
               const t0 = Date.now()
               const srcDir = path.resolve(projectRoot, 'src')
-              // 递归收集所有需变换的源文件
+              // 递归收集所有需变换的源文件（异步 readdir：避免同步递归阻塞事件循环，
+              // 首个 GET 请求就在同一事件循环里排队）
               const files: string[] = []
-              const walk = (dir: string) => {
-                for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const walk = async (dir: string): Promise<void> => {
+                const entries = await fs.promises.readdir(dir, { withFileTypes: true })
+                for (const entry of entries) {
                   const full = path.join(dir, entry.name)
                   if (entry.isDirectory()) {
                     // 跳过 node_modules、.git、test 目录（测试文件不参与浏览器渲染）
-                    if (entry.name !== 'node_modules' && entry.name !== '.git' && entry.name !== '__tests__' && entry.name !== 'test') walk(full)
+                    if (entry.name !== 'node_modules' && entry.name !== '.git' && entry.name !== '__tests__' && entry.name !== 'test') await walk(full)
                   } else if (entry.isFile() && /\.(tsx?|css)$/.test(entry.name) && !entry.name.endsWith('.test.ts') && !entry.name.endsWith('.test.tsx') && !entry.name.endsWith('.spec.ts') && !entry.name.endsWith('.spec.tsx')) {
                     files.push(full)
                   }
                 }
               }
-              walk(srcDir)
+              await walk(srcDir)
+              // 2026-11-04 冷启动：首屏闭包优先。
+              // 原先 376 个文件按 readdir 顺序并发变换，首屏 Home 闭包可能排在后面，
+              // 与浏览器首屏请求争抢 CPU/事件循环（实测首屏模块请求 5–200ms/个）。
+              // 按 warmup.clientFiles 的同一份首屏集合排序：这些先变换完，
+              // 浏览器首屏请求直接命中缓存；其余页面文件随后补齐（不影响首屏）。
+              const HOT_PREFIXES = [
+                'src/main.tsx', 'src/routes.tsx', 'src/components/Layout',
+                'src/stores', 'src/services', 'src/lib', 'src/hooks', 'src/types',
+                'src/pages/Home', 'src/pages/Browse',
+                'src/components/HeroBanner', 'src/components/TMDBMovieRow',
+                'src/components/VideoCard', 'src/components/CategoryQuickAccess',
+                'src/components/LazyImage', 'src/components/common', 'src/components/ui',
+                'src/assets/styles',
+              ]
+              const rank = (full: string) => {
+                const rel = path.relative(projectRoot, full).replace(/\\/g, '/')
+                const i = HOT_PREFIXES.findIndex((p) => rel.startsWith(p))
+                return i === -1 ? HOT_PREFIXES.length : i
+              }
+              files.sort((a, b) => rank(a) - rank(b))
               // 并发限制：30 路并行变换（Vite transformRequest 内部有去重，
               // 与浏览器正常请求不冲突；30 是事件循环饥饿与吞吐的平衡点）
               const CONCURRENCY = 30
