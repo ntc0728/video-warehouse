@@ -59,16 +59,37 @@ if (CHECK) {
   process.exit(0);
 }
 
-let cap = readFileSync(capPath, 'utf8');
-cap = cap.replace(/version: '[^']+'/, `version: '${version}'`);
-cap = cap.replace(/versionCode: \d+/, `versionCode: ${versionCode}`);
-writeFileSync(capPath, cap);
+// ── 写入：capacitor.config.ts 与 build.gradle **各自独立判断存在性** ──────────────
+// 2026-11-03 修复：此前无条件 readFileSync(gradlePath) —— 未跑过 `cap add` 的机器上
+//   android/app/build.gradle 不存在，脚本会**先写盘 capacitor.config.ts 再抛 ENOENT**，
+//   表现为「文件其实改好了，但进程异常退出 / 命令报红」，极易被误判成「没改成功」，
+//   进而反复重跑甚至手工改错。现在：
+//   ① 先收集全部待写内容，再统一落盘（避免半成功状态）；
+//   ② gradle 缺失时明确跳过并提示，与 --check 分支口径保持一致（不是错误）。
+const capSrc = readFileSync(capPath, 'utf8');
+const nextCap = capSrc
+  .replace(/version: '[^']+'/, `version: '${version}'`)
+  .replace(/versionCode: \d+/, `versionCode: ${versionCode}`);
 
-let gradle = readFileSync(gradlePath, 'utf8');
-gradle = gradle.replace(/versionCode \d+/, `versionCode ${versionCode}`);
-gradle = gradle.replace(/versionName "[^"]+"/, `versionName "${version}"`);
-writeFileSync(gradlePath, gradle);
+const writes = [{ file: 'capacitor.config.ts', src: capSrc, out: nextCap }];
 
-console.log(
-  `[sync-android-version] v${version} (versionCode ${versionCode}) -> capacitor.config.ts + android/app/build.gradle`,
-);
+if (existsSync(gradlePath)) {
+  const gradleSrc = readFileSync(gradlePath, 'utf8');
+  writes.push({
+    file: 'android/app/build.gradle',
+    src: gradleSrc,
+    out: gradleSrc
+      .replace(/versionCode \d+/, `versionCode ${versionCode}`)
+      .replace(/versionName "[^"]+"/, `versionName "${version}"`),
+  });
+} else {
+  console.log('[sync-android-version] 未找到 android/app/build.gradle（未 cap add）→ 跳过其同步');
+}
+
+const changed = writes.filter((w) => w.out !== w.src);
+changed.forEach((w) => writeFileSync(join(root, w.file), w.out));
+
+const summary = writes
+  .map((w) => `${w.file}${changed.includes(w) ? '' : '(无变化)'}`)
+  .join(' + ');
+console.log(`[sync-android-version] v${version} (versionCode ${versionCode}) -> ${summary}`);

@@ -14,11 +14,14 @@
 git clone git@github.com:ntc0728/video-warehouse.git
 cd video-warehouse
 
-# 2. 安装依赖（Node.js >= 18, npm >= 9）
-npm install
+# 2. 安装依赖（Node.js >= 18，pnpm >= 10）
+#    ⚠️ 本仓库只提交 pnpm-lock.yaml、没有 package-lock.json。
+#    请勿用 npm install —— 它不会遵守 lockfile，会拉到不同的依赖树，
+#    且会让 node_modules 布局与 CI（pnpm frozen install）不一致。
+pnpm install --frozen-lockfile
 
 # 3. 启动开发服务器（默认 http://127.0.0.1:3001）
-npm run dev
+pnpm dev
 ```
 
 TMDB 数据需在设置页填入 Access Token 后才会加载（详见 `KNOWLEDGE.md` 开发指南）。
@@ -28,7 +31,7 @@ TMDB 数据需在设置页填入 Access Token 后才会加载（详见 `KNOWLEDG
 - 从 `master` 切功能分支，命名建议：`feat/xxx`、`fix/xxx`、`docs/xxx`、`refactor/xxx`。
 - **小步提交**：一次 PR 聚焦一件事，描述写清「做了什么 + 为什么」。
 - 至少 **1 人 review** 后合并；**知识库（`AGENTS.md` 等）改动同样需要 review**——它和代码一样重要。
-- 合并前请运行 `npm run lint:all` 并跑受影响的测试（见第 7 节）。
+- 合并前请运行 `pnpm lint:all` 并跑受影响的测试（见第 7 节）。
 
 ## 4. 提交规范
 
@@ -70,13 +73,20 @@ docs: 同步卡片模块约定与 RecordShell 桌面横向布局到知识库与�
 
 - 改了 **CSS 类名 / 选择器 / DOM 结构** → 必须在**同一次 commit** 更新 `scripts/*.spec.ts` 对应选择器。
 - **精准跑测试**，不要全量（省时）：改动映射见 `AGENTS.md` 的「测试依赖映射」。
+- ⚠️ **禁止裸调 `npx playwright test`**（AGENTS.md 红线 7）：config 的 `webServer.command` 在 Windows 下经 shell 启动，收尾只杀到 shell，vite 会成为孤儿进程长期占端口。一律走下面两个入口：
+
   ```bash
-  # 单个页面（最常见）
-  npx playwright test scripts/player.spec.ts
-  # 共享组件（如 VideoCard）
-  npx playwright test scripts/home.spec.ts scripts/browse.spec.ts scripts/detail.spec.ts scripts/collections.spec.ts scripts/history.spec.ts
+  # ① 指定 spec 即「调试档」：单轮墙钟 ≤120s、retries=0
+  node scripts/e2e-skeleton.mjs scripts/player.spec.ts
+
+  # ② 或走预置脚本（已在 package.json 里封装好预算与清理）
+  pnpm test:e2e:subpages     # source-checker + proxy-setup
+  pnpm test:e2e:skeleton     # skeleton + boot-splash
+  pnpm test:e2e:boot-iso     # boot-splash-iso
   ```
-- 单元测试：`npm run test`。
+- **全量 E2E**（`pnpm test:e2e` / `e2e-skeleton.mjs --all`）**未经负责人明确允许不得运行**。
+- 单步等待/超时一律 ≤10s；改动测试映射或增删用例后必须跑 `pnpm test:count` 校验一致性。
+- 单元测试：`pnpm test`。
 
 ## 8. 协作问答
 

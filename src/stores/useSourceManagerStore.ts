@@ -18,6 +18,8 @@ import type {
   ManagedVideoSource,
   ManagedIPTVSource,
   ManagedEPGSource,
+  SourceKind,
+  SourceStatus,
   VideoSourceConfig,
   IPTVSourceConfig,
   EPGSourceConfig,
@@ -481,6 +483,72 @@ export const useSourceManagerStore = create<SourceManagerState>()(
         },
       })),
       partialize: (s) => ({ video: s.video, iptv: s.iptv, epg: s.epg }) as SourceManagerState,
+
+      /**
+       * 持久化版本号（2026-11-03 新增）
+       * 本 store 是四个 persist store 中**唯一没有字段级迁移兜底**的一个：
+       * useSettingsStore / usePlayerStore / useIPTVStore 各有自定义 merge 处理旧结构，
+       * 这里此前只有 partialize —— 一旦 ManagedSource* 的形状演进（加必填字段、
+       * 改 status 嵌套、改 kind 取值），老用户 localStorage 里的旧条目会带着
+       * undefined 直接进入渲染，表现为「源列表空白 / 排序 NaN / 开关点不动」，
+       * 且因为 persist 会立刻把坏数据写回，用户很难自愈。
+       *
+       * 迁移策略：**逐条字段补齐**（不整包丢弃，避免用户自建源丢失）。
+       * bump 规则：改 ManagedSourceBase 必填字段 / 改 status 结构 / 改 kind 取值时
+       * version + 1，并在下面加一层对应迁移分支。
+       */
+      version: 1,
+
+      migrate: (persisted, fromVersion) => {
+        const incoming = (persisted ?? {}) as Partial<
+          Pick<SourceManagerState, 'video' | 'iptv' | 'epg'>
+        >;
+
+        /**
+         * 单条源形状修复：补齐 ManagedSourceBase 的必填字段。
+         * 幂等（对已合法的条目零改动），故可安全地在每次水合时全量跑一遍。
+         */
+        const repair = <T extends ManagedSourceBase>(item: unknown, index: number, scene: Scene): T | null => {
+          if (!item || typeof item !== 'object') return null;
+          const it = item as Partial<ManagedSourceBase> & Record<string, unknown>;
+          const name = typeof it.name === 'string' && it.name ? it.name : '';
+          // 无 id 时用「scene+name」派生，保证 React key 稳定且不与其它条重复
+          const id = typeof it.id === 'string' && it.id ? it.id : `${scene}:${name || 'unnamed'}:${index}`;
+          const status = (it.status && typeof it.status === 'object' ? it.status : {}) as Partial<SourceStatus>;
+          return {
+            ...(it as T),
+            id,
+            name,
+            // kind 表示「内置 / 自建」来源，缺失时按 custom 兜底（更安全：不冒充内置源）
+            kind: (it.kind as SourceKind) ?? 'custom',
+            addedAt: typeof it.addedAt === 'number' ? it.addedAt : Date.now(),
+            order: typeof it.order === 'number' ? it.order : index,
+            status: {
+              enabled: typeof status.enabled === 'boolean' ? status.enabled : false,
+              latency: typeof status.latency === 'number' ? status.latency : null,
+              latencyCheckedAt: typeof status.latencyCheckedAt === 'number' ? status.latencyCheckedAt : null,
+              ...(typeof status.measuring === 'boolean' ? { measuring: status.measuring } : {}),
+            },
+          } as T;
+        };
+
+        const repairList = <T extends ManagedSourceBase>(list: unknown, scene: Scene): T[] =>
+          Array.isArray(list)
+            ? list.map((it, i) => repair<T>(it, i, scene)).filter((x): x is T => x !== null)
+            : [];
+
+        const next = {
+          ...incoming,
+          video: repairList<ManagedVideoSource>(incoming.video, 'video'),
+          iptv: repairList<ManagedIPTVSource>(incoming.iptv, 'iptv'),
+          epg: repairList<ManagedEPGSource>(incoming.epg, 'epg'),
+        };
+
+        // fromVersion === undefined 表示旧数据从未写过 version 字段：走同一套修复即可。
+        // 将来新增破坏性结构变更时，在此按 fromVersion 分支追加迁移。
+        void fromVersion;
+        return next as SourceManagerState;
+      },
     },
   ),
 );

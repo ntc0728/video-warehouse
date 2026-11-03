@@ -105,11 +105,9 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .sdp-spin {
-    animation-duration: 1.4s;
-  }
-}
+/* 注：本组件原有一条 reduced-motion 兜底（把 .sdp-spin 减速到 1.4s，仍在转）。
+   2026-11-03 移除：全局白名单 animations.css 已把 .sdp-spin 统一为 1s infinite，
+   保留此处会形成「同一元素两处口径」，且 !important 下组件级规则实际不生效（只剩误导）。 */
 
 /* 悬浮 / 钉住 的弹出层（Portal 渲染到 body，fixed 定位由内联样式控制，
    可见性由 .is-open 控制，避免被 .detail-content 的 overflow:hidden 裁剪） */

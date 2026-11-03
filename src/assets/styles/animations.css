@@ -427,13 +427,21 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* 功能性无限旋转指示器白名单（显式设置时长，避免继承 0.01ms） */
+  /* 功能性无限旋转指示器白名单（显式设置时长，避免继承 0.01ms）
+     2026-11-03 补齐 3 项：这三个是「正在加载/正在测速」的唯一视觉信号，
+     此前未列入白名单 → 被上方 * 压成 0.01ms 后**停在 0° 不动**，
+     用户无法区分「加载中」与「卡死」。其中 .sdp-spin 另有组件级兜底
+     （SourceDetectPill.css 减速到 1.4s 仍在转），补齐后两处口径一致。 */
   .spinning,
   .checking-spinner,
   .browse-loadmore-spinner,
   .player-loading-spinner,
   .playlist-query-spinner,
-  .up-channel-loading-icon {
+  .up-channel-loading-icon,
+  .browse-count-spin,
+  .source-manager__toolbar-btn .spin,
+  .source-manager__icon-btn .spin,
+  .sdp-spin {
     animation-duration: 1s !important;
     animation-iteration-count: infinite !important;
   }
