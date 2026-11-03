@@ -59,8 +59,12 @@
   text-align: center;
 }
 
+/* 2026-11-04：选中计数徽章底色改「22% 反色叠透明」。
+   原实现直接用状态色实底 + 反色字，亮色下如 #52c41a 上白字仅 2.27:1；
+   22% 反色（亮=黑 22% / 暗=白 22%）与反色字恒定 11+ :1，且与 RecordShell
+   ≥1024 档的 fused 口径统一（原该档单独覆盖，现全断点同源）。 */
 .status-tab--active .status-tab__count {
-  background: var(--status-tab-color, var(--color-primary));
+  background: color-mix(in srgb, var(--color-text-inverse) 22%, transparent);
   color: var(--color-text-inverse);
 }
 

@@ -961,17 +961,7 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .record-filter-chip--status .record-filter-chip__dot {
     background-color: var(--chip-dot-color, var(--color-text-tertiary));
   }
-  /* 选中态圆点改反色（2026-11-04 用户反馈「选中 chip 左侧圆点看不清」）：
-     选中底 = --color-primary（亮 #000 / 暗 #fff），状态色圆点在其上对比不足；
-     反色（亮→白点 / 暗→深点）保证双主题都可辨认。未选中仍保留状态色语义。 */
-  html:not([data-device="app"]):not([data-device="tv"])
-    .record-inline-filter .record-filter-chip--status.is-active .record-filter-chip__dot,
-  html:not([data-device="app"]):not([data-device="tv"])
-    .record-status .status-tab--active .status-tab__dot,
-  html:not([data-device="app"]):not([data-device="tv"])
-    .record-status--fused .status-tab--active .status-tab__dot {
-    background-color: var(--color-text-inverse);
-  }
+  /* 选中态圆点反色规则见文件末尾（顶层，覆盖 768–1023 横向内嵌条 + ≥1024 rail）。 */
   /* chip label：flex:1 撑满中段（镜像 .record-status--fused 的 status-tab
      「> span:not(dot):not(count)」规则）→ 计数徽章被推到按钮右缘，
      与 fused status-tabs 的「label 左 / count 右」布局完全一致。 */
@@ -992,7 +982,10 @@ html[data-device="app"] .action-btn__label {
     min-width: var(--badge-size);
     padding: var(--space-3xs) var(--space-2xs);
     border-radius: var(--radius-full);
-    background: var(--color-hover-bg);
+    /* 2026-11-04：底色由 --color-hover-bg 改 --color-surface。
+       前者（8% 白叠暗底）与文字 tertiary 在暗色下仅 4.44:1，差 0.06 不达标；
+       surface 底（#1f1f1f）→ 4.90:1 达标，且不动文字层级语义。 */
+    background: var(--color-surface);
     color: var(--color-text-tertiary);
     font-size: var(--text-xs);
     font-weight: 600;
@@ -1065,4 +1058,23 @@ html[data-device="app"] .action-btn__label {
     overflow: hidden;
     text-overflow: ellipsis;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   选中态状态圆点反色（2026-11-04 用户反馈「选中 chip 左侧圆点看不清」）
+   ───────────────────────────────────────────────────────────────────────
+   选中底 = --color-primary（亮 #000 / 暗 #fff），状态色圆点在其上对比不足
+   （暗色下 success 1.92:1 / warning 2.53:1）。反色后亮→白点 21:1、暗→深点 18.4:1。
+   ⚠️ 必须放在**顶层**（不能留在 ≥1024 块内）：768–1023 走横向内嵌筛选条，
+   选中底由 RecordFilterPanel.css 的 .record-filter-chip.is-active 提供，
+   反色规则若被媒体查询关住，该断点暗色下仍不可辨。
+   未选中态保持状态色语义（--chip-dot-color / --status-tab-color）。
+   ═══════════════════════════════════════════════════════════════════════ */
+html:not([data-device="app"]):not([data-device="tv"])
+  .record-inline-filter .record-filter-chip--status.is-active .record-filter-chip__dot,
+html:not([data-device="app"]):not([data-device="tv"])
+  .record-status .status-tab--active .status-tab__dot,
+html:not([data-device="app"]):not([data-device="tv"])
+  .record-status--fused .status-tab--active .status-tab__dot {
+  background-color: var(--color-text-inverse);
 }

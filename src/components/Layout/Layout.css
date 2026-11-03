@@ -206,7 +206,9 @@
   width: var(--space-2xs);
   height: 60%;
   border-radius: 0 var(--space-2xs) var(--space-2xs) 0;
-  background-color: var(--color-primary);
+  /* 2026-11-04：父项 active 底 = --color-primary，指示条原先也用 primary → 恒 1:1 不可见。
+     改反色后亮/暗均清晰（21:1 / 18.4:1）。 */
+  background-color: var(--color-text-inverse);
   transform: translateY(-50%);
   animation: indicatorSlideIn var(--dur-lg) ease-out both;
 }

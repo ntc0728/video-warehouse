@@ -499,6 +499,15 @@ body.skin-transitioning .skin-btn.active {
   font-weight: 600;
 }
 
+/* 2026-11-04：左栏选中 tab 的**图标**也必须反色。
+   下方通用 `.settings-tab--active .settings-tab__icon`（0,2,0）取 text-secondary，
+   在暗色白底上仅 2.61:1（亮色黑底上也偏暗）。仅限 `.settings-sidenav` 左栏，
+   横排 tab（surface 底）不受影响。 */
+.settings-sidenav .settings-tab--active .settings-tab__icon,
+.settings-sidenav .settings-tab--active:hover .settings-tab__icon {
+  color: var(--color-text-inverse);
+}
+
 /* rail 无指示条语言：激活态靠实心底区分，竖条/横条一律不渲染 */
 .settings-sidenav .settings-tab::after,
 .settings-sidenav .settings-tab--active::after {
