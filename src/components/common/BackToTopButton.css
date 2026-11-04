@@ -198,15 +198,20 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .fab-stack {
-  /* `right` = 元素**右缘**距视口右缘（值越小越靠右）。
-     要 fab 整组落在内容右缘外：right + fab ≤ gutter ⇒ right ≤ gutter − fab。
-     原式 `gutter − fab − breath` 满足（并留出 breath 呼吸距），是正确的；
-     2026-11-04 上一版曾误改为 `gutter + breath`（值变大 = 左移）→ fab 压进内容区，
-     已撤销。留白不足时由 max(..., space-md) 兜底贴边。 */
+  /* 2026-11-04 用户要求「fab 与换一换图标平行对齐」——
+     **改 fab 去对齐换一换，不得反过来改换一换**（换一换定位是既有设计）。
+     换一换左缘 = 视口 − gutter − space-md + shift
+       （.hero-bili__right 右缘 = 内容右缘 − grid 右 padding space-md；shift = min(breath, maxShift)）
+     ⇒ fab 的 right = gutter + space-md − shift − fab-size，两浮层左缘严格同列。
+     实测左缘：1440 1381 / 1920 1836 / 2560 2395（与换一换逐档一致）。
+     留白不足时 max(..., space-md) 兜底贴边。 */
   --fab-size: var(--space-3xl);
+  /* shift = min(breath, maxShift)，与 --shuffle-left 用同一取值；
+     min() 内不嵌 calc()（本仓 postcss-calc 会丢弃）→ 下沉为局部 token。 */
+  --fab-shift: min(var(--fab-breath, 12px), var(--shuffle-max-shift, 48px));
   position: fixed;
   right: max(
-    calc(var(--content-edge-gutter, 100px) - var(--fab-size) - var(--fab-breath, 12px)),
+    calc(var(--content-edge-gutter, 100px) + var(--space-md, 12px) - var(--fab-shift) - var(--fab-size)),
     var(--space-md)
   );
   bottom: var(--space-2xl);

@@ -654,15 +654,24 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   pointer-events: none;
 }
 
-/* 进度条容器 */
+/* 进度条容器（未播放轨道）
+   ⚠️ 2026-11-04：轨道底色由 `rgba(255,255,255,.15)` 改为 `rgba(0,0,0,.78)`。
+   旧值原本被文字层的 0.86 黑渐变压住（overlay z-index 4 < 文字层 5），
+   等效观感 ≈ 15% 白叠 86% 黑（约 #3d3d3d 暗灰）；本次修「遮罩」把轨道提到
+   z-index 6 后，15% 白直接叠封面图 → 未播放段明显变亮（用户报「颜色被调亮」）。
+   改用 78% 黑底，在任意封面图上都还原原来的暗灰轨道观感。
+   条高同步收窄一档（用户要求「高度稍微调小」）：space-xs → space-2xs。 */
 .video-card-landscape__progress-bar-wrap {
   width: 100%;
-  height: var(--space-xs);
-  background: rgba(255, 255, 255, 0.15);
+  height: var(--space-2xs);
+  background: rgba(0, 0, 0, 0.78);
   overflow: hidden;
 }
 
-/* 进度条填充 — 品红/粉色 */
+/* 进度条填充 — 品红/粉色。
+   ⚠️ 2026-11-04：填充段必须**不被文字层遮罩**——overlay 已提到 z-index 6
+   （高于文字层 5），且文字层渐变止于条上方（background-size 扣掉条高），
+   故粉红段以 `--color-progress-fill` 原色直接可见，不再被压暗。 */
 .video-card-landscape__progress-bar {
   height: 100%;
   background: var(--color-progress-fill);
@@ -760,7 +769,7 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
     rgba(0, 0, 0, 0.55) 42%,
     transparent 100%
   );
-  background-size: 100% calc(100% - var(--space-xs));
+  background-size: 100% calc(100% - var(--space-2xs));
   background-position: top left;
   background-repeat: no-repeat;
   pointer-events: none;
@@ -831,7 +840,7 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
    z-index 5：高于进度条 4，文字在条上方自然可读。 */
 .video-card--landscape .video-card-landscape__bottom {
   z-index: 5;
-  padding-bottom: calc(var(--space-xs) * 2);
+  padding-bottom: calc(var(--space-2xs) * 2);
 }
 
 @media (width <= 767px) {

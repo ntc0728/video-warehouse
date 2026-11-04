@@ -270,7 +270,7 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   right: 0;
   bottom: 0;
   left: 0;
-  height: var(--space-xs);
+  height: var(--space-2xs);
   background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
