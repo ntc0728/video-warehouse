@@ -307,8 +307,7 @@ export default function HeroBili({
               )}
               <span className="hero-bili__type">{itemTypeLabel(activeItem)}</span>
             </div>
-            {/* banner 简介（2026-11-04 用户要求：左下按钮上方；样式参考
-                demos/home-cinematic-2026-11-03.html）。文案来自 TMDB overview，
+            {/* banner 简介（2026-11-04 用户要求：左下按钮上方）。文案来自 TMDB overview，
                 超长截断；小视口降到单行，避免左下块高过按钮。 */}
             {activeItem.overview ? (
               <p className="hero-bili__desc">
