@@ -367,10 +367,10 @@
   animation: chart-shimmer var(--card-shimmer-duration) infinite;
 }
 
-/* 排名块：宽撑满 rank 轨（44px），高对齐真实 rank 行高（text-lg × 1.2 ≈ 27px） */
+/* 排名块：宽撑满 rank 轨（44px），高对齐真实 rank 行高（text-lg × 1.2） */
 .chart-list__skeleton .sk-rank {
   width: 100%;
-  height: 27px;
+  height: calc(var(--text-lg) * 1.2);
 }
 
 /* 封面块：撑满真实 .chart-row__cover（160 × --comp-chart-cover-land-h） */
@@ -382,7 +382,7 @@
 /* body 三行：标题 / meta / 描述，行高与间距对齐真实（24 / 14 / 14 + 2×space-2xs） */
 .chart-list__skeleton .sk-title {
   width: 62%;
-  height: 24px;
+  height: calc(var(--text-lg) * 1.1);
 }
 
 .chart-list__skeleton .sk-meta {

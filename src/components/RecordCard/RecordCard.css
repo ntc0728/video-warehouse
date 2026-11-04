@@ -27,12 +27,15 @@
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
+  /* 2026-11-04：hover 上浮与封面缩放需要过渡（与 VideoCard 同款时长） */
+  transition: transform var(--dur-md) ease, border-color var(--dur-md) ease, box-shadow var(--dur-md) ease;
 }
 
-/* hover：边框加强 + 悬浮阴影 */
+/* hover：边框加强 + 悬浮阴影 + 上浮（2026-11-04：与 VideoCard 竖版统一 -3px） */
 :is(.history-page, .collection-page) .record-card:hover {
   border-color: var(--color-border-strong);
   box-shadow: var(--shadow-card-hover);
+  transform: translateY(-3px);
 }
 
 /* 选中态：边框 + 外发光
@@ -65,10 +68,17 @@
   height: 100%;
 }
 
-/* 视频封面：图片铺满（16:9 源图按 cover 裁切，保持容器严格 16:9） */
+/* 视频封面：图片铺满（16:9 源图按 cover 裁切，保持容器严格 16:9）
+   2026-11-04：hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
 :is(.history-page, .collection-page) .record-card__media--video .lazy-image,
 :is(.history-page, .collection-page) .record-card__media--video .record-card__media-img {
   object-fit: cover;
+  transition: transform var(--dur-lg) var(--ease-standard);
+}
+
+:is(.history-page, .collection-page) .record-card:hover .record-card__media--video .lazy-image,
+:is(.history-page, .collection-page) .record-card:hover .record-card__media--video .record-card__media-img {
+  transform: scale(1.06);
 }
 
 /* IPTV 台标：cover 占满容器（与 IPTVChannelCard 同一口径，2026-09-23 用户定稿）。

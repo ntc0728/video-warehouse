@@ -674,6 +674,21 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
     padding-right: var(--page-pad-x);
     padding-left: var(--page-pad-x);
   }
+
+  /* 2026-11-04：修正「带 page-padding 的页面内容宽比 Home 窄 2×page-pad-x」。
+     根因：这些页面同时挂 `page-padding` 与 `max-width: var(--layout-content-max-width)`
+     = `min(100%, 2200px)`。`max-width` 作用在**含 padding 的外框**上，
+     故内容盒 = min(视口, 2200) − 2×pad，而 Home 的内容元素本身无 padding
+     → 1440 时 1124 vs 1320、2560 时 1920 vs 2200，各页宽度不一致（用户报）。
+     修法：外框上限补回左右 padding：min(100%, 2200 + 2×pad)，
+     使内容盒在所有视口都等于 Home 的 2200 封顶口径。
+     ⚠️ 仅作用于「页面根」这组组合类，不影响 Home（Home 根无 content-shell/browse-page）。 */
+  html:not([data-device="tv"]) .page-padding.content-shell,
+  html:not([data-device="tv"]) .page-padding.browse-page,
+  html:not([data-device="tv"]) .page-padding.settings-page,
+  html:not([data-device="tv"]) .page-padding.source-checker-page {
+    max-width: min(100%, calc(var(--layout-content-cap) + 2 * var(--page-pad-x)));
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

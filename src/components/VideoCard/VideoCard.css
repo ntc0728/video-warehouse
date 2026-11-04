@@ -482,13 +482,24 @@ html[data-device="app"] .video-card-status {
   animation-play-state: paused;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .video-card:hover .video-card-title--overflow .video-card-title-track,
-  .video-card:focus-visible .video-card-title--overflow .video-card-title-track {
+/* 2026-11-04 修复「hover 不生效」：原规则被包在 `@media (hover: hover) and (pointer: fine)`
+   里，触屏笔记本 / 部分指针设备不匹配该条件 → hover 永远不滚。
+   现改为**默认所有设备 hover/focus 都滚**（无媒体查询门槛），
+   触屏无 hover 的设备由下方 `@media (hover: none)` 与移动端规则接管为常驻播放。 */
+.video-card:hover .video-card-title--overflow .video-card-title-track,
+.video-card:focus-visible .video-card-title--overflow .video-card-title-track,
+.video-card:focus-within .video-card-title--overflow .video-card-title-track {
+  animation-play-state: running;
+}
+
+/* 无 hover 能力的设备（触屏）：常驻自动播放（2026-11-04 用户要求移动端自动播放） */
+@media (hover: none) {
+  .video-card-title--overflow .video-card-title-track {
     animation-play-state: running;
   }
 }
 
+/* 移动端视口（≤767px）：无论指针能力，一律自动播放 */
 @media (width <= 767px) {
   .video-card-title--overflow .video-card-title-track {
     animation-play-state: running;
