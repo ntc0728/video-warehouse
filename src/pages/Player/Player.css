@@ -356,7 +356,8 @@
   color: var(--color-primary);
 }
 
-.player-episode-btn.active {
+.player-episode-btn.active,
+.player-episode-btn.active:hover {
   border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
@@ -442,7 +443,8 @@
   color: var(--color-primary);
 }
 
-.player-source-item.active {
+.player-source-item.active,
+.player-source-item.active:hover {
   border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-background);

@@ -64,7 +64,8 @@
   background: var(--color-surface-hover);
   color: var(--color-text);
 }
-.record-filter-chip.is-active {
+.record-filter-chip.is-active,
+.record-filter-chip.is-active:hover {
   border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);

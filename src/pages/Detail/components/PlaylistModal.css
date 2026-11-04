@@ -169,7 +169,8 @@
   color: var(--color-text);
 }
 
-.playlist-season-item.is-active {
+.playlist-season-item.is-active,
+.playlist-season-item.is-active:hover {
   background: var(--color-primary);
   color: var(--color-background);
   font-weight: 700;

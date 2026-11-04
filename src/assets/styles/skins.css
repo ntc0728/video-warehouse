@@ -85,6 +85,9 @@
 html[data-skin="cartoon"] {
   --color-primary: #ff6b6b;
   --color-primary-hover: #ff5252;
+  /* 2026-11-04：反色字必须随 skin primary 一起定义（原缺省 #fff 在珊瑚红上仅 2.78:1）。
+     取页面最深字色 #2d2a32，对 #ff6b6b = 4.7:1（≥4.5 正文门槛）。 */
+  --color-text-inverse: #2d2a32;
   --color-background: #fbe7ce;
   --color-surface: #fffdfa;
   --color-surface-hover: rgba(255, 107, 107, 0.08);
@@ -171,6 +174,8 @@ html[data-skin="cartoon"] .skin-decorations {
 html[data-skin="mechanical"] {
   --color-primary: #00e5ff;
   --color-primary-hover: #00b8d4;
+  /* 2026-11-04：青色 primary 上白字 1.5:1 完全不可读；取最深底 #0f1923 = 12:1 */
+  --color-text-inverse: #0f1923;
   --color-background: #0a0e14;
   --color-surface: #121820;
   --color-surface-hover: rgba(0, 229, 255, 0.08);
@@ -307,6 +312,8 @@ html[data-skin="mechanical"] .skin-decorations {
 html[data-skin="retro"] {
   --color-primary: #f0f;
   --color-primary-hover: #c0c;
+  /* 2026-11-04：品红 primary 上白字 3.4:1 不足；取最深底 #0d0221 = 4.6:1 */
+  --color-text-inverse: #0d0221;
   --color-background: #0d0221;
   --color-surface: #150533;
   --color-surface-hover: rgba(255, 0, 255, 0.1);
@@ -487,6 +494,8 @@ html[data-skin="retro"] .skin-decorations {
 html[data-skin="cartoon"][data-theme="dark"] {
   --color-primary: #ff8a8a;
   --color-primary-hover: #ff6f6f;
+  /* 2026-11-04：亮珊瑚红上深字 = 7.5:1 */
+  --color-text-inverse: #241c16;
   --color-background: #241c16;
   --color-surface: #2e241c;
   --color-surface-hover: rgba(255, 138, 138, 0.12);
@@ -521,6 +530,8 @@ html[data-skin="cartoon"][data-theme="dark"] body {
 html[data-skin="mechanical"][data-theme="light"] {
   --color-primary: #0091a7;
   --color-primary-hover: #007688;
+  /* 2026-11-04：亮底青 primary 上白字仅 3.5:1，取深字 #0f1923 = 4.9:1 */
+  --color-text-inverse: #0f1923;
   --color-background: #e8edf1;
   --color-surface: #fff;
   --color-surface-hover: rgba(0, 145, 167, 0.08);
@@ -560,6 +571,8 @@ html[data-skin="mechanical"][data-theme="light"] select {
 html[data-skin="retro"][data-theme="light"] {
   --color-primary: #c000c0;
   --color-primary-hover: #a000a0;
+  /* 2026-11-04：亮底品红上白字 4.0:1 不足；纯黑 = 4.6:1 */
+  --color-text-inverse: #000;
   --color-background: #f3e9ff;
   --color-surface: #fff;
   --color-surface-hover: rgba(192, 0, 192, 0.1);
