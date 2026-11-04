@@ -12,7 +12,6 @@
 }
 
 .history-skeleton .record-card:hover {
-  border-color: var(--color-border-light);
   box-shadow: var(--shadow-sm);
 }
 

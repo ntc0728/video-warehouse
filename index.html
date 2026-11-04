@@ -89,7 +89,6 @@
         height: 60px;
         padding: 0 16px;
         background: #fff;
-        border-bottom: 1px solid #e8e8e8;
       }
       .bs-logo {
         flex-shrink: 0;
@@ -133,6 +132,16 @@
            shrink 会等比压扁各块（person hero 17rem 实测被压到 171px）——骨架宁多不缺，
            溢出由 overflow:hidden 裁剪，块高必须自洽 */
         flex-shrink: 0;
+      }
+      /* ── 启动骨架内一律无描边（2026-11-05 用户要求）───────────────────────
+         骨架只用「填充色块 + 圆角」表达轮廓，不要 1px 描边线。
+         暗色下描边夹在色块与页面底之间会显浅线，首帧/主题切换时即「边框变白闪烁」。
+         这里用通配一次性兜住全部形态（home/browse/iptv/detail/person/player…），
+         避免逐类删 border、也不会漏。真实页组件不受影响（选择器限定在 #boot-splash 内）。 */
+      #boot-splash,
+      #boot-splash * {
+        border: none;
+        box-shadow: none;
       }
       .bs-hero { width: 100%; aspect-ratio: 16 / 9; max-height: 42vh; background: #f3f4f7; border-radius: 12px; }
 
@@ -182,7 +191,6 @@
         align-items: center;
         padding: 12px 16px;
         background: #fff;
-        border: 1px solid #e8e8e8;
         border-radius: 12px;
       }
       .bs-chip { display: block; width: 3.5rem; height: 1.5rem; background: #f3f4f7; border-radius: 999px; }
@@ -207,7 +215,7 @@
       /* Browse 左栏筛选组（镜像真实 FilterBar rail 化，2026-09-21 用户反馈修正）：
          每组 = 组标题小字 + 固定 2 列 chips（2026-09-14 拍板恒两列），组间 1px 分割线 */
       .bs-fgroup { display: flex; flex-direction: column; gap: 6px; }
-      .bs-fgroup + .bs-fgroup { margin-top: 6px; padding-top: 10px; border-top: 1px solid #e8e8e8; }
+      .bs-fgroup + .bs-fgroup { margin-top: 6px; padding-top: 10px; }
       .bs-fgroup__chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 8px; }
 
       /* 提示绝对定位钉在视口底：内容按视口填满后仍可见（若留在文档流，
@@ -247,7 +255,6 @@
           flex-direction: column;
           gap: 6px;
           padding-right: 8px;
-          border-right: 1px solid #e8e8e8;
         }
         .bs-split__main { display: flex; flex: 1 1 auto; flex-direction: column; gap: 16px; min-width: 0; min-height: 0; }
         .bs-split .bs-rail i { display: block; height: 1.75rem; background: #f3f4f7; border-radius: 6px; }
@@ -255,8 +262,6 @@
         /* Browse 筛选组尺寸（需带 .bs-split .bs-rail 前缀压过上方裸 i 规则 0,2,1） */
         .bs-split .bs-rail .bs-fgroup__label { width: 2.5rem; height: 0.75rem; border-radius: 4px; }
         .bs-split .bs-rail .bs-fgroup__chips i { height: 1.5rem; border-radius: 999px; }
-        html[data-theme="dark"] .bs-split .bs-rail { border-right-color: #2b2b2b; }
-        html[data-theme="dark"] .bs-fgroup + .bs-fgroup { border-top-color: #2b2b2b; }
       }
 
       /* 首页（2026-10-09 随真实页整改同步）：单列纵向流 —— TopStrip → HeroBili 融合卡
@@ -267,7 +272,7 @@
       .bs-home { display: flex; flex: 1 1 auto; flex-direction: column; gap: 14.333px; min-height: 0; }
       /* 过渡带：镜像真实 .home-topstrip 卡片壳（surface + border + radius + 同 padding），
          此前只有三根裸条 → 高度差 10px，B→C 纵向抖动 */
-      .bs-home__strip { display: flex; gap: 8px; align-items: center; padding: 5px 7px; background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; }
+      .bs-home__strip { display: flex; gap: 8px; align-items: center; padding: 5px 7px; background: #fff; border-radius: 12px; }
       .bs-home__strip i { display: block; width: 7rem; height: 1.5rem; background: #f3f4f7; border-radius: 999px; }
       .bs-home__strip i:first-child { width: 10rem; }
       .bs-home__main { display: flex; flex: 1 1 auto; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; }
@@ -296,7 +301,6 @@
       .bs-herobili {
         padding: 7px 9.5px 9.5px;
         background: #fff;
-        border: 1px solid #e8e8e8;
         border-radius: 12px;
       }
       /* 栏间 gap 镜像 --hero-main-gap / --hero-side-gap（ui-scale 因子略，同上注） */
@@ -314,7 +318,7 @@
       #boot-splash[data-shape="home"][data-shape-ready] .bs-tip { display: none; }
       .bs-herobili__right { display: none; }
       .bs-herocards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: clamp(7.2px, calc(4px + 0.4167vw), 12px); }
-      .bs-herocard { display: flex; flex-direction: column; overflow: hidden; background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; }
+      .bs-herocard { display: flex; flex-direction: column; overflow: hidden; background: #fff; border-radius: 8px; }
       .bs-herocard__cover { display: block; aspect-ratio: 16 / 9; background: #f3f4f7; }
       .bs-herocard__title { display: block; height: 0.75rem; margin: 8px 10px; background: #f3f4f7; border-radius: 6px; }
       .bs-shuffle { display: none; }
@@ -361,7 +365,6 @@
              「换一换」3 字 + 0.15em 字距 ≈ 14 宽 × 37 高（原 10×40）。 */
           padding: 9.5px;
           background: #fff;
-          border: 1px solid #e8e8e8;
           border-radius: 8px;
         }
         .bs-shuffle i { display: block; width: 17px; height: 17px; background: #f3f4f7; border-radius: 4px; }
@@ -379,10 +382,10 @@
       html[data-theme="dark"] .bs-shuffle i { background: #2a2a2a; }
       html[data-theme="dark"] .bs-home__strip,
       html[data-theme="dark"] .bs-herobili,
-      html[data-theme="dark"] .bs-herocard { background: #1f1f1f; border-color: #2b2b2b; }
+      html[data-theme="dark"] .bs-herocard { background: #1f1f1f; }
       /* ⚠️ 换一换必须单独提高特异性（2026-09-22 修复深色白底）：它的浅色规则写在
          ≥1024 media 里且带 #boot-splash ID 前缀（1,2,1），普通 dark 规则（0,2,1）被压回白色 */
-      html[data-theme="dark"] #boot-splash:not([data-cols="tv"]) .bs-shuffle { background: #1f1f1f; border-color: #2b2b2b; }
+      html[data-theme="dark"] #boot-splash:not([data-cols="tv"]) .bs-shuffle { background: #1f1f1f; }
 
       /* Detail 形态（2026-09-20 重构，镜像 DetailSkeleton.tsx 真实结构；2026-09-21 用户反馈修正：
          hero 补真实页同款 max-height 曲线、信息卡改镜像 .detail-skeleton__info-card 的 3.25em 块，
@@ -401,9 +404,9 @@
       .bs-detail__infogrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
       /* 卡高固定 3.25rem（镜像 .detail-skeleton__info-card 的 3.25em）：信息卡不拉伸（2026-09-22 用户反馈） */
       .bs-detail__infogrid i { display: block; height: 3.25rem; background: #f3f4f7; border-radius: 8px; }
-      .bs-detail__tabs { display: flex; gap: 24px; padding: 4px 2px; border-bottom: 1px solid #e8e8e8; }
+      .bs-detail__tabs { display: flex; gap: 24px; padding: 4px 2px; }
       .bs-detail__tabs i { display: block; width: 5rem; height: 1rem; background: #f3f4f7; border-radius: 6px; }
-      .bs-detail__content { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; }
+      .bs-detail__content { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #fff; border-radius: 12px; }
       .bs-detail__cast { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 10px; }
       .bs-castitem { display: flex; flex-direction: column; gap: 6px; align-items: center; }
       .bs-castitem i { display: block; width: 40px; height: 40px; background: #f3f4f7; border-radius: 50%; }
@@ -427,19 +430,16 @@
           align-self: stretch;
           padding: 16px;
           background: #fff;
-          border: 1px solid #e8e8e8;
           border-radius: 12px;
         }
-        html[data-theme="dark"] #boot-splash:not([data-cols="tv"]):not([data-cols="app"]) .bs-detail__side { background: #1f1f1f; border-color: #2b2b2b; }
+        html[data-theme="dark"] #boot-splash:not([data-cols="tv"]):not([data-cols="app"]) .bs-detail__side { background: #1f1f1f; }
       }
       html[data-theme="dark"] .bs-detail__hero,
       html[data-theme="dark"] .bs-detail__infogrid i,
       html[data-theme="dark"] .bs-detail__tabs i,
       html[data-theme="dark"] .bs-castitem i,
       html[data-theme="dark"] .bs-detail__stills i { background: #2a2a2a; }
-      html[data-theme="dark"] .bs-detail__content { background: #1f1f1f; border-color: #2b2b2b; }
-      html[data-theme="dark"] .bs-detail__tabs { border-bottom-color: #2b2b2b; }
-
+      html[data-theme="dark"] .bs-detail__content { background: #1f1f1f; }
       /* 播放页（/play、/play/:id、/player，2026-09-18 补齐）：主播放区（16:9 黑场）
          + 右侧面板列，与真实 .player-main（flex row：.player-video-area + .player-sidebar）
          同构。侧栏骨架由 React 侧 PlayerSidebarSkeleton 承担，此处只做「有一列面板」的轮廓。
@@ -453,7 +453,7 @@
         border-radius: 12px;
       }
       .bs-player__side { display: none; flex-direction: column; gap: 12px; }
-      .bs-player__panel { height: 7rem; background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; }
+      .bs-player__panel { height: 7rem; background: #fff; border-radius: 12px; }
       .bs-player__panel--tall { height: 13rem; }
 
       /* 桌面（≥1024，与 AppLayout 的 wide 起点一致）：播放区吃满剩余宽，右侧出现面板列。
@@ -473,7 +473,7 @@
         .bs-player__stage { aspect-ratio: 16 / 10; }
       }
 
-      html[data-theme="dark"] .bs-player__panel { background: #1f1f1f; border-color: #2b2b2b; }
+      html[data-theme="dark"] .bs-player__panel { background: #1f1f1f; }
 
       /* /iptv/play 真实页是全屏播放器（顶层路由，不走 AppLayout）→ 无顶栏，提示居中 */
       #boot-splash[data-shape="play"] .bs-header { display: none; }
@@ -505,8 +505,8 @@
       html[data-theme="dark"] .bs-chartitem__lines i { background: #1f1f1f; }
 
       html[data-theme="dark"] #boot-splash { background: #141414; color: #666; }
-      html[data-theme="dark"] .bs-header { background: #1f1f1f; border-bottom-color: #2b2b2b; }
-      html[data-theme="dark"] .bs-filter { background: #1f1f1f; border-color: #2b2b2b; }
+      html[data-theme="dark"] .bs-header { background: #1f1f1f; }
+      html[data-theme="dark"] .bs-filter { background: #1f1f1f; }
       html[data-theme="dark"] .bs-logo,
       html[data-theme="dark"] .bs-nav i,
       html[data-theme="dark"] .bs-hero,

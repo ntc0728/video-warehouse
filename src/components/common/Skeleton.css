@@ -49,3 +49,20 @@
     animation: none;
   }
 }
+
+/* ── 骨架内一律无描边（2026-11-05 用户要求）───────────────────────────────
+   骨架（各页 *Skeleton、启动骨架 #boot-splash）只用「填充色块 + 圆角」表达轮廓，
+   不要任何 1px 描边线。原因：
+     ① 骨架大量复用真实页类名（.detail-hero / .record-card / .chart-list …），
+        那些组件的 border: 1px solid var(--color-border-light) 会渗进骨架；
+     ② 暗色下描边色夹在填充色块与页面底之间会显出一条浅线，切换主题/首帧绘制时
+        表现为「边框变白并闪烁」——正是本次要根治的现象；
+     ③ 填充色差（浅 #f3f4f7 vs #fff / 暗 #2a2a2a vs #141414）+ 圆角已足够辨识轮廓。
+   用 skeleton-scope 一处兜住，避免逐页逐类打补丁，也不改真实页样式。
+   ⚠️ 只作用于骨架根容器内部，真实页组件零影响。 */
+.skeleton-scope,
+.skeleton-scope * {
+  border: none;
+  box-shadow: none;
+}
+
