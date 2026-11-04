@@ -675,18 +675,15 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
     padding-left: var(--page-pad-x);
   }
 
-  /* 2026-11-04：修正「带 page-padding 的页面内容宽比 Home 窄 2×page-pad-x」。
-     根因：这些页面同时挂 `page-padding` 与 `max-width: var(--layout-content-max-width)`
-     = `min(100%, 2200px)`。`max-width` 作用在**含 padding 的外框**上，
-     故内容盒 = min(视口, 2200) − 2×pad，而 Home 的内容元素本身无 padding
-     → 1440 时 1124 vs 1320、2560 时 1920 vs 2200，各页宽度不一致（用户报）。
-     修法：外框上限补回左右 padding：min(100%, 2200 + 2×pad)，
-     使内容盒在所有视口都等于 Home 的 2200 封顶口径。
-     ⚠️ 仅作用于「页面根」这组组合类，不影响 Home（Home 根无 content-shell/browse-page）。 */
-  html:not([data-device="tv"]) .page-padding.content-shell,
-  html:not([data-device="tv"]) .page-padding.browse-page,
-  html:not([data-device="tv"]) .page-padding.settings-page,
-  html:not([data-device="tv"]) .page-padding.source-checker-page {
+  /* 2026-11-04：统一所有页面「内容主体宽度」= 与首页同一 2200 封顶口径。
+     根因：`.page-padding` 的 padding 与 max-width 在同一元素上，
+     `max-width: min(100%, 2200px)` 作用在**含 padding 的外框** →
+     内容盒 = min(视口, 2200) − 2×pad，比首页内容区窄 2×pad；
+     而首页/收藏/历史根又没有 max-width → 2560 下反而到 2280（超出封顶）。
+     修法：对所有 page-padding 页面根统一「外框上限 = 2200 + 2×pad」，
+     使内容盒在任何视口都恰好 = 2200（1440 → 1320、1920 → 1720、2560 → 2200）。
+     ⚠️ 排除 Player（全屏定位、不吃内容封顶）与 app/TV 分支。 */
+  html:not([data-device="tv"]):not([data-device="app"]) .page-padding:not(.player-page) {
     max-width: min(100%, calc(var(--layout-content-cap) + 2 * var(--page-pad-x)));
   }
 }

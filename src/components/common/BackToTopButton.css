@@ -198,15 +198,15 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .fab-stack {
-  /* 2026-11-04 用户报「fab-stack 要放在内容主题外侧」——
-     旧公式 `right = gutter − fab − breath` 让 **fab 右缘**距视口 = gutter−fab−breath，
-     则 fab 左缘 = gutter−breath，落在内容右缘**内侧** → 压住内容。
-     改为 `right = gutter + breath`：fab 左缘 = gutter + breath + fab > gutter，
-     整组稳定住在内容右缘外的留白区（留白不足时由 min() 上限钳制）。 */
+  /* `right` = 元素**右缘**距视口右缘（值越小越靠右）。
+     要 fab 整组落在内容右缘外：right + fab ≤ gutter ⇒ right ≤ gutter − fab。
+     原式 `gutter − fab − breath` 满足（并留出 breath 呼吸距），是正确的；
+     2026-11-04 上一版曾误改为 `gutter + breath`（值变大 = 左移）→ fab 压进内容区，
+     已撤销。留白不足时由 max(..., space-md) 兜底贴边。 */
   --fab-size: var(--space-3xl);
   position: fixed;
   right: max(
-    min(calc(var(--content-edge-gutter, 100px) + var(--fab-breath, 12px)), calc(100vw - var(--fab-size) - var(--space-md))),
+    calc(var(--content-edge-gutter, 100px) - var(--fab-size) - var(--fab-breath, 12px)),
     var(--space-md)
   );
   bottom: var(--space-2xl);

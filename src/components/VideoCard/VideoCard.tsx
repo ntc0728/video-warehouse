@@ -458,30 +458,32 @@ const VideoCard = memo(function VideoCard({
         )}
       </div>
 
-      <div className="video-card-info">
-        {/* 2026-11-04 二次定稿：竖版标题回到 info 区（封面内标题方案已回滚）；
-            横版标题仍在封面左下角，info 区只留 timeLabel。 */}
-        {variant !== 'landscape' && <div className="video-card-title-wrap">
-          <div
-            ref={titleRef}
-            className={`video-card-title ${isOverflow ? 'video-card-title--overflow' : ''}`}
-          >
-            <span className="video-card-title-track">
-              <span className="video-card-title-text">
-                {highlightQuery ? highlightedTitle : titleText}
-              </span>
-              {isOverflow && (
-                <span className="video-card-title-text" aria-hidden>
+      {/* info 区：竖版放标题；横版仅当有 timeLabel 时才渲染（继续观看不传 timeLabel
+          → 不渲染空壳，避免一段无内容的 padding 撑高卡片）。 */}
+      {(variant !== 'landscape' || timeLabel) && (
+        <div className="video-card-info">
+          {variant !== 'landscape' && <div className="video-card-title-wrap">
+            <div
+              ref={titleRef}
+              className={`video-card-title ${isOverflow ? 'video-card-title--overflow' : ''}`}
+            >
+              <span className="video-card-title-track">
+                <span className="video-card-title-text">
                   {highlightQuery ? highlightedTitle : titleText}
                 </span>
-              )}
-            </span>
-          </div>
-        </div>}
-        {variant === 'landscape' && timeLabel && (
-          <span className="video-card__time-inline">{timeLabel}</span>
-        )}
-      </div>
+                {isOverflow && (
+                  <span className="video-card-title-text" aria-hidden>
+                    {highlightQuery ? highlightedTitle : titleText}
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>}
+          {variant === 'landscape' && timeLabel && (
+            <span className="video-card__time-inline">{timeLabel}</span>
+          )}
+        </div>
+      )}
     </Link>
   );
 });

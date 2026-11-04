@@ -30,7 +30,11 @@
    基础规则先给所有子项压轴延迟（0.36s+0.03s），再由下方枚举覆盖前 12 个为递增小延迟：
    超出枚举的子项自动作为最后一批跟队入场，任意列数（--card-cols 最大 10）都不会抢跑。 */
 .video-card-grid > * {
-  animation: fadeInUp 0.4s var(--ease-standard) both;
+  /* 2026-11-04：fill-mode 由 both 改 backwards —— `both` 会把 `to{transform:translateY(0)}`
+     永久锁在元素上（动画声明优先级高于普通声明），导致 :hover 的 translateY(-3px) 被压掉，
+     表现为「hover 只有封面缩放、整卡不上浮」（用户 2026-11-04 反馈）。
+     backwards 只在 delay 期间保持 from（stagger 效果不变），动画结束即释放 transform。 */
+  animation: fadeInUp var(--dur-spring) var(--ease-standard) backwards;
   animation-delay: 0.39s;
 }
 .video-card-grid > *:nth-child(1) { animation-delay: 0.03s; }
@@ -795,10 +799,12 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 }
 
 /* 进度条回到封面底部（2026-11-04 用户要求：标题在进度条上方，不覆盖进度条）。
-   桌面：进度条贴底全宽，时间文本在条上方右侧；移动端：时间文本在封面居中显示。 */
+   桌面：进度条贴底全宽，时间文本在条上方右侧；移动端：时间文本在封面居中显示。
+   z-index 5：保证条永远在文字层（z-index 4）之上可见。 */
 .video-card--landscape .video-card-landscape__progress-overlay {
   top: auto;
   bottom: 0;
+  z-index: 5;
   height: auto;
 }
 
@@ -808,10 +814,13 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   bottom: calc(var(--space-xs) + var(--space-2xs));
 }
 
-/* 标题行让出进度条：padding-bottom = 进度条高 + 明显呼吸（space-md），
-   避免文字 descender 视觉上贴住/压住进度条。 */
+/* 标题行让出进度条：padding-bottom = 进度条高 + 明确呼吸（space-lg）。
+   2026-11-04 二次修正：上一版用 space-md+space-xs 仍贴住 —— 标题 descender
+   与 4px 进度条只差 ~11px，视觉上仍算覆盖。改用 space-lg 后留白 ≈20px。
+   文字层 z-index 降到 4（低于进度条 5）。 */
 .video-card--landscape .video-card-landscape__bottom {
-  padding-bottom: calc(var(--space-md) + var(--space-xs));
+  z-index: 4;
+  padding-bottom: calc(var(--space-lg) + var(--space-xs));
 }
 
 @media (width <= 767px) {
@@ -836,7 +845,7 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 
   /* 移动端同样让出进度条高度（此块特异性需压过基础 mobile padding 简写） */
   .video-card--landscape .video-card-landscape__bottom {
-    padding-bottom: calc(var(--space-md) + var(--space-xs));
+    padding-bottom: calc(var(--space-lg) + var(--space-xs));
   }
 }
 

@@ -150,7 +150,13 @@
    与启动骨架 bs-shuffle 镜像。
    TV 无 2200 封顶契约、页面全宽，不定义本组 token（回退各自旧值）。 */
 html:not([data-device="tv"]) {
-  --content-edge-gutter: calc((100vw - min(100vw, 2200px)) / 2 + var(--page-pad-x));
+  /* 2026-11-04：内容外框上限改为「2200 + 2×pad」（各页 page-padding 根统一口径，
+     见 index.css），故「视口 → 内容右缘」的实际留白 =
+     (100vw − (2200 + 2×pad)) / 2 + pad。旧式按 2200 裸值算，
+     在 ≥2200 时会低估留白（2560 旧值 320 vs 实际 180），导致 fab 压进内容区。
+     ⚠️ min() 内不嵌 calc()（本仓 postcss-calc 会静默丢弃）：先下沉外框宽度 token。 */
+  --content-outer-max: min(100vw, calc(2200px + 2 * var(--page-pad-x)));
+  --content-edge-gutter: calc((100vw - var(--content-outer-max)) / 2 + var(--page-pad-x));
   --fab-breath: clamp(12px, 1.5vw, 28px);
   /* 换一换呼吸距的可用留白上限 = G − 48（≈按钮宽上限+贴屏安全距）。
      ⚠️ 本仓 [vite:css] postcss-calc 解析器既不支持 min() 内嵌 calc()，也不支持

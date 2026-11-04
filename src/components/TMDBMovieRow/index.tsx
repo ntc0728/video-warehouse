@@ -172,7 +172,10 @@ export function SkeletonCards({ count, landscape = false }: { count?: number; la
               </>
             )}
           </div>
-          <div className="tmdb-movierow-skeleton-title" />
+          {/* 竖版：封面下方 info 区标题占位。
+              横版（继续观看）：真实卡不传 timeLabel → info 区为空（CSS 已收起），
+              骨架同样不渲染任何占位（2026-11-04 修正：此前误加 time 占位）。 */}
+          {!landscape && <div className="tmdb-movierow-skeleton-title" />}
         </div>
       ))}
     </>

@@ -355,9 +355,11 @@
    （后者是 2026-09-07 右移时的残留副本），迁移时已合并为单条 token 档。 */
 
 /* 卡片出场动画：与收藏页 .video-card-grid stagger 完全一致（fadeInUp 0.4s +
-   nth-child 阶梯延迟，第 13+ 项兜底 0.39s 跟队入场，任意列数不抢跑） */
+   nth-child 阶梯延迟，第 13+ 项兜底 0.39s 跟队入场，任意列数不抢跑）。
+   2026-11-04：fill-mode both → backwards，否则 to{transform:translateY(0)}
+   被永久锁定，:hover 的 translateY(-3px) 失效（用户报「只有封面上移」）。 */
 .history-content .history-group-body .history-grid > * {
-  animation: fadeInUp 0.4s var(--ease-standard) both;
+  animation: fadeInUp var(--dur-spring) var(--ease-standard) backwards;
   animation-delay: 0.39s;
 }
 .history-content .history-group-body .history-grid > *:nth-child(1) { animation-delay: 0.03s; }
