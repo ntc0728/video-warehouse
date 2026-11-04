@@ -798,32 +798,38 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   backdrop-filter: blur(4px);
 }
 
-/* 进度条回到封面底部（2026-11-04 用户要求：标题在进度条上方，不覆盖进度条）。
-   桌面：进度条贴底全宽，时间文本在条上方右侧；移动端：时间文本在封面居中显示。
-   z-index 5：保证条永远在文字层（z-index 4）之上可见。 */
+/* 进度条贴底全宽（独立层，不参与文字行布局）。
+   z-index 4：低于文字层 5（文字层在条上方，条不会被文字盖住）。 */
 .video-card--landscape .video-card-landscape__progress-overlay {
   top: auto;
   bottom: 0;
-  z-index: 5;
+  z-index: 4;
   height: auto;
 }
 
+/* 进度时间：2026-11-04 改为文字行内的静态项（与年份同一右对齐组），
+   不再绝对定位 —— 标题 flex:1 只吃剩余宽度，天然不会压到时间。 */
 .video-card--landscape .video-card-landscape__progress-text {
-  top: auto;
-  right: var(--space-sm);
-  bottom: calc(var(--space-xs) + var(--space-2xs));
+  position: static;
+  color: var(--color-on-image);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
 }
 
-/* 标题行让出进度条：padding-bottom = 进度条高 + 明确呼吸（space-lg）。
-   2026-11-04 二次修正：上一版用 space-md+space-xs 仍贴住 —— 标题 descender
-   与 4px 进度条只差 ~11px，视觉上仍算覆盖。改用 space-lg 后留白 ≈20px。
-   文字层 z-index 降到 4（低于进度条 5）。 */
+/* 文字层：底部 padding 只需留出进度条高度（space-xs），不再用大 padding 硬推。
+   z-index 5：高于进度条 4，文字在条上方自然可读。 */
 .video-card--landscape .video-card-landscape__bottom {
-  z-index: 4;
-  padding-bottom: calc(var(--space-lg) + var(--space-xs));
+  z-index: 5;
+  padding-bottom: calc(var(--space-xs) * 2);
 }
 
 @media (width <= 767px) {
+  /* 移动端：进度时间脱离文字行、在封面居中显示（用户 2026-11-04 要求）。
+     overlay 铺满封面，bar 贴底，时间绝对居中。 */
   .video-card--landscape .video-card-landscape__progress-overlay {
     inset: 0;
   }
@@ -836,16 +842,12 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   }
 
   .video-card--landscape .video-card-landscape__progress-text {
+    position: absolute;
     inset: 50% auto auto 50%;
     padding: var(--space-2xs) var(--space-sm);
     border-radius: var(--radius-sm);
     background: rgba(0, 0, 0, 0.55);
     transform: translate(-50%, -50%);
-  }
-
-  /* 移动端同样让出进度条高度（此块特异性需压过基础 mobile padding 简写） */
-  .video-card--landscape .video-card-landscape__bottom {
-    padding-bottom: calc(var(--space-lg) + var(--space-xs));
   }
 }
 

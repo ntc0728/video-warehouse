@@ -240,10 +240,10 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   width: clamp(40px, 6vw, 80px);
 }
 
-/* 底部左标题条：与真实 .video-card-landscape__title 同位置（进度条上方） */
+/* 底部左标题条：与真实 .video-card-landscape__title 同位置（进度条上方一行） */
 .tmdb-movierow-skeleton-land-title {
   position: absolute;
-  bottom: calc(var(--space-md) + var(--space-xs));
+  bottom: calc(var(--space-xs) * 2);
   left: var(--space-xs);
   width: 46%;
   height: var(--text-xs);
@@ -252,11 +252,11 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
-/* 右下年份块 */
+/* 右下年份块：与标题同一行、右对齐 */
 .tmdb-movierow-skeleton-land-year {
   position: absolute;
   right: var(--space-xs);
-  bottom: calc(var(--space-md) + var(--space-xs));
+  bottom: calc(var(--space-xs) * 2);
   width: 2.2em;
   height: var(--text-xs);
   border-radius: var(--radius-sm);

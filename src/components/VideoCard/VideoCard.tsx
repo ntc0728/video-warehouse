@@ -403,7 +403,8 @@ const VideoCard = memo(function VideoCard({
             )}
 
             {/* 左下角：标题（2026-11-03 用户定稿 —— 横版标题移入封面内左下角，
-                支持无缝跑马灯；标题与年份/类型同一行，年份在类型左侧，间距 --space-xs） */}
+                支持无缝跑马灯）。2026-11-04 修正：进度时间与年份一起放进本 flex 行，
+                标题只吃「剩余宽度」，由布局天然避让，不再靠 padding 硬推（会压住时间）。 */}
             <div className="video-card-landscape__bottom">
               <div className="video-card-landscape__title-wrap">
                 <div
@@ -422,26 +423,30 @@ const VideoCard = memo(function VideoCard({
                   </span>
                 </div>
               </div>
-              {/* 右下角：仅年份（2026-11-04 用户要求：继续观看卡删除类型标签） */}
+              {/* 右侧：年份 + 进度时间（同一行、右对齐；标题自动让出宽度） */}
               <div className="video-card-landscape__meta">
                 {!batchMode && video.year && (
                   <span className="video-card-badge-item video-card-landscape__year">{video.year}</span>
                 )}
+                {progress !== undefined && duration !== undefined && duration > 0 && (() => {
+                  const pct = progress / duration;
+                  const fmt = (s: number) => {
+                    const h = Math.floor(s / 3600);
+                    const m = Math.floor((s % 3600) / 60);
+                    const sec = Math.floor(s % 60);
+                    return h > 0
+                      ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+                      : `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+                  };
+                  const label = pct >= 0.9 ? '已看完' : `${fmt(progress)}/${fmt(duration)}`;
+                  return <span className="video-card-landscape__progress-text">{label}</span>;
+                })()}
               </div>
             </div>
 
-            {/* 底部进度条 + 右侧时间 */}
+            {/* 底部进度条（贴底全宽，独立于文字层） */}
             {progress !== undefined && duration !== undefined && duration > 0 && (() => {
               const pct = progress / duration;
-              const fmt = (s: number) => {
-                const h = Math.floor(s / 3600);
-                const m = Math.floor((s % 3600) / 60);
-                const sec = Math.floor(s % 60);
-                return h > 0
-                  ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
-                  : `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-              };
-              const label = pct >= 0.9 ? '已看完' : `${fmt(progress)}/${fmt(duration)}`;
               return (
                 <div className="video-card-landscape__progress-overlay">
                   <div className="video-card-landscape__progress-bar-wrap">
@@ -450,7 +455,6 @@ const VideoCard = memo(function VideoCard({
                       style={{ width: `${Math.min(100, pct * 100)}%` }}
                     />
                   </div>
-                  <span className="video-card-landscape__progress-text">{label}</span>
                 </div>
               );
             })()}
