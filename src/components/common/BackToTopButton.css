@@ -198,11 +198,17 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .fab-stack {
-  /* 2026-10-11 三次修正：与内容右缘保持 --fab-breath 呼吸距（按钮住在留白区，
-     不悬浮在内容上、不贴视口），留白不够时自动压缩；fab 仅 ≥1024 非 TV 渲染 */
+  /* 2026-11-04 用户报「fab-stack 要放在内容主题外侧」——
+     旧公式 `right = gutter − fab − breath` 让 **fab 右缘**距视口 = gutter−fab−breath，
+     则 fab 左缘 = gutter−breath，落在内容右缘**内侧** → 压住内容。
+     改为 `right = gutter + breath`：fab 左缘 = gutter + breath + fab > gutter，
+     整组稳定住在内容右缘外的留白区（留白不足时由 min() 上限钳制）。 */
   --fab-size: var(--space-3xl);
   position: fixed;
-  right: max(calc(var(--content-edge-gutter, 100px) - var(--fab-size) - var(--fab-breath, 12px)), var(--space-md));
+  right: max(
+    min(calc(var(--content-edge-gutter, 100px) + var(--fab-breath, 12px)), calc(100vw - var(--fab-size) - var(--space-md))),
+    var(--space-md)
+  );
   bottom: var(--space-2xl);
   z-index: var(--z-float);
   display: flex;

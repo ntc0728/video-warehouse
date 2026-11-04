@@ -153,8 +153,14 @@ export function SkeletonCards({ count, landscape = false }: { count?: number; la
         >
           <div className="tmdb-movierow-skeleton-img">
             {landscape ? (
-              /* 横版：左上源徽章占位（对齐继续观看卡 overlayLabel） */
-              <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tl" />
+              /* 横版（继续观看，2026-11-04 同步真实卡）：左上源徽章 + 底部左标题条
+                 + 右侧年份块 + 底部进度条占位（真实卡为「标题在进度条上方」） */
+              <>
+                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tl" />
+                <span className="tmdb-movierow-skeleton-land-title" />
+                <span className="tmdb-movierow-skeleton-land-year" />
+                <span className="tmdb-movierow-skeleton-land-progress" />
+              </>
             ) : (
               /* 竖版（2026-11-04 二次定稿：封面内标题方案已回滚）：
                  左上评分 / 右上收藏 / 左下年份 / 右下类型，标题在下方 info 区 */

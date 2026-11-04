@@ -229,7 +229,8 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
-/* 横版骨架（继续观看行）：16:9 封面 + 仅左上源徽章 */
+/* 横版骨架（继续观看行，2026-11-04 同步真实卡）：16:9 封面 + 左上源徽章
+   + 底部左标题条 / 右侧年份块 / 底部进度条占位 */
 .tmdb-movierow-skeleton--landscape .tmdb-movierow-skeleton-img {
   aspect-ratio: 16 / 9;
 }
@@ -237,6 +238,41 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
 .tmdb-movierow-skeleton--landscape .tmdb-movierow-skeleton-badge--tl {
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
   width: clamp(40px, 6vw, 80px);
+}
+
+/* 底部左标题条：与真实 .video-card-landscape__title 同位置（进度条上方） */
+.tmdb-movierow-skeleton-land-title {
+  position: absolute;
+  bottom: calc(var(--space-md) + var(--space-xs));
+  left: var(--space-xs);
+  width: 46%;
+  height: var(--text-xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
+  animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
+}
+
+/* 右下年份块 */
+.tmdb-movierow-skeleton-land-year {
+  position: absolute;
+  right: var(--space-xs);
+  bottom: calc(var(--space-md) + var(--space-xs));
+  width: 2.2em;
+  height: var(--text-xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
+  animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
+}
+
+/* 底部进度条：贴底全宽（真实 .video-card-landscape__progress-bar-wrap） */
+.tmdb-movierow-skeleton-land-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--space-xs);
+  background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
+  animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
 @keyframes tmdb-skeleton-pulse {

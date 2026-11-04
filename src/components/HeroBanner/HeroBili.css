@@ -227,6 +227,43 @@
   }
 }
 
+/* ≥2560（内容已封顶 2200、banner 尺寸固定）：左下文案层整体放大一档，
+   避免大屏上标题/标签/简介/按钮相对 banner 显得偏小（用户 2026-11-04 反馈）。
+   与 --ui-scale（1.08）叠加后仍受 --text-* 档位约束，不引入裸 px。 */
+@media (width >= 2560px) {
+  .hero-bili__title {
+    font-size: var(--text-3xl);
+    letter-spacing: -0.02em;
+  }
+
+  .hero-bili__meta {
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+    font-size: var(--text-xs);
+  }
+
+  .hero-bili__desc {
+    margin-top: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    -webkit-line-clamp: 3;
+  }
+
+  .hero-bili__caption {
+    padding: var(--space-2xl) var(--space-xl) var(--space-lg);
+  }
+
+  .hero-bili__caption .hero-banner__actions {
+    margin-top: var(--space-lg);
+  }
+
+  .hero-bili__caption .hero-banner__cta {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--text-sm);
+  }
+}
+
 /* 双按钮沿用 HeroBanner 的 .hero-banner__cta token（HeroBanner.css 全局规则），
    仅需在此放开 pointer-events（caption 整体 none）；
    margin-top sm → md（2026-10-10 用户要求标签上下间距稍大，见上方按钮节注释） */
