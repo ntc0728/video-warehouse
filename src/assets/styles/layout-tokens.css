@@ -164,8 +164,11 @@ html:not([data-device="tv"]) {
      custom property 的值不参与解析，故把整表达式下沉为 token，消费处只写 var()。
      浏览器运行时按标准 CSS 求值，无副作用。 */
   --shuffle-max-shift: calc(var(--content-edge-gutter) - 48px);
-  /* 换一换左缘锚定最终值：内容右缘 + 呼吸距（受可用留白上限钳制） */
-  --shuffle-left: calc(100% + min(var(--fab-breath), var(--shuffle-max-shift)));
+  /* 换一换左缘锚定最终值：内容右缘 + 呼吸距（受可用留白上限钳制）。
+     2026-11-04：`100%` 基准是 .hero-bili__right（其右缘 = 内容右缘 − grid 右 padding
+     space-md），故必须先补回 space-md 才到内容右缘，再加 breath ——
+     这样换一换左缘与 fab-stack 左缘（同为「内容右缘 + breath」）严格平行对齐。 */
+  --shuffle-left: calc(100% + var(--space-md, 12px) + min(var(--fab-breath), var(--shuffle-max-shift)));
 }
 
 /* ── HeroBili --hero-banner-h / --hero-side-w（2026-09-22 自 Home.css 生效点 +

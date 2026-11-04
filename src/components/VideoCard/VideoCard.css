@@ -750,13 +750,19 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   gap: var(--space-xs);
   align-items: flex-end;
   padding: var(--space-xl) var(--space-xs) var(--space-xs);
-  /* 渐变遮罩：上透下实，标题压在最底部 */
-  background: linear-gradient(
+  /* 渐变遮罩：上透下实。
+     ⚠️ 2026-11-04：渐变必须**止于进度条上方** —— 原实现铺满整层（含底部条区域），
+     不透明 0.86 直接糊在进度条上，用户看到的就是「进度条有一层遮罩」。
+     用 background-size 把渐变高度压到 calc(100% - 条高)，底部条区域保持透明。 */
+  background-image: linear-gradient(
     to top,
     rgba(0, 0, 0, 0.86) 0%,
     rgba(0, 0, 0, 0.55) 42%,
     transparent 100%
   );
+  background-size: 100% calc(100% - var(--space-xs));
+  background-position: top left;
+  background-repeat: no-repeat;
   pointer-events: none;
 }
 
@@ -799,11 +805,12 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 }
 
 /* 进度条贴底全宽（独立层，不参与文字行布局）。
-   z-index 4：低于文字层 5（文字层在条上方，条不会被文字盖住）。 */
+   z-index 6：**必须高于文字层 5** —— 文字层带不透明渐变遮罩，
+   若在其下会被整条盖住（用户 2026-11-04 报「进度条有一层遮罩」）。 */
 .video-card--landscape .video-card-landscape__progress-overlay {
   top: auto;
   bottom: 0;
-  z-index: 4;
+  z-index: 6;
   height: auto;
 }
 

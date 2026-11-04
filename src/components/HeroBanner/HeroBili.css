@@ -227,40 +227,42 @@
   }
 }
 
-/* ≥2560（内容已封顶 2200、banner 尺寸固定）：左下文案层整体放大一档，
-   避免大屏上标题/标签/简介/按钮相对 banner 显得偏小（用户 2026-11-04 反馈）。
-   与 --ui-scale（1.08）叠加后仍受 --text-* 档位约束，不引入裸 px。 */
+/* ≥2560（内容封顶 2200、banner 约 1300×735）：左下文案层必须明显放大。
+   2026-11-04 二次修正：上一版只到 --text-3xl（≈30px），相对 1300px 宽的 banner
+   仍偏小（用户再次反馈）。改为在 --text-* 基础上乘倍率：
+   标题 ×1.35（≈41px）、简介 ×1.2（≈16.9px）、按钮 ×1.2（≈15.6px）、
+   标签 ×1.15。倍率写死在媒体查询内，不改全局 --text-* 契约。 */
 @media (width >= 2560px) {
   .hero-bili__title {
-    font-size: var(--text-3xl);
+    font-size: calc(var(--text-3xl) * 1.35);
     letter-spacing: -0.02em;
   }
 
   .hero-bili__meta {
-    gap: var(--space-md);
-    margin-top: var(--space-md);
-    font-size: var(--text-xs);
+    gap: var(--space-lg);
+    margin-top: var(--space-lg);
+    font-size: calc(var(--text-xs) * 1.15);
   }
 
   .hero-bili__desc {
-    margin-top: var(--space-md);
-    padding: var(--space-sm) var(--space-md);
-    font-size: var(--text-sm);
-    line-height: 1.6;
+    margin-top: var(--space-lg);
+    padding: var(--space-md) var(--space-lg);
+    font-size: calc(var(--text-sm) * 1.2);
+    line-height: 1.65;
     -webkit-line-clamp: 3;
   }
 
   .hero-bili__caption {
-    padding: var(--space-2xl) var(--space-xl) var(--space-lg);
+    padding: var(--space-3xl) var(--space-2xl) var(--space-xl);
   }
 
   .hero-bili__caption .hero-banner__actions {
-    margin-top: var(--space-lg);
+    margin-top: var(--space-xl);
   }
 
   .hero-bili__caption .hero-banner__cta {
-    padding: var(--space-sm) var(--space-md);
-    font-size: var(--text-sm);
+    padding: var(--space-md) var(--space-lg);
+    font-size: calc(var(--text-sm) * 1.2);
   }
 }
 

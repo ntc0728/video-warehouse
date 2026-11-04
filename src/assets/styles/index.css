@@ -685,6 +685,13 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
      ⚠️ 排除 Player（全屏定位、不吃内容封顶）与 app/TV 分支。 */
   html:not([data-device="tv"]):not([data-device="app"]) .page-padding:not(.player-page) {
     max-width: min(100%, calc(var(--layout-content-cap) + 2 * var(--page-pad-x)));
+    /* 2026-11-04：必须同时居中。否则 >「cap+2×pad」视口（如 2560）下外框贴左，
+       右侧多出一整条空白（实测 fab 与内容间距被拉大到 68px，用户截图实证）。
+       居中后「视口 → 内容右缘」留白才等于 --content-edge-gutter 的公式值。
+       ⚠️ width:100% 必须显式：部分页面根（settings-page 等）没有 width，
+       只写 max-width + margin:auto 会按 fit-content 收缩（实测主列被压到 473px）。 */
+    width: 100%;
+    margin-inline: auto;
   }
 }
 
