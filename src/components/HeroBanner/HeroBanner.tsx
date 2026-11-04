@@ -1124,10 +1124,25 @@ function HeroBannerClassic({
  */
 export default function HeroBanner(props: HeroBannerProps) {
   const isWideDesktop = useIsWideDesktop();
-  if (isWideDesktop && props.items.length > 0) {
+  /**
+   * 2026-11-04：overview 归一化。
+   * 上游首页传的是 `TMDBVideoItem[]`（简介字段叫 `description`），而 HeroItem /
+   * HeroBiliItem 读的是 `overview` → 直接透传会让 banner 简介恒空
+   * （用户报「首页 banner 左下文案缺失简介」）。
+   * 在入口统一补 `overview`，Classic 与 HeroBili 两条路径都受益。
+   */
+  const items = useMemo(
+    () =>
+      props.items.map((it) => {
+        const withDesc = it as HeroItem & { description?: string };
+        return withDesc.overview ? it : { ...it, overview: withDesc.description || '' };
+      }),
+    [props.items],
+  );
+  if (isWideDesktop && items.length > 0) {
     return (
       <HeroBili
-        items={props.items}
+        items={items}
         onItemClick={props.onItemClick}
         onContinuePlay={props.onContinuePlay}
         historyMap={props.historyMap}
@@ -1135,5 +1150,5 @@ export default function HeroBanner(props: HeroBannerProps) {
       />
     );
   }
-  return <HeroBannerClassic {...props} />;
+  return <HeroBannerClassic {...props} items={items} />;
 }

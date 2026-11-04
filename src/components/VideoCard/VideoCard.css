@@ -584,12 +584,8 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   white-space: nowrap;
 }
 
-/* 横版卡片 hover：封面不放大（横图放大效果不佳） */
-.video-card--landscape:hover .video-card-cover img {
-  transform: none;
-}
-
-/* 横版卡片：竖版旧四角标已随 2026-11-04 角标统一移除（规则同步删除）。 */
+/* 2026-11-04：横版 hover 与竖版统一（上浮 + 封面 scale(1.06) + glow 扫光）。
+   旧规则单独禁用横版封面放大，导致「竖版会缩放、横版只有上浮」的不一致（用户报）。 */
 
 @media (width <= 767px) {
   .video-card--landscape .video-card-info {

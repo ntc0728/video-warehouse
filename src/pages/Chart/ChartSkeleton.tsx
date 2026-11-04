@@ -21,14 +21,29 @@ import { useRef } from 'react';
 import { useGridCols, useFillRows } from '@/hooks';
 import './Chart.css';
 
-/** 单行榜单骨架：首屏骨架与「加载更多」共用，几何唯一（.chart-list__skeleton 的 a/b/c/d） */
+/** 单行榜单骨架：首屏骨架与「加载更多」共用。
+ *  2026-11-04：改为**直接复用真实 .chart-row 及其子块类名**（rank/cover/body/heat），
+ *  只把文本换成灰块 —— 行高、padding、gap、flex 全部由真实类决定，天然同构；
+ *  旧实现自建 a/b/c/d 四块，c/d 只有 18px、body 缺 meta/desc 两行、且多一条 border，
+ *  与真实行（106px / 三行 body）不一致（用户报「骨架与真实尺寸不一致」）。 */
 export function ChartRowSkeleton() {
   return (
-    <div className="chart-list__skeleton" aria-hidden="true">
-      <i className="a" />
-      <i className="b" />
-      <i className="c" />
-      <i className="d" />
+    <div className="chart-row chart-list__skeleton" aria-hidden="true">
+      <div className="chart-row__rank">
+        <i className="sk sk-rank" />
+      </div>
+      <div className="chart-row__cover">
+        <i className="sk sk-cover" />
+      </div>
+      <div className="chart-row__body">
+        <i className="sk sk-title" />
+        <i className="sk sk-meta" />
+        <i className="sk sk-desc" />
+      </div>
+      <div className="chart-row__heat">
+        <i className="sk sk-heat-n" />
+        <i className="sk sk-heat-l" />
+      </div>
     </div>
   );
 }

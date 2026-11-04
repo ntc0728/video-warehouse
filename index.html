@@ -479,6 +479,28 @@
       #boot-splash[data-shape="play"] .bs-header { display: none; }
       #boot-splash[data-shape="play"] .bs-body { flex: 1; align-items: center; justify-content: center; }
 
+      /* ── 2026-11-04 修复「刷新首页时元素边框闪烁」────────────────────
+         根因：启动骨架的卡片壳带 1px border + 白/深 surface 底，而真实页在
+         ≥768 桌面（非 app/tv）已按「去卡片化」口径把四件套（border/radius/
+         background/shadow）全部拆除（见 docs/agents/css-layout-conventions.md §12）。
+         骨架 → 真实切换时边框「有→无」跳变，暗色下 #2b2b2b 描边在 #141414 底上
+         更明显，用户感知为「刷新时边框闪烁」。
+         修法：骨架在 ≥768 桌面档同步去边框与底色，只保留圆角与灰块，
+         使交接零跳变。移动端 / app / TV 保持原卡片样式（与真实页一致）。 */
+      @media (width >= 768px) {
+        html:not([data-device="app"]):not([data-device="tv"]) #boot-splash .bs-card,
+        html:not([data-device="app"]):not([data-device="tv"]) #boot-splash .bs-herobili,
+        html:not([data-device="app"]):not([data-device="tv"]) #boot-splash .bs-herocard,
+        html:not([data-device="app"]):not([data-device="tv"]) #boot-splash .bs-home__strip,
+        html:not([data-device="app"]):not([data-device="tv"]) #boot-splash .bs-detail__content,
+        html:not([data-device="app"]):not([data-device="tv"]) #boot-splash .bs-player__panel,
+        html:not([data-device="app"]):not([data-device="tv"]) #boot-splash .bs-shuffle,
+        html:not([data-device="app"]):not([data-device="tv"]) #boot-splash .bs-filter {
+          border: none;
+          background: transparent;
+        }
+      }
+
       html[data-theme="dark"] .bs-chartitem__img,
       html[data-theme="dark"] .bs-chartitem__lines i { background: #1f1f1f; }
 
