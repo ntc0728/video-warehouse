@@ -197,14 +197,7 @@
 }
 
 .detail-skeleton__rec-title {
-  width: 70%;
-  height: 1.4em;
-  font-size: var(--text-xs);
-}
-
-/* 右下竖排 meta 占位（镜像类型 + 年份胶囊） */
-.detail-skeleton__rec-meta {
-  width: 2.2em;
-  height: 2.8em;
-  font-size: var(--text-xs);
+  width: 78%;
+  height: 1.5em;
+  font-size: var(--text-sm);
 }

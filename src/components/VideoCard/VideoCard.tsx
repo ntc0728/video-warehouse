@@ -364,47 +364,34 @@ const VideoCard = memo(function VideoCard({
           </button>
         )}
 
-        {/* 竖版封面底部（2026-11-04 用户定稿）：
-            · 左下 = 标题（单行 ellipsis + 跑马灯）
-            · 右下 = 竖排 meta：类型 → 年份；收藏页最上再加观看状态
-            info 区不再重复标题（标题只在封面内出现一次）。 */}
-        {!batchMode && variant !== 'landscape' && (
-          <div className="video-card-portrait__bottom">
-            <div className="video-card-portrait__title-wrap">
-              <div
-                ref={titleRef}
-                className={`video-card-title video-card-portrait__title ${isOverflow ? 'video-card-title--overflow' : ''}`}
-              >
-                <span className="video-card-title-track">
-                  <span className="video-card-title-text">
-                    {highlightQuery ? highlightedTitle : titleText}
-                  </span>
-                  {isOverflow && (
-                    <span className="video-card-title-text" aria-hidden>
-                      {highlightQuery ? highlightedTitle : titleText}
-                    </span>
-                  )}
-                </span>
-              </div>
-            </div>
-            <div className="video-card-portrait__meta">
-              {status && (
-                <span className={`video-card-status status--${status}`}>
-                  {STATUS_LABELS[status]}
-                </span>
-              )}
+        {/* 竖版封面角标（2026-11-04 二次定稿：回滚封面内标题方案）：
+            传 status（收藏页）→ 左下 = 年份 + 类型合并、右下 = 观看状态；
+            不传 → 左下 = 年份、右下 = 类型。标题回到下方 info 区。 */}
+        {!batchMode && variant !== 'landscape' && status ? (
+          <>
+            <span className="video-card-badges-bl">
+              {video.year && <span className="video-card-badge-item">{video.year}</span>}
               {video.type && (
-                <span className="video-card-badge-item video-card-portrait__type">
+                <span className="video-card-badge-item video-card-badge-item--type">
                   {typeLabels[video.type] || video.type}
                 </span>
               )}
-              {video.year && (
-                <span className="video-card-badge-item video-card-portrait__year">
-                  {video.year}
-                </span>
-              )}
-            </div>
-          </div>
+            </span>
+            <span className={`video-card-status status--${status}`}>
+              {STATUS_LABELS[status]}
+            </span>
+          </>
+        ) : (
+          <>
+            {!batchMode && variant !== 'landscape' && video.year && (
+              <span className="video-card-year-badge">{video.year}</span>
+            )}
+            {!batchMode && variant !== 'landscape' && video.type && (
+              <span className="video-card-type">
+                {typeLabels[video.type] || video.type}
+              </span>
+            )}
+          </>
         )}
 
         {/* 横版封面叠加层：源+集数徽章 + 底部渐变进度 */}
@@ -472,8 +459,25 @@ const VideoCard = memo(function VideoCard({
       </div>
 
       <div className="video-card-info">
-        {/* 2026-11-04：竖版标题已移入封面左下角，info 区不再渲染标题（避免重复）。
-            竖版 info 因此无内容 → CSS 置 display:none；仅横版保留 timeLabel。 */}
+        {/* 2026-11-04 二次定稿：竖版标题回到 info 区（封面内标题方案已回滚）；
+            横版标题仍在封面左下角，info 区只留 timeLabel。 */}
+        {variant !== 'landscape' && <div className="video-card-title-wrap">
+          <div
+            ref={titleRef}
+            className={`video-card-title ${isOverflow ? 'video-card-title--overflow' : ''}`}
+          >
+            <span className="video-card-title-track">
+              <span className="video-card-title-text">
+                {highlightQuery ? highlightedTitle : titleText}
+              </span>
+              {isOverflow && (
+                <span className="video-card-title-text" aria-hidden>
+                  {highlightQuery ? highlightedTitle : titleText}
+                </span>
+              )}
+            </span>
+          </div>
+        </div>}
         {variant === 'landscape' && timeLabel && (
           <span className="video-card__time-inline">{timeLabel}</span>
         )}

@@ -504,15 +504,13 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     const skeleton = page.locator('.browse-skeleton');
     await expect(skeleton).toBeVisible({ timeout: 10000 });
 
-    // 卡壳复用真实 .video-card：封面 + 顶部两角标 + 封面底部「左标题 / 右竖排 meta」
-    // （2026-11-04 竖版角标统一：旧 --bl/--br 四角标与 info 区标题行已删除）
+    // 卡壳复用真实 .video-card：封面 + 四角标 + info 区标题行
+    // （2026-11-04 二次定稿：封面内标题方案已回滚）
     const cards = await page.locator('.browse-skeleton__card.video-card').count();
     expect(cards).toBeGreaterThan(0);
     await expect(page.locator('.browse-skeleton__card .video-card-cover')).toHaveCount(cards);
-    await expect(page.locator('.browse-skeleton__badge')).toHaveCount(cards * 2);
-    await expect(page.locator('.browse-skeleton__card .video-card-portrait__bottom')).toHaveCount(cards);
-    await expect(page.locator('.browse-skeleton__card .video-card-portrait__title-wrap')).toHaveCount(cards);
-    await expect(page.locator('.browse-skeleton__card .video-card-portrait__meta')).toHaveCount(cards);
+    await expect(page.locator('.browse-skeleton__badge')).toHaveCount(cards * 4);
+    await expect(page.locator('.browse-skeleton__card .video-card-title-wrap')).toHaveCount(cards);
 
     // 列数 == --card-cols；卡片数 = 列数 × 行数
     const cols = await readCols(page, '.browse-skeleton__grid');

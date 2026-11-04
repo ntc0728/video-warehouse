@@ -56,22 +56,11 @@ export default function CollectionsSkeleton({
           </div>
           <div ref={videoGridRef} className="collections-skeleton__video-grid">
             {Array.from({ length: videoCols * videoRows }, (_, i) => (
-              /* 2026-11-04：镜像真实 VideoCard 竖版结构 —— 封面 2:3 + 顶部两角标
-                 + 封面底部「左标题 / 右竖排 meta」；info 区对竖版已隐藏，故不再画下方灰线。 */
-              <div key={i} className="collections-skeleton__card video-card video-card--portrait">
-                <div className="video-card-cover">
-                  <Skeleton className="collections-skeleton__video-cover" />
-                  <span className="collections-skeleton__badge collections-skeleton__badge--tl" />
-                  <span className="collections-skeleton__badge collections-skeleton__badge--tr" />
-                  <div className="video-card-portrait__bottom">
-                    <div className="video-card-portrait__title-wrap">
-                      <Skeleton className="collections-skeleton__portrait-title" />
-                    </div>
-                    <div className="video-card-portrait__meta">
-                      <Skeleton className="collections-skeleton__portrait-meta" />
-                    </div>
-                  </div>
-                </div>
+              /* 2026-11-04 二次定稿：镜像真实 VideoCard 竖版 —— 封面 2:3 + 四角标
+                 + info 区标题灰线（封面内标题方案已回滚）。 */
+              <div key={i} className="collections-skeleton__card">
+                <Skeleton className="collections-skeleton__video-cover" />
+                <Skeleton className="collections-skeleton__line" />
               </div>
             ))}
           </div>

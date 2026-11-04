@@ -156,17 +156,17 @@ export function SkeletonCards({ count, landscape = false }: { count?: number; la
               /* 横版：左上源徽章占位（对齐继续观看卡 overlayLabel） */
               <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tl" />
             ) : (
-              /* 竖版（2026-11-04 角标统一后）：左上评分 / 右上收藏 /
-                 底部左标题条 + 右侧竖排 meta 占位（对齐真实卡结构） */
+              /* 竖版（2026-11-04 二次定稿：封面内标题方案已回滚）：
+                 左上评分 / 右上收藏 / 左下年份 / 右下类型，标题在下方 info 区 */
               <>
                 <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tl" />
                 <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tr" />
-                <span className="tmdb-movierow-skeleton-portrait-title" />
-                <span className="tmdb-movierow-skeleton-portrait-meta" />
+                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--bl" />
+                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--br" />
               </>
             )}
           </div>
-          {landscape && <div className="tmdb-movierow-skeleton-title" />}
+          <div className="tmdb-movierow-skeleton-title" />
         </div>
       ))}
     </>

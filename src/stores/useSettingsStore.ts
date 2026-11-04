@@ -72,7 +72,7 @@ const APP_SETTINGS_PERSIST_KEY = 'app-settings';
 export const DEFAULT_SETTINGS = {
   videoSourceIds: [] as string[],
   iptvSourceIds: [] as string[],
-  theme: 'light' as const,
+  theme: 'dark' as const,
   skin: 'default' as const,
   corsProxy: '',
   epgUrls: ['http://epg.51zmt.top:8000/e.xml'],
@@ -175,7 +175,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => ({
       videoSourceIds: [],
       iptvSourceIds: [],
-      theme: 'light' as const,
+      theme: 'dark' as const,
       skin: 'default' as const,
       corsProxy: '',
       epgUrls: ['http://epg.51zmt.top:8000/e.xml'],
