@@ -8,15 +8,7 @@
  * 本文件与 AppLayout 挂载点、CSS ≥1024 分支于 2026-10-11 死代码清理一并删除。
  * home.spec 1.3c 保留「.cqa-nav / .cqa-overlay 恒不存在」的退役回归锁。
  */
-import {
-  Camera,
-  Film,
-  LayoutGrid,
-  Mic2,
-  Sparkles,
-  Trophy,
-  Tv,
-} from 'lucide-react';
+import { Camera, Film, Trophy, Tv } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
 import { useIsMobile, useIsTV } from '@/hooks/useMediaQuery';
 import './CategoryQuickAccess.css';
@@ -25,23 +17,21 @@ export type CategoryKey = 'all' | 'movie' | 'tv' | 'variety' | 'anime' | 'top' |
 
 interface Category {
   key: CategoryKey;
-  icon: typeof LayoutGrid;
+  icon: typeof Film;
   label: string;
   color: string;
 }
 
 const CATEGORIES: Category[] = [
-  { key: 'all', icon: LayoutGrid, label: '全部', color: 'linear-gradient(135deg, #6366f1, #818cf8)' },
+  // 「全部」已下线（tv+movie 合并页的页数/入参无法稳定对齐），默认入口为「电影」。
   { key: 'movie', icon: Film, label: '电影', color: 'linear-gradient(135deg, #ff4757, #ff6b81)' },
   { key: 'tv', icon: Tv, label: '剧集', color: 'linear-gradient(135deg, #7c3aed, #a78bfa)' },
-  { key: 'variety', icon: Mic2, label: '综艺', color: 'linear-gradient(135deg, #f97316, #fb923c)' },
-  { key: 'anime', icon: Sparkles, label: '动漫', color: 'linear-gradient(135deg, #06b6d4, #22d3ee)' },
   { key: 'documentary', icon: Camera, label: '纪录片', color: 'linear-gradient(135deg, #16a34a, #4ade80)' },
   { key: 'top', icon: Trophy, label: '排行榜', color: 'linear-gradient(135deg, #eab308, #facc15)' },
 ];
 
 // 移动端只显示的分类
-const MOBILE_CATEGORIES: CategoryKey[] = ['all', 'movie', 'tv', 'variety', 'anime', 'top'];
+const MOBILE_CATEGORIES: CategoryKey[] = ['movie', 'tv', 'top'];
 
 interface CategoryQuickAccessProps {
   onCategorySelect: (category: CategoryKey) => void;

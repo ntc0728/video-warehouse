@@ -6,16 +6,19 @@
  *
  * 结构镜像（对应 Browse/index.tsx）：
  *   左栏 = .filter-bar 三组（分类/地区/年份 · label 真文 + chips 灰块）；
+ *        分类组按 category 的 CATEGORY_CONFIG 镜像真实 genre 数（含 genreDenylist 过滤）。
  *   顶栏 = .browse-sort-bar（类型 6 pill + 分隔线 + 排序 3 pill + 计数位）。
- *        类型 pill 取 VISIBLE_CATEGORY_KEYS（2026-11-05「全部」下线后 6 档，非 7）。
+ *        类型 pill 取 VISIBLE_CATEGORY_KEYS（2026-11-07 删「全部」/综艺/动漫后 4 档）。
  *
  * 模式 tab（智能检索/直链搜索）不属筛选项，始终真实渲染，不进本骨架。
  * 根类复用真实 .filter-bar / .browse-sort-bar 以继承 grid-area（filters / head）。
  */
 import type { CSSProperties } from 'react';
+import type { TMDBGenre } from '@/types/tmdb';
 import Skeleton from '@/components/common/Skeleton';
 import { useTMDBStore } from '@/stores';
-import { VISIBLE_CATEGORY_KEYS } from './constants';
+import { VISIBLE_CATEGORY_KEYS, CATEGORY_CONFIG } from './constants';
+import type { CategoryKey } from '@/components/CategoryQuickAccess';
 import { REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL } from '@/components/FilterBar/constants';
 import './BrowseChromeSkeleton.css';
 
@@ -58,19 +61,40 @@ function LabeledChipGroup({ labels }: { labels: string[] }) {
   );
 }
 
-/** 左栏「分类」行骨架灰块。
- *  默认分类已锁定「电影」（2026-11-05 用户拍板）：CATEGORY_CONFIG.movie.genresSource = 'movie'，
- *  defaultGenreIds 为空 → 真实 FilterBar 分类行 = 「全部」1 枚 + movieGenres 全量。
- *  骨架按 store 同步渲染同数量、同 2 字宽度的灰块，genres 落地后与真实行严格等量，
- *  消除旧「硬编码 N 枚骨架 ⇄ 1 枚「全部」壳 ⇄ N 枚真实」的首屏跳动；
- *  genres 尚未落地时仅渲染「全部」，FILL_CHIPS 继续撑满组高度，不露底。
+/** 左栏「分类」行骨架灰块数量。
+ *  与 index.tsx currentGenres 同逻辑：按 CATEGORY_CONFIG[category] 的 genresSource 选
+ *  movieGenres / tvGenres / 合并，再按 genreDenylist 剔除该分类不该显示的 genre，
+ *  最后减 excludedGenreIds（defaultGenreIds）得到「真实行可见 genre 数」。
+ *  骨架按该数量同步渲染灰块，genres 落地后与真实行严格等量，首屏不跳动。
+ *  genres 尚未落地（holdTmdb / 首帧）时数量为 0 → 仅「全部」1 枚，FILL_CHIPS 撑满不露底。
  */
-function GenreChips() {
-  const movieGenreCount = useTMDBStore((s) => s.movieGenres.length);
+function useGenreChipCount(category: CategoryKey): number {
+  const movieGenres = useTMDBStore((s) => s.movieGenres);
+  const tvGenres = useTMDBStore((s) => s.tvGenres);
+  const cfg = CATEGORY_CONFIG[category];
+  const drop = new Set(cfg.genreDenylist ?? []);
+  let base: TMDBGenre[];
+  if (cfg.genresSource === 'movie') base = movieGenres;
+  else if (cfg.genresSource === 'tv') base = tvGenres;
+  else {
+    // both 与 index.tsx currentGenres 同口径：按 name 去重（movie/tv 表重名如动画/喜剧/剧情…）
+    const seen = new Set<string>();
+    base = [];
+    for (const g of [...movieGenres, ...tvGenres]) {
+      const key = g.name.toLowerCase();
+      if (!seen.has(key)) { seen.add(key); base.push(g); }
+    }
+  }
+  const excluded = new Set(cfg.defaultGenreIds);
+  return base.filter((g) => !drop.has(g.id) && !excluded.has(g.id)).length;
+}
+
+function GenreChips({ category }: { category: CategoryKey }) {
+  const count = useGenreChipCount(category);
   return (
     <>
       <Skeleton key="chip-all" className="browse-chrome-skeleton__chip" style={chipStyle('全部')} />
-      {Array.from({ length: movieGenreCount }, (_, i) => (
+      {Array.from({ length: count }, (_, i) => (
         <Skeleton
           key={`chip-genre-${i}`}
           className="browse-chrome-skeleton__chip"
@@ -84,7 +108,7 @@ function GenreChips() {
   );
 }
 
-export function BrowseFilterChromeSkeleton() {
+export function BrowseFilterChromeSkeleton({ category = 'movie' }: { category?: CategoryKey }) {
   return (
     <div
       className="filter-bar browse-chrome-skeleton browse-chrome-skeleton--filters skeleton-scope"
@@ -95,13 +119,11 @@ export function BrowseFilterChromeSkeleton() {
         <span className="filter-bar__label filter-bar__label--as-chip">分类</span>
         <div className="filter-bar__chips-wrap">
           {/*
-           * 默认分类已锁定「电影」（2026-11-05 用户拍板），CATEGORY_CONFIG.movie.genresSource = 'movie'，
-           * 且 defaultGenreIds 为空 → 左栏「分类」行 = 「全部」1 枚 + movieGenres 全量。
-           * 骨架按 store 同步渲染同数量同宽度的灰块，与真实 FilterBar 严格等量，
-           * 首屏落地时不再出现「骨架 N 枚 ⇄ 1 枚「全部」壳 ⇄ N 枚真实」的跳动；
-           * genres 尚未落地时仅渲染「全部」，FILL_CHIPS 继续撑满组高度，不露底。
+           * 分类组按当前 category 的 CATEGORY_CONFIG（genresSource + genreDenylist）镜像真实
+           * genre 数；默认「电影」时等价于「全部」1 枚 + movieGenres 全量。骨架与真实行等量，
+           * 首屏不跳动；genres 未落地时仅「全部」，FILL_CHIPS 撑满不露底。
            */}
-          <GenreChips />
+          <GenreChips category={category} />
         </div>
       </div>
       <div className="filter-bar__row filter-bar__row--scroll">

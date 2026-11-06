@@ -114,12 +114,10 @@ test.describe('1.2 HeroBanner 交互', () => {
 
 test.describe('1.3 分类快捷入口', () => {
   // ── 分类跳转 URL 参数验证 ──
+  // 「全部」分类已下线（tv+movie 合并页的页数/入参无法稳定对齐），默认入口为「电影」。
   const CATEGORY_TEST_CASES = [
-    { label: '全部', expectedCategory: 'all', expectedMediaType: 'all', expectedGenre: null },
     { label: '电影', expectedCategory: 'movie', expectedMediaType: 'movie', expectedGenre: null },
     { label: '剧集', expectedCategory: 'tv', expectedMediaType: 'tv', expectedGenre: null },
-    { label: '综艺', expectedCategory: 'variety', expectedMediaType: 'tv', expectedGenre: '10764' },
-    { label: '动漫', expectedCategory: 'anime', expectedMediaType: 'tv', expectedGenre: '16' },
     { label: '纪录片', expectedCategory: 'documentary', expectedMediaType: 'movie', expectedGenre: '99' },
     { label: '排行榜', expectedCategory: 'top', expectedMediaType: 'all', expectedGenre: null },
   ];
@@ -357,17 +355,18 @@ test.describe('1.5 全局交互', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () => {
-  test('小视口(800×900)分类快选渲染 6 项 + 桌面搜索框（055/056）', async ({ page }) => {
+  test('小视口(800×900)分类快选渲染 5 项 + 桌面搜索框（055/056）', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
     await expect(page.locator('.category-quick-access').first()).toBeVisible({ timeout: 8000 });
 
-    // 055: 分类快选渲染（桌面隐藏规则已解禁），800px 仍属 mobile → 6 项精简集
+    // 055: 分类快选渲染（桌面隐藏规则已解禁），800px 仍属 mobile → 3 项精简集
+    // （「全部」已下线；综艺/动漫两个入口 2026-11-07 删除，二者本质属剧集）
     const quickAccess = page.locator('.category-quick-access').first();
     await expect(quickAccess).toBeVisible();
     const cardCount = await page.locator('.category-quick-access__card').count();
-    expect(cardCount).toBe(6);
+    expect(cardCount).toBe(3);
 
     // 056: 桌面搜索框渲染而非移动搜索框
     const desktopInput = page.locator('.sticky-header .search-box__input').first();

@@ -488,12 +488,13 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     await expect(page.locator('.browse-sort-bar__tab')).toHaveCount(0);
     await expect(page.locator('button.filter-bar__chip')).toHaveCount(0);
 
-    // chrome 骨架 pill 数取同一份常量真源：VISIBLE_CATEGORY_KEYS = 6（2026-11-05「全部」下线后）、SORT_OPTIONS = 3
-    await expect(sortChrome.locator('.browse-chrome-skeleton__pill--type')).toHaveCount(6);
+    // chrome 骨架 pill 数取同一份常量真源：VISIBLE_CATEGORY_KEYS = 4（2026-11-07 删综艺/动漫后：电影/剧集/排行榜/纪录片）、SORT_OPTIONS = 3
+    await expect(sortChrome.locator('.browse-chrome-skeleton__pill--type')).toHaveCount(4);
     await expect(sortChrome.locator('.browse-chrome-skeleton__pill--tab')).toHaveCount(3);
     await expect(sortChrome.locator('.browse-sort-bar__count')).toHaveCount(1);
-    // chip 总数（2026-11-06 骨架按 movieGenres 等量渲染后重算）：
-    //   分类 = 「全部」1 + movieGenres N（holdTmdb 延迟期 N=0）+ FILL_CHIPS 14 = 15
+    // chip 总数（骨架按 category 的 CATEGORY_CONFIG 镜像真实 genre 数）：
+    //   默认 /browse = category=movie、genresSource=movie；holdTmdb 延迟期 movieGenres=[]
+    //   → 分类 = 「全部」1 + 可见genre 0 + FILL_CHIPS 14 = 15
     //   地区 = REGION_OPTIONS 12 + FILL_CHIPS 14 = 26
     //   年份 = YEAR_OPTIONS 12 + 其他 1 + FILL_CHIPS 14 = 27
     //   合计 = 15 + 26 + 27 = 68

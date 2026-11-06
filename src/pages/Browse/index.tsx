@@ -373,7 +373,7 @@ export default function BrowsePage() {
     }
   }, [hasToken, movieGenres.length, tvGenres.length, fetchGenresAndCountries]);
 
-  // ── 结果区头部「类型」行（2026-11-05 起 6 档，无「全部」）──
+  // ── 结果区头部「类型」行（2026-11-07 起 4 档：电影/剧集/排行榜/纪录片，无「全部」/综艺/动漫）──
   // 「全部」= movie+tv 合并页，两路 total_pages 不同且 500 页硬顶，页数/入参无法稳定对齐；
   // 已由用户拍板删除，默认选中「电影」。列表由 constants 单点维护。
   const CATEGORY_OPTIONS = VISIBLE_CATEGORY_OPTIONS;
@@ -769,7 +769,7 @@ export default function BrowsePage() {
             </div>
           </div>
           {/* 首屏 chrome 骨架：接口未响应前左栏不渲染真实筛选项（模式 tab 在上方恒真实） */}
-          {showChromeSkeleton && <BrowseFilterChromeSkeleton />}
+          {showChromeSkeleton && <BrowseFilterChromeSkeleton category={filterValue.category} />}
           {/* 智能检索模式：FilterBar（类型行已移至结果区头部，footer 移到 Card 2） */}
           {!showChromeSkeleton && searchMode === 'smart' && (
             <FilterBar

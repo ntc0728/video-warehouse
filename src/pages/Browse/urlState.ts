@@ -14,7 +14,7 @@
  */
 import type { FilterBarValue } from '@/components/FilterBar';
 import type { CategoryKey } from '@/components/CategoryQuickAccess';
-import { SORT_OPTIONS, MEDIA_TYPE_OPTIONS } from './constants';
+import { SORT_OPTIONS, MEDIA_TYPE_OPTIONS, VISIBLE_CATEGORY_KEYS } from './constants';
 
 const VALID_CATEGORIES = new Set<CategoryKey>([
   'all', 'movie', 'tv', 'variety', 'anime', 'top', 'documentary',
@@ -22,10 +22,6 @@ const VALID_CATEGORIES = new Set<CategoryKey>([
 
 function isCategoryKey(v: string): v is CategoryKey {
   return VALID_CATEGORIES.has(v as CategoryKey);
-}
-
-function isMediaType(v: string): v is 'all' | 'movie' | 'tv' {
-  return v === 'all' || v === 'movie' || v === 'tv';
 }
 
 /** sortBy.order → URL 字符串 */
@@ -49,11 +45,11 @@ function parseGenreIds(raw: string | null): number[] {
     .filter((n) => Number.isFinite(n) && n > 0);
 }
 
-/** 默认 FilterBarValue（进入筛选页无 URL 时的兜底） */
+/** 默认 FilterBarValue（进入筛选页无 URL 时的兜底）——2026-11-05 起默认「电影」单路 */
 export function getDefaultFilterValue(): FilterBarValue {
   return {
-    category: 'all',
-    mediaType: 'all',
+    category: 'movie',
+    mediaType: 'movie',
     genreIds: [],
     region: null,
     minRating: 0,
@@ -68,10 +64,23 @@ export function parseFromUrl(params: URLSearchParams): FilterBarValue {
   const def = getDefaultFilterValue();
 
   const categoryRaw = params.get('category') ?? def.category;
-  const category: CategoryKey = isCategoryKey(categoryRaw) ? categoryRaw : def.category;
+  // 类型行可见档位 = VISIBLE_CATEGORY_KEYS 白名单，旧/非法 category 一律兜底：
+  //   · category=all（「全部」已下线，2026-11-05）→ 默认「电影」；
+  //   · category=variety / anime（综艺/动漫入口已删除，2026-11-07）→ 剧集 'tv'
+  //     （二者本质属剧集，避免落到「类型行已不显示、配置却还在」的孤立状态）；
+  //   · 其它非法值 → 默认「电影」。
+  const legacyTv = categoryRaw === 'variety' || categoryRaw === 'anime';
+  const category: CategoryKey =
+    legacyTv ? 'tv'
+    : isCategoryKey(categoryRaw) && categoryRaw !== 'all' && (VISIBLE_CATEGORY_KEYS as string[]).includes(categoryRaw)
+      ? categoryRaw
+      : def.category;
 
-  const mediaTypeRaw = params.get('mediaType') ?? MEDIA_TYPE_OPTIONS[category] ?? def.mediaType;
-  const mediaType: 'all' | 'movie' | 'tv' = isMediaType(mediaTypeRaw) ? mediaTypeRaw : def.mediaType;
+  // mediaType 一律由 category 决定，**不再信任 URL 里的 mediaType**。
+  // 旧链接常见的 category=all&mediaType=all 会被上面的 category 兜底改写成 movie，
+  // 若仍读 URL 的 all 就会重新进入 tv+movie 合并页（页数/入参无法稳定对齐）。
+  // 「排行榜」的内部标记 all 由 MEDIA_TYPE_OPTIONS.top 保留，不经过 URL。
+  const mediaType: 'all' | 'movie' | 'tv' = MEDIA_TYPE_OPTIONS[category] ?? def.mediaType;
 
   const regionRaw = params.get('region');
   const region = regionRaw && regionRaw !== 'null' ? regionRaw : null;
@@ -115,9 +124,15 @@ export function buildBrowseUrl(
   category: CategoryKey,
   defaultGenreIds: number[] = [],
 ): string {
+  // 「全部」下线（→电影）、综艺/动漫入口删除（→剧集，二者本质属 tv）：
+  // 旧调用点即使仍传这些 key，也不会生成类型行已不存在的 category。
+  const safeCategory: CategoryKey =
+    category === 'all' ? 'movie'
+    : category === 'variety' || category === 'anime' ? 'tv'
+    : category;
   const params = new URLSearchParams();
-  params.set('category', category);
-  params.set('mediaType', MEDIA_TYPE_OPTIONS[category] ?? 'all');
+  params.set('category', safeCategory);
+  params.set('mediaType', MEDIA_TYPE_OPTIONS[safeCategory] ?? 'movie');
   if (defaultGenreIds.length > 0) {
     params.set('genre', defaultGenreIds.slice().sort((a, b) => a - b).join(','));
   }
