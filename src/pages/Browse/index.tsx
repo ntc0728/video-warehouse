@@ -393,6 +393,8 @@ export default function BrowsePage() {
 
   // ── 渲染分支 ────────────────────────────────────
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
+  // 综艺的 OR 基线在用户选二级 genre 时须被替换（否则 with_genres 全 OR，X 变并集而非收窄）。
+  const replaceBaselineOnSelect = CATEGORY_CONFIG[filterValue.category]?.genreMatch === 'or';
   const isCmsLoading = cmsLoading;
 
   // ── 逻辑分页组装层：每页恒定 cols×4 行（2026-11-06 由 5 改 4）——
@@ -733,6 +735,7 @@ export default function BrowsePage() {
             categoryOptions: CATEGORY_OPTIONS,
             genres: currentGenres,
             excludedGenreIds,
+            replaceBaselineOnSelect,
             totalResults: discoverPagination.totalResults,
             categoryLabel: CATEGORY_LABELS[filterValue.category],
             hideFooter: true,
@@ -771,6 +774,7 @@ export default function BrowsePage() {
               onChange={handleFilterChange}
               genres={currentGenres}
               excludedGenreIds={excludedGenreIds}
+              replaceBaselineOnSelect={replaceBaselineOnSelect}
               totalResults={discoverPagination.totalResults}
               categoryLabel={CATEGORY_LABELS[filterValue.category]}
               hideFooter

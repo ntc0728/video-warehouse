@@ -33,6 +33,46 @@ import axios from 'axios';
 const BASE_URL = 'https://api.tmdb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
 
+/**
+ * TMDB 分页契约（**只在这一处定义**，store / 页面层一律 import）。
+ *
+ * 这两个是**接口协议常量**，不是业务数据：
+ * - `TMDB_PAGE_CAP`：`page` 参数的硬顶。>500 直接 HTTP 400
+ *   `{"status_code":22,"status_message":"Invalid page: Pages start at 1 and max at 500."}`
+ *   （实测 501 必失败）。`total_pages` 字段却可能报 1001 —— 所以必须钳。
+ * - `TMDB_PAGE_SIZE`：单页条数上限（discover / search / top_rated 均为 20）。
+ *   只作「一页有多少条」的**兜底**；真实每页条数优先按 `total_results / total_pages`
+ *   从接口返回值推导（见 `toReachEntry`），不把 20 写进定位算术。
+ */
+export const TMDB_PAGE_CAP = 500;
+export const TMDB_PAGE_SIZE = 20;
+
+/** 一路取页源（movie / tv / search）的**真实可达量**，供逻辑分页层做前缀定位。 */
+export interface TMDBReachEntry {
+  /** 该路可达的 TMDB 页数（已按接口硬顶钳制） */
+  pages: number;
+  /** 该路可达的条目数（`total_results` 与「页数 × 每页条数」取小） */
+  items: number;
+  /** 该路「每页条数」——**由接口返回值推导**，不写死 20（末页可能不足） */
+  perPage: number;
+}
+
+/**
+ * 由接口自报的 `total_pages` / `total_results` 推导一路的**可达量**。
+ *
+ * 为什么不写死每页 20：TMDB 各端点、各筛选下每页条数可能不同（末页通常不足 20），
+ * 写死会让「页 ↔ 条目」映射在尾部错位。这里用 `ceil(items / pages)` 反推每页条数，
+ * 完全由接口返回值决定 —— 接口怎么报，就怎么算。
+ */
+export function toReachEntry(totalPages: number, totalResults: number): TMDBReachEntry {
+  const pages = Math.min(Math.max(totalPages, 0), TMDB_PAGE_CAP);
+  if (pages <= 0) return { pages: 0, items: 0, perPage: 0 };
+  const items = Math.min(Math.max(totalResults, 0), TMDB_PAGE_SIZE * pages);
+  // 每页条数按「可达条目 / 页数」上取整推导（不足 1 时退回契约上限）
+  const perPage = Math.min(TMDB_PAGE_SIZE, Math.max(1, Math.ceil(items / pages)));
+  return { pages, items, perPage };
+}
+
 // ============================================================
 // Token & 语言
 // ============================================================
@@ -336,7 +376,10 @@ export async function discoverMovie(
     sort_by: getSortByParam(filters.sortBy || 'popularity', filters.sortOrder || 'desc', 'movie'),
     'vote_count.gte': 50,
   };
-  if (filters.genreIds?.length) params.with_genres = filters.genreIds.join(',');
+  if (filters.genreIds?.length) {
+    params.with_genres = filters.genreIds.join(filters.genreMatch === 'or' ? '|' : ',');
+  }
+  if (filters.keywordIds?.length) params.with_keywords = filters.keywordIds.join(',');
   if (filters.minVoteAverage && filters.minVoteAverage > 0) params['vote_average.gte'] = filters.minVoteAverage;
   if (filters.releaseDateGte) params['primary_release_date.gte'] = filters.releaseDateGte;
   else if (filters.releaseYear) params.primary_release_year = filters.releaseYear;
@@ -356,7 +399,10 @@ export async function discoverTV(
     sort_by: getSortByParam(filters.sortBy || 'popularity', filters.sortOrder || 'desc', 'tv'),
     'vote_count.gte': 50,
   };
-  if (filters.genreIds?.length) params.with_genres = filters.genreIds.join(',');
+  if (filters.genreIds?.length) {
+    params.with_genres = filters.genreIds.join(filters.genreMatch === 'or' ? '|' : ',');
+  }
+  if (filters.keywordIds?.length) params.with_keywords = filters.keywordIds.join(',');
   if (filters.minVoteAverage && filters.minVoteAverage > 0) params['vote_average.gte'] = filters.minVoteAverage;
   if (filters.releaseDateGte) params['first_air_date.gte'] = filters.releaseDateGte;
   else if (filters.releaseYear) params.first_air_date_year = filters.releaseYear;

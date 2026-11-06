@@ -30,6 +30,9 @@ import {
   fetchMovieGenres,
   fetchTVGenres,
   fetchCountries,
+  toReachEntry,
+  TMDB_PAGE_SIZE,
+  type TMDBReachEntry,
   buildImageUrl,
   getLanguage,
 } from '@/services/tmdbService';
@@ -44,6 +47,8 @@ export type { TMDBVideoItem } from '@/types/tmdb';
 const DEFAULT_FILTER_OPTIONS: TMDBFilterOptions = {
   mediaType: 'all',
   genreIds: [],
+  genreMatch: 'and',
+  keywordIds: [],
   minVoteAverage: 0,
   sortBy: 'popularity',
   sortOrder: 'desc',
@@ -74,7 +79,29 @@ interface TMDBStoreState {
 
   // ---- 发现 ----
   discoverResults: TMDBVideoItem[];
-  discoverPagination: { page: number; totalPages: number; totalResults: number };
+  /**
+   * 分页元信息。
+   *
+   * `reach`（2026-11-05 新增）= **各取页路（movie / tv）真实可达的页数与条目数**，
+   * 是「最大页数」唯一可信的真源。缺省时消费方退回旧口径（只按 totalResults 折算）。
+   *
+   * ⚠️ 为什么必须分路记录（实测 TMDB，2026-11-05）：
+   * - `total_results` 是**该路命中的总条数**，但 `page` 参数硬顶 500（501 直接 HTTP 400
+   *   `status_code:22`），所以 **可达条目 = min(total_results, 20 × min(total_pages, 500))**。
+   *   实测 discover/movie: total_results=20001 但可达只有 10000；discover/tv: 7072 可达 7072。
+   * - `all` 模式两路合并，但**两路页数不同**（movie 500 页 / tv 354 页）→ 355~500 页只有
+   *   movie 的 20 条、没有 tv。合并页大小 M=40 只在「稠密区」成立，稠密区之外是 20 条/页。
+   *   任何按固定 M=40 的算术定位（`t = floor(start/40)+1`）都会在稀疏区整体错位，
+   *   表现为**同一批卡片在多个逻辑页重复出现**（实测重复 2897 张）。
+   * 所以定位必须按「分段线性前缀」算，不能用固定页大小。
+   */
+  discoverPagination: {
+    page: number;
+    totalPages: number;
+    totalResults: number;
+    /** 各取页路的可达量（movie / tv；搜索态只有一路），字段全部由接口返回值推导。 */
+    reach?: TMDBReachEntry[];
+  };
   /**
    * 最近一次 discover / search / top-rated 懒加载请求的最终状态
    * - null      : 从未发起过请求（初始态）
@@ -1014,6 +1041,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
             totalPages: hasMore ? data.total_pages : data.page,
             // 折算后的视频口径总数（避免人物污染导致分页虚高）
             totalResults: estimatedTotalResults,
+            // 搜索是单路（每页 ≤20，movie/tv 混合后条数不固定）→ 可达量按接口自报页数折算
+            reach: [toReachEntry(data.total_pages, estimatedTotalResults)],
           },
           loading: { ...s.loading, discover: false },
           discoverLastStatus: 'success',
@@ -1052,6 +1081,8 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       let totalPages = 0;
       // 真实命中总数（接口 total_results），用于右上角「共 N 条」展示
       let totalResults = 0;
+      // 各取页路的真实可达量（见 discoverPagination.reach 的注释）
+      let reach: TMDBReachEntry[] | undefined;
 
       if (filterOptions.mediaType === 'all') {
         const [movieData, tvData] = await Promise.all([
@@ -1082,7 +1113,13 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         });
         // mediaType=all 时合并 movie+tv，去重后实际数量可能少于两者之和
         // totalPages 取两者较大值，但若去重后本页不足 2×PAGE_SIZE 则可能已到最后一页
-        const TMDB_PAGE_SIZE = 20;
+        // 各取页路的真实可达量（2026-11-05）：`total_results` 常远大于 500 页能返回的量
+        // （实测 movie 报 20001 但 500 页只有 10000），且**两路页数不同**（movie 500 / tv 354）
+        // → 必须逐路记录「可达页数 + 可达条目」，供逻辑分页层做分段前缀定位。
+        reach = [
+          toReachEntry(movieData.total_pages, movieData.total_results),
+          toReachEntry(tvData.total_pages, tvData.total_results),
+        ];
         totalPages = Math.max(movieData.total_pages, tvData.total_pages);
         // 去重后如果本页结果少于预期（2×PAGE_SIZE），说明可能已到最后一页
         if (results.length < TMDB_PAGE_SIZE * 2 && page >= totalPages) {
@@ -1095,11 +1132,13 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         results = data.results.map(mapTVToVideoItem);
         totalPages = data.total_pages;
         totalResults = data.total_results;
+        reach = [toReachEntry(data.total_pages, data.total_results)];
       } else {
         const data = await discoverMovie(filterOptions, page);
         results = data.results.map(mapMovieToVideoItem);
         totalPages = data.total_pages;
         totalResults = data.total_results;
+        reach = [toReachEntry(data.total_pages, data.total_results)];
       }
 
       if (seq !== _discoverSeq) return; // 过期响应（更新的筛选/搜索已发起）丢弃
@@ -1116,6 +1155,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
             totalPages,
             // 真实命中总数（接口 total_results），而非当前页条数
             totalResults,
+            reach,
           },
           loading: { ...s.loading, discover: false },
           discoverLastStatus: 'success',
@@ -1172,6 +1212,12 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           page,
           totalPages: Math.max(movieData.total_pages, tvData.total_pages),
           totalResults: movieData.total_results + tvData.total_results,
+          // top_rated 同样两路合并、页数可能不同（movie 500 / tv 356 等），
+          // 逻辑分页层据此做分段前缀定位（2026-11-05）
+          reach: [
+            toReachEntry(movieData.total_pages, movieData.total_results),
+            toReachEntry(tvData.total_pages, tvData.total_results),
+          ],
         },
         loading: { ...s.loading, discover: false },
         discoverLastStatus: 'success',
