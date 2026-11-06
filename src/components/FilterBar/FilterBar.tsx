@@ -18,11 +18,11 @@ import './FilterBar.css';
 
 export type { FilterBarValue } from './constants';
 
-// ── 长文本识别（2026-09-07 用户拍板：文本大于 4 个字符才独占一行）──
+// ── 长文本识别（2026-09-07 用户拍板：文本达到 4 个字宽及以上才独占一行（2026-11-06 用户拍板））──
 //    CJK 记 1 字宽、ASCII 记 0.5 → 「黑色五叶草/天然黑电影」独占一行，
-//    「中国大陆/中国香港/2026/电影」等 ≤4 字不受影响。
+//    「中国大陆/中国香港/2026/电影」等 4 字起独占一行；仅 < 4 字的短标签仍走两列。
 const isWideLabel = (s: string): boolean =>
-  [...s].reduce((w, c) => w + (/[\u2E80-\u9FFF\uF900-\uFFFD]/.test(c) ? 1 : 0.5), 0) > 4;
+  [...s].reduce((w, c) => w + (/[\u2E80-\u9FFF\uF900-\uFFFD]/.test(c) ? 1 : 0.5), 0) >= 4;
 
 const chipCls = (label: string, active: boolean): string =>
   `filter-bar__chip${active ? ' filter-bar__chip--active' : ''}${isWideLabel(label) ? ' filter-bar__chip--full' : ''}`;

@@ -12,7 +12,7 @@
    基础档（<1024 / 移动）：胶囊占满 2 列格宽（width:100%）。
    桌面 ≥1024 非 app/tv：chips 容器复用真实 .filter-bar__chips-* 类 →
    display:grid 2 列、gap --space-xs/--space-2xs、margin-top --space-xs、
-   justify-self:start 左对齐，全部来自 Browse.css 真实规则（同一份真源）；
+   justify-self:center 居中对齐，全部来自 Browse.css 真实规则（同一份真源）；
    骨架只补宽度 —— var(--chip-w)（TSX 按真实标签「文本宽 + padding」注入，
    地区/年份逐个还原；分类 genre 来自接口，按 2 字档近似 = 2em + 2×space-sm）。 */
 .browse-chrome-skeleton__chip {
@@ -34,7 +34,7 @@
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-chrome-skeleton .browse-chrome-skeleton__chip {
     display: block;
-    justify-self: start;
+    justify-self: center;
     /* 宽度 = 真实 chip 盒宽（文本 + 左右 padding，TSX 逐标签注入 --chip-w；
        分类组无标签 → 2 字档兜底 2em + 2×space-sm）。高度/padding/圆角
        与真实 .filter-bar__chip 同公式（text-sm + space-xs×2 / radius-md）。 */
