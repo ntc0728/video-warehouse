@@ -380,11 +380,14 @@ export default function BrowsePage() {
 
   // ── 当前分类下的可选类型 ────────────────────────
   const currentGenres = useMemo<TMDBGenre[]>(() => {    const cfg = CATEGORY_CONFIG[filterValue.category];
-    if (cfg.genresSource === 'movie') return movieGenres;
-    if (cfg.genresSource === 'tv') return tvGenres;
+    // 按分类的 genreDenylist 剔除与该分类结果集互斥的 genre（如动漫剔除「电视节目形态」id）。
+    const drop = new Set(cfg.genreDenylist ?? []);
+    const filterDeny = (list: TMDBGenre[]) => list.filter((g) => !drop.has(g.id));
+    if (cfg.genresSource === 'movie') return filterDeny(movieGenres);
+    if (cfg.genresSource === 'tv') return filterDeny(tvGenres);
     const seen = new Set<string>();
     const merged: TMDBGenre[] = [];
-    for (const g of [...movieGenres, ...tvGenres]) {
+    for (const g of [...filterDeny(movieGenres), ...filterDeny(tvGenres)]) {
       const key = g.name.toLowerCase();
       if (!seen.has(key)) { seen.add(key); merged.push(g); }
     }

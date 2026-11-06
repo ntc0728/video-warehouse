@@ -29,9 +29,10 @@ export const CATEGORY_LABELS: Record<CategoryKey, string> = {
  *  - 排行榜：fetchTopRated(movie+tv 合并)，genresSource=both 与混合结果对齐。
  *  - 电影 / 剧集：各自单路 + 对应 genre 表。
  *
- * ⚠️ 关于 genresSource：剧集/综艺/动漫共用 tvGenres（TMDB /genre/tv/list 全表），
- *    这是 TMDB 官方 TV 分类体系（10759 本就叫 Action & Adventure、还有肥皂剧/新闻等），
- *    左栏显示的是接口原名，未做本地合并/重命名。这是「共用 tv 接口」的真实结果。
+ * ⚠️ 关于 genresSource：剧集/综艺共用 tvGenres 全表（TMDB 官方 TV 分类体系，10759 本就叫
+ *    Action & Adventure，左栏显示接口原名、未做本地重命名）。动漫虽也走 TV 表，但按
+ *    genreDenylist 剔除 5 个「电视节目形态」id（新闻/真人秀/肥皂剧/脱口秀/战争政治）——
+ *    这些与 anime 结果集互斥，显示出来只会点出空结果（2026-11-07 用户截图反馈）。
  */
 export interface CategoryConfig {
   mediaType: 'all' | 'movie' | 'tv';
@@ -43,6 +44,9 @@ export interface CategoryConfig {
   keywordIds?: number[];
   /** 左栏「分类」行用哪个语种 genre list */
   genresSource: 'movie' | 'tv' | 'both';
+  /** 该分类左栏需剔除的 TV genre id（TMDB 官方定义为「电视节目形态」，与作品类型无关）。
+      动漫等分类按 keyword 过滤出的结果集里这些 id 不可能出现，显示出来只会点出空结果。 */
+  genreDenylist?: number[];
 }
 
 /**
@@ -52,6 +56,13 @@ export interface CategoryConfig {
  *    兜底：若 TMDB 返回空结果，可把该值清空、改用下方 ANIME_ORIGIN_COUNTRY='JP' 国家码方案。
  */
 export const ANIME_KEYWORD_ID = 210024;
+/**
+ * TMDB TV genre 里的「电视节目形态」id（非动画作品类型，与 anime 结果集互斥）：
+ * 10763 新闻 / 10764 真人秀 / 10766 肥皂剧 / 10767 脱口秀 / 10768 战争政治。
+ * 依据：TMDB 官方 /genre/tv/list 原名（News / Reality / Soap / Talk / War & Politics），
+ * 这些是节目编排形态，不是动画作品会带的叙事 genre；左栏显示它们点进去必空。
+ */
+export const TV_FORMAT_GENRE_IDS = [10763, 10764, 10766, 10767, 10768];
 /** 兜底方案：改用国家码过滤日漫时启用（与 keyword 二选一，默认不走） */
 export const ANIME_ORIGIN_COUNTRY: string | null = null;
 
@@ -60,7 +71,7 @@ export const CATEGORY_CONFIG: Record<CategoryKey, CategoryConfig> = {
   movie:       { mediaType: 'movie', defaultGenreIds: [],          genresSource: 'movie' },
   tv:          { mediaType: 'tv',    defaultGenreIds: [],          genresSource: 'tv' },
   variety:     { mediaType: 'tv',    defaultGenreIds: [10764, 10767], genreMatch: 'or', genresSource: 'tv' },
-  anime:       { mediaType: 'tv',    defaultGenreIds: [],   keywordIds: [ANIME_KEYWORD_ID], genresSource: 'tv' },
+  anime:       { mediaType: 'tv',    defaultGenreIds: [],   keywordIds: [ANIME_KEYWORD_ID], genresSource: 'tv', genreDenylist: TV_FORMAT_GENRE_IDS },
   top:         { mediaType: 'all',   defaultGenreIds: [],          genresSource: 'both' },
   documentary: { mediaType: 'movie', defaultGenreIds: [99],        genresSource: 'movie' },
 };
