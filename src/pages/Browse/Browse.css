@@ -894,28 +894,38 @@
     box-shadow: none;
   }
 
-  /* 长文本选项（FilterBar 按字宽 >= 4 识别打 --full，2026-11-06 起含 4 字）：
-     独占整行 + 文字左侧与「第一列两字 chip」对齐（2026-11-07 用户拍板方案 A 后的定稿）。
-     几何：方案 A 下第一列两字 chip 格内居中，文字左缘 = (C − w₂)/2 + sm；四字 --full
-     贴整行左缘 + margin-left:X → 文字左缘 = X + sm。令两者相等得 X = (C − w₂)/2。
-     其中 C = (W − G)/2（W = grid 内容区宽，--full 的 margin-left 百分比即相对 W）、
-     w₂ = 2×字宽 + 2×padding。故
-       X = (W − G)/4 − w₂/2 = 25% − G/4 − (字宽 + padding)。
-     ⚠️ 用 25%（非 px）表达 W 的真实百分比、用无单位 0 兜底（margin-left 禁裸 px，见
-        .stylelintrc.json declaration-property-unit-disallowed-list）；不再用 var(--rail-w) 反推容器宽——
-        后者假设 chips 容器 == rail-w − 2·space-sm，实际有误差且 rail-w 收窄后会漂移。
-     ⚠️ 特异性必须与上方 .filter-bar .filter-bar__chip 基础规则持平 (0,4,1)，
-        靠「书写顺序在后」取胜；切勿给基础规则加 :not(...) 抬特异性。 */
+  /* 四字及以上 chip（--wide）单独处理：文字左缘与「格内居中的两字 chip」对齐。
+     2026-11-07 用户定稿：只要字宽 >= 4 就走本规则，不论是否独占整行、不论落在第几列。
+     几何：方案 A 下两字 chip 格内居中，文字左缘 = (C − w₂)/2 + sm。给长 chip 设
+     justify-self:start + margin-left:X（X=(C−w₂)/2），其文字左缘 = X + sm：
+       · 落第一列：= 第一列两字 chip 文字左缘 ✓
+       · 落第二列：格子左缘 = C+G，文字左缘 = C+G+X+sm = 第二列两字 chip 文字左缘 ✓
+       · 独占整行（--full 同时命中）：整行左缘 = 0，文字左缘 = X+sm = 第一列两字 chip ✓
+     一个 X 值三种位置全对齐，故 --wide 与 --full 正交：--wide 管对齐、--full 管独占。
+     X 展开 = (rail-w − 6·sm − G − 4·字宽)/4（W=rail-w−2·sm、C=(W−G)/2、w₂=2·字宽+2·sm）。
+     ⚠️ 2026-11-07 截图实锤：早先用 25% 百分比（假设 margin-left 的 % 基准 = grid 内容区宽）
+        在真实浏览器未生效，四字仍贴左 → 弃用 %，改全 token 绝对长度 calc，解析无歧义。
+        1440 实算 X=(148−42−19.667−52)/4=8.58px = 两字 chip 居中缩进。
+     ⚠️ margin-left 禁裸 px（.stylelintrc.json），全用 var() 与无单位数字；max(0,…) 兜底负值。
+     ⚠️ 特异性与基础 .filter-bar .filter-bar__chip 持平 (0,4,1)，靠书写顺序取胜；
+        切勿给基础规则加 :not(...) 抬特异性（会压过本规则，连续返工的同型坑）。 */
   html:not([data-device="app"]):not([data-device="tv"])
-    .filter-bar .filter-bar__chip--full {
-    grid-column: 1 / -1;
+    .filter-bar .filter-bar__chip--wide {
     justify-content: flex-start;
     justify-self: start;
     margin-left: max(
       0,
-      calc(25% - var(--space-xl) / 4 - (var(--text-sm) + var(--space-sm)))
+      calc((var(--rail-w) - 6 * var(--space-sm) - var(--space-xl) - 4 * var(--text-sm)) / 4)
     );
     text-align: left;
+  }
+
+  /* --full：独占整行（grid-column:1/-1）。与 --wide 正交，>=4 字且需独占时同时命中两条。
+     触发条件见 FilterBar.tsx chipCls：字宽 > 4（全视口）或 字宽 == 4 且视口 < 1980。
+     继承 --wide 的 margin-left 对齐，这里只补独占整行语义。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .filter-bar .filter-bar__chip--full {
+    grid-column: 1 / -1;
   }
 
   /* 组标题（「电影」= label--as-chip，同时带 .filter-bar__chip 类）会被上方 chip 居中
