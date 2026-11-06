@@ -676,8 +676,16 @@ export default function BrowsePage() {
     tvGenres.length,
   ]);
   // 有数据/错误时当帧换真（不等 effect），避免缓存命中或多一帧骨架闪烁
+  // ⚠️ 必须把「genres 已就绪」也纳入：genres 从 0 → N 的那一帧，GenreChips 会按新长度
+  //  突然渲染 N 枚 chip，把左栏撑高（「被拉长」），只有下一帧 chromeSettled 才为 true
+  //  才隐藏骨架。此处直接在 genres 就绪时不再渲染骨架，立即切到真实 FilterBar，
+  //  此时 movieGenres 已有值，真实行显示正确数量，无中间膨胀帧。
   const showChromeSkeleton =
-    !chromeSettled && !smartHasData && !cmsHasData && !currentError;
+    !chromeSettled &&
+    (!hasToken || !genresReady) &&
+    !smartHasData &&
+    !cmsHasData &&
+    !currentError;
 
   // 逐源列表：供源状态弹层展示（与详情页源检测弹窗一致的逐源网格）
   const { videoSourceIds } = useSettingsStore();
