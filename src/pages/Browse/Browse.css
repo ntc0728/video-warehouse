@@ -547,7 +547,7 @@
     .browse-page:not(.browse-page--mobile):not(.browse-page--tv) {
     display: grid;
     /* 2026-09-10 用户拍板 B+C：栏宽由硬编码 clamp(124px, 8.61vw, 224px) 提为共享 token
-       --rail-w = clamp(148px, 10vw, 248px)（1440 → 148、1920 → 192、2560 → 248），
+       --rail-w = clamp(148px, 10vw, 200px)（1440 → 148、1920 → 192、≥2000 → 200 封顶；2026-11-07 由 248 收窄），
        与设置页 / IPTV / 收藏·历史 左栏同源。 */
     grid-template-columns: var(--rail-w) minmax(0, 1fr);
     /* 行高修复（2026-09-07 用户实测反馈）：两条隐式 auto 行 + results 跨行
@@ -822,9 +822,10 @@
     /* 2026-09-12 行距回补：row-gap 由 --space-2xs(≈2px) 提到 --space-xs(≈4px)
        （行距 22.2 → 24.2px）。列数已固定。
        2026-11-06 用户连续拍板：column-gap 由 --space-2xs(≈2px) → --space-3xl →
-       --space-xl → 最终定为 --space-md(1440 档 ≈8–9.5px)：两列留白收紧到与设计
-       稿紧凑感一致，同时窄栏（--rail-w 1440 档仅 148px）列宽充裕、4 字标签不挤压。 */
-    gap: var(--space-xs) var(--space-md);
+       --space-md → 最终定为 --space-xl(1440 档 ≈16–20px)：2026-11-07 用户拍板
+       「选方案 A（每列格内居中）并把两列间距调大」。列宽随 G 收缩，配合下方 --full
+       的 margin-left 让四字独占行文字左缘与第一列两字对齐。 */
+    gap: var(--space-xs) var(--space-xl);
     justify-items: stretch;
     align-content: start;
     /* label↔chips 间距（row 改 block 后原 gap 失效，补回 ≈3.9px） */
@@ -838,10 +839,10 @@
      2026-09-12 用户追根因 + 拍板「宽度、高度都收」：
        宽度 — 原来 width:100% 被 grid 1fr 拉伸，两字选项也被撑成 ≈65px 色块，
              与文字完全脱钩；改 width:auto 后色块宽 = 文字 + padding。
-             2026-11-06 用户最终要求「四字标题左侧与两字标题左侧对齐」：
-             justify-self 由 center 改 start，两字 chip 贴格子左缘，与独占整行的
-             四字 chip（--full，justify-self:start）共享同一条左基线（色块左缘 +
-             相同 --space-sm padding → 文字左缘完全对齐）。
+             2026-11-07 用户拍板「方案 A：每列居中」→ justify-self 回到 center，
+             每列 chip 在各自格内居中；两列间距调大到 --space-xl，使列宽收缩、
+             第一列两字 chip 居中后左缘收窄；再由 --full 的 margin-left 精确补齐
+             与第一列两字的差值，达成「四字标题左侧与两字标题左侧对齐」。
        高度 — 2026-09-12 二轮：padding+line-height 推导不可控，改显式高度 + flex 居中。
              三轮：padding 用 --space-2xs(≈2px) 太少、且系数由 1.5→1.3 抵消了增量，
              净增仅 1.5px = 肉眼无感。四轮改用「字高 + 上下 padding × 2」：
@@ -849,7 +850,7 @@
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip {
     display: flex;
-    justify-self: start;
+    justify-self: center; /* 方案A：每列格内居中 */
     align-items: center;
     justify-content: flex-start;
     width: auto;
@@ -894,16 +895,23 @@
   }
 
   /* 长文本选项（FilterBar 按字宽 >= 4 识别打 --full，2026-11-06 起含 4 字）：
-     独占整行 + 文字左对齐。2026-11-06 用户二轮拍板：4 字标签仍独占整行，
-     但文字须与两列 chip 的左缘对齐成一条线，不要居中飘着 → justify-self:start /
-     justify-content:flex-start / text-align:left。色块宽度贴合文字（width:auto），
-     不横跨整栏。
+     独占整行 + 文字左侧与「第一列两字 chip」对齐（2026-11-07 用户拍板方案 A 后的定稿）。
+     几何：方案 A 下第一列两字 chip 格内居中，文字左缘 = (C − w₂)/2 + sm；四字 --full
+     贴整行左缘 + margin-left:X → 文字左缘 = X + sm。令两者相等得 X = (C − w₂)/2。
+     其中 C = (W − G)/2（W = grid 内容区宽，--full 的 margin-left 百分比即相对 W）、
+     w₂ = 2×字宽 + 2×padding。故
+       X = (W − G)/4 − w₂/2 = 25% − G/4 − (字宽 + padding)。
+     ⚠️ 用 25% 表达 W 的真实百分比（零假设），不再用 var(--rail-w) 反推容器宽——
+        后者假设 chips 容器 == rail-w − 2·space-sm，实际有误差且 rail-w 收窄后会漂移。
      ⚠️ 特异性必须与上方 .filter-bar .filter-bar__chip 基础规则持平 (0,4,1)，
-        靠「书写顺序在后」取胜；切勿给基础规则加 :not(...) 抬特异性，否则本规则被压过、
-        左对齐失效（2026-11-06 连续两轮返工的同型坑）。 */
+        靠「书写顺序在后」取胜；切勿给基础规则加 :not(...) 抬特异性。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip--full {
     grid-column: 1 / -1;
+    margin-left: max(
+      0px,
+      calc(25% - var(--space-xl) / 4 - (var(--text-sm) + var(--space-sm)))
+    );
     justify-self: start;
     justify-content: flex-start;
     text-align: left;
