@@ -850,9 +850,9 @@
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip {
     display: flex;
+    justify-content: flex-start;
     justify-self: center; /* 方案A：每列格内居中 */
     align-items: center;
-    justify-content: flex-start;
     width: auto;
     /* ⚠️ 全局 border-box（index.css:255）→ padding 已含在 height 内，
        垂直 padding 必须计入高度公式，否则只挤压文字、色块不变高。
@@ -901,19 +901,20 @@
      其中 C = (W − G)/2（W = grid 内容区宽，--full 的 margin-left 百分比即相对 W）、
      w₂ = 2×字宽 + 2×padding。故
        X = (W − G)/4 − w₂/2 = 25% − G/4 − (字宽 + padding)。
-     ⚠️ 用 25% 表达 W 的真实百分比（零假设），不再用 var(--rail-w) 反推容器宽——
+     ⚠️ 用 25%（非 px）表达 W 的真实百分比、用无单位 0 兜底（margin-left 禁裸 px，见
+        .stylelintrc.json declaration-property-unit-disallowed-list）；不再用 var(--rail-w) 反推容器宽——
         后者假设 chips 容器 == rail-w − 2·space-sm，实际有误差且 rail-w 收窄后会漂移。
      ⚠️ 特异性必须与上方 .filter-bar .filter-bar__chip 基础规则持平 (0,4,1)，
         靠「书写顺序在后」取胜；切勿给基础规则加 :not(...) 抬特异性。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip--full {
     grid-column: 1 / -1;
+    justify-content: flex-start;
+    justify-self: start;
     margin-left: max(
-      0px,
+      0,
       calc(25% - var(--space-xl) / 4 - (var(--text-sm) + var(--space-sm)))
     );
-    justify-self: start;
-    justify-content: flex-start;
     text-align: left;
   }
 

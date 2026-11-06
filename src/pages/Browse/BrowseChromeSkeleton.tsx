@@ -6,7 +6,8 @@
  *
  * 结构镜像（对应 Browse/index.tsx）：
  *   左栏 = .filter-bar 三组（分类/地区/年份 · label 真文 + chips 灰块）；
- *   顶栏 = .browse-sort-bar（类型 7 pill + 分隔线 + 排序 3 pill + 计数位）。
+ *   顶栏 = .browse-sort-bar（类型 6 pill + 分隔线 + 排序 3 pill + 计数位）。
+ *        类型 pill 取 VISIBLE_CATEGORY_KEYS（2026-11-05「全部」下线后 6 档，非 7）。
  *
  * 模式 tab（智能检索/直链搜索）不属筛选项，始终真实渲染，不进本骨架。
  * 根类复用真实 .filter-bar / .browse-sort-bar 以继承 grid-area（filters / head）。
@@ -61,7 +62,7 @@ function LabeledChipGroup({ labels }: { labels: string[] }) {
  *  默认分类已锁定「电影」（2026-11-05 用户拍板）：CATEGORY_CONFIG.movie.genresSource = 'movie'，
  *  defaultGenreIds 为空 → 真实 FilterBar 分类行 = 「全部」1 枚 + movieGenres 全量。
  *  骨架按 store 同步渲染同数量、同 2 字宽度的灰块，genres 落地后与真实行严格等量，
- *  消除「20 枚骨架 ⇄ 1 枚「全部」壳 ⇄ 20 枚真实」的首屏跳动；
+ *  消除旧「硬编码 N 枚骨架 ⇄ 1 枚「全部」壳 ⇄ N 枚真实」的首屏跳动；
  *  genres 尚未落地时仅渲染「全部」，FILL_CHIPS 继续撑满组高度，不露底。
  */
 function GenreChips() {
@@ -97,7 +98,7 @@ export function BrowseFilterChromeSkeleton() {
            * 默认分类已锁定「电影」（2026-11-05 用户拍板），CATEGORY_CONFIG.movie.genresSource = 'movie'，
            * 且 defaultGenreIds 为空 → 左栏「分类」行 = 「全部」1 枚 + movieGenres 全量。
            * 骨架按 store 同步渲染同数量同宽度的灰块，与真实 FilterBar 严格等量，
-           * 首屏落地时不再出现 20 枚骨架 ⇄ 1 枚「全部」壳 ⇄ 20 枚真实的跳动；
+           * 首屏落地时不再出现「骨架 N 枚 ⇄ 1 枚「全部」壳 ⇄ N 枚真实」的跳动；
            * genres 尚未落地时仅渲染「全部」，FILL_CHIPS 继续撑满组高度，不露底。
            */}
           <GenreChips />

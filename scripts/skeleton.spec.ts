@@ -488,15 +488,18 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     await expect(page.locator('.browse-sort-bar__tab')).toHaveCount(0);
     await expect(page.locator('button.filter-bar__chip')).toHaveCount(0);
 
-    // chrome 骨架 pill 数仍取同一份常量真源：CATEGORY_CONFIG = 7、SORT_OPTIONS = 3
-    await expect(sortChrome.locator('.browse-chrome-skeleton__pill--type')).toHaveCount(7);
+    // chrome 骨架 pill 数取同一份常量真源：VISIBLE_CATEGORY_KEYS = 6（2026-11-05「全部」下线后）、SORT_OPTIONS = 3
+    await expect(sortChrome.locator('.browse-chrome-skeleton__pill--type')).toHaveCount(6);
     await expect(sortChrome.locator('.browse-chrome-skeleton__pill--tab')).toHaveCount(3);
     await expect(sortChrome.locator('.browse-sort-bar__count')).toHaveCount(1);
-    // chip 总数 = 分类(GENRE_CHIPS 6 + FILL_CHIPS 14) + 地区(REGION 12 + FILL 14)
-    //          + 年份(YEAR 12 + 其他 1 + FILL 14) = 20 + 26 + 27 = 73
-    // 2026-10-09 ff5930f 为 ≥1024 撑满加入 FILL_CHIPS=14×3 组后本行应 22 → 73，
-    // 当时漏同步（BrowseChromeSkeleton.tsx 单向变更）；2026-10-10 补上。
-    await expect(filterChrome.locator('.browse-chrome-skeleton__chip')).toHaveCount(20 + 26 + 27);
+    // chip 总数（2026-11-06 骨架按 movieGenres 等量渲染后重算）：
+    //   分类 = 「全部」1 + movieGenres N（holdTmdb 延迟期 N=0）+ FILL_CHIPS 14 = 15
+    //   地区 = REGION_OPTIONS 12 + FILL_CHIPS 14 = 26
+    //   年份 = YEAR_OPTIONS 12 + 其他 1 + FILL_CHIPS 14 = 27
+    //   合计 = 15 + 26 + 27 = 68
+    // 旧值 73 = 分类(GENRE_CHIPS 6 + FILL 14)=20 来自已删除的硬编码 GENRE_CHIPS；
+    // 类型 pill 旧值 7 来自含「全部」的 7 档，均已同步。
+    await expect(filterChrome.locator('.browse-chrome-skeleton__chip')).toHaveCount(15 + 26 + 27);
     // 旧镜像类不得复活
     await expect(page.locator('.browse-skeleton__type, .browse-skeleton__sort, .browse-skeleton__count')).toHaveCount(0);
 
