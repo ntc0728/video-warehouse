@@ -887,15 +887,30 @@
   }
 
   /* 长文本选项（FilterBar 按字宽 >= 4 识别打 --full，2026-11-06 起含 4 字）：
-     独占整行 + 居中。2026-11-06 用户反馈「4 字以上仍然左对齐」→ 本规则由
-     justify-self:start / text-align:left 统一改为 center，与同组两列 chip 视觉对齐；
-     色块宽度仍贴合文字（width:auto），不横跨整栏。 */
+     独占整行 + 文字左对齐。2026-11-06 用户二轮拍板：4 字标签仍独占整行，
+     但文字须与两列 chip 的左缘对齐成一条线，不要居中飘着 → justify-self:start /
+     justify-content:flex-start / text-align:left。色块宽度贴合文字（width:auto），
+     不横跨整栏。
+     ⚠️ 特异性必须与上方 .filter-bar .filter-bar__chip 基础规则持平 (0,4,1)，
+        靠「书写顺序在后」取胜；切勿给基础规则加 :not(...) 抬特异性，否则本规则被压过、
+        左对齐失效（2026-11-06 连续两轮返工的同型坑）。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip--full {
     grid-column: 1 / -1;
-    justify-self: center;
-    justify-content: center;
-    text-align: center;
+    justify-self: start;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  /* 组标题（「电影」= label--as-chip，同时带 .filter-bar__chip 类）会被上方 chip 居中
+     规则误伤：display:flex + width:auto 撑满整行 + justify-content:center 把文字推到中间
+     （2026-11-06 用户截图红框）。用户拍板「三个组标题统一左对齐」→ 单独恢复左对齐，
+     不改基础 chip 选择器（避免抬高特异性压过 --full 规则）。地区/年份 label 本就左对齐。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .filter-bar .filter-bar__label--as-chip {
+    display: inline-flex;
+    justify-content: flex-start;
+    text-align: left;
   }
 }
 
