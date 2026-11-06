@@ -27,7 +27,7 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useDelayedFlag } from '@/hooks/useDelayedFlag';
 import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
 import type { TMDBGenre } from '@/types/tmdb';
-import { CATEGORY_CONFIG, CATEGORY_LABELS, PENDING_FEEDBACK_DELAY_MS } from './constants';
+import { CATEGORY_CONFIG, CATEGORY_LABELS, VISIBLE_CATEGORY_OPTIONS, PENDING_FEEDBACK_DELAY_MS } from './constants';
 import { useBrowseData, toStoreFilter, DISCOVER_CACHE_TTL_MS } from './useBrowseData';
 import { getDefaultFilterValue } from './urlState';
 import type { VideoType } from '@/types/video';
@@ -158,7 +158,12 @@ export default function BrowsePage() {
     [],
   );
 
-  const [cmsFilterValue, setCmsFilterValue] = useState<FilterBarValue>(() => getDefaultFilterValue());
+  // CMS 直链搜索是纯前端按 type 过滤，其「全部」= 不限类型（与 TMDB 的 tv+movie 合并页无关），
+  // 默认值单独构造，避免被智能检索的新默认（电影）带偏。
+  const getDefaultCmsFilterValue = (): FilterBarValue => ({
+    ...getDefaultFilterValue(), category: 'all', mediaType: 'all',
+  });
+  const [cmsFilterValue, setCmsFilterValue] = useState<FilterBarValue>(getDefaultCmsFilterValue);
   const handleCmsFilterChange = useCallback((next: FilterBarValue) => setCmsFilterValue(next), []);
 
   // vod_area 是自由文本（大陆/内地/中国大陆/香港…），REGION_OPTIONS 是 ISO 码 → 别名表匹配
@@ -233,7 +238,7 @@ export default function BrowsePage() {
       // 智能检索可能还有取页在飞：切走时收掉它的 loading 遮罩（CMS 有自己的 loading 态）
       endRefresh();
       // 切入直链搜索：本地筛选复位（不写 URL、不影响智能检索的 filterValue）
-      setCmsFilterValue(getDefaultFilterValue());
+      setCmsFilterValue(getDefaultCmsFilterValue());
       if (query) {
         triggerCmsSearch(query);
       } else {
@@ -242,7 +247,8 @@ export default function BrowsePage() {
         resetCMS();
       }
     }
-    // 切回智能检索：searchMode 变 → logicalContext 变 → 逻辑分页层自动重新取页
+    // 切回智能检索：searchMode 纳入 logicalContext → 下方取页 effect 重跑并
+    // force 真实请求（见该 effect 注释）。直链搜索无关键词时不构造请求（方案 B）。
   }, [query, triggerCmsSearch, resetCMS, endRefresh]);
 
   // ── 筛选条件变更 ────────────────────────────────
@@ -327,7 +333,17 @@ export default function BrowsePage() {
   // 只在请求落地后结算（isRefreshing/isLoading 中不钉），避免旧上下文的总数抢先钉入新 key。
   const totalKey = `${searchMode}:${query}:${JSON.stringify(searchMode === 'smart' ? filterValue : cmsFilterValue)}`;
   const [pinnedTotal, setPinnedTotal] = useState(0);
-  useEffect(() => { setPinnedTotal(0); }, [totalKey]);
+  /**
+   * 钉定的**可达条目数**（= 末页 × 每页 − 末页余量）。
+   *
+   * ⚠️ 为什么不能直接显示 `total_results`（2026-11-05 用户要求「准确的页数」）：
+   * TMDB 自报的 total_results 远超 `page ≤·500` 能取到的量（实测合计 27073，
+   * 实际可达 14152），而「全部」的合并页只存在于 movie / tv 都有数据的区间（1..354）。
+   * 继续显示 27073 会与「末页 405 页」自相矛盾 —— 用户按 27073 折算会得到另一套页数。
+   * 与 pinnedTotal 同策略钉定（首次非零为准），避免翻页时数字闪变。
+   */
+  const [pinnedReachable, setPinnedReachable] = useState(0);
+  useEffect(() => { setPinnedTotal(0); setPinnedReachable(0); }, [totalKey]);
   useEffect(() => {
     if (searchMode !== 'smart') return;
     if (isRefreshing || isLoading) return;
@@ -357,17 +373,10 @@ export default function BrowsePage() {
     }
   }, [hasToken, movieGenres.length, tvGenres.length, fetchGenresAndCountries]);
 
-  // ── 分类级类型选项（类型行 7 档：全部/电影/剧集/综艺/动漫/纪录片/排行榜）──
-  // 点击即切换 category 并注入该分类的 mediaType + 默认 genreIds（CATEGORY_CONFIG）
-  const CATEGORY_OPTIONS = useMemo<FilterBarCategoryOption[]>(
-    () => (Object.keys(CATEGORY_CONFIG) as (keyof typeof CATEGORY_CONFIG)[]).map((key) => ({
-      key,
-      label: key === 'all' ? '全部' : CATEGORY_LABELS[key],
-      mediaType: CATEGORY_CONFIG[key].mediaType,
-      genreIds: CATEGORY_CONFIG[key].defaultGenreIds,
-    })),
-    [],
-  );
+  // ── 结果区头部「类型」行（2026-11-05 起 6 档，无「全部」）──
+  // 「全部」= movie+tv 合并页，两路 total_pages 不同且 500 页硬顶，页数/入参无法稳定对齐；
+  // 已由用户拍板删除，默认选中「电影」。列表由 constants 单点维护。
+  const CATEGORY_OPTIONS = VISIBLE_CATEGORY_OPTIONS;
 
   // ── 当前分类下的可选类型 ────────────────────────
   const currentGenres = useMemo<TMDBGenre[]>(() => {    const cfg = CATEGORY_CONFIG[filterValue.category];
@@ -386,12 +395,14 @@ export default function BrowsePage() {
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
   const isCmsLoading = cmsLoading;
 
-  // ── 逻辑分页组装层（2026-09-12 用户拍板）：每页恒定 cols×5 行、行行完整、
-  //    总页数按每页条数折算。逻辑页 L 覆盖全局条目 [(L-1)P, LP)，按算术定位所需
-  //    TMDB 合并页（至多 2 个请求 + offset 切片）；TMDB 硬顶 500 页 → 可达条目
-  //    上限 = 500×合并页大小，一并钳进总页数。 ──
+  // ── 逻辑分页组装层：每页恒定 cols×4 行（2026-11-06 由 5 改 4）——
+  //    P = cols×4；单路 M 恒定 → 算术精确定位；页数 = ceil(可达条目 / P)。
+  //    「全部」= tv+movie 合并页已下线（页数天然不稳），默认「电影」单路。 ──
   const cardCols = useCardCols();
-  const logicalContext = `smart:${query}:${JSON.stringify(filterValue)}`;
+  // ⚠️ 必须包含 searchMode：从「直链搜索」切回「智能检索」时，query / filterValue
+  // 都没变，若上下文不含 mode 则本值不变 → 下方取页 effect 不重跑 → 不重新调接口
+  // （2026-11-06 用户报「切换模式没调用接口」）。纳入后切回必然触发取页。
+  const logicalContext = `${searchMode}:${query}:${JSON.stringify(filterValue)}`;
   // 在飞取页的上下文代际：渲染期同步更新，供 fetchTmdbPage 中途弃权——
   // 旧上下文的 fetchDiscover/search 若在换词后才落地写 store，会把
   // discoverResults 盖成旧/错数据（逻辑层 items 已按新上下文清空 → 空态被压住）。
@@ -475,12 +486,15 @@ export default function BrowsePage() {
   }, [query, filterValue, logicalContext]);
   const logical = useLogicalPage({
     cols: cardCols,
-    // 合并页大小随媒体类型：all = 电影 20 + 剧集 20 = 40；单类型/搜索 = 单路 20。
-    // ⚠️ 偏移算术依赖此值与真实拉取条数一致，切分类后 M 变 20 时若仍按 40 定位会错位空页。
-    mergedPageSize: query || filterValue.mediaType !== 'all' ? 20 : 40,
     contextKey: logicalContext,
     fetchPage: fetchTmdbPage,
     total: pinnedTotal || discoverPagination.totalResults,
+    // 最大页数的**真源**（2026-11-05 重做）：各取页路的真实可达量（页数 + 条目），
+    // 由 store 按 min(total_pages, 500) / min(total_results, 20×页数) 算好。
+    // 不能用 total_results 折算 —— 它远大于 500 页能返回的量（实测 movie 报 20001、
+    // 实际只有 10000），且两路页数不同（movie 500 / tv 354）导致合并页大小在尾部退化为
+    // 20 条/页；旧公式因此算出 572 页（真实 488 页），并在稀疏区重复渲染同一批卡片。
+    reach: discoverPagination.reach,
     // 列数跨档的隐式重切由 hook 内部发起：它若抢占了在飞取页（对方返回 false 后
     // 放弃收尾），必须由这条回调接管 loading 收尾，否则 isRefreshing 永驻 →
     // 卡片永久变淡 + 分页器永久禁用。
@@ -489,6 +503,16 @@ export default function BrowsePage() {
   // 首次挂载 / 上下文变化（换词/换筛选/切分类）→ 装载第 1 页。
   // goto 走 ref 转发：total 钉定会使 goto 换身份，若直接进 deps 会多拉一次页 1；
   // 同时让 runGoto / hardRefresh 能稳定引用它。
+  // 钉定「可达到条目数」：必须在 logical 声明之后（读 logical.reachableItems）。
+  // 与 pinnedTotal 同策略——首次非零为准，翻页时数字不闪变。
+  useEffect(() => {
+    if (searchMode !== 'smart') return;
+    if (isRefreshing || isLoading) return;
+    if (logical.reachableItems > 0) {
+      setPinnedReachable((p) => p || logical.reachableItems);
+    }
+  }, [searchMode, isRefreshing, isLoading, logical.reachableItems]);
+
   const logicalGotoRef = useRef(logical.goto);
   logicalGotoRef.current = logical.goto;
 
@@ -521,7 +545,10 @@ export default function BrowsePage() {
   useEffect(() => {
     // 直链搜索（CMS）不进逻辑分页层（它自带并发搜索 + 滚动追加），不在此取页
     if (searchMode !== 'smart') return;
-    void runGoto(1);
+    // force=true：切模式回来时 query / 筛选没变，store 的 10min 缓存回显会直接
+    // 顶回旧结果、不发请求。用户要求「切换模式默认调用接口」→ 必须绕过回显真实取页。
+    // 其余上下文变化（换词 / 切筛选）filterOptions 已不同，本来就会真实请求，force 无副作用。
+    void runGoto(1, { force: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logicalContext]);
 
@@ -565,11 +592,18 @@ export default function BrowsePage() {
     ? (logical.loading || isRefreshing || (isLoading && !smartHasData))
     : (isCmsLoading && !cmsHasData);
 
-  // 骨架只在「无内容可显示」时渲染（2026-09-14 用户反馈慢网叠字）：
-  // 翻页飞行中逻辑层 items 保留旧页原地展示（分页器禁用兜底），
-  // 骨架若同时渲染会叠在旧网格之上（骨架为文档流块，非遮罩）。
+  // 翻页（上一页 / 下一页 / 页码 / 跳页）是**替换语义**：旧页与新页内容完全不同，
+  // 保留旧网格只会让人以为「点了没生效」，故 2026-11-05 用户要求翻页时渲染骨架。
+  // 判定用 targetPage ≠ page（逻辑层已生效页）：刷新 / 换筛选时两者相等 → 走下方
+  // 2026-09-14 的「旧内容变淡」反馈（A′），两条通道互斥。
+  const isPaging = searchMode === 'smart' && logical.targetPage !== logical.page;
+
+  // 骨架渲染条件：
+  // ① 无内容可显示（首屏 / 换筛选清空）—— 2026-09-14 用户反馈「慢网叠字」的原始场景；
+  // ② 翻页飞行中（isPaging）—— 骨架与旧网格互斥渲染（下方网格门禁 = !showSkeleton），
+  //    不会叠字；骨架行数由 useFillRows 按可视高推导，落地时页面高度不跳。
   const showSkeleton = showResultsLoading &&
-    (searchMode === 'smart' ? logical.items.length === 0 : true);
+    (searchMode === 'smart' ? (logical.items.length === 0 || isPaging) : true);
 
   // ── 慢取页反馈（2026-09-14 用户拍板 A′）────────────────────────────
   // 骨架只覆盖「无内容可显示」；反过来「有旧内容顶着」的取页（翻页 / 下拉刷新 /
@@ -581,8 +615,10 @@ export default function BrowsePage() {
   // （.browse-results-body--pending）。
   // CMS 分支 showSkeleton ≡ showResultsLoading → 本标志恒 false，
   // 直链搜索的滚动追加（append 语义，旧结果本就不该变淡）不受影响。
+  // 翻页已由骨架接管（isPaging → showSkeleton），故本标志再排除 isPaging，
+  // 避免「骨架 + 旧内容变淡」两条反馈同帧叠加。
   const showLateFeedback = useDelayedFlag(
-    showResultsLoading && !showSkeleton,
+    showResultsLoading && !showSkeleton && !isPaging,
     PENDING_FEEDBACK_DELAY_MS,
   );
 
@@ -604,6 +640,13 @@ export default function BrowsePage() {
   // 终态 = 看过一拍 loading 后结束，或已有数据/错误，或直链模式（无词时无请求）。
   const [chromeSettled, setChromeSettled] = useState(false);
   const sawChromeLoading = useRef(false);
+  // 左栏「分类」行的 genre chips 来自异步接口（movieGenres/tvGenres）。
+  // 默认分类已锁定「电影」（getDefaultFilterValue / CATEGORY_CONFIG.movie，genresSource='movie'），
+  // 真实行 = 「全部」+ movieGenres 全量，骨架按 movieGenres 长度等量渲染；只有 genre 配置就绪后
+  // 才允许 chrome 终态，避免「骨架 N 枚 ⇄ 真实首帧 1 枚（genres 尚未落地）⇄ N 枚」的跳动。
+  // 未配置 Token 时 genres 永不拉取，不在此等待：发现数据落地或错误自行触发终态，此时
+  // 真实行也只有「全部」1 枚，与骨架（0 枚 genre）数量一致，不跳动。
+  const genresReady = hasToken ? movieGenres.length > 0 || tvGenres.length > 0 : true;
   useEffect(() => {
     if (chromeSettled) return;
     if (showResultsLoading) {
@@ -615,11 +658,23 @@ export default function BrowsePage() {
       smartHasData ||
       cmsHasData ||
       currentError ||
-      searchMode === 'cms'
+      searchMode === 'cms' ||
+      genresReady
     ) {
       setChromeSettled(true);
     }
-  }, [chromeSettled, showResultsLoading, smartHasData, cmsHasData, currentError, searchMode]);
+  }, [
+    chromeSettled,
+    showResultsLoading,
+    smartHasData,
+    cmsHasData,
+    currentError,
+    searchMode,
+    genresReady,
+    hasToken,
+    movieGenres.length,
+    tvGenres.length,
+  ]);
   // 有数据/错误时当帧换真（不等 effect），避免缓存命中或多一帧骨架闪烁
   const showChromeSkeleton =
     !chromeSettled && !smartHasData && !cmsHasData && !currentError;
@@ -777,7 +832,8 @@ export default function BrowsePage() {
                 </>
               ) : (
                 <>
-                  共 {(pinnedTotal || discoverPagination.totalResults).toLocaleString('zh-CN')} 条
+                  {/* 优先显示「实际可达条目」：与末页页数同源，二者不会互相矛盾 */}
+              共 {(pinnedReachable || pinnedTotal || discoverPagination.totalResults).toLocaleString('zh-CN')} 条
                 </>
               )}
             </span>

@@ -13,15 +13,14 @@
  */
 import type { CSSProperties } from 'react';
 import Skeleton from '@/components/common/Skeleton';
-import { CATEGORY_CONFIG } from './constants';
+import { useTMDBStore } from '@/stores';
+import { VISIBLE_CATEGORY_KEYS } from './constants';
 import { REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL } from '@/components/FilterBar/constants';
 import './BrowseChromeSkeleton.css';
 
-const TYPE_COUNT = Object.keys(CATEGORY_CONFIG).length;
+// 结果区头部类型行已下线「全部」→ 6 档（与 constants 单点同源）
+const TYPE_COUNT = VISIBLE_CATEGORY_KEYS.length;
 const SORT_COUNT = SORT_OPTIONS.length;
-/** 分类组占位数：真实 genre chips 由接口动态返回（以 2 字标签为主），
- *  骨架按 2 字档均一宽度近似（真实宽度 = 文本 2em + 左右 padding）。 */
-const GENRE_CHIPS = 6;
 /** 地区/年份组 <1024 移动档保留的占位数：真实标签超出此数的标 --fill，
  *  移动端不渲染（胶囊为整行大块，数量必须克制）、≥1024 复活。 */
 const MOBILE_CHIPS = 8;
@@ -58,6 +57,32 @@ function LabeledChipGroup({ labels }: { labels: string[] }) {
   );
 }
 
+/** 左栏「分类」行骨架灰块。
+ *  默认分类已锁定「电影」（2026-11-05 用户拍板）：CATEGORY_CONFIG.movie.genresSource = 'movie'，
+ *  defaultGenreIds 为空 → 真实 FilterBar 分类行 = 「全部」1 枚 + movieGenres 全量。
+ *  骨架按 store 同步渲染同数量、同 2 字宽度的灰块，genres 落地后与真实行严格等量，
+ *  消除「20 枚骨架 ⇄ 1 枚「全部」壳 ⇄ 20 枚真实」的首屏跳动；
+ *  genres 尚未落地时仅渲染「全部」，FILL_CHIPS 继续撑满组高度，不露底。
+ */
+function GenreChips() {
+  const movieGenreCount = useTMDBStore((s) => s.movieGenres.length);
+  return (
+    <>
+      <Skeleton key="chip-all" className="browse-chrome-skeleton__chip" style={chipStyle('全部')} />
+      {Array.from({ length: movieGenreCount }, (_, i) => (
+        <Skeleton
+          key={`chip-genre-${i}`}
+          className="browse-chrome-skeleton__chip"
+          style={chipStyle('分类')}
+        />
+      ))}
+      {Array.from({ length: FILL_CHIPS }, (_, i) => (
+        <Skeleton key={`fill-${i}`} className="browse-chrome-skeleton__chip browse-chrome-skeleton__chip--fill" />
+      ))}
+    </>
+  );
+}
+
 export function BrowseFilterChromeSkeleton() {
   return (
     <div
@@ -68,13 +93,14 @@ export function BrowseFilterChromeSkeleton() {
       <div className="filter-bar__row filter-bar__row--wrap">
         <span className="filter-bar__label filter-bar__label--as-chip">分类</span>
         <div className="filter-bar__chips-wrap">
-          {/* 分类 = genre chips 由接口动态返回，骨架按 2 字档均一宽度近似 */}
-          {Array.from({ length: GENRE_CHIPS + FILL_CHIPS }, (_, i) => (
-            <Skeleton
-              key={i}
-              className={`browse-chrome-skeleton__chip${i >= GENRE_CHIPS ? ' browse-chrome-skeleton__chip--fill' : ''}`}
-            />
-          ))}
+          {/*
+           * 默认分类已锁定「电影」（2026-11-05 用户拍板），CATEGORY_CONFIG.movie.genresSource = 'movie'，
+           * 且 defaultGenreIds 为空 → 左栏「分类」行 = 「全部」1 枚 + movieGenres 全量。
+           * 骨架按 store 同步渲染同数量同宽度的灰块，与真实 FilterBar 严格等量，
+           * 首屏落地时不再出现 20 枚骨架 ⇄ 1 枚「全部」壳 ⇄ 20 枚真实的跳动；
+           * genres 尚未落地时仅渲染「全部」，FILL_CHIPS 继续撑满组高度，不露底。
+           */}
+          <GenreChips />
         </div>
       </div>
       <div className="filter-bar__row filter-bar__row--scroll">
