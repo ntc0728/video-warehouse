@@ -820,8 +820,12 @@
     flex: 0 0 auto;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     /* 2026-09-12 行距回补：row-gap 由 --space-2xs(≈2px) 提到 --space-xs(≈4px)
-       （行距 22.2 → 24.2px）。列数已固定，column-gap 保持 2xs 不再影响列数。 */
-    gap: var(--space-xs) var(--space-2xs);
+       （行距 22.2 → 24.2px）。列数已固定。
+       2026-11-06 用户拍板「两列之间间距调大一点，先调到 --space-3xl」：
+       column-gap 由 --space-2xs(≈2px) 提到 --space-3xl(1440 档 ≈32–39px)。
+       ⚠️ 窄栏（--rail-w 1440 档仅 148px，减去两侧 --space-sm 与列间距后每列余量很小）
+          下 4 字标签可能挤压/换行，按用户「先调到」要求保留此档，等实机反馈再微调。 */
+    gap: var(--space-xs) var(--space-3xl);
     justify-items: stretch;
     align-content: start;
     /* label↔chips 间距（row 改 block 后原 gap 失效，补回 ≈3.9px） */
