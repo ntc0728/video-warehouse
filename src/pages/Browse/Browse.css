@@ -824,7 +824,7 @@
        2026-11-06 用户连续拍板：column-gap 由 --space-2xs(≈2px) → --space-3xl →
        --space-md → 最终定为 --space-xl(1440 档 ≈16–20px)：2026-11-07 用户拍板
        「选方案 A（每列格内居中）并把两列间距调大」。列宽随 G 收缩，配合下方 --full
-       的 margin-left 让四字独占行文字左缘与第一列两字对齐。 */
+       的 margin-left 让长标签文字左缘与两字 chip 对齐。长标签不再跨两列（见下方 --full）。 */
     gap: var(--space-xs) var(--space-xl);
     justify-items: stretch;
     align-content: start;
@@ -900,8 +900,8 @@
      justify-self:start + margin-left:X（X=(C−w₂)/2），其文字左缘 = X + sm：
        · 落第一列：= 第一列两字 chip 文字左缘 ✓
        · 落第二列：格子左缘 = C+G，文字左缘 = C+G+X+sm = 第二列两字 chip 文字左缘 ✓
-       · 独占整行（--full 同时命中）：整行左缘 = 0，文字左缘 = X+sm = 第一列两字 chip ✓
-     一个 X 值三种位置全对齐，故 --wide 与 --full 正交：--wide 管对齐、--full 管独占。
+       · 长标签（--full 同时命中）仍占单格：文字左缘 = X+sm，与同列两字 chip 对齐 ✓
+     一个 X 值三种位置全对齐；--wide 管对齐、--full 管「格内换行完整显示」。
      X 展开 = (rail-w − 6·sm − G − 4·字宽)/4（W=rail-w−2·sm、C=(W−G)/2、w₂=2·字宽+2·sm）。
      ⚠️ 2026-11-07 截图实锤：早先用 25% 百分比（假设 margin-left 的 % 基准 = grid 内容区宽）
         在真实浏览器未生效，四字仍贴左 → 弃用 %，改全 token 绝对长度 calc，解析无歧义。
@@ -920,12 +920,21 @@
     text-align: left;
   }
 
-  /* --full：独占整行（grid-column:1/-1）。与 --wide 正交，>=4 字且需独占时同时命中两条。
+  /* --full：长标签「独占一块」但**不再跨两列**（2026-11-07 用户拍板「保留独占但让右列补位」）。
+     物理约束：grid-column:1/-1 跨整行的那一行没有右格，右列必空（用户截图里
+     Sci-Fi & Fantasy / War & Politics / 动作冒险 独占行右侧全空即此故）。
+     改法：长标签占**自己那一格**、文字在格内换行完整显示（height:auto 撑高整行），
+     右列由后续 chip 正常流式补位 —— 右列不再空，长标签也不被截断。
      触发条件见 FilterBar.tsx chipCls：字宽 > 4（全视口）或 字宽 == 4 且视口 < 1980。
-     继承 --wide 的 margin-left 对齐，这里只补独占整行语义。 */
+     --wide 的 margin-left 左缘对齐仍生效（单格内对齐，与两字 chip 同基线）。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip--full {
-    grid-column: 1 / -1;
+    grid-column: auto;
+    height: auto;
+    min-height: calc(var(--text-sm) + var(--space-xs) * 2);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   /* 组标题（「电影」= label--as-chip，同时带 .filter-bar__chip 类）会被上方 chip 居中
