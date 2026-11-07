@@ -25,7 +25,7 @@ import type { FilterBarValue } from '@/components/FilterBar';
 import { useTMDBStore } from '@/stores';
 import { buildFilterSig } from '@/lib/filterSig';
 import { SORT_OPTIONS } from './constants';
-import { buildRegionOptions, REGION_OTHER_CODE } from '@/components/FilterBar/constants';
+
 import { FILTER_DEBOUNCE_MS } from './constants';
 import { parseFromUrl, serializeToUrl } from './urlState';
 
@@ -57,22 +57,12 @@ export function toStoreFilter(value: FilterBarValue) {
 }
 
 /**
- * 地区 code → TMDB `with_origin_country` 值。
- *
- * - 普通国家：直接下发 ISO 二字母码；
- * - **「其他」（OTHER）**：TMDB 没有 NOT IN 语义，只能取
- *   "TMDB 国家列表中不在候选表的剩余国家全集" 用逗号 OR 下发。
- *   这份清单由 `buildRegionOptions(store.countries)` 生成，这里直接读 store 计算
- *   （toStoreFilter 是纯函数、不持有 countries，故走单例读取）。
- * - 其余自造值（历史 URL 残留）：忽略 → null（等价「不按地区过滤」，不换来空结果）。
+ * 地区 code → TMDB `with_origin_country` 值（只接受 ISO 3166-1 二字母码）。
+ * 非 ISO 形态（历史 URL 残留的自造值）一律忽略 → null（等价「不按地区过滤」，
+ * 不会把无效值发给 TMDB 换来空结果）。
  */
 function toTmdbCountry(region: string | null): string | null {
   if (!region) return null;
-  if (region === REGION_OTHER_CODE) {
-    const opt = buildRegionOptions(useTMDBStore.getState().countries)
-      .find((o) => o.code === REGION_OTHER_CODE);
-    return opt?.tmdbCodes?.length ? opt.tmdbCodes.join(',') : null;
-  }
   return /^[A-Z]{2}$/.test(region) ? region : null;
 }
 

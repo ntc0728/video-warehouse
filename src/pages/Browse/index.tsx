@@ -13,7 +13,7 @@ import { Search, Loader2 } from 'lucide-react';
 import FilterBar, { type FilterBarValue, type FilterBarCategoryOption } from '@/components/FilterBar';
 import { Empty, BackToTopButton } from '@/components/common';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
-import { SORT_OPTIONS, buildRegionOptions, REGION_OTHER_CODE } from '@/components/FilterBar/constants';
+import { SORT_OPTIONS, buildRegionOptions } from '@/components/FilterBar/constants';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -215,12 +215,8 @@ export default function BrowsePage() {
       }
       if (f.region !== null) {
         if (!v.region) return false;
-        if (f.region === REGION_OTHER_CODE) {
-          if (Object.values(CMS_REGION_ALIASES).some((als) => als.some((a) => v.region!.includes(a)))) return false;
-        } else {
-          const aliases = CMS_REGION_ALIASES[f.region];
-          if (!aliases || !aliases.some((a) => v.region!.includes(a))) return false;
-        }
+        const aliases = CMS_REGION_ALIASES[f.region];
+        if (!aliases || !aliases.some((a) => v.region!.includes(a))) return false;
       }
       if (f.year !== null && v.year !== f.year) return false;
       if (f.olderThan2015 && (v.year === undefined || v.year >= 2015)) return false;

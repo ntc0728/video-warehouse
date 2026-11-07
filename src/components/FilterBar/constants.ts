@@ -28,12 +28,12 @@ export const MEDIA_OPTIONS: { label: string; value: 'all' | 'movie' | 'tv' }[] =
  *    但支持**逗号分隔多值（OR 语义）**；
  *  - 直链搜索（CMS）：`vod_area` 自由文本，用别名表匹配（见 `index.tsx CMS_REGION_ALIASES`）。
  *
- * 2026-11-07 定稿（用户要求「和年份一样：主流国家 + 其他」）：
+ * 2026-11-07 定稿：
  *  - 候选表 `REGION_CANDIDATES` 经 TMDB `/configuration/countries` 校验后逐个出现；
- *  - **「其他」= TMDB 国家列表里不在候选表的剩余国家全集**，用逗号 OR 下发。
- *    TMDB 没有 NOT IN 语义，这是唯一能表达「其他」的方式；
- *  - 删除「欧洲」聚合项：欧洲主要国家（法/德/意/西/俄/荷/瑞典/挪威/波兰）已单列，
- *    再挂一个聚合只会与单列项重复命中。
+ *  - **不设「欧洲」聚合**：欧洲主要国家（法/德/意/西/俄/荷/瑞典/挪威/波兰）已单列；
+ *  - **不设「其他」**：TMDB 侧只能枚举剩余 ~216 国做 OR（URL 长、语义绕），
+ *    CMS 侧 `vod_area` 自由文本下小国几乎不出现，投入产出比低；
+ *  - 智能检索与直链搜索共用同一份选项（同 `buildRegionOptions`）。
  */
 export interface RegionOption {
   label: string;
@@ -41,8 +41,6 @@ export interface RegionOption {
   code: string | null;
   /** TMDB 侧实际下发的国家码（多值 = OR）；缺省时直接用 code */
   tmdbCodes?: string[];
-  /** 「其他」标记：代表「不在候选表内的所有国家」，CMS 侧走排除法 */
-  isRest?: boolean;
 }
 
 /** 候选国家/地区（展示顺序 = 本表顺序）。全部须经 TMDB countries 校验后才生效。 */
@@ -73,40 +71,25 @@ const REGION_CANDIDATES: { code: string; label: string }[] = [
   { code: 'TR', label: '土耳其' },
 ];
 
-/** 「其他」的虚拟 code（非 ISO 国家码，仅作 URL/分发键） */
-export const REGION_OTHER_CODE = 'OTHER';
-
 /**
- * 用 TMDB `/configuration/countries` 的真实返回**校验**候选表，并追加「其他」。
+ * 用 TMDB `/configuration/countries` 的真实返回**校验**候选表，生成左栏地区选项。
  *
- * - 候选国家只有 TMDB 确实支持（`iso_3166_1` 存在）才出现 → 杜绝「选了没数据的地区」；
- * - **「其他」= 剩余国家全集**（`tmdbCodes` 逗号 OR）：TMDB 无 NOT IN 语义，
- *   只能反向枚举"除候选之外的所有国家"来表达它；
+ * - 只有 TMDB 确实支持（`iso_3166_1` 存在）的 code 才会出现 → 杜绝「选了没数据的地区」；
  * - countries 尚未拉取（首屏 / 未配 Token）时返回空数组 → 地区组只剩「全部」，
  *   不会闪出无效项。
+ *
+ * 2026-11-07：**不设「其他」**（用户拍板删除）。原因：
+ *   · TMDB 侧要表达「其他」只能枚举剩余 ~216 个国家做 OR，语义绕且 URL 长；
+ *   · CMS 侧 `vod_area` 是自由文本，小国根本不会出现，「其他」覆盖面极窄；
+ *   · 24 个主流国家已覆盖绝大多数影视内容，「其他」的筛选价值低于维护成本。
  */
 export function buildRegionOptions(countries: TMDBCountry[]): RegionOption[] {
   if (!countries.length) return [];
-  const all = countries.map((c) => c.iso_3166_1);
-  const valid = new Set(all);
+  const valid = new Set(countries.map((c) => c.iso_3166_1));
   const out: RegionOption[] = [];
-  const used = new Set<string>();
-
   for (const cand of REGION_CANDIDATES) {
     if (!valid.has(cand.code)) continue;
     out.push({ code: cand.code, label: cand.label });
-    used.add(cand.code);
-  }
-
-  // 剩余国家 → 「其他」（与年份的「其他」同构：主流在前，兜底在后）
-  const rest = all.filter((code) => !used.has(code)).sort();
-  if (rest.length > 0) {
-    out.push({
-      code: REGION_OTHER_CODE,
-      label: '其他',
-      tmdbCodes: rest,
-      isRest: true,
-    });
   }
   return out;
 }
