@@ -1554,16 +1554,35 @@
   }
 
   /* 文本列体固定在 info 内框高度（min-height:0 允许 flex 收缩，否则内容高会把 body
-     撑到超出 info 被 overflow:hidden 连 CTA 一起裁掉——展开简介后按钮不可见） */
+     撑到超出 info 被 overflow:hidden 连 CTA 一起裁掉——展开简介后按钮不可见）。
+     内容簇贴底（2026-11-08 用户定稿）：全部元素尽量靠近 CTA 按钮，空区上浮；
+     长简介向上抬升直至撑满（唯一可收缩项），仍有剩余则出「展开简介」 */
   html:not([data-device="app"]) .detail-hero-body {
+    justify-content: flex-end;
     min-height: 0;
   }
+  /* 固定元素不参与收缩（默认 shrink:1 会让标题/meta 被压扁），只有简介可收缩抬升 */
+  html:not([data-device="app"]) .detail-hero-body > * {
+    flex-shrink: 0;
+  }
+  /* topline 恒在顶部（2026-11-08 用户要求）：内容簇贴底但 kicker/官方页面行例外——
+     margin-bottom:auto 吸收全部剩余空间，把其余元素压向底部；
+     长简介撑满时簇整体抬升，topline 自然仍在顶 */
+  html:not([data-device="app"]) .detail-hero-topline {
+    margin-bottom: auto;
+  }
+  /* CTA 原以 margin-top:auto 钉底（内容顶堆叠时代的产物）——内容簇贴底后它会把
+     简介与按钮重新拉开死区，必须归零（间距由 body 的 gap 承担） */
+  html:not([data-device="app"]) .detail-hero-cta-zone {
+    margin-top: 0;
+  }
 
-  /* 简介区 = 文本列弹性区：占满 meta 与钉底 CTA 之间；展开后放不下 → 区内裁切。
+  /* 简介区 = 唯一可收缩项：短简介自然高贴住 meta 下方，长简介向上抬升
+     直至元素撑满 hero，超出部分裁切；展开后原地滚动（见 txt--open）。
      按钮挂简介区末尾（flex 不参与收缩）保证「收起」始终可见、不被文本推出裁切。 */
   html:not([data-device="app"]) .detail-hero-desc {
     display: flex;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     flex-direction: column;
     min-height: 0;
     overflow: hidden;

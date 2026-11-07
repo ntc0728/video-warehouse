@@ -46,11 +46,11 @@
     box-shadow: var(--shadow-card);
   }
 
-  /* 内容簇垂直居中（用户 2026-11-08：固定高度下灰块全挤在顶部不协调）。
-     覆盖真实类的钉底几何：__overview-list 不再拉伸、__btn-row 不再 margin-top:auto，
-     整簇由 body 的 justify-content:center 居中，与 bg 图主体的左中构图呼应 */
+  /* 内容簇贴底镜像真实页（2026-11-08：真实 hero 内容簇 flex-end 靠近 CTA，
+     空区上浮；骨架同步 flex-end，灰块簇不再垂直居中）。
+     覆盖真实类的钉底几何：__overview-list 不再拉伸、__btn-row 不再 margin-top:auto */
   html:not([data-device="app"]) .detail-skeleton__hero-info .detail-hero-body {
-    justify-content: center;
+    justify-content: flex-end;
   }
   html:not([data-device="app"]) .detail-skeleton__overview-list {
     flex: 0 0 auto;
