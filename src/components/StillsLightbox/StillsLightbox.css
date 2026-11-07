@@ -130,7 +130,10 @@
   display: flex;
   flex: 0 0 auto;
   justify-content: center;
-  align-items: center;
+  /* 底对齐（2026-11-08 用户定稿方案 A）：图底边恒贴 zoom 行上缘——
+     旧 center 使图在主图区内垂直居中，图越矮图底到 zoom 行空隙越大（悬空感）。
+     留白移到图上方（顶栏 padding 一侧），图 + zoom + 缩略图成组贴底 */
+  align-items: flex-end;
   width: 100%;
   max-width: 90vw;
   height: 100%;
@@ -254,10 +257,12 @@
 
 .stills-lightbox__thumb {
   flex: 0 0 auto;
+  /* 2026-11-08 用户反馈「太小」加大一档：宽 clamp 顶 72→104（封顶点 1333→1828），
+     高改 aspect-ratio 16/9 播高——与剧照原图同形状，去掉旧 3:2 盒子对 16:9 图
+     的竖向裁切（object-fit: cover 从「裁 15%」变零裁切） */
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  width: clamp(48px, 32px + 3vw, 72px);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  height: clamp(32px, 20.8px + 2vw, 48px);
+  width: clamp(56px, 40px + 3.5vw, 104px);
+  aspect-ratio: 16 / 9;
   padding: 0;
   border: 2px solid transparent;
   border-radius: var(--radius-sm);
@@ -300,9 +305,8 @@
 
 [data-device="tv"] .stills-lightbox__thumb {
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  width: clamp(64px, 48px + 2vw, 88px);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  height: clamp(40px, 28.8px + 1.5vw, 56px);
+  width: clamp(72px, 54px + 2vw, 112px);
+  /* 高由基类 aspect-ratio 16/9 播出（1080p ≈ 102×57） */
 }
 
 /* ── Mobile ────────────────────────────────────── */
