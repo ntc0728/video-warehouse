@@ -968,6 +968,10 @@
     .browse-page .browse-sort-bar .browse-search-tabs {
     display: flex;
     flex: 0 0 auto;
+    /* ⚠️ 必须显式 width:auto 覆盖基础规则的 width:100%：
+       基础那条是给 <2560「胶囊独占左列、pill flex:1 撑满」用的；
+       移进 sort-bar 后它会让容器吃满整行，把类型/排序挤出可见区（2026-11-07 用户反馈）。 */
+    width: auto;
     padding: 0;
   }
 
@@ -993,6 +997,12 @@
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-cms-head .browse-search-tabs-row {
     display: flex;
+    width: auto;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-cms-head .browse-search-tabs {
+    width: auto;
   }
 
   /* cms-head 内胶囊宽同样按内容（不继承左栏 --rail-w 定宽），与 smart 模式一致 */
