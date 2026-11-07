@@ -13,7 +13,7 @@ import { Search, Loader2 } from 'lucide-react';
 import FilterBar, { type FilterBarValue, type FilterBarCategoryOption } from '@/components/FilterBar';
 import { Empty, BackToTopButton } from '@/components/common';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
-import { SORT_OPTIONS, buildRegionOptions } from '@/components/FilterBar/constants';
+import { SORT_OPTIONS, buildRegionOptions, REGION_OTHER_CODE } from '@/components/FilterBar/constants';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -177,11 +177,24 @@ export default function BrowsePage() {
       US: ['美国'],
       KR: ['韩国'],
       JP: ['日本'],
-      EU: ['欧洲', '法国', '德国', '意大利', '西班牙', '英国'], // CMS 常无 EU 概念，兜进欧洲系
       IN: ['印度'],
       TH: ['泰国'],
-      DK: ['丹麦'],
       GB: ['英国'],
+      DK: ['丹麦'],
+      FR: ['法国'],
+      DE: ['德国'],
+      ES: ['西班牙'],
+      IT: ['意大利'],
+      RU: ['俄罗斯', '苏联'],
+      CA: ['加拿大'],
+      AU: ['澳大利亚', '澳洲'],
+      BR: ['巴西'],
+      MX: ['墨西哥'],
+      SE: ['瑞典'],
+      NO: ['挪威'],
+      NL: ['荷兰'],
+      PL: ['波兰'],
+      TR: ['土耳其'],
     }),
     [],
   );
@@ -202,7 +215,7 @@ export default function BrowsePage() {
       }
       if (f.region !== null) {
         if (!v.region) return false;
-        if (f.region === 'OTHER') {
+        if (f.region === REGION_OTHER_CODE) {
           if (Object.values(CMS_REGION_ALIASES).some((als) => als.some((a) => v.region!.includes(a)))) return false;
         } else {
           const aliases = CMS_REGION_ALIASES[f.region];
@@ -812,6 +825,9 @@ export default function BrowsePage() {
               onChange={handleCmsFilterChange}
               genres={[]}
               categoryOptions={CMS_CATEGORY_OPTIONS}
+              /* 地区选项与智能检索共用同一份（TMDB 国家校验 + 主流/其他），
+                 避免两种模式的地区 chip 集合不一致（2026-11-07 用户要求） */
+              regionOptions={regionOptions}
               hideFooter
             />
           )}
