@@ -954,18 +954,24 @@
       'filters results';
   }
 
-  /* 模式胶囊已在 sort-bar 内部：整行居中；胶囊按内容宽，不再吃 --rail-w */
+  /* 胶囊位置与模式无关（2026-11-07 用户要求「切直链搜索位置不要变」）：
+     smart 模式让胶囊**独占首行居中**，与 cms 模式（cms-head 内居中）位置一致。
+     做法：sort-bar 允许换行 + 胶囊 flex-basis:100% 独占第一行，
+     类型 / 分隔线 / 排序 / 计数自动落到第二行仍居中。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-sort-bar {
-    /* 首行跨两列：内部 flex 项（胶囊 / 类型 / 分隔线 / 排序 / 计数）整行居中 */
+    /* 首行跨两列：内部 flex 项整行居中 */
+    flex-wrap: wrap;
+    row-gap: var(--space-xs);
     justify-content: center;
     padding-left: 0;
   }
 
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-sort-bar .browse-search-tabs {
-    flex: 0 0 auto;
-    width: auto;
+    display: flex;
+    flex: 0 0 100%;
+    justify-content: center;
     padding: 0;
   }
 
@@ -992,6 +998,13 @@
     .browse-page .browse-cms-head .browse-search-tabs-row {
     display: flex;
     justify-content: center;
+  }
+
+  /* cms-head 内胶囊宽同样按内容（不继承左栏 --rail-w 定宽），与 smart 模式一致 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-cms-head .browse-search-tabs__pill {
+    flex: 0 0 auto;
+    width: auto;
   }
 
   /* 源状态行在容器内按内容宽排布（不拉满整行） */
