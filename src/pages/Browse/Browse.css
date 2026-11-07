@@ -954,24 +954,20 @@
       'filters results';
   }
 
-  /* 胶囊位置与模式无关（2026-11-07 用户要求「切直链搜索位置不要变」）：
-     smart 模式让胶囊**独占首行居中**，与 cms 模式（cms-head 内居中）位置一致。
-     做法：sort-bar 允许换行 + 胶囊 flex-basis:100% 独占第一行，
-     类型 / 分隔线 / 排序 / 计数自动落到第二行仍居中。 */
+  /* 首行：胶囊 + 类型 + 排序 + 计数**同一行**，沿用 sort-bar 原有排列（不额外居中）。
+     ⚠️ 禁止 flex-wrap / 胶囊 flex-basis:100% —— 会把胶囊挤成单独一行、类型排序掉到第二行。
+     ⚠️ 不写 justify-content —— 保持 sort-bar 原本的 flex-start 左起排列，
+        与下方结果区左边缘对齐（此前误加 center 导致整行居中，已移除）。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-sort-bar {
-    /* 首行跨两列：内部 flex 项整行居中 */
-    flex-wrap: wrap;
-    row-gap: var(--space-xs);
-    justify-content: center;
+    flex-wrap: nowrap;
     padding-left: 0;
   }
 
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-sort-bar .browse-search-tabs {
     display: flex;
-    flex: 0 0 100%;
-    justify-content: center;
+    flex: 0 0 auto;
     padding: 0;
   }
 
@@ -997,7 +993,6 @@
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-cms-head .browse-search-tabs-row {
     display: flex;
-    justify-content: center;
   }
 
   /* cms-head 内胶囊宽同样按内容（不继承左栏 --rail-w 定宽），与 smart 模式一致 */
@@ -1010,7 +1005,7 @@
   /* 源状态行在容器内按内容宽排布（不拉满整行） */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-cms-head .browse-source-status-row {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   /* 胶囊宽度略放大（原 auto 只贴文字，两侧过挤）+ 内部字号收一档。
