@@ -227,16 +227,46 @@ export function buildOriginalImageUrl(path: string | null): string | null {
 // 类型
 // ============================================================
 
-/** 获取电影类型列表 */
-export async function fetchMovieGenres(language?: string): Promise<TMDBGenre[]> {
-  const data = await fetchTMDB<TMDBGenresResponse>('/genre/movie/list', language ? { language } : {});
-  return data.genres;
+/**
+ * TMDB genre 中文别名表（按 id，2026-11-07 用户拍板）。
+ * TMDB zh-CN 的 /genre/{movie,tv}/list 仍会返回部分**未汉化英文名**
+ * （尤以 TV 表含 & 的复合名为甚：Sci-Fi & Fantasy / War & Politics / Action & Adventure），
+ * 这些名字字宽 7~8，在两列筛选栏里必然换行/独占，观感割裂。
+ * 别名只覆盖「TMDB 返回英文名」的情况——若某语言已返回中文，normalizeGenreName 原样保留。
+ * 依据：TMDB 官方 TV genre id↔name 全表（16 项），按 id 精确映射，不按字符串猜。
+ */
+const GENRE_NAME_ZH: Record<number, string> = {
+  28: '动作', 12: '冒险', 16: '动画', 35: '喜剧', 80: '犯罪', 99: '纪录片',
+  18: '剧情', 10751: '家庭', 14: '奇幻', 36: '历史', 27: '恐怖', 10402: '音乐',
+  9648: '悬疑', 10749: '爱情', 878: '科幻', 10770: '电视电影', 53: '惊悚',
+  10752: '战争', 37: '西部',
+  // TV 专属 / 与电影表重名但英文更常见的
+  10759: '动作冒险', 10762: '儿童', 10763: '新闻', 10764: '真人秀',
+  10765: '科幻奇幻', 10766: '肥皂剧', 10767: '脱口秀', 10768: '战争政治',
+};
+
+/**
+ * 归一化 genre 显示名：TMDB 返回非中文（含 ASCII 字母）时，按 id 套中文别名。
+ * 已是中文（如 zh-CN 正常返回的「动画」「喜剧」）原样保留，避免覆盖官方优质翻译。
+ */
+function normalizeGenreName(g: TMDBGenre): TMDBGenre {
+  const hasLatin = /[A-Za-z]/.test(g.name);
+  if (hasLatin && GENRE_NAME_ZH[g.id]) {
+    return { ...g, name: GENRE_NAME_ZH[g.id] };
+  }
+  return g;
 }
 
-/** 获取电视剧类型列表 */
+/** 获取电影类型列表（英文名按 id 归一化为中文别名） */
+export async function fetchMovieGenres(language?: string): Promise<TMDBGenre[]> {
+  const data = await fetchTMDB<TMDBGenresResponse>('/genre/movie/list', language ? { language } : {});
+  return data.genres.map(normalizeGenreName);
+}
+
+/** 获取电视剧类型列表（英文名按 id 归一化为中文别名） */
 export async function fetchTVGenres(language?: string): Promise<TMDBGenre[]> {
   const data = await fetchTMDB<TMDBGenresResponse>('/genre/tv/list', language ? { language } : {});
-  return data.genres;
+  return data.genres.map(normalizeGenreName);
 }
 
 // ============================================================

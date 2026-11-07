@@ -11,33 +11,19 @@
  * 所有筛选 tab 均全展开（不限行、无折叠 / 「更多」按钮）
  */
 import { useCallback, useMemo } from 'react';
-import { useIsMobile, useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 import type { TMDBGenre } from '@/types/tmdb';
 import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type FilterBarValue, type FilterBarCategoryOption } from './constants';
 import './FilterBar.css';
 
 export type { FilterBarValue } from './constants';
 
-// ── 长文本 chip 分类（2026-11-07 用户定稿）─────────────────────────────
-//    CJK 记 1 字宽、ASCII 记 0.5。两个字宽维度独立：
-//      · --wide：字宽 >= 4 一律「单独处理」→ 文字左缘与「居中两字 chip」对齐
-//                （CSS 用 margin-left 补回两字 chip 的居中缩进 X，见 Browse.css）
-//      · --full：独占整行（grid-column:1/-1）。触发 = 字宽 > 4（所有视口）
-//                或 字宽 == 4 且视口 < 1980（列宽不足才需独占）；
-//                字宽 == 4 且视口 >= 1980 仅带 --wide、回归两列（1980 列宽≈82px > 四字色块 66px）。
-//      · 字宽 < 4：普通两列 chip，居中显示。
-//    ⚠️ --wide / --full 的 CSS 只在 ≥1024 桌面侧栏档生效；本判定对所有档都跑，
-//       但移动/弹窗档不渲染两列 grid，多打类无视觉副作用。
-const labelWidth = (s: string): number =>
-  [...s].reduce((w, ch) => w + (/[\u2E80-\u9FFF\uF900-\uFFFD]/.test(ch) ? 1 : 0.5), 0);
-
-/** @param wideViewport 视口 >= 1980（四字列宽足够，不独占整行） */
-const chipCls = (label: string, active: boolean, wideViewport: boolean): string => {
-  const w = labelWidth(label);
-  const wide = w >= 4;
-  const full = w > 4 || (wide && !wideViewport);
-  return `filter-bar__chip${active ? ' filter-bar__chip--active' : ''}${wide ? ' filter-bar__chip--wide' : ''}${full ? ' filter-bar__chip--full' : ''}`;
-};
+// ── chip 类名（2026-11-07 简化）──────────────────────────────────────
+//   列数由 CSS auto-fill 按可用宽度决定、chip 统一贴左（宽度贴合文字），
+//   因此不再需要按字宽打 --wide / --full 做「独占整行 / 左缘补偿」——
+//   四字与两字天然同一条左基线，长标签也不必单独换行处理。
+const chipCls = (active: boolean): string =>
+  `filter-bar__chip${active ? ' filter-bar__chip--active' : ''}`;
 
 // ── FilterBar Props ───────────────────────────────────
 
@@ -88,8 +74,6 @@ export default function FilterBar({
   showGenreRowShell = false,
 }: FilterBarProps) {
   const isMobile = useIsMobile();
-  // ≥1980 视口：4 字标签列宽足够，不独占整行（仍带 --wide 做文字左缘对齐）
-  const wideViewport = useMediaQuery('(min-width: 1980px)');
 
   // 过滤掉分类自身默认的 genre（仍在 value.genreIds 中参与 API）
   const visibleGenres = useMemo(
@@ -158,7 +142,7 @@ export default function FilterBar({
             {categoryOptions.map((o) => (
               <button
                 key={o.key}
-                className={chipCls(o.label, value.category === o.key, wideViewport)}
+                className={chipCls(value.category === o.key)}
                 onClick={() => onChange({ ...value, category: o.key, mediaType: o.mediaType, genreIds: o.genreIds })}
               >
                 {o.label}
@@ -173,7 +157,7 @@ export default function FilterBar({
             {MEDIA_OPTIONS.map((m) => (
               <button
                 key={m.value}
-                className={chipCls(m.label, value.mediaType === m.value, wideViewport)}
+                className={chipCls(value.mediaType === m.value)}
                 onClick={() => selectMediaType(m.value)}
               >
                 {m.label}
@@ -201,7 +185,7 @@ export default function FilterBar({
             {visibleGenres.map((g) => (
               <button
                 key={g.id}
-                className={chipCls(g.name, value.genreIds.includes(g.id), wideViewport)}
+                className={chipCls(value.genreIds.includes(g.id))}
                 onClick={() => selectGenre(g.id)}
               >
                 {g.name}
@@ -228,7 +212,7 @@ export default function FilterBar({
             {REGION_OPTIONS.map((r) => (
               <button
                 key={r.code ?? 'all'}
-                className={chipCls(r.label, value.region === r.code, wideViewport)}
+                className={chipCls(value.region === r.code)}
                 onClick={() => update({ region: r.code })}
               >
                 {r.label}
@@ -254,7 +238,7 @@ export default function FilterBar({
           {YEAR_OPTIONS.map((y) => (
             <button
               key={y.value}
-              className={chipCls(y.label, value.year === y.value && !value.olderThan2015, wideViewport)}
+              className={chipCls(value.year === y.value && !value.olderThan2015)}
               onClick={() => update({ year: y.value, olderThan2015: false })}
             >
               {y.label}
@@ -262,7 +246,7 @@ export default function FilterBar({
           ))}
           <button
             type="button"
-            className={chipCls(YEAR_OLDER_LABEL, value.olderThan2015, wideViewport)}
+            className={chipCls(value.olderThan2015)}
             onClick={() => update({ year: null, olderThan2015: true })}
           >
             {YEAR_OLDER_LABEL}

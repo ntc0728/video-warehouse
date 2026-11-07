@@ -753,19 +753,12 @@
     .browse-page .filter-bar {
     position: sticky;
     top: 0;
-    /* 2026-11-05 用户反馈「≥2560 时左栏下方还有很大空余」：
-       左栏高此前只随内容自然高（三组 chips = 902px @2560），而可视高 1311px
-       → 下方空 409px，且右边界线长在 border-right 上，到 1031px（栏底）就断。
-       修法：min-height 撑到「可视高」，用 min(视口高, 100%) 而不是硬算
-       calc(100dvh - header - 首行高) ——
-         · min() 的 100% 解析为所在 grid 区（row2）高，短页（结果不足一页、
-           页面高 = 视口高）时取 100% 正好落到视口底，不会像纯 100dvh 那样
-           凭空多出 55px 溢出并拉出滚动条（实测 scrollH 1367 = clientH 1367）；
-         · 长页取 100dvh - header，滚动后 sticky 贴 header 下沿时盒底正好
-           落在视口底（实测 railBottom 1440）。
-       不写 align-self:stretch —— 那会让盒高 = 整列（1985px @2560），
-       短页同样溢出；sticky 常驻语义保持不变（本块其余声明不动）。 */
-    min-height: min(calc(100dvh - var(--header-height)), 100%);
+    /* 2026-11-07 用户拍板：左栏底部不要留大量空白。
+       旧实现用 min-height: min(calc(100dvh - header), 100%) 把左栏强行撑到「可视高」，
+       目的是让 border-right 分割线通到底；代价是内容短时（如两列只排 8 行）栏底
+       留出大片空白，观感空荡。
+       现改回「高度 = 内容自然高」：栏底即组尾，无空白；分割线随内容高度结束
+       （用户优先消除空白，接受线不拉满）。sticky 常驻语义不变。 */
     overflow: visible;
   }
 
@@ -807,18 +800,22 @@
     font-weight: 500;
   }
 
-  /* 侧栏内禁横向滚动 → 固定 2 列（2026-09-14 用户拍板，再度取代 2026-09-10 B+C 的
-     auto-fill 自适应列数）：auto-fill 在大视口下随 --rail-w 增宽自动多排列
-     （1920 档 3 列、2560 档 4 列），用户要求任何视口下恒为两列。
-     长词仍由 FilterBar 打 --full 独占整行。同一规则同时作用于
-     chips-scroll（分类/类型/地区）与 chips-wrap（年份）。 */
+  /* chips 列数按「可用宽度」自适应（2026-11-07 用户拍板：不要太早分两列）：
+       · 之前写死 repeat(2,1fr)：1440 档 rail 内宽仅 134px → 每列 57px，而四字 chip
+         需 66px → 必然溢出/挤压；且窄栏两列本身拥挤。
+       · 改 repeat(auto-fill, minmax(--chip-col-min, 1fr))：列宽不足一个 chip 时只排
+         1 列，rail 够宽（≥~1900 视口）才自然变 2 列，不再「太早」硬分。
+       · --chip-col-min = 4 字 chip 宽（字宽×4 + padding×3），保证最长的中文 chip
+         在单列内完整单行显示。
+     同一规则作用于四组：chips-scroll（分类/类型/地区）与 chips-wrap（年份）。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-scroll,
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-wrap {
+    --chip-col-min: calc(var(--text-sm) * 4 + var(--space-sm) * 3);
     display: grid;
     flex: 0 0 auto;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(var(--chip-col-min), 1fr));
     /* 2026-09-12 行距回补：row-gap 由 --space-2xs(≈2px) 提到 --space-xs(≈4px)
        （行距 22.2 → 24.2px）。列数已固定。
        2026-11-06 用户连续拍板：column-gap 由 --space-2xs(≈2px) → --space-3xl →
@@ -851,7 +848,7 @@
     .filter-bar .filter-bar__chip {
     display: flex;
     justify-content: flex-start;
-    justify-self: center; /* 方案A：每列格内居中 */
+    justify-self: start; /* 统一贴格左缘：所有 chip 左缘成一条线，选中态保持文字宽胶囊 */
     align-items: center;
     width: auto;
     /* ⚠️ 全局 border-box（index.css:255）→ padding 已含在 height 内，
@@ -894,48 +891,15 @@
     box-shadow: none;
   }
 
-  /* 四字及以上 chip（--wide）单独处理：文字左缘与「格内居中的两字 chip」对齐。
-     2026-11-07 用户定稿：只要字宽 >= 4 就走本规则，不论是否独占整行、不论落在第几列。
-     几何：方案 A 下两字 chip 格内居中，文字左缘 = (C − w₂)/2 + sm。给长 chip 设
-     justify-self:start + margin-left:X（X=(C−w₂)/2），其文字左缘 = X + sm：
-       · 落第一列：= 第一列两字 chip 文字左缘 ✓
-       · 落第二列：格子左缘 = C+G，文字左缘 = C+G+X+sm = 第二列两字 chip 文字左缘 ✓
-       · 长标签（--full 同时命中）仍占单格：文字左缘 = X+sm，与同列两字 chip 对齐 ✓
-     一个 X 值三种位置全对齐；--wide 管对齐、--full 管「格内换行完整显示」。
-     X 展开 = (rail-w − 6·sm − G − 4·字宽)/4（W=rail-w−2·sm、C=(W−G)/2、w₂=2·字宽+2·sm）。
-     ⚠️ 2026-11-07 截图实锤：早先用 25% 百分比（假设 margin-left 的 % 基准 = grid 内容区宽）
-        在真实浏览器未生效，四字仍贴左 → 弃用 %，改全 token 绝对长度 calc，解析无歧义。
-        1440 实算 X=(148−42−19.667−52)/4=8.58px = 两字 chip 居中缩进。
-     ⚠️ margin-left 禁裸 px（.stylelintrc.json），全用 var() 与无单位数字；max(0,…) 兜底负值。
-     ⚠️ 特异性与基础 .filter-bar .filter-bar__chip 持平 (0,4,1)，靠书写顺序取胜；
-        切勿给基础规则加 :not(...) 抬特异性（会压过本规则，连续返工的同型坑）。 */
-  html:not([data-device="app"]):not([data-device="tv"])
-    .filter-bar .filter-bar__chip--wide {
-    justify-content: flex-start;
-    justify-self: start;
-    margin-left: max(
-      0,
-      calc((var(--rail-w) - 6 * var(--space-sm) - var(--space-xl) - 4 * var(--text-sm)) / 4)
-    );
-    text-align: left;
-  }
+  /* 2026-11-07：chip 已统一 justify-self:start 贴格左缘，四字与两字天然同一条左基线，
+     原先为「补偿格内居中缩进」而写的 --wide margin-left 计算（含 rail-w 反推）整体删除，
+     不再需要该补偿，也不再依赖 --rail-w 与列宽的关系。 */
 
-  /* --full：长标签「独占一块」但**不再跨两列**（2026-11-07 用户拍板「保留独占但让右列补位」）。
-     物理约束：grid-column:1/-1 跨整行的那一行没有右格，右列必空（用户截图里
-     Sci-Fi & Fantasy / War & Politics / 动作冒险 独占行右侧全空即此故）。
-     改法：长标签占**自己那一格**、文字在格内换行完整显示（height:auto 撑高整行），
-     右列由后续 chip 正常流式补位 —— 右列不再空，长标签也不被截断。
-     触发条件见 FilterBar.tsx chipCls：字宽 > 4（全视口）或 字宽 == 4 且视口 < 1980。
-     --wide 的 margin-left 左缘对齐仍生效（单格内对齐，与两字 chip 同基线）。 */
-  html:not([data-device="app"]):not([data-device="tv"])
-    .filter-bar .filter-bar__chip--full {
-    grid-column: auto;
-    height: auto;
-    min-height: calc(var(--text-sm) + var(--space-xs) * 2);
-    line-height: 1.2;
-    overflow-wrap: anywhere;
-    white-space: normal;
-  }
+
+  /* 2026-11-07：--full 的「独占/换行/nowrap」规则整体删除 —— 列数现在由 auto-fill 决定
+     且 chip 统一贴左（宽度贴合文字），基础 .filter-bar__chip 本就 white-space:nowrap，
+     长标签单行完整显示不再需要单独覆盖。 */
+
 
   /* 组标题（「电影」= label--as-chip，同时带 .filter-bar__chip 类）会被上方 chip 居中
      规则误伤：display:flex + width:auto 撑满整行 + justify-content:center 把文字推到中间
@@ -948,6 +912,7 @@
     text-align: left;
   }
 }
+
 
 /* ── 右上角总数加载态 + 手动跳页（2026-09-12 用户反馈）───────────── */
 
