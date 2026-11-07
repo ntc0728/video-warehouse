@@ -11,6 +11,11 @@
  *          不使用固定 waitForTimeout 睡眠；轮询 50ms 起步，条件成立立即返回。
  */
 import { test, expect } from './fixtures/mock-tmdb';
+import { MOVIE_DETAIL } from './fixtures/tmdb-mock-data';
+
+// 超长简介（压测 hero 简介弹性区折叠）
+const LONG_OVERVIEW_550 = ('这是一段用于压测详情页简介高度的中文文本，描述一部虚构影片的漫长故事梗概，' +
+  '包含多段情节推进与人物关系描写，目的是让展开后的简介行数远超 hero 可容纳的范围。').repeat(28);
 
 // 使用一个已知存在的 TMDB 电影 ID 进行测试
 const TEST_MOVIE_ID = 'tmdb-movie-550'; // 《搏击俱乐部》
@@ -519,5 +524,63 @@ test.describe('3.11 剧照灯箱', () => {
     // 点击百分比复位
     await zoomValue.click();
     await expect(zoomValue).toHaveText('100%', { timeout: 10000 });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 3.12 Hero 简介按可用空间折叠（fill，2026-11-08）
+// ═══════════════════════════════════════════════════════════════
+
+test.describe('3.12 Hero 简介折叠', () => {
+  test('DETAIL-092: 简介填满弹性区，超空间才出展开按钮', async ({ page }) => {
+    // 550 详情换成超长简介
+    await page.route('**/movie/550?*', async (route) => {
+      const body = { ...MOVIE_DETAIL, overview: LONG_OVERVIEW_550 };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/detail/tmdb-movie-550', { waitUntil: 'domcontentloaded' });
+
+    const desc = page.locator('.detail-hero-desc');
+    await expect(desc).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.detail-hero-cta-zone')).toBeVisible({ timeout: 10000 });
+
+    const geo = await page.evaluate(() => {
+      const descEl = document.querySelector<HTMLElement>('.detail-hero-desc')!;
+      const txt = descEl.querySelector<HTMLElement>('.detail-collapse-txt')!;
+      const cta = document.querySelector<HTMLElement>('.detail-hero-cta-zone')!;
+      return {
+        txtH: Math.round(txt.getBoundingClientRect().height),
+        // 文本区底缘到 CTA 区顶缘的「死区」高度
+        deadGap: Math.round(cta.getBoundingClientRect().top - txt.getBoundingClientRect().bottom),
+        hasBtn: !!descEl.querySelector('.detail-collapse-btn'),
+        clamp: getComputedStyle(txt).webkitLineClamp,
+      };
+    });
+    // 卸 clamp（fill）+ flex 收缩填满弹性区：死区 < 40px（旧 3 行固定时约 200px）
+    expect(geo.clamp).toBe('none');
+    expect(geo.hasBtn).toBe(true);
+    expect(geo.deadGap).toBeLessThan(40);
+
+    // 展开态：原地滚动
+    await page.locator('.detail-hero-desc .detail-collapse-btn').click();
+    await expect(page.locator('.detail-hero-desc .detail-collapse-txt--open')).toBeVisible({ timeout: 10000 });
+    const overflowY = await page.evaluate(
+      () => getComputedStyle(document.querySelector<HTMLElement>('.detail-collapse-txt--open')!).overflowY,
+    );
+    expect(overflowY).toBe('auto');
+  });
+
+  test('DETAIL-092b: 短简介不出现展开按钮', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/detail/tmdb-movie-550', { waitUntil: 'domcontentloaded' });
+    const desc = page.locator('.detail-hero-desc');
+    await expect(desc).toBeVisible({ timeout: 10000 });
+    // mock 默认简介 ~2 行，弹性区可容 6+ 行 → 无按钮、无死区
+    expect(await desc.locator('.detail-collapse-btn').count()).toBe(0);
   });
 });

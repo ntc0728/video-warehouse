@@ -1575,10 +1575,23 @@
     min-height: 0;
   }
   html:not([data-device="app"]) .detail-hero-desc .detail-collapse-txt {
-    /* 收起态 = 3 行自然高（按钮贴文本下缘）；展开态 = 内容撑满 basis 后被压回
+    /* 收起态 = 弹性收缩填满可用空间（按钮贴文本下缘）；展开态 = 内容撑满 basis 后被压回
        剩余空间（min-height:0 允许 flex 收缩，overflow:hidden 由基类 clamp 规则提供） */
     flex: 0 1 auto;
     min-height: 0;
+  }
+
+  /* fill 变体（2026-11-08）：折叠行数按可用空间决定，不再写死 3 行——
+     卸掉 clamp 后 txt 是 flex 收缩项，几行由空间决定，文本超空间才出「展开」。
+     仅 ≥768 固定高度弹性区；<768 / app 无弹性区，保持 3 行 clamp */
+  html:not([data-device="app"]) .detail-hero-desc .detail-collapse-txt--fill {
+    -webkit-line-clamp: unset;
+  }
+
+  /* 展开态原地滚动：超长简介在弹性区内滚看，收起按钮（flex 尾随）恒可见不被裁 */
+  html:not([data-device="app"]) .detail-hero-desc .detail-collapse-txt--open {
+    overflow-y: auto;
+    scrollbar-width: thin;
   }
 }
 

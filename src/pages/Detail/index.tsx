@@ -837,10 +837,11 @@ export default function DetailPage() {
                 <span className="detail-hero-meta-item">🔥 {popularity.toFixed(0)}</span>
               )}
             </div>
-            {/* 简介：3 行折叠 + 展开（与资料表长字段同一交互语言） */}
+            {/* 简介：按可用空间折叠（fill，2026-11-08）——固定高度 hero 下方不留死区，
+                文本超过可用空间才出「展开简介」；<768 / app 仍 3 行折叠（CSS 作用域） */}
             {overview && (
               <p className="detail-hero-desc">
-                <CollapsibleValue lines={3} expandLabel="展开简介">{overview}</CollapsibleValue>
+                <CollapsibleValue lines={3} expandLabel="展开简介" fill>{overview}</CollapsibleValue>
               </p>
             )}
             {/* CTA 与观看进度：钉文本区底部（margin-top:auto），与海报下沿齐平 */}
@@ -1414,7 +1415,12 @@ function formatProgressTime(seconds: number): string {
 // ⚠️ 两处实测坑（Demo 2026-10-10 验证）：① 不能用 scrollHeight 判溢出——Chromium 下
 // -webkit-line-clamp 的 scrollHeight 可能等于 clientHeight（漏检）；② 测量克隆节点必须挂在
 // 原父节点内——挂 document.body 会丢元素自身字号，自然高算大→假阳性。
-function CollapsibleValue({ lines, expandLabel = '展开', children }: { lines: number; expandLabel?: string; children?: ReactNode }) {
+// fill 变体（2026-11-08，hero 简介）：折叠行数不再是常量——txt 卸掉 clamp 后是
+// flex:0 1 auto 弹性项，flex 收缩天然「按可用空间截断」（几行由空间决定）；
+// 溢出检测仍成立（渲染高=被收缩的可用空间 vs 克隆自然高），文本超过空间才出按钮。
+// 展开态在 hero 作用域加 overflow-y:auto（Detail.css），超长简介原地滚动、收起恒可见。
+// <768 / app 端无固定高度弹性区，--fill 不卸 clamp（CSS 作用域控制），仍 3 行折叠。
+function CollapsibleValue({ lines, expandLabel = '展开', fill = false, children }: { lines: number; expandLabel?: string; fill?: boolean; children?: ReactNode }) {
   const txtRef = useRef<HTMLSpanElement>(null);
   const [overflow, setOverflow] = useState(false);
   const [open, setOpen] = useState(false);
@@ -1441,7 +1447,7 @@ function CollapsibleValue({ lines, expandLabel = '展开', children }: { lines: 
     <span className="detail-collapse">
       <span
         ref={txtRef}
-        className={`detail-collapse-txt${open ? ' detail-collapse-txt--open' : ''}`}
+        className={`detail-collapse-txt${fill ? ' detail-collapse-txt--fill' : ''}${open ? ' detail-collapse-txt--open' : ''}`}
         style={{ '--collapse-lines': lines } as CSSProperties}
       >
         {children}
