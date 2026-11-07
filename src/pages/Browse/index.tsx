@@ -767,14 +767,18 @@ export default function BrowsePage() {
             hideFooter: true,
           }}
           allGenres={[...movieGenres, ...tvGenres]}
+          movieGenres={movieGenres}
+          tvGenres={tvGenres}
         />
       )}
 
       {/* Card 1：搜索区域（桌面端；移动端由命令栏接管） */}
       {!isPhone && (
         <div className="browse-card--search">
-          {/* <2560：模式胶囊占首行左列；≥2560 已移入 sort-bar 行 */}
-          {!wideViewport && searchMode === 'smart' && tabsBlock}
+          {/* <2560：模式胶囊占首行左列 —— smart / cms 两种模式都渲染在这里，
+              保证切换直链搜索时胶囊位置与样式完全不变（2026-11-07 用户要求）。
+              ≥2560 由 sort-bar（smart）/ cms-head（cms）承载。 */}
+          {!wideViewport && tabsBlock}
           {/* 首屏 chrome 骨架：接口未响应前左栏不渲染真实筛选项 */}
           {showChromeSkeleton && <BrowseFilterChromeSkeleton category={filterValue.category} />}
           {/* 智能检索模式：FilterBar（类型行已移至结果区头部，footer 移到 Card 2） */}
@@ -872,7 +876,11 @@ export default function BrowsePage() {
             任意视口都保留胶囊，才能从直链搜索切回智能检索。 */}
         {searchMode === 'cms' && (
           <div className="browse-cms-head">
-            <div className="browse-search-tabs-row">{tabsBlock}</div>
+            {/* 仅桌面 ≥2560 需要：<2560 胶囊已在 Card1 原位；移动端由命令栏的
+                模式切换承载（否则会与命令栏重复出现两组胶囊） */}
+            {!isPhone && wideViewport && (
+              <div className="browse-search-tabs-row">{tabsBlock}</div>
+            )}
             {/* 源状态行：左侧结果数 + 右侧源状态（搜索中折叠 pill / 结束逐源 badge） */}
             <div
               className={[

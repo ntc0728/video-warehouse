@@ -4,6 +4,8 @@ import type { FilterBarProps, FilterBarValue } from '@/components/FilterBar/Filt
 import { REGION_OPTIONS, YEAR_OLDER_LABEL } from '@/components/FilterBar/constants'
 import FilterBar from '@/components/FilterBar/FilterBar'
 import Drawer from '@/components/ui/Drawer'
+import type { TMDBGenre } from '@/types/tmdb'
+import { CATEGORY_CONFIG, CATEGORY_LABELS } from './constants'
 
 type SearchMode = 'smart' | 'cms'
 
@@ -12,6 +14,9 @@ interface BrowseMobileBarProps {
   onModeChange: (mode: SearchMode) => void
   filterBarProps: FilterBarProps
   allGenres: { id: number; name: string }[]
+  /** 全量 genre（面板内切换分类时按 draft.category 重新解析，见下方 panelCategory） */
+  movieGenres: TMDBGenre[]
+  tvGenres: TMDBGenre[]
 }
 
 function genreName(id: number, all: { id: number; name: string }[]): string {
@@ -26,6 +31,8 @@ export default function BrowseMobileBar({
   onModeChange,
   filterBarProps,
   allGenres,
+  movieGenres,
+  tvGenres,
 }: BrowseMobileBarProps) {
   const { value, onChange, excludedGenreIds = [] } = filterBarProps
   const [open, setOpen] = useState(false)
@@ -37,11 +44,34 @@ export default function BrowseMobileBar({
     if (open) setDraft(value)
   }, [open, value])
 
+  // ── 面板内按「草稿分类」解析筛选依赖 ──────────────────────────────────
+  // ⚠️ filterBarProps 里的 genres / categoryLabel / excludedGenreIds 都基于父级
+  //    filterValue.category（面板外实际生效的分类）；而面板内改的是本地 draft。
+  //    若直接用父级值，面板里切换类型后「分类标题 + 下方 genre 列表」不会跟着变
+  //    （2026-11-07 用户反馈）。故这里按 draft.category 重新解析一套，覆盖传入。
+  const panelCfg = CATEGORY_CONFIG[draft.category]
+  const panelGenres = (() => {
+    const drop = new Set(panelCfg.genreDenylist ?? [])
+    if (panelCfg.genresSource === 'movie') return movieGenres.filter((g) => !drop.has(g.id))
+    if (panelCfg.genresSource === 'tv') return tvGenres.filter((g) => !drop.has(g.id))
+    const seen = new Set<string>()
+    const merged: TMDBGenre[] = []
+    for (const g of [...movieGenres, ...tvGenres]) {
+      if (drop.has(g.id)) continue
+      const key = g.name.toLowerCase()
+      if (!seen.has(key)) { seen.add(key); merged.push(g) }
+    }
+    return merged
+  })()
+  const panelExcludedGenreIds = panelCfg.defaultGenreIds
+  const panelReplaceBaseline = panelCfg.genreMatch === 'or'
+  const panelCategoryLabel = CATEGORY_LABELS[draft.category]
+
   const visibleGenres = value.genreIds.filter((id) => !excludedGenreIds.includes(id))
 
   const defaultDraft = (base: FilterBarValue): FilterBarValue => ({
     ...base,
-    mediaType: 'all',
+    // mediaType 由 category 决定（「全部」已下线），重置时不再回写 'all'
     genreIds: [...excludedGenreIds],
     region: null,
     year: null,
@@ -62,20 +92,12 @@ export default function BrowseMobileBar({
   const patchValue = (patch: Partial<FilterBarValue>) => onChange({ ...value, ...patch })
 
   const activeCount =
-    (value.mediaType !== 'all' ? 1 : 0) +
     visibleGenres.length +
     (value.region ? 1 : 0) +
     (value.year || value.olderThan2015 ? 1 : 0)
 
-  // 已选轨
+  // 已选轨（mediaType 由分类决定，不再作为可移除的筛选项）
   const chips: { key: string; label: string; onRemove: () => void }[] = []
-  if (value.mediaType !== 'all') {
-    chips.push({
-      key: 'mt',
-      label: value.mediaType === 'movie' ? '电影' : '剧集',
-      onRemove: () => patchValue({ mediaType: 'all' }),
-    })
-  }
   visibleGenres.forEach((id) => {
     chips.push({
       key: `g-${id}`,
@@ -161,7 +183,7 @@ export default function BrowseMobileBar({
           <button
             type="button"
             className="bmb-chip clear"
-            onClick={() => patchValue({ mediaType: 'all', genreIds: [...excludedGenreIds], region: null, year: null, olderThan2015: false, sortIdx: 0 })}
+            onClick={() => patchValue({ genreIds: [...excludedGenreIds], region: null, year: null, olderThan2015: false, sortIdx: 0 })}
           >
             清除全部
           </button>
@@ -194,6 +216,10 @@ export default function BrowseMobileBar({
           {...filterBarProps}
           value={draft}
           onChange={setDraft}
+          genres={panelGenres}
+          excludedGenreIds={panelExcludedGenreIds}
+          replaceBaselineOnSelect={panelReplaceBaseline}
+          categoryLabel={panelCategoryLabel}
           hideFooter={false}
         />
       </Drawer>
