@@ -211,8 +211,6 @@ export default function DetailPage() {
   // 发行公司 logo 加载失败集合：失败的公公司只隐图、保留公司名（2026-10-10 用户要求）。
   const [failedCompanyLogos, setFailedCompanyLogos] = useState<Set<number>>(() => new Set());
   useEffect(() => { setLogoFailed(false); setFailedCompanyLogos(new Set()); }, [id]);
-  /** hero 文本区 ref：量其内容高反算海报列宽（--poster-w，见下方 effect 注释） */
-  const heroInfoRef = useRef<HTMLDivElement>(null);
 
   // CMS
   const [cmsResults, setCmsResults] = useState<DetailSourceResult[]>([]);
@@ -678,37 +676,6 @@ export default function DetailPage() {
     return () => ro.disconnect();
   }, [cast.length]);
 
-  // hero 两列等高且等比（2026-10-10 用户两轮反馈）：文本区为高度主（内容驱动），
-  // RO 量出其高写 --poster-w = 高×2/3 到 .detail-hero，左列轨道宽随变量走 →
-  // 海报盒永远 2:3、宽高同变零裁切（不是把盒机械拉高）。防振荡：取整 + 变化 >2px 才写。
-  // 上限 330（非 300）：真机实测 1024 展开简介后 info 高≈473，若顶在 300 会破坏 2:3（aspect 0.63）；
-  // 330 容下 h≤495 的展开态且宽屏折叠态（h≈450→w=300）不受影响。
-  // 路径迟滞修复：视口宽度变化时先清变量——轨道回落视口公式，info 宽高随之重排，
-  // RO 再触发 sync 从当前视口最优点重新收敛（否则双稳态下旧宽变量会残留）。
-  useEffect(() => {
-    const info = heroInfoRef.current;
-    const hero = info?.closest('.detail-hero') as HTMLElement | null;
-    if (!info || !hero) return;
-    const sync = () => {
-      const h = info.clientHeight;
-      if (h <= 0) return;
-      const w = Math.round(Math.min(330, Math.max(160, (h * 2) / 3)));
-      const cur = parseInt(hero.style.getPropertyValue('--poster-w'), 10);
-      if (!Number.isFinite(cur) || Math.abs(cur - w) > 2) {
-        hero.style.setProperty('--poster-w', `${w}px`);
-      }
-    };
-    sync();
-    const ro = new ResizeObserver(sync);
-    ro.observe(info);
-    const onResize = () => hero.style.removeProperty('--poster-w');
-    window.addEventListener('resize', onResize);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', onResize);
-    };
-  }, [d]);
-
   const genres = d?.genres || [];
   const director = d?.credits?.crew?.find((c) => c.job === 'Director')?.name;
   const status = d?.status || '';
@@ -834,7 +801,7 @@ export default function DetailPage() {
           )}
         </div>
         {/* 右列：文本区（横板 backdrop 底纹 + 左侧渐变压色保可读） */}
-        <div ref={heroInfoRef} className="detail-hero-info">
+        <div className="detail-hero-info">
           {backdropUrl && (
             <img className="detail-hero-bg" src={backdropUrl} alt="" width={1920} height={1080} onLoad={() => setBgLoaded(true)} />
           )}

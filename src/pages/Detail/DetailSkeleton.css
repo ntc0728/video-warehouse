@@ -27,9 +27,9 @@
 
 /* ── hero：真实 .detail-hero 两列几何；__poster-img 吃满 2:3 海报列 ── */
 
-/* --poster-w 不在此处硬写：真实页由 JS ResizeObserver 量 info 高写 h×2/3（上限 330），
-   骨架在 DetailSkeleton.tsx 复用同一套测量逻辑（见 syncPosterW），保证两列自洽同构；
-   静态公式会与骨架自身 info 高脱钩 → 海报比例失真。 */
+/* 固定高度（2026-11-07）：hero 高度与海报列宽均由 Detail.css ≥768 块的
+   --detail-hero-h 单真源求值（原「JS 量 info 高写 --poster-w」的镜像测量已随
+   真实页同步删除），骨架复用真实类自动同构，无需私有规则。 */
 
 .detail-skeleton__poster {
   background: none;
@@ -79,6 +79,15 @@
   flex-direction: column;
   gap: var(--space-xs);
   max-width: 65em;
+}
+
+/* ≥768 非 app 镜像真实 .detail-hero-desc 的弹性区定位（固定高度下简介占满
+   meta 与钉底 CTA 之间，按钮行贴底）：<768 单列内容驱动，保持自然高。 */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .detail-skeleton__overview-list {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
 }
 
 .detail-skeleton__overview {

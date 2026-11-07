@@ -401,16 +401,15 @@
 
 /* ── 桌面端右侧海报 ────────────────────────────── */
 
-/* ⚠️ 两列等高方案（用户 2026-10-10 两轮反馈定稿）：不是把海报盒机械拉高（那样盒变窄、cover 裁图），
-   而是海报整体等比缩放——文本区为高度主（内容驱动），JS 量出其高写 --poster-w = 高×2/3 到本块，
-   左列轨道宽随该变量走 → 海报盒永远 2:3，宽高同变、零裁切；未写入前回退视口公式。
-   防振荡：index.tsx 侧 RO 仅在变化 >2px 时写入并取整；文本区行数（meta/CTA）跨阈值才变高，
-   属离散量，实测收敛。 */
+/* 两列等高（2026-11-07 改定稿 · 固定高度方案）：hero 高度由 --detail-hero-h 分档固定
+   （不再由内容/展开简介驱动，展开简介只在 hero 内部溢出隐藏，见 ≥768 块）。
+   海报宽 = 高×2/3 的等比关系改由 CSS 对同一变量求值（原 JS ResizeObserver 量 info 高
+   写 --poster-w 的联动已删——它会让「展开简介」间接控制 hero 高度与海报宽度）。
+   上限 330：真机 2:3 档（≥495 高后 cover 轻微裁切，属固定高度的已知取舍）。 */
 .detail-hero-poster {
   position: relative;
   display: none;
   width: 100%;
-  /* 上限 330：与 index.tsx sync 的 clamp 顶一致（展开态 h>450 时仍维持 2:3，真机实测 1024 展开 h≈473） */
   max-width: 330px;
   border-radius: var(--radius-md);
   background-color: var(--color-placeholder);
@@ -1523,17 +1522,72 @@
 
 /* ============================================================
    ≥ 768px（非 app）— 方案 A 两列启用：海报列 + 文本列
+   ── 固定高度（2026-11-07 用户定稿）─────────────────────────
+   根因：hero 高度原本由文本区内容驱动 + RO 把 info 高换算成海报宽写回 --poster-w，
+   「展开简介」解除 3 行 clamp → 文本列变高 → 海报变宽 + hero 被拉高（实测 2000 字
+   简介展开后 hero 冲到 2185px），展开按钮成了整块高度的控制器；折叠态行尾/钉底 CTA
+   之间又留下大片空白。
+   方案：hero 高度按视口分档固定（--detail-hero-h），海报宽 = min(高×2/3, 330) 由 CSS
+   对同一变量求值；简介区成为文本列的弹性区（flex:1 + min-height:0 + overflow:hidden），
+   展开后放不下的文本在简介区内裁切，「展开/收起」按钮始终可见。骨架复用同一批真实类，
+   固定高度自动生效（DetailSkeleton 的同款 JS 测量已同步删除）。
+   分档依据（mock 长简介实测折叠态 info 高）：768→309 / 1440→336 / 2560→385，
+   叠加真实 worst case（logo 失败回退 h1、meta 折行、观看进度行）≈ +110 → 440 起步；
+   视口越大档位越高，兼顾海报 2:3 观感与首屏信息量。
    ============================================================ */
 
 @media (width >= 768px) {
   html:not([data-device="app"]) .detail-hero {
-    grid-template-columns: var(--poster-w, clamp(160px, 17vw, 330px)) minmax(0, 1fr);
+    --detail-hero-h: 440px;
+    grid-template-columns: minmax(0, min(calc(var(--detail-hero-h) * 2 / 3), 330px)) minmax(0, 1fr);
     /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- 对开栏间距为布局比例值，随视口流体；px 地板/顶为刻意固定档（同 grid 列宽公式，grid-template 例外口径） */
     gap: clamp(20px, 2.6vw, 44px);
+    height: var(--detail-hero-h);
   }
 
   html:not([data-device="app"]) .detail-hero-poster {
     display: block;
+  }
+
+  /* 文本列体固定在 info 内框高度（min-height:0 允许 flex 收缩，否则内容高会把 body
+     撑到超出 info 被 overflow:hidden 连 CTA 一起裁掉——展开简介后按钮不可见） */
+  html:not([data-device="app"]) .detail-hero-body {
+    min-height: 0;
+  }
+
+  /* 简介区 = 文本列弹性区：占满 meta 与钉底 CTA 之间；展开后放不下 → 区内裁切。
+     按钮挂简介区末尾（flex 不参与收缩）保证「收起」始终可见、不被文本推出裁切。 */
+  html:not([data-device="app"]) .detail-hero-desc {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  html:not([data-device="app"]) .detail-hero-desc .detail-collapse {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+  html:not([data-device="app"]) .detail-hero-desc .detail-collapse-txt {
+    /* 收起态 = 3 行自然高（按钮贴文本下缘）；展开态 = 内容撑满 basis 后被压回
+       剩余空间（min-height:0 允许 flex 收缩，overflow:hidden 由基类 clamp 规则提供） */
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+}
+
+/* 固定高度分档：中屏 / 大屏各抬一档（海报宽随之 293 → 320 → 330 封顶） */
+@media (width >= 1280px) {
+  html:not([data-device="app"]) .detail-hero {
+    --detail-hero-h: 480px;
+  }
+}
+
+@media (width >= 1920px) {
+  html:not([data-device="app"]) .detail-hero {
+    --detail-hero-h: 520px;
   }
 }
 
