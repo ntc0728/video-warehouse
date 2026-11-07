@@ -35,12 +35,26 @@
   background: none;
 }
 
-/* 骨架 hero-info：影院模式深底（2026-11-07 方案 A）——骨架期灰块在深底上可见，
-   数据到达后同底色无缝过渡（旧 surface 白底已随影院模式退役）。
-   仅 ≥768 非 app：<768 / app 真实 hero 无底色（页底形态），骨架须同步保持透明 */
+/* 骨架 hero-info 底色：保持与资料区一致的 surface 卡片底（2026-11-08 用户反馈：
+   影院深底上灰块不协调，骨架不用跟真实 hero 的 --color-media-surface 走）。
+   仅 ≥768 非 app：<768 / app 真实 hero 无底色（页底形态），骨架同步保持透明 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .detail-skeleton__hero-info {
-    background: var(--color-media-surface);
+    background: var(--color-surface);
+  }
+
+  /* 内容簇垂直居中（用户 2026-11-08：固定高度下灰块全挤在顶部不协调）。
+     覆盖真实类的钉底几何：__overview-list 不再拉伸、__btn-row 不再 margin-top:auto，
+     整簇由 body 的 justify-content:center 居中，与 bg 图主体的左中构图呼应 */
+  html:not([data-device="app"]) .detail-skeleton__hero-info .detail-hero-body {
+    justify-content: center;
+  }
+  html:not([data-device="app"]) .detail-skeleton__overview-list {
+    flex: 0 0 auto;
+  }
+  html:not([data-device="app"]) .detail-skeleton__btn-row {
+    margin-top: 0;
+    padding-top: 0;
   }
 }
 
@@ -88,15 +102,7 @@
   flex-direction: column;
   gap: var(--space-xs);
   max-width: 65em;
-}
-
-/* ≥768 非 app 镜像真实 .detail-hero-desc 的弹性区定位（固定高度下简介占满
-   meta 与钉底 CTA 之间，按钮行贴底）：<768 单列内容驱动，保持自然高。 */
-@media (width >= 768px) {
-  html:not([data-device="app"]) .detail-skeleton__overview-list {
-    flex: 1 1 auto;
-    min-height: 0;
-  }
+  /* ≥768 固定高度下的弹性/居中行为见文件顶部 hero-info 媒体块（2026-11-08 内容簇居中） */
 }
 
 .detail-skeleton__overview {
