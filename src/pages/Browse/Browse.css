@@ -1020,6 +1020,18 @@
     min-width: calc(var(--text-sm) * 14);
   }
 
+  /* 胶囊行高度对齐 sort-bar 的控件行（类型/排序那一行）：
+     控件行高 = 容器 padding(2xs×2) + 按钮 padding(xs×2) + 文字行高(text-sm×1.5)，
+     实测 2560/2880 ≈31.9px；胶囊行原本 ≈29px，差约 2.9px → 视觉上胶囊比下面一行矮半截。
+     统一给 .browse-search-tabs 设同值 min-height（smart 在 sort-bar 内、cms 在 cms-head 内
+     都命中），胶囊在行内垂直居中 → 两种模式下该行高度完全一致，切换模式下方内容不跳动。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-search-tabs {
+    min-height: calc(
+      var(--space-2xs) * 2 + var(--space-xs) * 2 + var(--text-sm) * 1.5
+    );
+  }
+
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-search-tabs__pill .browse-search-tab {
     font-size: var(--text-xs);
