@@ -160,8 +160,11 @@
 /* ── 组内折叠的「+N 展开 / 收起」（2026-11-07）───────────────────
    ⚠️ 刻意**不复用 `.filter-bar__chip`**：复用会让它和数据项长得一样、
    又排在组末尾 → 看起来像「最后一条数据被选中」（用户反馈）。
-   样式与布局 demo 一致（纯文字链接：主色 + 11px + 与 chip 同高，
-   无边框 / 无背景 / 无箭头），明确是「操作」而非「选项」。 */
+   样式与布局 demo 一致（纯文字链接 + 11px + 与 chip 同高，无边框 / 无背景 / 无箭头）。
+   ⚠️ 颜色是**特例**（2026-11-07 用户特批）：demo 用 #1a56c4 蓝，而本项目主色是黑白
+      （--color-primary 浅色 #000 / 暗色 #fff），直接用主色会变成黑/白。
+      故改用信息蓝的文字档 --color-info-text（浅色 #0958d9 / 暗色 #3c9ae8），
+      与 demo 的深蓝同调，且符合「承载文字用 *-text 变体」的 token 纪律。 */
 .filter-bar__more {
   display: inline-flex;
   justify-self: center;
@@ -170,15 +173,17 @@
   padding: 0 var(--space-sm);
   border: none;
   background: transparent;
-  color: var(--color-primary);
+  color: var(--color-info-text);
   font-size: var(--text-2xs);
   white-space: nowrap;
   transition: color var(--dur-2xs) ease;
   cursor: pointer;
 }
 
+/* hover 只加下划线、不改色：--color-info 是填充档，用作文字会违反
+   design-audit 的 fill-token-as-text（文字必须走 --color-*-text） */
 .filter-bar__more:hover {
-  color: var(--color-primary-hover);
+  text-decoration: underline;
 }
 
 .filter-bar__chip--active {

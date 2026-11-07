@@ -882,13 +882,15 @@
      同 (0,4,1) + 书写顺序在后 → 稳定生效。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__more {
-    color: var(--color-primary);
+    /* 特例：用信息蓝文字档而非主色（主色是黑白，见 FilterBar.css 注释） */
+    color: var(--color-info-text);
     font-weight: 400;
   }
 
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__more:hover {
-    color: var(--color-primary-hover);
+    /* 同 FilterBar.css：hover 只加下划线，不改色（填充档不能当文字色） */
+    text-decoration: underline;
   }
 
   /* 组标题（「电影」= label--as-chip，同时带 .filter-bar__chip 类）会被上方 chip 规则影响：
