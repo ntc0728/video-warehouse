@@ -24,7 +24,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { FilterBarValue } from '@/components/FilterBar';
 import { useTMDBStore } from '@/stores';
 import { buildFilterSig } from '@/lib/filterSig';
-import { SORT_OPTIONS, CATEGORY_CONFIG } from './constants';
+import { SORT_OPTIONS } from './constants';
 import { FILTER_DEBOUNCE_MS } from './constants';
 import { parseFromUrl, serializeToUrl } from './urlState';
 
@@ -39,14 +39,9 @@ export const DISCOVER_CACHE_TTL_MS = 10 * 60 * 1000;
 /** 把 FilterBarValue 转成 store 需要的 TMDBFilterOptions */
 export function toStoreFilter(value: FilterBarValue) {
   const sort = SORT_OPTIONS[value.sortIdx] ?? SORT_OPTIONS[0];
-  // 分类级接口参数（genre 连接语义 / keyword）从 CATEGORY_CONFIG 单真源按 category 注入，
-  // 不写进 FilterBarValue / URL —— category 已在 buildFilterSig 里，切分类必触发重新取页。
-  const cfg = CATEGORY_CONFIG[value.category];
   return {
     mediaType: value.mediaType,
     genreIds: value.genreIds,
-    genreMatch: cfg?.genreMatch ?? 'and',
-    keywordIds: cfg?.keywordIds ?? [],
     minVoteAverage: value.minRating,
     sortBy: sort.sortBy,
     sortOrder: sort.order,

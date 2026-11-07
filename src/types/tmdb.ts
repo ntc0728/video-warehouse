@@ -366,10 +366,6 @@ export type TMDBSortOption = 'popularity' | 'vote_average' | 'release_date';
 export interface TMDBFilterOptions {
   mediaType: TMDBMediaTypeFilter;
   genreIds: number[];
-  /** with_genres 多 id 连接语义：',' = AND、'|' = OR（综艺等多类型并集用 or） */
-  genreMatch: 'and' | 'or';
-  /** with_keywords：TMDB keyword id 列表，逗号 AND / 竖线 OR（动漫 anime 精准过滤用） */
-  keywordIds: number[];
   minVoteAverage: number;
   sortBy: TMDBSortOption;
   sortOrder: 'desc' | 'asc';

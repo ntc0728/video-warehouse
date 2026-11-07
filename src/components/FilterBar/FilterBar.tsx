@@ -44,9 +44,6 @@ export interface FilterBarProps {
   hideRegion?: boolean;
   /** 需要从显示中排除的 genreIds（这些 id 仍参与 filterValue.genreIds / API 调用） */
   excludedGenreIds?: number[];
-  /** 分类基线是 OR 组（如综艺 10764|10767）时，用户选二级 genre 应替换基线而非叠加。
-      true：selectGenre 用 [genreId]；false（默认）：沿用 [...excludedGenreIds, genreId] 做 AND。 */
-  replaceBaselineOnSelect?: boolean;
   /** 结果总数 */
   totalResults?: number;
   /** 当前分类显示名称（替换默认的"分类"label） */
@@ -73,7 +70,6 @@ export default function FilterBar({
   genres = [],
   hideRegion = false,
   excludedGenreIds = [],
-  replaceBaselineOnSelect = false,
   totalResults = 0,
   categoryLabel,
   hideFooter = false,
@@ -100,11 +96,10 @@ export default function FilterBar({
   const selectGenre = useCallback(
     (genreId: number) => {
       if (value.genreIds.includes(genreId)) return;
-      // OR 基线分类（综艺）：用户选具体类型 = 收窄，替换基线，不能把 10764|10767 与 X 再 OR；
-      // AND 基线分类（纪录片 99）：保留基线做 99 AND X，语义正确。
-      onChange({ ...value, genreIds: replaceBaselineOnSelect ? [genreId] : [...excludedGenreIds, genreId] });
+      // 保留 excludedGenreIds 中被隐藏的分类基线（如纪录片 99），与用户选择的二级 genre 做 AND
+      onChange({ ...value, genreIds: [...excludedGenreIds, genreId] });
     },
-    [value, onChange, excludedGenreIds, replaceBaselineOnSelect],
+    [value, onChange, excludedGenreIds],
   );
 
   // 类型切换：清空可见分类的选择（不同类型的 genre id 不通用）

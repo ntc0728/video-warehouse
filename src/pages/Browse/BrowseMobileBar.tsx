@@ -51,20 +51,17 @@ export default function BrowseMobileBar({
   //    （2026-11-07 用户反馈）。故这里按 draft.category 重新解析一套，覆盖传入。
   const panelCfg = CATEGORY_CONFIG[draft.category]
   const panelGenres = (() => {
-    const drop = new Set(panelCfg.genreDenylist ?? [])
-    if (panelCfg.genresSource === 'movie') return movieGenres.filter((g) => !drop.has(g.id))
-    if (panelCfg.genresSource === 'tv') return tvGenres.filter((g) => !drop.has(g.id))
+    if (panelCfg.genresSource === 'movie') return movieGenres
+    if (panelCfg.genresSource === 'tv') return tvGenres
     const seen = new Set<string>()
     const merged: TMDBGenre[] = []
     for (const g of [...movieGenres, ...tvGenres]) {
-      if (drop.has(g.id)) continue
       const key = g.name.toLowerCase()
       if (!seen.has(key)) { seen.add(key); merged.push(g) }
     }
     return merged
   })()
   const panelExcludedGenreIds = panelCfg.defaultGenreIds
-  const panelReplaceBaseline = panelCfg.genreMatch === 'or'
   const panelCategoryLabel = CATEGORY_LABELS[draft.category]
 
   const visibleGenres = value.genreIds.filter((id) => !excludedGenreIds.includes(id))
@@ -218,7 +215,6 @@ export default function BrowseMobileBar({
           onChange={setDraft}
           genres={panelGenres}
           excludedGenreIds={panelExcludedGenreIds}
-          replaceBaselineOnSelect={panelReplaceBaseline}
           categoryLabel={panelCategoryLabel}
           hideFooter={false}
         />

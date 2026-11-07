@@ -6,7 +6,7 @@
  *
  * 结构镜像（对应 Browse/index.tsx）：
  *   左栏 = .filter-bar 三组（分类/地区/年份 · label 真文 + chips 灰块）；
- *        分类组按 category 的 CATEGORY_CONFIG 镜像真实 genre 数（含 genreDenylist 过滤）。
+ *        分类组按 category 的 CATEGORY_CONFIG 镜像真实 genre 数。
  *   顶栏 = .browse-sort-bar（类型 6 pill + 分隔线 + 排序 3 pill + 计数位）。
  *        类型 pill 取 VISIBLE_CATEGORY_KEYS（2026-11-07 删「全部」/综艺/动漫后 4 档）。
  *
@@ -63,8 +63,8 @@ function LabeledChipGroup({ labels }: { labels: string[] }) {
 
 /** 左栏「分类」行骨架灰块数量。
  *  与 index.tsx currentGenres 同逻辑：按 CATEGORY_CONFIG[category] 的 genresSource 选
- *  movieGenres / tvGenres / 合并，再按 genreDenylist 剔除该分类不该显示的 genre，
- *  最后减 excludedGenreIds（defaultGenreIds）得到「真实行可见 genre 数」。
+ *  movieGenres / tvGenres / 合并，再减 excludedGenreIds（defaultGenreIds）
+ *  得到「真实行可见 genre 数」。
  *  骨架按该数量同步渲染灰块，genres 落地后与真实行严格等量，首屏不跳动。
  *  genres 尚未落地（holdTmdb / 首帧）时数量为 0 → 仅「全部」1 枚，FILL_CHIPS 撑满不露底。
  */
@@ -72,7 +72,6 @@ function useGenreChipCount(category: CategoryKey): number {
   const movieGenres = useTMDBStore((s) => s.movieGenres);
   const tvGenres = useTMDBStore((s) => s.tvGenres);
   const cfg = CATEGORY_CONFIG[category];
-  const drop = new Set(cfg.genreDenylist ?? []);
   let base: TMDBGenre[];
   if (cfg.genresSource === 'movie') base = movieGenres;
   else if (cfg.genresSource === 'tv') base = tvGenres;
@@ -86,7 +85,7 @@ function useGenreChipCount(category: CategoryKey): number {
     }
   }
   const excluded = new Set(cfg.defaultGenreIds);
-  return base.filter((g) => !drop.has(g.id) && !excluded.has(g.id)).length;
+  return base.filter((g) => !excluded.has(g.id)).length;
 }
 
 function GenreChips({ category }: { category: CategoryKey }) {
@@ -119,7 +118,7 @@ export function BrowseFilterChromeSkeleton({ category = 'movie' }: { category?: 
         <span className="filter-bar__label filter-bar__label--as-chip">分类</span>
         <div className="filter-bar__chips-wrap">
           {/*
-           * 分类组按当前 category 的 CATEGORY_CONFIG（genresSource + genreDenylist）镜像真实
+           * 分类组按当前 category 的 CATEGORY_CONFIG（genresSource）镜像真实
            * genre 数；默认「电影」时等价于「全部」1 枚 + movieGenres 全量。骨架与真实行等量，
            * 首屏不跳动；genres 未落地时仅「全部」，FILL_CHIPS 撑满不露底。
            */}

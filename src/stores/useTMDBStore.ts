@@ -47,8 +47,6 @@ export type { TMDBVideoItem } from '@/types/tmdb';
 const DEFAULT_FILTER_OPTIONS: TMDBFilterOptions = {
   mediaType: 'all',
   genreIds: [],
-  genreMatch: 'and',
-  keywordIds: [],
   minVoteAverage: 0,
   sortBy: 'popularity',
   sortOrder: 'desc',

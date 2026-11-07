@@ -19,61 +19,30 @@ export const CATEGORY_LABELS: Record<CategoryKey, string> = {
 
 // ── 分类默认筛选配置（单真源：类型行点击 → URL → store → TMDB 接口）────────
 /**
- * 2026-11-07 按 TMDB 真实语义修正（用户拍板）：
- *  - 动漫：TMDB 无 "Anime" genre。16=Animation（含欧美动画）不是日漫，且把它塞进
- *          defaultGenreIds 会与用户二级筛选在同一个 with_genres 里 AND，点任何二级项都变
- *          「动画 AND X」→ 空结果。故动漫**只用 with_keywords=anime 关键词**界定集合，
- *          defaultGenreIds 置空，把 with_genres 维度完整留给二级筛选。
- *  - 综艺：10764=真人秀 / 10767=脱口秀，是「分类基线」的 OR 组（with_genres 用 |）。
- *  - 纪录片：99=纪录片 是 AND 基线（99 AND 用户 genre = 纪录片里的该类型，语义正确）。
- *  - 排行榜：fetchTopRated(movie+tv 合并)，genresSource=both 与混合结果对齐。
- *  - 电影 / 剧集：各自单路 + 对应 genre 表。
- *
- * ⚠️ 关于 genresSource：剧集/综艺共用 tvGenres 全表（TMDB 官方 TV 分类体系，10759 本就叫
- *    Action & Adventure，左栏显示接口原名、未做本地重命名）。动漫虽也走 TV 表，但按
- *    genreDenylist 剔除 5 个「电视节目形态」id（新闻/真人秀/肥皂剧/脱口秀/战争政治）——
- *    这些与 anime 结果集互斥，显示出来只会点出空结果（2026-11-07 用户截图反馈）。
+ * 2026-11-07 现状（综艺/动漫入口删除后的收敛结果）：
+ *  类型行只暴露 电影 / 剧集 / 排行榜 / 纪录片 四档（见 VISIBLE_CATEGORY_KEYS）。
+ *  variety / anime 作为 CategoryKey 仍保留在 Record 里（Chart 页 tab、CMS 类型、VideoType
+ *  等别处在用），但**永远不会经 Browse 激活** —— parseFromUrl 会把
+ *  category=variety/anime 兜底改写成 tv。
+ *  因此曾为二者加的 genreMatch / keywordIds / genreDenylist 及相关常量已全部移除
+ *  （2026-11-07 用户要求清理死代码）。
  */
 export interface CategoryConfig {
   mediaType: 'all' | 'movie' | 'tv';
   /** 进入该分类时自动注入的 genreIds（仍参与 API 调用，逗号 = AND） */
   defaultGenreIds: number[];
-  /** 多个 genre 之间 OR 时用 '|' 连接后交给 with_genres；默认逗号 AND */
-  genreMatch?: 'and' | 'or';
-  /** 自动注入的 TMDB keywordIds（with_keywords，逗号 AND / 竖线 OR） */
-  keywordIds?: number[];
   /** 左栏「分类」行用哪个语种 genre list */
   genresSource: 'movie' | 'tv' | 'both';
-  /** 该分类左栏需剔除的 TV genre id（TMDB 官方定义为「电视节目形态」，与作品类型无关）。
-      动漫等分类按 keyword 过滤出的结果集里这些 id 不可能出现，显示出来只会点出空结果。 */
-  genreDenylist?: number[];
 }
 
-/**
- * 动漫分类的 anime 关键词 id（TMDB /keyword 体系）。
- * ⚠️ 210024 为用户指定的候选值，本项目无真实 token 未能联网核实；
- *    如与实际不符，只改这一个常量即可（单点），无需动 4 层链路。
- *    兜底：若 TMDB 返回空结果，可把该值清空、改用下方 ANIME_ORIGIN_COUNTRY='JP' 国家码方案。
- */
-export const ANIME_KEYWORD_ID = 210024;
-/**
- * TMDB TV genre 里的「电视节目形态」id（非动画作品类型，与 anime 结果集互斥）：
- * 10763 新闻 / 10764 真人秀 / 10766 肥皂剧 / 10767 脱口秀 / 10768 战争政治。
- * 依据：TMDB 官方 /genre/tv/list 原名（News / Reality / Soap / Talk / War & Politics），
- * 这些是节目编排形态，不是动画作品会带的叙事 genre；左栏显示它们点进去必空。
- */
-export const TV_FORMAT_GENRE_IDS = [10763, 10764, 10766, 10767, 10768];
-/** 兜底方案：改用国家码过滤日漫时启用（与 keyword 二选一，默认不走） */
-export const ANIME_ORIGIN_COUNTRY: string | null = null;
-
 export const CATEGORY_CONFIG: Record<CategoryKey, CategoryConfig> = {
-  all:         { mediaType: 'all',   defaultGenreIds: [],          genresSource: 'both' },
-  movie:       { mediaType: 'movie', defaultGenreIds: [],          genresSource: 'movie' },
-  tv:          { mediaType: 'tv',    defaultGenreIds: [],          genresSource: 'tv' },
-  variety:     { mediaType: 'tv',    defaultGenreIds: [10764, 10767], genreMatch: 'or', genresSource: 'tv' },
-  anime:       { mediaType: 'tv',    defaultGenreIds: [],   keywordIds: [ANIME_KEYWORD_ID], genresSource: 'tv', genreDenylist: TV_FORMAT_GENRE_IDS },
-  top:         { mediaType: 'all',   defaultGenreIds: [],          genresSource: 'both' },
-  documentary: { mediaType: 'movie', defaultGenreIds: [99],        genresSource: 'movie' },
+  all:         { mediaType: 'all',   defaultGenreIds: [],   genresSource: 'both' },
+  movie:       { mediaType: 'movie', defaultGenreIds: [],   genresSource: 'movie' },
+  tv:          { mediaType: 'tv',    defaultGenreIds: [],   genresSource: 'tv' },
+  variety:     { mediaType: 'tv',    defaultGenreIds: [],   genresSource: 'tv' },
+  anime:       { mediaType: 'tv',    defaultGenreIds: [],   genresSource: 'tv' },
+  top:         { mediaType: 'all',   defaultGenreIds: [],   genresSource: 'both' },
+  documentary: { mediaType: 'movie', defaultGenreIds: [99], genresSource: 'movie' },
 };
 
 // ── 结果区头部「类型」行可见分类 ──────────────────────────────

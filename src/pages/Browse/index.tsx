@@ -381,15 +381,13 @@ export default function BrowsePage() {
   const CATEGORY_OPTIONS = VISIBLE_CATEGORY_OPTIONS;
 
   // ── 当前分类下的可选类型 ────────────────────────
-  const currentGenres = useMemo<TMDBGenre[]>(() => {    const cfg = CATEGORY_CONFIG[filterValue.category];
-    // 按分类的 genreDenylist 剔除与该分类结果集互斥的 genre（如动漫剔除「电视节目形态」id）。
-    const drop = new Set(cfg.genreDenylist ?? []);
-    const filterDeny = (list: TMDBGenre[]) => list.filter((g) => !drop.has(g.id));
-    if (cfg.genresSource === 'movie') return filterDeny(movieGenres);
-    if (cfg.genresSource === 'tv') return filterDeny(tvGenres);
+  const currentGenres = useMemo<TMDBGenre[]>(() => {
+    const cfg = CATEGORY_CONFIG[filterValue.category];
+    if (cfg.genresSource === 'movie') return movieGenres;
+    if (cfg.genresSource === 'tv') return tvGenres;
     const seen = new Set<string>();
     const merged: TMDBGenre[] = [];
-    for (const g of [...filterDeny(movieGenres), ...filterDeny(tvGenres)]) {
+    for (const g of [...movieGenres, ...tvGenres]) {
       const key = g.name.toLowerCase();
       if (!seen.has(key)) { seen.add(key); merged.push(g); }
     }
@@ -398,8 +396,6 @@ export default function BrowsePage() {
 
   // ── 渲染分支 ────────────────────────────────────
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
-  // 综艺的 OR 基线在用户选二级 genre 时须被替换（否则 with_genres 全 OR，X 变并集而非收窄）。
-  const replaceBaselineOnSelect = CATEGORY_CONFIG[filterValue.category]?.genreMatch === 'or';
   const isCmsLoading = cmsLoading;
 
   // ── 逻辑分页组装层：每页恒定 cols×4 行（2026-11-06 由 5 改 4）——
@@ -761,7 +757,6 @@ export default function BrowsePage() {
             categoryOptions: CATEGORY_OPTIONS,
             genres: currentGenres,
             excludedGenreIds,
-            replaceBaselineOnSelect,
             totalResults: discoverPagination.totalResults,
             categoryLabel: CATEGORY_LABELS[filterValue.category],
             hideFooter: true,
@@ -788,7 +783,6 @@ export default function BrowsePage() {
               onChange={handleFilterChange}
               genres={currentGenres}
               excludedGenreIds={excludedGenreIds}
-              replaceBaselineOnSelect={replaceBaselineOnSelect}
               totalResults={discoverPagination.totalResults}
               categoryLabel={CATEGORY_LABELS[filterValue.category]}
               hideFooter

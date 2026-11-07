@@ -406,10 +406,7 @@ export async function discoverMovie(
     sort_by: getSortByParam(filters.sortBy || 'popularity', filters.sortOrder || 'desc', 'movie'),
     'vote_count.gte': 50,
   };
-  if (filters.genreIds?.length) {
-    params.with_genres = filters.genreIds.join(filters.genreMatch === 'or' ? '|' : ',');
-  }
-  if (filters.keywordIds?.length) params.with_keywords = filters.keywordIds.join(',');
+  if (filters.genreIds?.length) params.with_genres = filters.genreIds.join(',');
   if (filters.minVoteAverage && filters.minVoteAverage > 0) params['vote_average.gte'] = filters.minVoteAverage;
   if (filters.releaseDateGte) params['primary_release_date.gte'] = filters.releaseDateGte;
   else if (filters.releaseYear) params.primary_release_year = filters.releaseYear;
@@ -429,10 +426,7 @@ export async function discoverTV(
     sort_by: getSortByParam(filters.sortBy || 'popularity', filters.sortOrder || 'desc', 'tv'),
     'vote_count.gte': 50,
   };
-  if (filters.genreIds?.length) {
-    params.with_genres = filters.genreIds.join(filters.genreMatch === 'or' ? '|' : ',');
-  }
-  if (filters.keywordIds?.length) params.with_keywords = filters.keywordIds.join(',');
+  if (filters.genreIds?.length) params.with_genres = filters.genreIds.join(',');
   if (filters.minVoteAverage && filters.minVoteAverage > 0) params['vote_average.gte'] = filters.minVoteAverage;
   if (filters.releaseDateGte) params['first_air_date.gte'] = filters.releaseDateGte;
   else if (filters.releaseYear) params.first_air_date_year = filters.releaseYear;
