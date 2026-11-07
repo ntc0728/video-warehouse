@@ -876,6 +876,21 @@
     box-shadow: none;
   }
 
+  /* 折叠按钮「+N 展开 / 收起」（2026-11-07）：
+     独立类 `.filter-bar__more` 与 chip 无关，但需要与 chip 规则**同特异性**才不会被
+     更靠后的通用规则/继承色覆盖（用户反馈「颜色被覆盖了」）。
+     同 (0,4,1) + 书写顺序在后 → 稳定生效。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .filter-bar .filter-bar__more {
+    color: var(--color-primary);
+    font-weight: 400;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"])
+    .filter-bar .filter-bar__more:hover {
+    color: var(--color-primary-hover);
+  }
+
   /* 组标题（「电影」= label--as-chip，同时带 .filter-bar__chip 类）会被上方 chip 规则影响：
      显式恢复左对齐，保证三个分组标题（分类/地区/年份）同一条左基线。
      用同特异性 + 书写顺序靠后覆盖，不改基础 chip 选择器。 */
