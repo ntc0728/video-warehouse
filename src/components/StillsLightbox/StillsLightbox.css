@@ -8,8 +8,8 @@
   z-index: var(--z-modal-overlay);
   display: flex;
   flex-direction: column;
-  /* 三行流式布局：主图区（吃掉剩余高度）→ 缩放条 → 缩略图条。
-     缩放条 2026-09-10 从右下角浮层改为主图正下方，因此不再用绝对定位。 */
+  /* 两行流式布局（2026-11-08 zoom 移入当前 slide 内）：主图区（吃掉剩余高度，
+     内部 = 图片 + zoom 成组居中）→ 缩略图条 */
   gap: var(--space-sm);
   justify-content: center;
   align-items: center;
@@ -128,20 +128,23 @@
 
 .stills-lightbox__slide {
   display: flex;
+  /* 纵向布局（2026-11-08）：img + zoom 成组垂直居中——zoom 是 img 的 flex 兄弟节点，
+     「图底→zoom 间距」恒等于 margin-top(xs)，不随图高漂移；水平同轴居中 */
   flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0;
   justify-content: center;
-  /* 底对齐（2026-11-08 用户定稿方案 A）：图底边恒贴 zoom 行上缘——
-     旧 center 使图在主图区内垂直居中，图越矮图底到 zoom 行空隙越大（悬空感）。
-     留白移到图上方（顶栏 padding 一侧），图 + zoom + 缩略图成组贴底 */
-  align-items: flex-end;
+  align-items: center;
   width: 100%;
   max-width: 90vw;
   height: 100%;
 }
 
 .stills-lightbox__slide img {
+  /* max-height 预留 zoom 行高度（行高 ~36px + margin xs ≈ 40px，留 4rem 余量），
+     否则高图 + zoom 挤出 slide 底被 scroll 裁掉 */
   max-width: 100%;
-  max-height: 100%;
+  max-height: calc(100% - 4rem);
   object-fit: contain;
   border-radius: var(--radius-sm);
   user-select: none;
@@ -151,17 +154,8 @@
   transition: opacity var(--dur-lg) ease, transform var(--dur-xs) ease;
 }
 
-/* 大视口默认放大档（2026-11-08 用户定稿）：contain 适配结果 ×1.2 作为默认「100%」。
-   用独立 scale 属性（非 transform）——用户缩放的 inline transform 会整体替换
-   transform 属性，两者相乘组合，JS 零改动（zoom 50%~200% 语义不变）。
-   transform-origin bottom：底边钉死继续贴 zoom 行，顶部先吃 96px 顶栏 padding，
-   仍溢出部分在 scroll 边界裁切（16:9 @1920×900 实测裁图顶约 5%，视口越高越多）。 */
-@media (width >= 1920px) {
-  .stills-lightbox__slide img {
-    scale: 1.2;
-    transform-origin: bottom center;
-  }
-}
+/* （2026-11-08 曾试过 ≥1920 默认 scale 1.2 放大档，因「居中 vs 贴底」取舍
+   用户改回居中构图，该档已删除；zoom 100% 恢复为 contain 适配基准） */
 
 .stills-lightbox__slide img.is-loaded {
   opacity: 1;
@@ -180,17 +174,14 @@
 /* ── 缩放控件（2026-09-10 由 Detail 剧照标题行移入灯箱）─────
    形态：− 按钮 / 百分比数值（可点击复位）/ + 按钮；每级 5%，范围 50%~200%。 */
 .stills-lightbox__zoom {
-  /* 流内第二行：水平居中于当前显示的图片（用户 2026-09-10 要求「放到当前显示图片的下方」）。
-     保留 position:relative + z-index 是为了仍绘制在 .stills-lightbox__scroll（z-index:5）之上。
-     margin-top（2026-11-08 用户定稿）：与图片底缘保持一定间距（底对齐后图底=本行上缘
-     仅隔容器 gap，叠加 xs ≈ 14~17px），zoom↔缩略图间距仍为容器 gap */
+  /* zoom 在当前 slide 内、img 的 flex 兄弟（2026-11-08 移入）：margin-top = 与图底的
+     定间距（xs ≈ 4px + 视觉呼吸 ≈ 间距要求），不再依赖容器 gap（那会随图高漂移） */
   position: relative;
   z-index: 20;
   display: flex;
   flex: none;
   gap: var(--space-2xs);
   align-items: center;
-  align-self: center;
   margin-top: var(--space-xs);
   padding: var(--space-2xs);
   border-radius: var(--radius-full);
@@ -249,8 +240,8 @@
   flex: none;
   gap: var(--space-2xs);
   align-self: center;
-  /* 2026-11-08 随缩略图加大放宽容器（80rem→~1280px），大视口可见 ~9 张 */
-  width: min(86vw, 80rem);
+  /* 2026-11-08 随缩略图加大放宽容器（→ min(92vw, 96rem)=1536px，208 档可见 ~8 张） */
+  width: min(92vw, 96rem);
   padding: var(--space-2xs);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.4);
@@ -272,10 +263,10 @@
 
 .stills-lightbox__thumb {
   flex: 0 0 auto;
-  /* 2026-11-08 二次加大（用户反馈上档「几乎没变化」）：宽 clamp 顶 104→144
-     （1920 ≈ 124.6 / ≥2400 封顶 144），16:9 aspect-ratio 不变（1920 ≈ 124.6×70） */
+  /* 2026-11-08 三档定稿（用户连续反馈过小/过保守）：宽 clamp 顶 144→176
+     （1920 ≈ 159.2 / ≥2733 封顶 208），16:9 aspect 播高（1920 ≈ 159.2×89.6） */
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  width: clamp(64px, 44px + 4.2vw, 144px);
+  width: clamp(64px, 44px + 6vw, 208px);
   aspect-ratio: 16 / 9;
   padding: 0;
   border: 2px solid transparent;
@@ -319,8 +310,8 @@
 
 [data-device="tv"] .stills-lightbox__thumb {
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  width: clamp(88px, 66px + 2vw, 144px);
-  /* 高由基类 aspect-ratio 16/9 播出（1080p ≈ 128×72） */
+  width: clamp(96px, 72px + 3vw, 208px);
+  /* 高由基类 aspect-ratio 16/9 播出（1080p ≈ 132×74.3） */
 }
 
 /* ── Mobile ────────────────────────────────────── */

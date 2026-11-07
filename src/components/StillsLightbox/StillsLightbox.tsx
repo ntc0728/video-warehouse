@@ -288,7 +288,9 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
         </button>
       )}
 
-      {/* 主图区域 */}
+      {/* 主图区域。zoom 控件（2026-11-08）移入当前 slide 内、作为 img 的 flex 兄弟节点：
+          图片垂直居中构图下，「图底→zoom 定间距」必须由 flex 布局锚定（zoom 在流内独立行时
+          间距 = 图片下方剩余高度的一半，随图高漂移）。仅当前 slide 渲染，其余 slide 离屏 */}
       <div
         ref={scrollRef}
         className="stills-lightbox__scroll"
@@ -313,43 +315,40 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
                 onLoad={() => setLoadedMap((p) => ({ ...p, [i]: true }))}
                 onError={() => setLoadedMap((p) => ({ ...p, [i]: true }))}
               />
+              {isCurrent && (
+                <div className="stills-lightbox__zoom" role="group" aria-label="剧照缩放">
+                  <button
+                    type="button"
+                    className="stills-lightbox__zoom-btn"
+                    onClick={() => zoomBy(-ZOOM_STEP)}
+                    disabled={zoom <= ZOOM_MIN}
+                    aria-label="缩小"
+                  >
+                    <Icon icon={Minus} size="sm" />
+                  </button>
+                  <button
+                    type="button"
+                    className="stills-lightbox__zoom-value"
+                    onClick={resetZoom}
+                    aria-label={`当前缩放 ${zoom}%，点击复位`}
+                    title="点击复位到 100%（也可单击图片）"
+                  >
+                    {zoom}%
+                  </button>
+                  <button
+                    type="button"
+                    className="stills-lightbox__zoom-btn"
+                    onClick={() => zoomBy(ZOOM_STEP)}
+                    disabled={zoom >= ZOOM_MAX}
+                    aria-label="放大"
+                  >
+                    <Icon icon={Plus} size="sm" />
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}
-      </div>
-
-      {/* 缩放控件（2026-09-10 从 Detail 剧照标题行移入灯箱；同日晚些时候按用户要求
-          从右下角浮层改为「当前显示图片的正下方」一行——三行流式布局：
-          主图区 → 缩放条 → 缩略图条，主图区吃掉剩余高度因此图片整体上移）。
-          − / + 按钮每级 5%，范围 50%~200%；单击主图或点击百分比数字复位到 100%。 */}
-      <div className="stills-lightbox__zoom" role="group" aria-label="剧照缩放">
-        <button
-          type="button"
-          className="stills-lightbox__zoom-btn"
-          onClick={() => zoomBy(-ZOOM_STEP)}
-          disabled={zoom <= ZOOM_MIN}
-          aria-label="缩小"
-        >
-          <Icon icon={Minus} size="sm" />
-        </button>
-        <button
-          type="button"
-          className="stills-lightbox__zoom-value"
-          onClick={resetZoom}
-          aria-label={`当前缩放 ${zoom}%，点击复位`}
-          title="点击复位到 100%（也可单击图片）"
-        >
-          {zoom}%
-        </button>
-        <button
-          type="button"
-          className="stills-lightbox__zoom-btn"
-          onClick={() => zoomBy(ZOOM_STEP)}
-          disabled={zoom >= ZOOM_MAX}
-          aria-label="放大"
-        >
-          <Icon icon={Plus} size="sm" />
-        </button>
       </div>
 
       {/* 缩略图条 */}

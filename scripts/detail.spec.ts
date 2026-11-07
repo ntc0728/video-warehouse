@@ -437,7 +437,7 @@ test.describe('3.8 推荐区域', () => {
 });
 
 test.describe('3.11 剧照灯箱', () => {
-  test('DETAIL-090: 缩放控件位于当前显示图片正下方（三行流式布局）', async ({ page }) => {
+  test('DETAIL-090: 缩放控件位于当前显示图片正下方（slide 内 flex 锚定）', async ({ page }) => {
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.detail-stills-item', { timeout: 10000 });
     await page.locator('.detail-stills-item').first().click();
@@ -446,37 +446,40 @@ test.describe('3.11 剧照灯箱', () => {
     await expect(lightbox).toBeVisible({ timeout: 10000 });
 
     const geo = await lightbox.evaluate((el) => {
-      const box = (sel: string) => {
-        const n = el.querySelector(sel);
+      // zoom 已移入当前 slide、作为 img 的 flex 兄弟节点（2026-11-08）
+      const slide = el.querySelector('.stills-lightbox__slide');
+      const img = slide?.querySelector('img');
+      const zoomEl = slide?.querySelector('.stills-lightbox__zoom');
+      const thumbsEl = el.querySelector('.stills-lightbox__thumbs');
+      const box = (n: Element | null | undefined) => {
         if (!n) return null;
         const r = n.getBoundingClientRect();
         return { top: r.top, bottom: r.bottom, centerX: r.left + r.width / 2 };
       };
-      const zoomEl = el.querySelector('.stills-lightbox__zoom');
-      const thumbsEl = el.querySelector('.stills-lightbox__thumbs');
       return {
-        scroll: box('.stills-lightbox__scroll'),
-        zoom: box('.stills-lightbox__zoom'),
-        thumbs: box('.stills-lightbox__thumbs'),
+        img: box(img),
+        zoom: box(zoomEl),
+        thumbs: box(thumbsEl),
+        zoomInsideSlide: !!zoomEl && !!slide && zoomEl.parentElement === slide,
         zoomPosition: zoomEl ? getComputedStyle(zoomEl).position : null,
         thumbsPosition: thumbsEl ? getComputedStyle(thumbsEl).position : null,
-        viewportCenterX: window.innerWidth / 2,
       };
     });
 
-    // 旧形态是 position:absolute 的视口右下角浮层；现为文档流内第二行
-    expect(geo.zoom).not.toBeNull();
+    // zoom 在当前 slide 内、紧贴图片正下方（定间距 margin-top xs，非随图高漂移的剩余空间）
+    expect(geo.zoomInsideSlide).toBe(true);
     expect(geo.zoomPosition).toBe('relative');
-    expect(geo.scroll).not.toBeNull();
+    expect(geo.img).not.toBeNull();
+    expect(geo.zoom!.top).toBeGreaterThanOrEqual(geo.img!.bottom - 1);
+    expect(geo.zoom!.top - geo.img!.bottom).toBeLessThan(12);
 
-    // 竖向次序：主图区 → 缩放条 → 缩略图条
-    expect(geo.zoom!.top).toBeGreaterThanOrEqual(geo.scroll!.bottom - 1);
+    // 水平与图片同轴（slide 内 flex 居中）
+    expect(Math.abs(geo.zoom!.centerX - geo.img!.centerX)).toBeLessThanOrEqual(2);
+
+    // 竖向次序：slide（图+zoom）→ 缩略图条
     if (geo.thumbs) {
       expect(geo.thumbsPosition).toBe('relative');
       expect(geo.thumbs.top).toBeGreaterThanOrEqual(geo.zoom!.bottom - 1);
     }
-
-    // 水平居中于当前显示图片（= 视口水平中心）
-    expect(Math.abs(geo.zoom!.centerX - geo.viewportCenterX)).toBeLessThanOrEqual(2);
   });
 });
