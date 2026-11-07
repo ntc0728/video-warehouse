@@ -800,10 +800,13 @@
     font-weight: 500;
   }
 
-  /* chips 列数（2026-11-07 用户拍板）：< 2560 两列；≥ 2560 单列。
-        · 大视口（≥2560）左栏已封顶 200px，两列会把每格压到 83px、chip 只占一半，
-          观感散 → 改单列，chip 撑满可用宽度语义、阅读动线更整。
-        · 常规桌面（<2560）仍两列，保持紧凑。
+  /* chips 列数：全宽度两列（2026-11-07 定稿）。
+        · 曾试过「≥2560 改单列」——否决：单列会让行数翻倍，且把「格内横向留白」
+          变成「每行右侧留白」，两个问题都没解决反而更差。
+        · 实测 ≥2560 时 --ui-scale=1.08 放大字号/间距、而 --rail-w 不放大，
+          两列格宽 81.8px / 四字 chip 71.3px = 占 87%，并不空；
+          「观感差」的真因是当时 chip 在格内**居中**（两侧各空一半），不是两列本身。
+        · 故恒用两列，chip 统一贴左（见下方 justify-self:start）。
      同一规则作用于四组：chips-scroll（分类/类型/地区）与 chips-wrap（年份）。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-scroll,
@@ -906,17 +909,6 @@
 }
 
 
-/* ── ≥2560 大视口：左栏 chips 改单列（2026-11-07 用户拍板）──────────────
-   大视口左栏已封顶 200px，两列每格仅 ≈83px、chip 只占一半 → 散；改单列。
-   与 <2560 的两列形成明确分工：常规桌面紧凑两列，超大屏单列。 */
-@media (width >= 2560px) {
-  html:not([data-device="app"]):not([data-device="tv"])
-    .browse-page .filter-bar__chips-scroll,
-  html:not([data-device="app"]):not([data-device="tv"])
-    .browse-page .filter-bar__chips-wrap {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 
 /* ── 右上角总数加载态 + 手动跳页（2026-09-12 用户反馈）───────────── */
 
