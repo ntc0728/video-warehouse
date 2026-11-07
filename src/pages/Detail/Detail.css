@@ -823,6 +823,16 @@
   gap: var(--space-md);
   width: 100%;
 }
+
+/* ≥1920 固定 18 列（2026-11-08 用户定稿）：auto-fill 在 2560+ 会自动涨到 22 列，
+   用户要求大屏恒 18 列（头像列宽随 1fr 摊宽、头像定尺寸居中不受影响）。
+   折叠态几何不变：仍 2 行（--cast-collapsed-h 由 JS 按「首行高×2+rowGap」测量）。
+   排除 app（页宽受限走单列语义）/ TV（TV 档 root 字号 15→30px、头像放大，恒 18 列会挤） */
+@media (width >= 1920px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .detail-cast-row {
+    grid-template-columns: repeat(18, minmax(0, 1fr));
+  }
+}
 .detail-cast-item {
   display: flex;
   flex-direction: column;
