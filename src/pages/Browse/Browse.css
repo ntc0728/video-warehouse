@@ -1001,11 +1001,16 @@
     .browse-page .browse-cms-head .browse-search-tabs-row {
     display: flex;
     width: auto;
+    padding: 0;
   }
 
+  /* ⚠️ 必须清掉 BR-C 给的 padding: 0 var(--space-sm) var(--space-sm)：
+     那是「胶囊独占左列时与栏内左缘对齐」用的；移进 cms-head 后它会额外右移 --space-sm
+     并多出底部内距 → 胶囊左缘与源状态行左缘错开、两者不齐（2026-11-07 用户反馈）。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-cms-head .browse-search-tabs {
     width: auto;
+    padding: 0;
   }
 
   /* cms-head 内胶囊宽同样按内容（不继承左栏 --rail-w 定宽），与 smart 模式一致 */
