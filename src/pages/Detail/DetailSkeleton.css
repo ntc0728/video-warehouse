@@ -35,10 +35,19 @@
   background: none;
 }
 
-/* 骨架 hero-info：surface 白卡 + 与 .detail-content 卡片同款的边框/投影（2026-11-08）。
-   页面底色同为 --color-surface(#fff)，纯白底会「隐形」——补卡片 chrome 后与下方
-   资料区骨架卡观感一致，灰块在白卡上保持对比。仅 ≥768 非 app（<768 / app
-   真实 hero 无卡形态，骨架同步保持透明）。 */
+/* 骨架 hero-info 底色分设备（2026-11-08）：
+   - ≥768 非 app：surface 白卡 + 边框/投影（用户定稿，与资料区骨架卡观感一致）；
+   - <768 / app：随移动端启用底纹改影院深底（真实 hero 全宽度均为深色媒体面，
+     白卡会在加载前后跳变），灰块在深底上可见。 */
+@media (width <= 767px) {
+  .detail-skeleton__hero-info {
+    background: var(--color-media-surface);
+  }
+}
+html[data-device="app"] .detail-skeleton__hero-info {
+  background: var(--color-media-surface);
+}
+
 @media (width >= 768px) {
   html:not([data-device="app"]) .detail-skeleton__hero-info {
     border: 1px solid var(--color-border);
