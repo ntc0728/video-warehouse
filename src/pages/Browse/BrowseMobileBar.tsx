@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './BrowseMobileBar.css'
 import type { FilterBarProps, FilterBarValue } from '@/components/FilterBar/FilterBar'
-import { REGION_OPTIONS, YEAR_OLDER_LABEL } from '@/components/FilterBar/constants'
+import { YEAR_OLDER_LABEL, type RegionOption } from '@/components/FilterBar/constants'
 import FilterBar from '@/components/FilterBar/FilterBar'
 import Drawer from '@/components/ui/Drawer'
 import type { TMDBGenre } from '@/types/tmdb'
@@ -22,8 +22,8 @@ interface BrowseMobileBarProps {
 function genreName(id: number, all: { id: number; name: string }[]): string {
   return all.find((g) => g.id === id)?.name ?? ''
 }
-function regionLabel(code: string): string {
-  return REGION_OPTIONS.find((r) => r.code === code)?.label ?? code
+function regionLabel(code: string, options: RegionOption[]): string {
+  return options.find((r) => r.code === code)?.label ?? code
 }
 
 export default function BrowseMobileBar({
@@ -105,7 +105,7 @@ export default function BrowseMobileBar({
   if (value.region) {
     chips.push({
       key: 'region',
-      label: regionLabel(value.region),
+      label: regionLabel(value.region, filterBarProps.regionOptions ?? []),
       onRemove: () => patchValue({ region: null }),
     })
   }

@@ -19,7 +19,7 @@ import Skeleton from '@/components/common/Skeleton';
 import { useTMDBStore } from '@/stores';
 import { VISIBLE_CATEGORY_KEYS, CATEGORY_CONFIG } from './constants';
 import type { CategoryKey } from '@/components/CategoryQuickAccess';
-import { REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL } from '@/components/FilterBar/constants';
+import { SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type RegionOption } from '@/components/FilterBar/constants';
 import './BrowseChromeSkeleton.css';
 
 // 结果区头部类型行已下线「全部」→ 6 档（与 constants 单点同源）
@@ -107,7 +107,14 @@ function GenreChips({ category }: { category: CategoryKey }) {
   );
 }
 
-export function BrowseFilterChromeSkeleton({ category = 'movie' }: { category?: CategoryKey }) {
+export function BrowseFilterChromeSkeleton({
+  category = 'movie',
+  regionOptions = [],
+}: {
+  category?: CategoryKey;
+  /** 与真实 FilterBar 同一份地区选项（TMDB 真实国家校验后），保证骨架占位数等量 */
+  regionOptions?: RegionOption[];
+}) {
   return (
     <div
       className="filter-bar browse-chrome-skeleton browse-chrome-skeleton--filters skeleton-scope"
@@ -128,10 +135,8 @@ export function BrowseFilterChromeSkeleton({ category = 'movie' }: { category?: 
       <div className="filter-bar__row filter-bar__row--scroll">
         <span className="filter-bar__label">地区</span>
         <div className="filter-bar__chips-scroll">
-          {/* 与 smart 模式真实 FilterBar 等量：剔除 TMDB 无法表达的地区项（如「其他」） */}
-          <LabeledChipGroup
-            labels={REGION_OPTIONS.filter((o) => !o.tmdbUnsupported).map((o) => o.label)}
-          />
+          {/* 与 smart 模式真实 FilterBar 等量：用同一份 regionOptions（TMDB 真实国家校验后） */}
+          <LabeledChipGroup labels={regionOptions.map((o) => o.label)} />
         </div>
       </div>
       <div className="filter-bar__row filter-bar__row--scroll">

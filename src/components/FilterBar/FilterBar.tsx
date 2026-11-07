@@ -13,7 +13,7 @@
 import { useCallback, useMemo, type CSSProperties } from 'react';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import type { TMDBGenre } from '@/types/tmdb';
-import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type FilterBarValue, type FilterBarCategoryOption } from './constants';
+import { MEDIA_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type FilterBarValue, type FilterBarCategoryOption, type RegionOption } from './constants';
 import './FilterBar.css';
 
 export type { FilterBarValue } from './constants';
@@ -44,8 +44,8 @@ export interface FilterBarProps {
   hideRegion?: boolean;
   /** 需要从显示中排除的 genreIds（这些 id 仍参与 filterValue.genreIds / API 调用） */
   excludedGenreIds?: number[];
-  /** 需要隐藏的地区 code（智能检索模式下 TMDB 无法表达的项，如 OTHER） */
-  hideRegionCodes?: string[];
+  /** 地区选项（由调用方用 buildRegionOptions(store.countries) 生成；缺省回退内置常量） */
+  regionOptions?: RegionOption[];
   /** 结果总数 */
   totalResults?: number;
   /** 当前分类显示名称（替换默认的"分类"label） */
@@ -72,7 +72,7 @@ export default function FilterBar({
   genres = [],
   hideRegion = false,
   excludedGenreIds = [],
-  hideRegionCodes = [],
+  regionOptions = [],
   totalResults = 0,
   categoryLabel,
   hideFooter = false,
@@ -218,7 +218,7 @@ export default function FilterBar({
             >
               全部
             </button>
-            {REGION_OPTIONS.filter((r) => !hideRegionCodes.includes(r.code ?? '')).map((r) => (
+            {regionOptions.map((r) => (
               <button
                 key={r.code ?? 'all'}
                 className={chipCls(value.region === r.code)}

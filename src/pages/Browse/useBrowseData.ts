@@ -25,7 +25,7 @@ import type { FilterBarValue } from '@/components/FilterBar';
 import { useTMDBStore } from '@/stores';
 import { buildFilterSig } from '@/lib/filterSig';
 import { SORT_OPTIONS } from './constants';
-import { REGION_OPTIONS } from '@/components/FilterBar/constants';
+import { EUROPE_AGGREGATE } from '@/components/FilterBar/constants';
 import { FILTER_DEBOUNCE_MS } from './constants';
 import { parseFromUrl, serializeToUrl } from './urlState';
 
@@ -56,13 +56,17 @@ export function toStoreFilter(value: FilterBarValue) {
   };
 }
 
-/** 地区 code → TMDB with_origin_country 值（聚合项展开为多国 OR） */
+/**
+ * 地区 code → TMDB with_origin_country 值（聚合项展开为多国 OR）。
+ * 「欧洲」是虚拟聚合键（非 ISO 国家码），必须展开，否则 TMDB 返回空。
+ * 其余 code 直接下发（合法性由 buildRegionOptions 在 UI 侧用真实 country 列表保证）。
+ */
 function toTmdbCountry(region: string | null): string | null {
   if (!region) return null;
-  const opt = REGION_OPTIONS.find((r) => r.code === region);
-  if (!opt) return region;
-  if (opt.tmdbUnsupported) return null;
-  return opt.tmdbCodes?.length ? opt.tmdbCodes.join(',') : opt.code;
+  if (region === EUROPE_AGGREGATE.code) return EUROPE_AGGREGATE.tmdbCodes!.join(',');
+  // 只放行 ISO 3166-1 形态（两位大写字母）；历史 URL 遗留的 OTHER 等自造值一律忽略，
+  // 避免把无效值发给 TMDB 换来空结果（等价于「不按地区过滤」）。
+  return /^[A-Z]{2}$/.test(region) ? region : null;
 }
 
 export function useBrowseData() {

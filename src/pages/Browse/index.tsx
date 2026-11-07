@@ -13,7 +13,7 @@ import { Search, Loader2 } from 'lucide-react';
 import FilterBar, { type FilterBarValue, type FilterBarCategoryOption } from '@/components/FilterBar';
 import { Empty, BackToTopButton } from '@/components/common';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
-import { SORT_OPTIONS, REGION_OPTIONS } from '@/components/FilterBar/constants';
+import { SORT_OPTIONS, buildRegionOptions } from '@/components/FilterBar/constants';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -366,6 +366,9 @@ export default function BrowsePage() {
   // ── genres & countries 兜底拉取（精确选择器；token 未配置跳过） ──────────
   const movieGenres = useTMDBStore(s => s.movieGenres);
   const tvGenres = useTMDBStore(s => s.tvGenres);
+  // TMDB /configuration/countries 的真实国家列表（与 genres 同一次 fetchGenresAndCountries 拉取），
+  // 作为地区选项的校验真源（2026-11-07）
+  const countries = useTMDBStore(s => s.countries);
   const fetchGenresAndCountries = useTMDBStore(s => s.fetchGenresAndCountries);
   const hasToken = useHasTmdbToken();
   useEffect(() => {
@@ -396,12 +399,9 @@ export default function BrowsePage() {
 
   // ── 渲染分支 ────────────────────────────────────
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
-  // 智能检索（TMDB）无法表达的地区项（如「其他」）：TMDB 的 with_origin_country 只认
-  // ISO 3166-1 国家码，没有 NOT IN 语义 → 这些 chip 在 smart 模式隐藏（CMS 侧仍保留）。
-  const hideRegionCodes = useMemo(
-    () => REGION_OPTIONS.filter((r) => r.tmdbUnsupported).map((r) => r.code ?? ''),
-    [],
-  );
+  // 地区选项：用 TMDB /configuration/countries 的真实返回校验候选表（2026-11-07 用户要求）。
+  // 未拉到时为空数组 → FilterBar 只剩「全部」，不会再出现「选了没数据」的地区。
+  const regionOptions = useMemo(() => buildRegionOptions(countries), [countries]);
   const isCmsLoading = cmsLoading;
 
   // ── 逻辑分页组装层：每页恒定 cols×4 行（2026-11-06 由 5 改 4）——
@@ -763,7 +763,7 @@ export default function BrowsePage() {
             categoryOptions: CATEGORY_OPTIONS,
             genres: currentGenres,
             excludedGenreIds,
-            hideRegionCodes,
+            regionOptions,
             totalResults: discoverPagination.totalResults,
             categoryLabel: CATEGORY_LABELS[filterValue.category],
             hideFooter: true,
@@ -782,7 +782,9 @@ export default function BrowsePage() {
               ≥2560 由 sort-bar（smart）/ cms-head（cms）承载。 */}
           {!wideViewport && tabsBlock}
           {/* 首屏 chrome 骨架：接口未响应前左栏不渲染真实筛选项 */}
-          {showChromeSkeleton && <BrowseFilterChromeSkeleton category={filterValue.category} />}
+          {showChromeSkeleton && (
+            <BrowseFilterChromeSkeleton category={filterValue.category} regionOptions={regionOptions} />
+          )}
           {/* 智能检索模式：FilterBar（类型行已移至结果区头部，footer 移到 Card 2） */}
           {!showChromeSkeleton && searchMode === 'smart' && (
             <FilterBar
@@ -790,7 +792,7 @@ export default function BrowsePage() {
               onChange={handleFilterChange}
               genres={currentGenres}
               excludedGenreIds={excludedGenreIds}
-              hideRegionCodes={hideRegionCodes}
+              regionOptions={regionOptions}
               totalResults={discoverPagination.totalResults}
               categoryLabel={CATEGORY_LABELS[filterValue.category]}
               hideFooter

@@ -495,12 +495,12 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     // chip 总数（骨架按 category 的 CATEGORY_CONFIG 镜像真实 genre 数）：
     //   默认 /browse = category=movie、genresSource=movie；holdTmdb 延迟期 movieGenres=[]
     //   → 分类 = 「全部」1 + 可见genre 0 + FILL_CHIPS 14 = 15
-    //   地区 = REGION_OPTIONS 可见 11（12 项中「其他」tmdbUnsupported 被 smart 模式隐藏）+ FILL_CHIPS 14 = 25
+    //   地区 = 0（holdTmdb 期间 countries 未落地 → buildRegionOptions([]) = []）+ FILL_CHIPS 14 = 14
     //   年份 = YEAR_OPTIONS 12 + 其他 1 + FILL_CHIPS 14 = 27
-    //   合计 = 15 + 25 + 27 = 67
+    //   合计 = 15 + 14 + 27 = 56
     // 旧值 73 = 分类(GENRE_CHIPS 6 + FILL 14)=20 来自已删除的硬编码 GENRE_CHIPS；
     // 类型 pill 旧值 7 来自含「全部」的 7 档，均已同步。
-    await expect(filterChrome.locator('.browse-chrome-skeleton__chip')).toHaveCount(15 + 25 + 27);
+    await expect(filterChrome.locator('.browse-chrome-skeleton__chip')).toHaveCount(15 + 14 + 27);
     // 旧镜像类不得复活
     await expect(page.locator('.browse-skeleton__type, .browse-skeleton__sort, .browse-skeleton__count')).toHaveCount(0);
 
