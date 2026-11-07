@@ -35,6 +35,15 @@
   background: none;
 }
 
+/* 骨架 hero-info：影院模式深底（2026-11-07 方案 A）——骨架期灰块在深底上可见，
+   数据到达后同底色无缝过渡（旧 surface 白底已随影院模式退役）。
+   仅 ≥768 非 app：<768 / app 真实 hero 无底色（页底形态），骨架须同步保持透明 */
+@media (width >= 768px) {
+  html:not([data-device="app"]) .detail-skeleton__hero-info {
+    background: var(--color-media-surface);
+  }
+}
+
 .detail-skeleton__poster-img {
   width: 100%;
   height: 100%;

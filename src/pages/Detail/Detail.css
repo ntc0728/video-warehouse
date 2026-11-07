@@ -57,26 +57,22 @@
 }
 
 .detail-hero-bg {
-  /* 底纹化：透明度由 --hero-bg-o 控制（⚠️ heroBgReveal 动画终点必须用同一变量——
-     旧写死 to{opacity:1} 会被 fill:both 冻结在全图实度，基础值形同虚设，真机实测回归此坑）。
-     2026-10-10 用户多轮反馈「仍太淡、整体发白」：根因是图叠在不透白 surface 底 + 白 veil，
-     0.3/0.5 仍被白底洗白。提到 0.92 让 banner 图真正显色（左侧文字带靠 veil 保读）。 */
-  --hero-bg-o: 0.92;
+  /* 影院模式（2026-11-07 方案 A，用户拍板）：backdrop 图 100% 实色，不再叠透明白底
+     （旧 0.92/0.88 分主题透明度 + veil 白渐变是「白托底保深色字」时代的产物，
+     亮主题下整体发白；现文字带改深色压色 + on-image 白字，亮暗主题同构）。
+     无 backdrop 的影片露出 .detail-hero-info 的 --color-media-surface 深底，白字恒可读。
+     主体定位：与首页 banner 一致（见 HeroBanner.css），避免容器比 16:9 扁时
+     cover 裁掉上下两端、只露中间「横条」；偏上 20% 保留人物/标题主体 */
+  --hero-bg-o: 1;
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* 主体定位：与首页 banner 一致（见 HeroBanner.css），避免容器比 16:9 扁时
-     cover 裁掉上下两端、只露中间「横条」；偏上 20% 保留人物/标题主体 */
   object-position: center 20%;
   opacity: var(--hero-bg-o);
   animation: heroBgReveal 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   will-change: opacity, filter;
-}
-
-[data-theme="dark"] .detail-hero-bg {
-  --hero-bg-o: 0.88;
 }
 
 @keyframes heroBgReveal {
@@ -85,15 +81,14 @@
   filter: brightness(0.6);
 }
   to   {
-  opacity: var(--hero-bg-o, 0.5);
+  opacity: var(--hero-bg-o, 1);
   filter: brightness(1);
 }
 }
 
 /* 右列文本区容器（底纹图 + 压色 + 内容的层叠基底）。
-   ⚠️ 可读性结构方案（用户 2026-10-10 反馈「降透明度仍不清晰」）：单靠压低 img 透明度不够——
-   backdrop 原图明暗不可控，文字对比度随条目图漂移。改为文本区先铺 surface 实色底，
-   底纹图 ×0.12 叠在实色上（氛围感保留、对比度恒定），veil 用同系实色渐变只补左侧文字带 */
+   影院模式：本块默认不带底色（底色/文字色由 ≥768 影院块按「图上白字」体系注入；
+   <768 / app 端隐藏底纹图，文本区回归页底主题色，见下方对应媒体块）。 */
 .detail-hero-info {
   position: relative;
   display: flex;
@@ -101,19 +96,16 @@
   min-width: 0;
   padding: clamp(var(--space-lg), 1.6vw, var(--space-xl));
   border-radius: var(--radius-md);
-  background: var(--color-surface);
   overflow: hidden;
 }
 
-/* 左侧渐变压色（与实色底同色系，左段实色右段透出底纹，无跨底色问题）。
-   2026-10-10 用户反馈「靠右侧文字发暗看不清」：旧 transparent 68% 使简介行尾/展开按钮落在无托底的图上，
-   暗图上黑字不可读 → 把透出点右移到 88%，文字带（至 ~85%）始终有白托底，仅最右边缘露图。 */
+/* 左侧深色渐变压色（影院模式）：只保左侧文字带（白字可读），右侧透出原图实色。
+   基础规则仅层叠定位；渐变色值由 ≥768 影院块注入（<768 / app 端整层隐藏）。 */
 .detail-hero-veil {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(115deg, var(--color-surface) 12%, transparent 88%);
 }
 
 /* ── 返回按钮：叠海报列左上角（暗图/灰占位上均可读的半透暗玻璃）── */
@@ -247,7 +239,7 @@
   line-height: 1.18;
 }
 
-/* 标语（2026-10-10 用户反馈 text-secondary 不清晰 → 用正文主色） */
+/* 标语：基础规则为主题色（服务 <768 / app 页底形态）；≥768 影院块改 on-image 白 */
 .detail-hero-tagline {
   margin: calc(-1 * var(--space-xs)) 0 0;
   color: var(--color-text);
@@ -265,8 +257,11 @@
   font-size: var(--text-sm);
 }
 
-/* shared-hero 白字适用于 Play 沉浸 banner；Detail 亮底文本区改回主题色（复合选择器压过单类全局规则）。
-   2026-10-10 用户反馈 text-secondary 在底纹上不清晰 → meta 用主题正文色 --color-text。 */
+/* 基础规则 = 主题色（<768 / app 端文本区在页底上，需要深浅随主题）。
+   ⚠️ 亮主题 --color-primary 是纯黑——凡 on-image 语境（≥768 影院块）不得引用
+   --color-primary 作前景色，见下方影院块的 kicker/展开按钮覆写。
+   shared-hero 单类（.detail-hero-rating / .detail-hero-meta-item）默认白字，
+   此处复合选择器压回主题色；影院块再压回白（三段覆写链，勿删任一环）。 */
 .detail-hero .detail-hero-meta {
   color: var(--color-text);
 }
@@ -286,7 +281,7 @@
 .detail-hero-desc {
   max-width: 65em;
   margin: 0;
-  /* 2026-10-10 用户反馈 text-secondary 不清晰 → 简介用正文主色 */
+  /* 基础规则主题色（<768 / app 页底形态）；≥768 影院块改 on-image 白 */
   color: var(--color-text);
   font-size: var(--text-sm);
   line-height: 1.9;
@@ -1588,6 +1583,111 @@
 @media (width >= 1920px) {
   html:not([data-device="app"]) .detail-hero {
     --detail-hero-h: 520px;
+  }
+}
+
+/* ============================================================
+   ≥ 768px（非 app）— 影院模式（2026-11-07 方案 A，用户拍板）
+   ── on-image 文字/按钮体系 ──────────────────────────────────
+   背景：旧「白 surface 托底 + 白 veil 渐变 + 主题深色字」在亮主题下把
+   backdrop 洗得发白（图 0.92 叠白底 + veil 白渐变盖 70% 宽）。改与首页
+   HeroBanner / 播放页沉浸区同一语言：图 100% 实色 + 左侧深色渐变压色 +
+   文字/按钮切 on-image 白色系，亮暗主题观感一致。
+   ⚠️ 亮主题 --color-primary = 纯黑，on-image 语境一律不得引用其作前景色。
+   ============================================================ */
+
+@media (width >= 768px) {
+  /* 底色：深色媒体承载面（图未就绪 / 无 backdrop 影片的兜底） */
+  html:not([data-device="app"]) .detail-hero-info {
+    background: var(--color-media-surface);
+  }
+
+  html:not([data-device="app"]) .detail-hero-veil {
+    background: linear-gradient(115deg, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.30) 50%, rgba(0, 0, 0, 0) 85%);
+  }
+
+  html:not([data-device="app"]) .detail-hero-title {
+    color: var(--color-on-image);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7), 0 0 60px rgba(0, 0, 0, 0.3);
+  }
+
+  html:not([data-device="app"]) .detail-hero-tagline {
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+
+  /* kicker：亮主题 --color-primary 纯黑在深色压色上不可读 → 白 */
+  html:not([data-device="app"]) .detail-hero-kicker {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* meta 三件套：压回 shared-hero 的 on-image 体系（基类复合覆写链的第三段） */
+  html:not([data-device="app"]) .detail-hero .detail-hero-meta {
+    color: var(--color-on-image);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+  html:not([data-device="app"]) .detail-hero .detail-hero-rating {
+    color: var(--color-on-image-rating);
+  }
+  html:not([data-device="app"]) .detail-hero .detail-hero-meta-item {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  html:not([data-device="app"]) .detail-hero-desc {
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+
+  /* 展开简介按钮：primary 黑字改白 */
+  html:not([data-device="app"]) .detail-hero-desc .detail-collapse-btn {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* 播放按钮：primary 黑胶囊在深底上弱 → 首页 HeroBanner 同款浅胶囊（亮暗主题皆成立） */
+  html:not([data-device="app"]) .detail-btn-play {
+    background: var(--color-surface-elevated);
+    color: var(--color-text);
+  }
+  html:not([data-device="app"]) .detail-btn-play:hover {
+    background: var(--color-surface-elevated);
+    filter: brightness(0.9);
+  }
+
+  /* 收藏 / 从头播放 / 官方页面：暗玻璃胶囊（同返回钮语言） */
+  html:not([data-device="app"]) .detail-btn-collect,
+  html:not([data-device="app"]) .detail-btn-play-from-start {
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--color-on-image);
+    backdrop-filter: blur(6px);
+  }
+  html:not([data-device="app"]) .detail-btn-collect:hover,
+  html:not([data-device="app"]) .detail-btn-play-from-start:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(0, 0, 0, 0.6);
+    color: var(--color-on-image);
+  }
+  html:not([data-device="app"]) .detail-btn-collect.active {
+    border-color: var(--color-favorite-active);
+    color: var(--color-favorite-active);
+  }
+
+  html:not([data-device="app"]) .detail-official-link {
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.45);
+    color: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(6px);
+  }
+  html:not([data-device="app"]) .detail-official-link:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    color: var(--color-on-image);
+  }
+
+  html:not([data-device="app"]) .detail-progress-label {
+    color: rgba(255, 255, 255, 0.8);
+  }
+  html:not([data-device="app"]) .detail-progress-time {
+    color: rgba(255, 255, 255, 0.6);
   }
 }
 
