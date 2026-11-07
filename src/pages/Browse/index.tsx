@@ -864,8 +864,12 @@ export default function BrowsePage() {
           </div>
         )}
 
-        {/* 直链搜索：无 sort-bar，模式胶囊独立成行（任意视口都要能切回智能检索） */}
-        {searchMode === 'cms' && tabsBlock}
+        {/* 直链搜索：无 sort-bar，模式胶囊独立成行（任意视口都要能切回智能检索）。
+            包一层 --row 容器：≥2560 的 grid 只有 head/filters/results，无 tabs 区域，
+            裸 tabs 会退化成自动放置而错位（2026-11-07 用户反馈）。 */}
+        {searchMode === 'cms' && (
+          <div className="browse-search-tabs-row">{tabsBlock}</div>
+        )}
 
       {/* 源状态行（仅直链搜索）：左侧结果数 + 右侧源状态。
             搜索中 = 折叠 pill（UI 不变）；搜索结束 = demo 同款逐源 badge 卡片行 */}

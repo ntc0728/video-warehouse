@@ -576,6 +576,12 @@
     display: contents;
   }
 
+  /* 直链搜索独立行容器：<2560 回左列首格（≥2560 由下方块改到 head 居中） */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-search-tabs-row {
+    grid-area: tabs;
+  }
+
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-search-tabs {
     grid-area: tabs;
@@ -960,6 +966,28 @@
     .browse-page .browse-sort-bar .browse-search-tabs__pill {
     flex: 0 0 auto;
     width: auto;
+  }
+
+  /* 直链搜索：胶囊独立成行，放到 head 区域居中（否则无 tabs 区域会错位） */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-search-tabs-row {
+    display: flex;
+    grid-area: head;
+    justify-content: center;
+    justify-self: stretch;
+    padding-bottom: var(--space-sm);
+  }
+
+  /* 胶囊宽度略放大（原 auto 只贴文字，两侧过挤）+ 内部字号收一档。
+     ⚠️ 作用域严格限定在 .browse-search-tabs 内，不影响左栏 chips / 类型行 / 排序。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-search-tabs__pill {
+    min-width: calc(var(--text-sm) * 14);
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-search-tabs__pill .browse-search-tab {
+    font-size: var(--text-xs);
   }
 
   /* 左栏 chips 单列 */
