@@ -174,10 +174,21 @@
 }
 
 /* ── 首屏骨架容器（ChartSkeleton，2026-09-18）──────────────────────────────
-   骨架直接挂 .chart-list（网格列数 / gap / flex 撑满 / padding 全部复用），
-   本类只补一条：loading 期间不抢占点击（与 #boot-splash 的 pointer-events:none
-   同口径，防 E2E 误判遮挡、防用户在骨架期误点）。 */
+   骨架直接挂 .chart-list（网格列数 / gap / padding 全部复用），本类只补两条：
+   ① loading 期间不抢占点击（与 #boot-splash 的 pointer-events:none 同口径，
+      防 E2E 误判遮挡、防用户在骨架期误点）；
+   ② **不参与 flex 撑满卡片**（2026-11-07 修「骨架块之间的间距比真实数据大」）。
+   ②的根因（1280×720 实测）：.chart-list 是 flex:1 1 auto（真实数据要撑满卡片），
+   而 grid 行是 auto + align-content:normal(=stretch) → 仅有的 3 行被摊满整卡，
+   每行 177.8px（真实行 105.4px，行盒被拉高 69%），行内灰块垂直居中 →
+   相邻灰块的视觉空档 181.6px vs 真实 109.3px。
+   更糟的是自反馈：useFillRows 的 step =（容器高 + rowGap）/ 已渲染行数，
+   量到的是被拉高的假步进（186.3 而非 109.3）→ 永远只算 3 行。
+   改内容高排布后 step 恢复真实值，行数自动补到视口底（实测 5 行），
+   骨架与真实数据的行高/gap 完全一致。 */
 .chart-skeleton {
+  flex: 0 0 auto;
+  align-content: start;
   pointer-events: none;
 }
 
