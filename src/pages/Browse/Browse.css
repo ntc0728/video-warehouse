@@ -800,22 +800,18 @@
     font-weight: 500;
   }
 
-  /* chips 列数按「可用宽度」自适应（2026-11-07 用户拍板：不要太早分两列）：
-       · 之前写死 repeat(2,1fr)：1440 档 rail 内宽仅 134px → 每列 57px，而四字 chip
-         需 66px → 必然溢出/挤压；且窄栏两列本身拥挤。
-       · 改 repeat(auto-fill, minmax(--chip-col-min, 1fr))：列宽不足一个 chip 时只排
-         1 列，rail 够宽（≥~1900 视口）才自然变 2 列，不再「太早」硬分。
-       · --chip-col-min = 4 字 chip 宽（字宽×4 + padding×3），保证最长的中文 chip
-         在单列内完整单行显示。
+  /* chips 列数（2026-11-07 用户拍板）：< 2560 两列；≥ 2560 单列。
+        · 大视口（≥2560）左栏已封顶 200px，两列会把每格压到 83px、chip 只占一半，
+          观感散 → 改单列，chip 撑满可用宽度语义、阅读动线更整。
+        · 常规桌面（<2560）仍两列，保持紧凑。
      同一规则作用于四组：chips-scroll（分类/类型/地区）与 chips-wrap（年份）。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-scroll,
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-wrap {
-    --chip-col-min: calc(var(--text-sm) * 4 + var(--space-sm) * 3);
     display: grid;
     flex: 0 0 auto;
-    grid-template-columns: repeat(auto-fill, minmax(var(--chip-col-min), 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     /* row-gap = --space-xs（2026-09-12 由 2xs 回补，行距 24.2px）；
        column-gap = --space-xl（1440 档 ≈16–20px，历次 2xs→3xl→md→xl 收敛结果）。
        列数由上面的 auto-fill 决定，间距只影响可容纳列数、不再用于「对齐补偿」。 */
@@ -909,6 +905,18 @@
   }
 }
 
+
+/* ── ≥2560 大视口：左栏 chips 改单列（2026-11-07 用户拍板）──────────────
+   大视口左栏已封顶 200px，两列每格仅 ≈83px、chip 只占一半 → 散；改单列。
+   与 <2560 的两列形成明确分工：常规桌面紧凑两列，超大屏单列。 */
+@media (width >= 2560px) {
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .filter-bar__chips-scroll,
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .filter-bar__chips-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 
 /* ── 右上角总数加载态 + 手动跳页（2026-09-12 用户反馈）───────────── */
 
