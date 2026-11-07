@@ -178,7 +178,7 @@ export default function FilterBar({
   return (
     <div className={`filter-bar${isMobile ? ' filter-bar--mobile' : ''}`}>
       {/* 类型 — hideType 时整行不渲染（类型已移至结果区头部）；
-          否则传入 categoryOptions 时为分类级 7 档（驱动 category，
+          传入 categoryOptions 时按调用方给的分类数渲染（Browse 现为 4 档，驱动 category，
           切换即注入该分类的 mediaType + 默认 genreIds）；
           都不传回落旧 3 档 mediaType 行（仅「全部」category 显示） */}
       {!hideType && (categoryOptions ? (

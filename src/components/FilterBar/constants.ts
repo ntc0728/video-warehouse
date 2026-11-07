@@ -16,11 +16,10 @@ export const MEDIA_OPTIONS: { label: string; value: 'all' | 'movie' | 'tv' }[] =
 // ── 地区选项（2026-11-07 改为从 TMDB 真实国家列表生成）──────
 // 「全部」已迁移到可点击的 label 上，chip 区不再包含 null 选项
 //
-// 设计：`REGION_PRIORITY` 是「希望展示的国家/地区」候选表（含中文名），
+// 设计：`REGION_CANDIDATES` 是「希望展示的国家/地区」候选表（含中文名），
 // `buildRegionOptions(countries)` 用 TMDB `/configuration/countries` 的真实返回做**校验**：
-// 只有 TMDB 确实支持（存在该 iso_3166_1）的项才会出现在左栏 → 从根上杜绝
-// 「选了没有数据的地区」（如历史上的 EU / OTHER，二者都不是 ISO 3166-1 国家码）。
-// ⚠️ tag 顺序即展示顺序（常用在前），未列入 PRIORITY 的国家不展示（TMDB 全量 200+ 项塞不进左栏）。
+// 只有 TMDB 确实支持（存在该 iso_3166_1）的项才会出现在左栏 → 从根上杜绝「选了没有数据的地区」。
+// ⚠️ 表内顺序即展示顺序（常用在前）；未列入候选表的国家不展示（TMDB 全量 200+ 项塞不进左栏）。
 
 /**
  * 地区选项。`code` 既是 URL 值、也是两种后端的分发键：
@@ -37,10 +36,8 @@ export const MEDIA_OPTIONS: { label: string; value: 'all' | 'movie' | 'tv' }[] =
  */
 export interface RegionOption {
   label: string;
-  /** URL / 分发键。非国家项使用虚拟键（如 `OTHER`），其余为 ISO 3166-1 二字母码 */
+  /** URL / 分发键：ISO 3166-1 二字母码 */
   code: string | null;
-  /** TMDB 侧实际下发的国家码（多值 = OR）；缺省时直接用 code */
-  tmdbCodes?: string[];
 }
 
 /** 候选国家/地区（展示顺序 = 本表顺序）。全部须经 TMDB countries 校验后才生效。 */

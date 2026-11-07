@@ -834,7 +834,7 @@ export default function BrowsePage() {
 
       {/* Card 2：结果区域 */}
       <div className="browse-card--results">
-        {/* 智能检索模式：类型（分类级 7 档）+ 排序 + 结果数（≥1024 对齐 demo reshead）
+        {/* 智能检索模式：类型（分类级 4 档）+ 排序 + 结果数（≥1024 对齐 demo reshead）
             首屏 chrome 骨架期由 BrowseSortChromeSkeleton 占位，接口响应后换真 */}
         {searchMode === 'smart' && showChromeSkeleton && <BrowseSortChromeSkeleton />}
         {searchMode === 'smart' && !showChromeSkeleton && (

@@ -49,9 +49,7 @@ export function toStoreFilter(value: FilterBarValue) {
     releaseYear: value.olderThan2015 ? null : value.year,
     releaseDateGte: null as string | null,
     releaseDateLte: value.olderThan2015 ? '2014-12-31' : null,
-    // region → TMDB with_origin_country：只认 ISO 3166-1 二字母码。
-    // 聚合项（如「欧洲」= EU）按 tmdbCodes 展开成逗号列表（TMDB 逗号 = OR）；
-    // 「其他」无 ISO 表达（TMDB 无 NOT IN），已在 FilterBar 侧隐藏，这里兜底置 null 不影响查询。
+    // region → TMDB with_origin_country：只认 ISO 3166-1 二字母码（见 toTmdbCountry）。
     originCountry: toTmdbCountry(value.region),
   };
 }
