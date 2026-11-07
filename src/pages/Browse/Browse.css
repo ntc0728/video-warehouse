@@ -987,9 +987,12 @@
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-cms-head {
     display: flex;
-    flex-direction: column;
+    /* 胶囊与源状态行**同一行**左起排列（与 smart 模式 sort-bar 内「胶囊+类型+排序」同构）。
+       ⚠️ 不要 column：那会把源状态行挤到第二行（2026-11-07 用户反馈）。
+       ⚠️ 不要 align-items:center 之外的居中设置：会让胶囊在整行中央而非左起。 */
+    flex-flow: row wrap;
     grid-area: head;
-    gap: var(--space-xs);
+    gap: var(--space-md);
     align-items: center;
     padding-bottom: var(--space-sm);
   }
@@ -1013,9 +1016,17 @@
   }
 
   /* 源状态行在容器内按内容宽排布（不拉满整行） */
+  /* 源状态行在横向容器内**占据剩余宽度**（原样式无 width/flex，宽度只由内容决定，
+     内容一多就顶出胶囊或换行）。这里让它 flex:1 吃掉剩余空间、内部 badge 自行换行；
+     min-width:0 是 flex 子项可收缩的必要条件（否则内容撑破容器）。
+     同时归零 margin-bottom —— 垂直间距统一由 .browse-cms-head 的 padding-bottom 提供，
+     避免与胶囊行叠加出双倍留白。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-cms-head .browse-source-status-row {
+    flex: 1 1 0;
     justify-content: flex-start;
+    min-width: 0;
+    margin-bottom: 0;
   }
 
   /* 胶囊宽度略放大（原 auto 只贴文字，两侧过挤）+ 内部字号收一档。
