@@ -56,7 +56,7 @@ function LabeledChipGroup({ labels, extra = 0 }: { labels: string[]; extra?: num
         />
       ))}
       {Array.from({ length: extra }, (_, i) => (
-        <Skeleton key={`more-${i}`} className="browse-chrome-skeleton__chip" style={chipStyle('+99 展开')} />
+        <Skeleton key={`more-${i}`} className="browse-chrome-skeleton__chip" style={chipStyle('展开全部（24）')} />
       ))}
       {Array.from({ length: FILL_CHIPS }, (_, i) => (
         <Skeleton key={`fill-${i}`} className="browse-chrome-skeleton__chip browse-chrome-skeleton__chip--fill" />
@@ -92,12 +92,9 @@ function useGenreChipCount(category: CategoryKey): number {
   return base.filter((g) => !excluded.has(g.id)).length;
 }
 
-function GenreChips({ category, collapsible }: { category: CategoryKey; collapsible: boolean }) {
-  const raw = useGenreChipCount(category);
-  // 折叠态：真实 FilterBar 只渲染前 limit 项 + 一个「展开」按钮 → 骨架等量
-  const count = collapsible
-    ? Math.min(raw, FILTER_COLLAPSE_LIMIT.genre) + (raw > FILTER_COLLAPSE_LIMIT.genre ? 1 : 0)
-    : raw;
+function GenreChips({ category }: { category: CategoryKey }) {
+  // 分类不折叠（与真实 FilterBar 一致）：始终全量，不使用 FILTER_COLLAPSE_LIMIT
+  const count = useGenreChipCount(category);
   return (
     <>
       <Skeleton key="chip-all" className="browse-chrome-skeleton__chip" style={chipStyle('全部')} />
@@ -147,7 +144,7 @@ export function BrowseFilterChromeSkeleton({
            * genre 数；默认「电影」时等价于「全部」1 枚 + movieGenres 全量。骨架与真实行等量，
            * 首屏不跳动；genres 未落地时仅「全部」，FILL_CHIPS 撑满不露底。
            */}
-          <GenreChips category={category} collapsible={collapsible} />
+          <GenreChips category={category} />
         </div>
       </div>
       <div className="filter-bar__row filter-bar__row--scroll">

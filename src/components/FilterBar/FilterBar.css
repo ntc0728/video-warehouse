@@ -157,17 +157,36 @@
   transform: scale(0.95);
 }
 
-/* 组内折叠的「展开 N 项 / 收起」按钮（2026-11-07）：与 chip 同尺寸，
-   用主色文字 + 无底，避免与可选 chip 混淆 */
-.filter-bar__chip--more {
+/* ── 组内折叠的「展开全部 / 收起」按钮（2026-11-07）─────────────
+   ⚠️ 刻意**不复用 `.filter-bar__chip`**：复用会让它和数据项长得一样、
+   又排在组末尾 → 看起来像「最后一条数据被选中」（用户反馈）。
+   独立类 + 虚线边框 + 箭头图标，明确是「操作」而非「选项」。 */
+.filter-bar__more {
+  display: inline-flex;
+  gap: var(--space-2xs);
+  justify-self: start;
+  align-items: center;
+  height: calc(var(--text-sm) + var(--space-xs) * 2);
+  padding: 0 var(--space-sm);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
   color: var(--color-primary);
   font-size: var(--text-xs);
   font-weight: 500;
+  white-space: nowrap;
+  transition: border-color var(--dur-2xs) ease, background-color var(--dur-2xs) ease;
+  cursor: pointer;
 }
 
-.filter-bar__chip--more:hover {
+.filter-bar__more:hover {
+  border-color: var(--color-primary);
   background: var(--color-primary-light);
-  color: var(--color-primary);
+}
+
+.filter-bar__more-icon {
+  font-size: var(--text-2xs);
+  line-height: 1;
 }
 
 .filter-bar__chip--active {

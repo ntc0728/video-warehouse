@@ -100,18 +100,24 @@ export default function FilterBar({
   const sliceGroup = <T,>(list: T[], key: keyof typeof COLLAPSE_LIMIT): T[] =>
     collapsible && !openGroups[key] ? list.slice(0, COLLAPSE_LIMIT[key]) : list;
   const toggleGroup = (key: string) => setOpenGroups((s) => ({ ...s, [key]: !s[key] }));
-  /** 折叠态的「展开 N 项 / 收起」按钮 */
+  /**
+   * 折叠态的「展开 N 项 / 收起」按钮。
+   * ⚠️ **不能复用 `filter-bar__chip` 类**（2026-11-07 用户反馈）：
+   *    它和数据项长得一模一样、又排在组末尾 → 看起来像「最后一条数据被选中」。
+   *    故用独立类 `filter-bar__more`：箭头图标 + 主色文字 + 虚线底，明确是操作而非选项。
+   */
   const MoreButton = ({ total, shown, groupKey }: { total: number; shown: number; groupKey: string }) => {
     if (!collapsible || total <= shown) return null;
     const opened = !!openGroups[groupKey];
     return (
       <button
         type="button"
-        className="filter-bar__chip filter-bar__chip--more"
+        className="filter-bar__more"
         onClick={() => toggleGroup(groupKey)}
         aria-expanded={opened}
       >
-        {opened ? '收起' : `+${total - shown} 展开`}
+        <span className="filter-bar__more-icon" aria-hidden="true">{opened ? '▲' : '▼'}</span>
+        {opened ? '收起' : `展开全部（${total}）`}
       </button>
     );
   };
@@ -224,7 +230,8 @@ export default function FilterBar({
             >
               全部
             </button>
-            {sliceGroup(visibleGenres, 'genre').map((g) => (
+            {/* 分类不折叠（用户：主筛选维度，默认全部展示） */}
+            {visibleGenres.map((g) => (
               <button
                 key={g.id}
                 className={chipCls(value.genreIds.includes(g.id))}
@@ -234,11 +241,6 @@ export default function FilterBar({
                 {g.name}
               </button>
             ))}
-            <MoreButton
-              total={visibleGenres.length}
-              shown={sliceGroup(visibleGenres, 'genre').length}
-              groupKey="genre"
-            />
           </div>
         </div>
       )}
