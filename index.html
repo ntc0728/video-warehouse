@@ -158,16 +158,38 @@
       .bs-row--channel { grid-template-columns: repeat(var(--iptv-cols, 2), 1fr); }
       .bs-row--iptvpage { grid-template-columns: repeat(var(--iptv-page-cols, 2), 1fr); }
       .bs-row--record { grid-template-columns: repeat(var(--history-cols, 1), 1fr); }
-      .bs-row--chart { grid-template-columns: repeat(var(--chart-cols, 1), minmax(0, 1fr)); gap: 5px; }
-      /* 榜单行块（2026-09-22 实测修正）：镜像 .chart-list__skeleton 行卡几何 ——
-         行高 桌面 ≈17.5rem×13.2 基 ≈ 231px / 移动 ≈213px，内含 16:9 缩略图槽 + 两行文本；
-         旧单块 3.5rem 与真实差 5 倍，数据到达时榜单区高度跳变一整屏 */
-      .bs-chartitem { display: flex; gap: 10px; align-items: center; height: 17.5rem; padding: 12px; background: #f3f4f7; border-radius: 12px; }
-      @media (width <= 767px) { .bs-chartitem { height: 16.1rem; } }
-      .bs-chartitem__img { flex: 0 0 12.1rem; aspect-ratio: 16 / 9; background: #e8ebf1; border-radius: 8px; }
-      .bs-chartitem__lines { display: flex; flex: 1 1 auto; flex-direction: column; gap: 6px; min-width: 0; }
-      .bs-chartitem__lines i { display: block; height: 0.9rem; background: #e8ebf1; border-radius: 4px; }
-      .bs-chartitem__lines i:last-child { width: 45%; }
+      .bs-row--chart { grid-template-columns: repeat(var(--chart-cols, 1), minmax(0, 1fr)); gap: 4px 11px; }
+      /* 榜单行块（2026-11-07 按真实行重做）：镜像真实 .chart-row 的盒模型 ——
+         行内 = 排名 44 + 封面 160×90（≤1023 竖版 112×168）+ 标题/年份/简介三行 + 右侧热度两行；
+         行高由「封面 + 上下 padding」派生（1280 实测真实 105.4px，此处 90+8×2=106）；
+         行距 3.86 / 列距 10.57 → 取 4 / 11px；
+         行内不再画整块灰卡底色（真实行无底色，灰块才是骨架本体）。
+         ⚠️ 旧版是 height:17.5rem(=234px) 的灰卡 + gap 5px，与真实行差 2.2 倍、
+            列距还比真实窄一半，冷启动 → React 骨架 → 真实数据连跳两次（用户 2026-11-07 反馈）。 */
+      .bs-chartitem { display: flex; gap: 11px; align-items: center; padding: 8px 11px; }
+      .bs-chartitem__rank { flex: 0 0 44px; height: 24px; background: #e8ebf1; border-radius: 6px; }
+      .bs-chartitem__img { flex: 0 0 160px; height: 90px; background: #e8ebf1; border-radius: 8px; }
+      .bs-chartitem__lines { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-width: 0; }
+      .bs-chartitem__lines i { display: block; height: 14px; background: #e8ebf1; border-radius: 4px; }
+      .bs-chartitem__lines i:first-child { width: 62%; height: 26px; }
+      .bs-chartitem__lines i:nth-child(2) { width: 38%; }
+      .bs-chartitem__lines i:last-child { width: 78%; }
+      .bs-chartitem__heat { display: flex; flex: 0 0 auto; flex-direction: column; gap: 2px; align-items: flex-end; }
+      .bs-chartitem__heat i { display: block; height: 18px; background: #e8ebf1; border-radius: 4px; }
+      .bs-chartitem__heat i:first-child { width: 56px; }
+      .bs-chartitem__heat i:last-child { width: 40px; height: 12px; }
+      /* ≤1023 / App：单列 + 竖版封面（真实 .chart-row__cover--poster 112×168，行高 168+6×2=180） */
+      @media (width <= 1023px) {
+        .bs-row--chart { gap: 3px 8px; }
+        .bs-chartitem { gap: 9px; padding: 6px 9px; }
+        .bs-chartitem__rank { flex-basis: 32px; }
+        .bs-chartitem__img { flex-basis: 112px; height: 168px; }
+      }
+      /* App 端（html[data-device="app"]）与 ≤1023 同档：单列竖版（真实 CSS 同款双写） */
+      html[data-device="app"] .bs-row--chart { gap: 3px 8px; }
+      html[data-device="app"] .bs-chartitem { gap: 9px; padding: 6px 9px; }
+      html[data-device="app"] .bs-chartitem__rank { flex-basis: 32px; }
+      html[data-device="app"] .bs-chartitem__img { flex-basis: 112px; height: 168px; }
       /* person 形态（2026-09-22 实测新增）：hero 对齐 PersonSkeleton 同档高
          （桌面 17rem≈224 有图档近似；移动真实内容驱动 ≈293px=21.2rem）；
          作品网格读 --person-work-cols（与真实/页骨架三方同源） */
@@ -501,9 +523,6 @@
         }
       }
 
-      html[data-theme="dark"] .bs-chartitem__img,
-      html[data-theme="dark"] .bs-chartitem__lines i { background: #1f1f1f; }
-
       html[data-theme="dark"] #boot-splash { background: #141414; color: #666; }
       html[data-theme="dark"] .bs-header { background: #1f1f1f; }
       html[data-theme="dark"] .bs-filter { background: #1f1f1f; }
@@ -515,7 +534,6 @@
       html[data-theme="dark"] .bs-chip,
       html[data-theme="dark"] .bs-sec,
       html[data-theme="dark"] .bs-list i,
-      html[data-theme="dark"] .bs-chartitem,
       html[data-theme="dark"] .bs-person-hero,
       html[data-theme="dark"] .bs-row--chart i,
       html[data-theme="dark"] .bs-lines i,
@@ -694,18 +712,25 @@
           for (var i = 0; i < count; i++) list.appendChild(el(''));
           return list;
         }
-        /* 榜单行网格（chart 专用）：行卡镜像 .chart-list__skeleton（16:9 图槽 + 两行文本，
-           行高由 CSS .bs-chartitem 控制），区别于旧单灰块（与真实差 5 倍高）；
-           铺在 --chart-cols 列网格里与真实 .chart-list 同构 */
+        /* 榜单行网格（chart 专用，2026-11-07 重做）：行内 = 排名 + 封面 + 标题/年份/简介三行 + 热度两行，
+           与真实 .chart-row / ChartSkeleton 的 ChartRowSkeleton 同构（行高 / 行距 / 列距见 CSS .bs-chartitem）；
+           铺在 --chart-cols 列网格里与真实 .chart-list 同构。
+           旧实现只有「图槽 + 两行文本」且无排名/热度，行高 234px（真实 105px）。 */
         function chartRows(count) {
           var row = el('bs-row bs-row--chart', 'div');
           for (var i = 0; i < count; i++) {
             var item = el('bs-chartitem', 'div');
+            item.appendChild(el('bs-chartitem__rank'));
             item.appendChild(el('bs-chartitem__img'));
             var linesBox = el('bs-chartitem__lines', 'div');
             linesBox.appendChild(el(''));
             linesBox.appendChild(el(''));
+            linesBox.appendChild(el(''));
             item.appendChild(linesBox);
+            var heat = el('bs-chartitem__heat', 'div');
+            heat.appendChild(el(''));
+            heat.appendChild(el(''));
+            item.appendChild(heat);
             row.appendChild(item);
           }
           return row;
@@ -908,7 +933,19 @@
             fillRows(host, function () { return fullGrid('poster', 1); }, true);
           },
           browse: function () { fillRows(body.querySelector('.bs-split__main') || body, function () { return fullGrid('poster', 1); }); },
-          chart: function () { fillRows(body, function () { return chartRows(colCount('chart')); }); },
+          /* 追加行必须落进**同一个** .bs-row--chart 网格：逐块 append 会被 .bs-body 的
+             flex gap(16px) 隔开 → 行距从 4px 变 16px（2026-11-07 行高改小后填充行数变多，此坑才暴露）。
+             故这里把 chartRows 生成的整行拆成碎片塞进首个网格。 */
+          chart: function () {
+            var grid = body.querySelector('.bs-row--chart');
+            if (!grid) return;
+            fillRows(grid, function () {
+              var frag = document.createDocumentFragment();
+              var row = chartRows(colCount('chart'));
+              while (row.firstChild) frag.appendChild(row.firstChild);
+              return frag;
+            });
+          },
           collections: function () { fillRows(body.querySelector('.bs-split__main') || body, function () { return fullGrid('channel', 1); }, true); },
           history: function () { fillRows(body.querySelector('.bs-split__main') || body, function () { return fullGrid('record', 1); }); },
           iptv: function () {
