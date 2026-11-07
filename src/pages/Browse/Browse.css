@@ -910,62 +910,43 @@
 
 
 
-/* ── ≥2560 大视口：左栏 chips 单列（2026-11-07 用户拍板，含四条硬约束）────────
-   为什么大视口要单列：--rail-w 封顶 200px 不随视口变宽，而 --ui-scale 在 ≥2560 升到 1.08
-   把字号/间距放大 → 两列每格 81.8px 里塞 71.3px 的 chip，只是「勉强塞满」；
-   单列能让每个选项独占一行、点按区更宽，配合 2880+ 的卡片墙也更从容。
-   一次性解决此前四项吐槽：
-     ① 行数翻倍 → 收掉行距（row-gap:0，行节奏交给 chip 自身高度），20+17+13 项
-        刚好把左栏撑到可视高，不再显得空。
-     ② 每行右侧留白 → chip width:100% 撑满整行，文字左对齐，右侧零留白。
-     ③ 选中态撑满整行 → 不用满宽深色块，改「左侧 2px 主色竖条 + 加粗」，仍是标签感。
-     ④ 左栏底部大量空白 → chip 撑高后栏高≈内容高，且此前已移除强制 min-height。
-   作用域：仅本页、仅 ≥2560、仅桌面（非 app/tv）；<2560 的两列布局零回归。 */
+/* ── ≥2560 大视口：Browse 左栏单列 + 收窄 + chip 居中 + 四字左缘对齐 ──────────
+   用户 2026-11-07 定稿规格（四项，全部只在 ≥2560 生效）：
+     ① 单列：chips 容器 1 列。
+     ② 只收窄 Browse 页左栏：在 .browse-page 上**局部覆盖 --rail-w**（200→168px），
+        不动全局 token —— 设置 / IPTV / 收藏·历史 三页共用 --rail-w，必须零影响。
+        （.browse-page 内消费 --rail-w 的只有两处：本页 grid 列宽、模式胶囊宽度，
+          局部覆盖后两者一起跟着收，保持对齐。）
+     ③ chip 居中：justify-self: center（宽度仍贴合文字，选中态是文字宽胶囊）。
+     ④ 四字左缘对齐两字（单独处理）：格内居中会让宽度不同 => 左缘按字数错开。
+        四字比两字宽 2 个字 → 左缘偏左 1 个字；给 --wide 加 margin-left。
+        ⚠️ justify-self:center 居中的是「margin box」，加 margin-left:m 实际右移 m/2，
+           故 m 取 2 个字宽，净右移 1 个字宽，正好补齐。
+   作用域：仅 Browse、仅 ≥2560、仅桌面（非 app/tv）；<2560 两列零回归。 */
 @media (width >= 2560px) {
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page {
+    --rail-w: 168px;
+  }
+
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .filter-bar__chips-scroll,
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .filter-bar__chips-wrap {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 0;
-  }
-
-  /* 条目撑满整行（排除组标题 label--as-chip，它只是文本，不该被拉伸） */
-  html:not([data-device="app"]):not([data-device="tv"])
-    .browse-page .filter-bar .filter-bar__chip:not(.filter-bar__label--as-chip) {
-    position: relative;
-    justify-self: stretch;
-    width: 100%;
-    padding-left: var(--space-md);
-    border-radius: var(--radius-sm);
-    text-align: left;
-  }
-
-  /* 选中态：左侧竖条 + 加粗 + 主文字色，不铺满深色底 */
-  html:not([data-device="app"]):not([data-device="tv"])
-    .browse-page .filter-bar .filter-bar__chip--active,
-  html:not([data-device="app"]):not([data-device="tv"])
-    .browse-page .filter-bar .filter-bar__chip--active:hover {
-    background: transparent;
-    color: var(--color-text);
-    font-weight: 600;
-    box-shadow: none;
   }
 
   html:not([data-device="app"]):not([data-device="tv"])
-    .browse-page .filter-bar .filter-bar__chip--active::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 2px;
-    height: 1.1em;
-    border-radius: var(--radius-full);
-    background: var(--color-primary);
-    transform: translateY(-50%);
+    .browse-page .filter-bar .filter-bar__chip {
+    justify-self: center;
+  }
+
+  /* 四字（及更宽）→ 右移一个字宽，文字左缘与两字 chip 对齐 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .filter-bar .filter-bar__chip--wide {
+    margin-left: calc(var(--text-sm) * 2);
   }
 }
-
 /* ── 右上角总数加载态 + 手动跳页（2026-09-12 用户反馈）───────────── */
 
 /* 新搜索落位前：总数位置显示转圈（替代「共 0 条」闪现） */
