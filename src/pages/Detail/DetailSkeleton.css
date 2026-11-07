@@ -35,12 +35,15 @@
   background: none;
 }
 
-/* 骨架 hero-info 底色：保持与资料区一致的 surface 卡片底（2026-11-08 用户反馈：
-   影院深底上灰块不协调，骨架不用跟真实 hero 的 --color-media-surface 走）。
-   仅 ≥768 非 app：<768 / app 真实 hero 无底色（页底形态），骨架同步保持透明 */
+/* 骨架 hero-info：surface 白卡 + 与 .detail-content 卡片同款的边框/投影（2026-11-08）。
+   页面底色同为 --color-surface(#fff)，纯白底会「隐形」——补卡片 chrome 后与下方
+   资料区骨架卡观感一致，灰块在白卡上保持对比。仅 ≥768 非 app（<768 / app
+   真实 hero 无卡形态，骨架同步保持透明）。 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .detail-skeleton__hero-info {
+    border: 1px solid var(--color-border);
     background: var(--color-surface);
+    box-shadow: var(--shadow-card);
   }
 
   /* 内容簇垂直居中（用户 2026-11-08：固定高度下灰块全挤在顶部不协调）。
