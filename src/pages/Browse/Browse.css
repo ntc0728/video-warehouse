@@ -1033,12 +1033,6 @@
     padding: 0 var(--space-sm) var(--space-2xl);
   }
 
-  /* 展开按钮在单列里与 chip 同样居中（chip 是 center 对齐） */
-  html:not([data-device="app"]):not([data-device="tv"])
-    .browse-page .filter-bar .filter-bar__more {
-    justify-self: center;
-  }
-
   /* 左栏 chips 单列 */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .filter-bar__chips-scroll,

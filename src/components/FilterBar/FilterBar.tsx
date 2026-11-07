@@ -104,7 +104,8 @@ export default function FilterBar({
    * 折叠态的「展开 N 项 / 收起」按钮。
    * ⚠️ **不能复用 `filter-bar__chip` 类**（2026-11-07 用户反馈）：
    *    它和数据项长得一模一样、又排在组末尾 → 看起来像「最后一条数据被选中」。
-   *    故用独立类 `filter-bar__more`：箭头图标 + 主色文字 + 虚线底，明确是操作而非选项。
+   *    故用独立类 `filter-bar__more`：主色纯文字（无边框/无背景/无箭头，与布局 demo 一致），
+   *    明确是「操作」而非「选项」。
    */
   const MoreButton = ({ total, shown, groupKey }: { total: number; shown: number; groupKey: string }) => {
     if (!collapsible || total <= shown) return null;
@@ -116,8 +117,7 @@ export default function FilterBar({
         onClick={() => toggleGroup(groupKey)}
         aria-expanded={opened}
       >
-        <span className="filter-bar__more-icon" aria-hidden="true">{opened ? '▲' : '▼'}</span>
-        {opened ? '收起' : `展开全部（${total}）`}
+        {opened ? '收起' : `+${total - shown} 展开`}
       </button>
     );
   };

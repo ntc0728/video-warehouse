@@ -157,36 +157,28 @@
   transform: scale(0.95);
 }
 
-/* ── 组内折叠的「展开全部 / 收起」按钮（2026-11-07）─────────────
+/* ── 组内折叠的「+N 展开 / 收起」（2026-11-07）───────────────────
    ⚠️ 刻意**不复用 `.filter-bar__chip`**：复用会让它和数据项长得一样、
    又排在组末尾 → 看起来像「最后一条数据被选中」（用户反馈）。
-   独立类 + 虚线边框 + 箭头图标，明确是「操作」而非「选项」。 */
+   样式与布局 demo 一致（纯文字链接：主色 + 11px + 与 chip 同高，
+   无边框 / 无背景 / 无箭头），明确是「操作」而非「选项」。 */
 .filter-bar__more {
   display: inline-flex;
-  gap: var(--space-2xs);
-  justify-self: start;
+  justify-self: center;
   align-items: center;
   height: calc(var(--text-sm) + var(--space-xs) * 2);
   padding: 0 var(--space-sm);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
+  border: none;
   background: transparent;
   color: var(--color-primary);
-  font-size: var(--text-xs);
-  font-weight: 500;
+  font-size: var(--text-2xs);
   white-space: nowrap;
-  transition: border-color var(--dur-2xs) ease, background-color var(--dur-2xs) ease;
+  transition: color var(--dur-2xs) ease;
   cursor: pointer;
 }
 
 .filter-bar__more:hover {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
-}
-
-.filter-bar__more-icon {
-  font-size: var(--text-2xs);
-  line-height: 1;
+  color: var(--color-primary-hover);
 }
 
 .filter-bar__chip--active {
