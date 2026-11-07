@@ -349,6 +349,11 @@
   filter: brightness(0.9);
   box-shadow: var(--shadow-card);
 }
+/* 继续播放态（有观看历史）：首页 banner「继续播放」同款危险色胶囊（2026-11-08 用户要求） */
+.detail-btn-play--continue {
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+}
 
 /* 从头播放 / 收藏：暗玻璃胶囊（同返回钮语言，影院 on-image 体系） */
 .detail-btn-play-from-start {
@@ -1409,7 +1414,9 @@
      hero 已影院化（深底 + on-image 白字），底纹图/压色层与桌面同一体系；
      文本区保持全出血无圆角（padding 左右 0，文字贴屏缘，可读性靠深色 veil + 文字阴影） */
   .detail-hero-info {
-    padding: var(--space-md) 0;
+    /* 左右 padding 恢复（2026-11-08）：底纹图 absolute inset 0 全出血不受影响，
+       白字贴屏缘不可读；上下 0 改 md 统一 */
+    padding: var(--space-md);
     border-radius: 0;
     background: var(--color-media-surface);
   }
@@ -1471,7 +1478,7 @@
    2026-11-08 随移动端启用底纹：bg/veil 不再隐藏，info 深底同步） */
 
   html[data-device="app"] .detail-hero-info {
-    padding: var(--space-md) 0;
+    padding: var(--space-md);
     border-radius: 0;
     background: var(--color-media-surface);
   }

@@ -850,7 +850,7 @@ export default function DetailPage() {
                 <Link
                   to={{ pathname: `/play/${id}`, search: '' }}
                   state={{ from: playFrom }}
-                  className="detail-btn detail-btn-play"
+                  className={`detail-btn detail-btn-play${hasWatchingHistory ? ' detail-btn-play--continue' : ''}`}
                 >
                   <Icon icon={Play} size="sm" fill="currentColor" />
                   {hasWatchingHistory ? '继续播放' : '立即播放'}
