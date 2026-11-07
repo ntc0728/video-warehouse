@@ -13,7 +13,7 @@ import { Search, Loader2 } from 'lucide-react';
 import FilterBar, { type FilterBarValue, type FilterBarCategoryOption } from '@/components/FilterBar';
 import { Empty, BackToTopButton } from '@/components/common';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
-import { SORT_OPTIONS } from '@/components/FilterBar/constants';
+import { SORT_OPTIONS, REGION_OPTIONS } from '@/components/FilterBar/constants';
 
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -396,6 +396,12 @@ export default function BrowsePage() {
 
   // ── 渲染分支 ────────────────────────────────────
   const excludedGenreIds = CATEGORY_CONFIG[filterValue.category]?.defaultGenreIds ?? [];
+  // 智能检索（TMDB）无法表达的地区项（如「其他」）：TMDB 的 with_origin_country 只认
+  // ISO 3166-1 国家码，没有 NOT IN 语义 → 这些 chip 在 smart 模式隐藏（CMS 侧仍保留）。
+  const hideRegionCodes = useMemo(
+    () => REGION_OPTIONS.filter((r) => r.tmdbUnsupported).map((r) => r.code ?? ''),
+    [],
+  );
   const isCmsLoading = cmsLoading;
 
   // ── 逻辑分页组装层：每页恒定 cols×4 行（2026-11-06 由 5 改 4）——
@@ -757,6 +763,7 @@ export default function BrowsePage() {
             categoryOptions: CATEGORY_OPTIONS,
             genres: currentGenres,
             excludedGenreIds,
+            hideRegionCodes,
             totalResults: discoverPagination.totalResults,
             categoryLabel: CATEGORY_LABELS[filterValue.category],
             hideFooter: true,
@@ -783,6 +790,7 @@ export default function BrowsePage() {
               onChange={handleFilterChange}
               genres={currentGenres}
               excludedGenreIds={excludedGenreIds}
+              hideRegionCodes={hideRegionCodes}
               totalResults={discoverPagination.totalResults}
               categoryLabel={CATEGORY_LABELS[filterValue.category]}
               hideFooter

@@ -25,6 +25,7 @@ import type { FilterBarValue } from '@/components/FilterBar';
 import { useTMDBStore } from '@/stores';
 import { buildFilterSig } from '@/lib/filterSig';
 import { SORT_OPTIONS } from './constants';
+import { REGION_OPTIONS } from '@/components/FilterBar/constants';
 import { FILTER_DEBOUNCE_MS } from './constants';
 import { parseFromUrl, serializeToUrl } from './urlState';
 
@@ -48,8 +49,20 @@ export function toStoreFilter(value: FilterBarValue) {
     releaseYear: value.olderThan2015 ? null : value.year,
     releaseDateGte: null as string | null,
     releaseDateLte: value.olderThan2015 ? '2014-12-31' : null,
-    originCountry: value.region,
+    // region → TMDB with_origin_country：只认 ISO 3166-1 二字母码。
+    // 聚合项（如「欧洲」= EU）按 tmdbCodes 展开成逗号列表（TMDB 逗号 = OR）；
+    // 「其他」无 ISO 表达（TMDB 无 NOT IN），已在 FilterBar 侧隐藏，这里兜底置 null 不影响查询。
+    originCountry: toTmdbCountry(value.region),
   };
+}
+
+/** 地区 code → TMDB with_origin_country 值（聚合项展开为多国 OR） */
+function toTmdbCountry(region: string | null): string | null {
+  if (!region) return null;
+  const opt = REGION_OPTIONS.find((r) => r.code === region);
+  if (!opt) return region;
+  if (opt.tmdbUnsupported) return null;
+  return opt.tmdbCodes?.length ? opt.tmdbCodes.join(',') : opt.code;
 }
 
 export function useBrowseData() {

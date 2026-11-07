@@ -128,7 +128,10 @@ export function BrowseFilterChromeSkeleton({ category = 'movie' }: { category?: 
       <div className="filter-bar__row filter-bar__row--scroll">
         <span className="filter-bar__label">地区</span>
         <div className="filter-bar__chips-scroll">
-          <LabeledChipGroup labels={REGION_OPTIONS.map((o) => o.label)} />
+          {/* 与 smart 模式真实 FilterBar 等量：剔除 TMDB 无法表达的地区项（如「其他」） */}
+          <LabeledChipGroup
+            labels={REGION_OPTIONS.filter((o) => !o.tmdbUnsupported).map((o) => o.label)}
+          />
         </div>
       </div>
       <div className="filter-bar__row filter-bar__row--scroll">

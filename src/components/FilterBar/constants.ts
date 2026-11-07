@@ -15,19 +15,48 @@ export const MEDIA_OPTIONS: { label: string; value: 'all' | 'movie' | 'tv' }[] =
 // ── 地区选项 ────────────────────────────────────────
 // 「全部」已迁移到可点击的 label 上，chip 区不再包含 null 选项
 
-export const REGION_OPTIONS: { label: string; code: string | null }[] = [
+/**
+ * 地区选项。`code` 既是 URL 值、也是两种后端的分发键：
+ *  - 智能检索（TMDB）：`with_origin_country` **只接受 ISO 3166-1 二字母国家代码**；
+ *  - 直链搜索（CMS）：`vod_area` 自由文本，用 `index.tsx CMS_REGION_ALIASES` 别名匹配。
+ *
+ * ⚠️ 2026-11-07 修复：`EU`（超国家码）与 `OTHER`（自造值）都不是 ISO 国家代码，
+ *    直接传给 TMDB 会**返回空结果**（用户报「欧洲该地区接口没有数据」）。
+ *    处理方式：
+ *      · `EU` → `tmdbCodes` 展开成一组欧洲国家码，`with_origin_country` 逗号分隔为 OR 语义；
+ *      · `OTHER` → 无 ISO 表达（TMDB 没有 NOT IN），`tmdbUnsupported: true`，
+ *        智能检索模式下不再显示该 chip（CMS 侧仍保留其「排除法」语义）。
+ */
+export interface RegionOption {
+  label: string;
+  code: string | null;
+  /** TMDB 侧实际下发的 ISO 国家码（多值 = OR）；缺省时直接用 code */
+  tmdbCodes?: string[];
+  /** TMDB 无法表达该语义（目前仅 OTHER），智能检索模式应隐藏 */
+  tmdbUnsupported?: boolean;
+}
+
+export const REGION_OPTIONS: RegionOption[] = [
   { label: '内地', code: 'CN' },
   { label: '中国香港', code: 'HK' },
   { label: '中国台湾', code: 'TW' },
   { label: '美国', code: 'US' },
   { label: '韩国', code: 'KR' },
   { label: '日本', code: 'JP' },
-  { label: '欧洲', code: 'EU' },
+  {
+    label: '欧洲',
+    code: 'EU',
+    // 已单列的 GB（英国）/ DK（丹麦）不重复计入，避免同片在两个 chip 下都命中
+    tmdbCodes: [
+      'FR', 'DE', 'IT', 'ES', 'NL', 'BE', 'SE', 'NO',
+      'PL', 'IE', 'AT', 'CH', 'PT', 'GR', 'FI', 'CZ', 'HU', 'RO',
+    ],
+  },
   { label: '印度', code: 'IN' },
   { label: '泰国', code: 'TH' },
   { label: '丹麦', code: 'DK' },
   { label: '英国', code: 'GB' },
-  { label: '其他', code: 'OTHER' },
+  { label: '其他', code: 'OTHER', tmdbUnsupported: true },
 ];
 
 // ── 排序选项 ────────────────────────────────────────
