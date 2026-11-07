@@ -10,7 +10,7 @@
  *
  * 所有筛选 tab 均全展开（不限行、无折叠 / 「更多」按钮）
  */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, type CSSProperties } from 'react';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import type { TMDBGenre } from '@/types/tmdb';
 import { MEDIA_OPTIONS, REGION_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type FilterBarValue, type FilterBarCategoryOption } from './constants';
@@ -18,17 +18,20 @@ import './FilterBar.css';
 
 export type { FilterBarValue } from './constants';
 
-// ── chip 类名 ────────────────────────────────────────────────────────
-//   CJK 记 1 字宽、ASCII 记 0.5。--wide 标记「字宽 >= 4」的长标签，
-//   供 Browse ≥2560 单列时做「四字左缘对齐两字」的单独补偿（见 Browse.css）。
-//   <2560 无 --wide 的 CSS 规则 → 该标记不产生任何视觉影响。
+// ── chip 类名与字宽变量 ──────────────────────────────────────────────
+//   CJK 记 1 字宽、ASCII 记 0.5。labelWidth 以 CSSProperties 变量 --chip-label-w
+//   注入到每个 chip，供 Browse ≥2560 单列时按「(字宽 − 2) × 字宽」动态补偿左缘，
+//   使任意长度（三字 / 四字 / 五字…）文字左缘都对齐两字 chip（见 Browse.css）。
+//   纯数字变量在 <2560 / 其它调用方无任何规则消费 → 零副作用。
 const labelWidth = (label: string): number =>
   [...label].reduce((w, ch) => w + (/[\u2E80-\u9FFF\uF900-\uFFFD]/.test(ch) ? 1 : 0.5), 0);
 
-const chipCls = (label: string, active: boolean): string => {
-  const wide = labelWidth(label) >= 4;
-  return `filter-bar__chip${active ? ' filter-bar__chip--active' : ''}${wide ? ' filter-bar__chip--wide' : ''}`;
-};
+const chipCls = (active: boolean): string =>
+  `filter-bar__chip${active ? ' filter-bar__chip--active' : ''}`;
+
+/** --chip-label-w：无单位字宽数字；CSS 侧 calc 消费，缺省兜底 2（不补偿）。 */
+const chipLabelStyle = (label: string): CSSProperties =>
+  ({ '--chip-label-w': labelWidth(label) }) as CSSProperties;
 
 // ── FilterBar Props ───────────────────────────────────
 
@@ -147,7 +150,8 @@ export default function FilterBar({
             {categoryOptions.map((o) => (
               <button
                 key={o.key}
-                className={chipCls(o.label, value.category === o.key)}
+                className={chipCls(value.category === o.key)}
+                style={chipLabelStyle(o.label)}
                 onClick={() => onChange({ ...value, category: o.key, mediaType: o.mediaType, genreIds: o.genreIds })}
               >
                 {o.label}
@@ -162,7 +166,8 @@ export default function FilterBar({
             {MEDIA_OPTIONS.map((m) => (
               <button
                 key={m.value}
-                className={chipCls(m.label, value.mediaType === m.value)}
+                className={chipCls(value.mediaType === m.value)}
+                style={chipLabelStyle(m.label)}
                 onClick={() => selectMediaType(m.value)}
               >
                 {m.label}
@@ -190,7 +195,8 @@ export default function FilterBar({
             {visibleGenres.map((g) => (
               <button
                 key={g.id}
-                className={chipCls(g.name, value.genreIds.includes(g.id))}
+                className={chipCls(value.genreIds.includes(g.id))}
+                style={chipLabelStyle(g.name)}
                 onClick={() => selectGenre(g.id)}
               >
                 {g.name}
@@ -217,7 +223,8 @@ export default function FilterBar({
             {REGION_OPTIONS.map((r) => (
               <button
                 key={r.code ?? 'all'}
-                className={chipCls(r.label, value.region === r.code)}
+                className={chipCls(value.region === r.code)}
+                style={chipLabelStyle(r.label)}
                 onClick={() => update({ region: r.code })}
               >
                 {r.label}
@@ -243,7 +250,8 @@ export default function FilterBar({
           {YEAR_OPTIONS.map((y) => (
             <button
               key={y.value}
-              className={chipCls(y.label, value.year === y.value && !value.olderThan2015)}
+              className={chipCls(value.year === y.value && !value.olderThan2015)}
+                style={chipLabelStyle(y.label)}
               onClick={() => update({ year: y.value, olderThan2015: false })}
             >
               {y.label}
@@ -251,7 +259,8 @@ export default function FilterBar({
           ))}
           <button
             type="button"
-            className={chipCls(YEAR_OLDER_LABEL, value.olderThan2015)}
+            className={chipCls(value.olderThan2015)}
+              style={chipLabelStyle(YEAR_OLDER_LABEL)}
             onClick={() => update({ year: null, olderThan2015: true })}
           >
             {YEAR_OLDER_LABEL}

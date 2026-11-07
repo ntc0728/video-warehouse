@@ -22,7 +22,7 @@ import { usePageSearchStore } from '@/stores/usePageSearchStore';
 import { getVideoSources } from '@/services/sourceService';
 import type { VideoSourceConfig } from '@/types/source';
 import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
-import { useIsMobile, useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
+import { useIsMobile, useIsMobileLayout, useIsTV, useMediaQuery } from '@/hooks/useMediaQuery';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useDelayedFlag } from '@/hooks/useDelayedFlag';
 import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
@@ -54,6 +54,8 @@ export default function BrowsePage() {
   const isNarrowViewport = useIsMobile();
   const isPhone = isMobileLayout || isNarrowViewport;
   const isTV = useIsTV();
+  // ≥2560：模式胶囊移入结果区头部行居中（2026-11-07 用户拍板）
+  const wideViewport = useMediaQuery('(min-width: 2560px)');
   const location = useLocation();
   const navigationType = useNavigationType();
   const [searchParams] = useSearchParams();
@@ -286,7 +288,7 @@ export default function BrowsePage() {
     const store = usePageSearchStore.getState();
     // 分类导航进入时写入空搜索词（不写残留 query），保证顶部搜索框为空
     store.setPageSearch(fromCategory ? '' : query, handlePageSearch, '搜索影片、剧集…');
-    return () => { store.clearPageSearch(); };
+  return () => { store.clearPageSearch(); };
   }, [query, handlePageSearch, location.pathname, fromCategory]);
 
   // 从顶部导航搜索进入：用 location.state 或 ?q= 中的最新搜索词触发
@@ -718,6 +720,27 @@ export default function BrowsePage() {
     });
   }, [videoSourceIds, videoSources, cmsResults, failedSources]);
 
+  // 模式胶囊（智能检索 / 直链搜索）：位置由视口决定，内容单点复用
+  const tabsBlock = (
+    <div className="browse-search-tabs">
+      <div className="browse-search-tabs__pill">
+        <button
+          className={`browse-search-tab ${searchMode === 'smart' ? 'active' : ''}`}
+          onClick={() => handleModeChange('smart')}
+        >
+          <Icon icon={Search} size="xs" />
+          <span>智能检索</span>
+        </button>
+        <button
+          className={`browse-search-tab ${searchMode === 'cms' ? 'active' : ''}`}
+          onClick={() => handleModeChange('cms')}
+        >
+          <span>直链搜索</span>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div
       className={[
@@ -750,25 +773,9 @@ export default function BrowsePage() {
       {/* Card 1：搜索区域（桌面端；移动端由命令栏接管） */}
       {!isPhone && (
         <div className="browse-card--search">
-          {/* Tab 切换 — ≥1024 首行左列（胶囊宽度 = 左栏 --rail-w；右侧同行由结果区头部占用） */}
-          <div className="browse-search-tabs">
-            <div className="browse-search-tabs__pill">
-              <button
-                className={`browse-search-tab ${searchMode === 'smart' ? 'active' : ''}`}
-                onClick={() => handleModeChange('smart')}
-              >
-                <Icon icon={Search} size="xs" />
-                <span>智能检索</span>
-              </button>
-              <button
-                className={`browse-search-tab ${searchMode === 'cms' ? 'active' : ''}`}
-                onClick={() => handleModeChange('cms')}
-              >
-                <span>直链搜索</span>
-              </button>
-            </div>
-          </div>
-          {/* 首屏 chrome 骨架：接口未响应前左栏不渲染真实筛选项（模式 tab 在上方恒真实） */}
+          {/* <2560：模式胶囊占首行左列；≥2560 已移入 sort-bar 行 */}
+          {!wideViewport && searchMode === 'smart' && tabsBlock}
+          {/* 首屏 chrome 骨架：接口未响应前左栏不渲染真实筛选项 */}
           {showChromeSkeleton && <BrowseFilterChromeSkeleton category={filterValue.category} />}
           {/* 智能检索模式：FilterBar（类型行已移至结果区头部，footer 移到 Card 2） */}
           {!showChromeSkeleton && searchMode === 'smart' && (
@@ -806,6 +813,8 @@ export default function BrowsePage() {
         {searchMode === 'smart' && showChromeSkeleton && <BrowseSortChromeSkeleton />}
         {searchMode === 'smart' && !showChromeSkeleton && (
           <div className="browse-sort-bar">
+            {/* ≥2560：模式胶囊与本行同排居中；<2560 在首行左列 */}
+            {wideViewport && tabsBlock}
             <div className="browse-sort-bar__types" role="tablist" aria-label="类型">
               {CATEGORY_OPTIONS.map((o) => (
                 <button
@@ -855,7 +864,10 @@ export default function BrowsePage() {
           </div>
         )}
 
-        {/* 源状态行（仅直链搜索）：左侧结果数 + 右侧源状态。
+        {/* 直链搜索：无 sort-bar，模式胶囊独立成行（任意视口都要能切回智能检索） */}
+        {searchMode === 'cms' && tabsBlock}
+
+      {/* 源状态行（仅直链搜索）：左侧结果数 + 右侧源状态。
             搜索中 = 折叠 pill（UI 不变）；搜索结束 = demo 同款逐源 badge 卡片行 */}
         {searchMode === 'cms' && (
           <div

@@ -910,25 +910,59 @@
 
 
 
-/* ── ≥2560 大视口：Browse 左栏单列 + 收窄 + chip 居中 + 四字左缘对齐 ──────────
-   用户 2026-11-07 定稿规格（四项，全部只在 ≥2560 生效）：
-     ① 单列：chips 容器 1 列。
-     ② 只收窄 Browse 页左栏：在 .browse-page 上**局部覆盖 --rail-w**（200→168px），
+/* ── ≥2560 大视口：Browse 左栏单列 + 收窄 + chip 居中 + 长标签左缘对齐 ────────
+   用户 2026-11-07 定稿规格（全部只在 ≥2560 生效）：
+     ① 左栏 chips 单列：chips 容器 1 列。
+     ② 只收窄 Browse 页左栏：在 .browse-page 上**局部覆盖 --rail-w**（200 → 148px），
         不动全局 token —— 设置 / IPTV / 收藏·历史 三页共用 --rail-w，必须零影响。
-        （.browse-page 内消费 --rail-w 的只有两处：本页 grid 列宽、模式胶囊宽度，
-          局部覆盖后两者一起跟着收，保持对齐。）
+        （.browse-page 内消费 --rail-w 的只有两处：本页 grid 列宽、模式胶囊宽度。）
      ③ chip 居中：justify-self: center（宽度仍贴合文字，选中态是文字宽胶囊）。
-     ④ 四字左缘对齐两字（单独处理）：格内居中会让宽度不同 => 左缘按字数错开。
-        四字比两字宽 2 个字 → 左缘偏左 1 个字；给 --wide 加 margin-left。
-        ⚠️ justify-self:center 居中的是「margin box」，加 margin-left:m 实际右移 m/2，
-           故 m 取 2 个字宽，净右移 1 个字宽，正好补齐。
-   作用域：仅 Browse、仅 ≥2560、仅桌面（非 app/tv）；<2560 两列零回归。 */
+     ④ 长标签左缘对齐两字（三字/四字/五字…统一处理）：
+        格内居中会让不同字宽的 chip 左缘按字数错开（宽度差 / 2）。
+        用 JS 注入的 --chip-label-w（无单位字宽数字）动态补偿：
+          margin-left = (字宽 − 2) × 一个字宽
+        ⚠️ justify-self:center 居中的是「margin box」，加 margin-left:m 实际右移 m/2；
+           两字为基准（不补偿），n 字 chip 左缘偏左 (n−2)/2 个字，
+           故 m 取 (n−2) 个字宽 → 净右移 (n−2)/2 个字，正好补齐。
+           三字净移 0.5 字、四字净移 1 字，与两字严格同一条左缘。
+     ⑤ 模式胶囊（browse-search-tabs）移入结果区头部行（browse-sort-bar）居中：
+        首行改为跨两列的 head（不再有 tabs 左列），胶囊与类型/排序同排居中；
+        DOM 侧由 index.tsx 按 wideViewport 条件渲染到 sort-bar 内。
+   作用域：仅 Browse、仅 ≥2560、仅桌面（非 app/tv）；<2560 完全零回归
+   （<2560 仍是 'tabs head' / 'filters results' 两列首行 + 胶囊占左列首格）。 */
 @media (width >= 2560px) {
   html:not([data-device="app"]):not([data-device="tv"])
-    .browse-page {
-    --rail-w: 168px;
+    .browse-page:not(.browse-page--mobile):not(.browse-page--tv) {
+    --rail-w: 148px;
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+    /* 首行跨两列（原 'tabs head' 的左列让给 head），左栏仍占 row2 左列 */
+    grid-template-areas:
+      'head head'
+      'filters results';
   }
 
+  /* 模式胶囊已在 sort-bar 内部：整行居中；胶囊按内容宽，不再吃 --rail-w */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-sort-bar {
+    /* 首行跨两列：内部 flex 项（胶囊 / 类型 / 分隔线 / 排序 / 计数）整行居中 */
+    justify-content: center;
+    padding-left: 0;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-sort-bar .browse-search-tabs {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 0;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-sort-bar .browse-search-tabs__pill {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  /* 左栏 chips 单列 */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .filter-bar__chips-scroll,
   html:not([data-device="app"]):not([data-device="tv"])
@@ -936,15 +970,11 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* chip 居中 + 长标签左缘动态补偿 */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .filter-bar .filter-bar__chip {
     justify-self: center;
-  }
-
-  /* 四字（及更宽）→ 右移一个字宽，文字左缘与两字 chip 对齐 */
-  html:not([data-device="app"]):not([data-device="tv"])
-    .browse-page .filter-bar .filter-bar__chip--wide {
-    margin-left: calc(var(--text-sm) * 2);
+    margin-left: calc((var(--chip-label-w, 2) - 2) * var(--text-sm));
   }
 }
 /* ── 右上角总数加载态 + 手动跳页（2026-09-12 用户反馈）───────────── */
