@@ -727,8 +727,9 @@
 }
 
 /* ── 基础信息：行距单一真源 ─────────────────────
-   label 上 / 值下 + 底线分区；一行最多 4 列（列宽地板 25% 封顶，2560 下恒 4 列）；行距单一真源 = grid gap。
-   旧双列 info-card + 半宽 span 测量脚本随方案 A（2026-10-10）整体退役。 */
+   label 上 / 值下；一行最多 4 列（列宽地板 25% 封顶，2560 下恒 4 列）；
+   行距单一真源 = grid gap（2026-11-08 用户要求：格子删底线分区，原 border-bottom
+   + 配套 padding-bottom 一并移除，行间距完全由 gap 提供）。 */
 .detail-facts {
   margin-top: var(--space-xs);
 }
@@ -742,8 +743,6 @@
 
 .detail-fact {
   min-width: 0;
-  padding-bottom: var(--space-2xs);
-  border-bottom: 1px solid var(--color-border-light);
 }
 .detail-fact > span {
   display: block;
@@ -766,7 +765,7 @@
   color: var(--color-warning-text);
 }
 /* 国家 / 发行：独占整行，label 左·值右同行基线对齐；放不下自然换行（不折叠）。
-   分割线/行距与上方格孪生：继承 .detail-fact 的 border-bottom + padding-bottom，行距统一由 grid gap 提供 */
+   行距与上方格同源 = grid gap（原「继承 border-bottom + padding-bottom」随 2026-11-08 删底线一并退役） */
 .detail-fact--full {
   display: flex;
   grid-column: 1 / -1;
