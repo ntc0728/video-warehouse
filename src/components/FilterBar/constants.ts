@@ -111,22 +111,22 @@ export const SORT_OPTIONS: { label: string; sortBy: 'popularity' | 'vote_average
   { label: '最高分', sortBy: 'vote_average', order: 'desc' },
 ];
 
-// ── 年份选项 ────────────────────────────────────────
+// ── 年份选项（2026-11-07 改为按当前年份滚动）────────────
+/**
+ * 年份下限固定 2015：与「其他」（`olderThan2015`）的语义绑定 ——
+ * 该选项查的是 2015 年**之前**的内容，若下限跟着滚动会与「其他」重叠。
+ * 上限取当前年份（TMDB 无「年份列表」接口，业界惯例即「当前年往前推」）。
+ */
+export const YEAR_MIN = 2015;
+const YEAR_MAX = new Date().getFullYear();
 
-export const YEAR_OPTIONS: { label: string; value: number }[] = [
-  { label: '2026', value: 2026 },
-  { label: '2025', value: 2025 },
-  { label: '2024', value: 2024 },
-  { label: '2023', value: 2023 },
-  { label: '2022', value: 2022 },
-  { label: '2021', value: 2021 },
-  { label: '2020', value: 2020 },
-  { label: '2019', value: 2019 },
-  { label: '2018', value: 2018 },
-  { label: '2017', value: 2017 },
-  { label: '2016', value: 2016 },
-  { label: '2015', value: 2015 },
-];
+export const YEAR_OPTIONS: { label: string; value: number }[] = Array.from(
+  { length: Math.max(1, YEAR_MAX - YEAR_MIN + 1) },
+  (_, i) => {
+    const y = YEAR_MAX - i;
+    return { label: String(y), value: y };
+  },
+);
 
 export const YEAR_OLDER_LABEL = '其他';
 

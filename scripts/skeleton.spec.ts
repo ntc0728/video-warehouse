@@ -496,11 +496,15 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     //   默认 /browse = category=movie、genresSource=movie；holdTmdb 延迟期 movieGenres=[]
     //   → 分类 = 「全部」1 + 可见genre 0 + FILL_CHIPS 14 = 15
     //   地区 = 0（holdTmdb 期间 countries 未落地 → buildRegionOptions([]) = []）+ FILL_CHIPS 14 = 14
-    //   年份 = YEAR_OPTIONS 12 + 其他 1 + FILL_CHIPS 14 = 27
-    //   合计 = 15 + 14 + 27 = 56
+    //   年份 = YEAR_OPTIONS N + 其他 1 + FILL_CHIPS 14
+    //          ⚠️ N 随当前年份滚动（2026-11-07 起 YEAR_OPTIONS 由 new Date().getFullYear()
+    //          与固定下限 2015 生成，2026 年 N=12）；此处按同一算式求值，避免跨年腐化。
     // 旧值 73 = 分类(GENRE_CHIPS 6 + FILL 14)=20 来自已删除的硬编码 GENRE_CHIPS；
     // 类型 pill 旧值 7 来自含「全部」的 7 档，均已同步。
-    await expect(filterChrome.locator('.browse-chrome-skeleton__chip')).toHaveCount(15 + 14 + 27);
+    const yearCount = new Date().getFullYear() - 2015 + 1;
+    await expect(filterChrome.locator('.browse-chrome-skeleton__chip')).toHaveCount(
+      15 + 14 + (yearCount + 1 + 14),
+    );
     // 旧镜像类不得复活
     await expect(page.locator('.browse-skeleton__type, .browse-skeleton__sort, .browse-skeleton__count')).toHaveCount(0);
 
