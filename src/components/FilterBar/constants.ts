@@ -96,6 +96,14 @@ export function buildRegionOptions(countries: TMDBCountry[]): RegionOption[] {
 
 
 
+/**
+ * 组内折叠的默认展示上限（2026-11-07 用户拍板，仅 Browse ≥2560 单列启用）。
+ * 预算依据（1440 高视口，左栏可用 ≈1274px、每项 ≈25.4px）：
+ *   16 + 6 + 6 = 28 项 ≈ 711px + 3 组标题/按钮 ≈ 270px → 默认总高 ≈980px，一屏放下。
+ * 分类是最主要的筛选维度故给最多；地区 / 年份只需常见几项。
+ */
+export const FILTER_COLLAPSE_LIMIT = { genre: 16, region: 6, year: 6 } as const;
+
 // ── 排序选项 ────────────────────────────────────────
 
 export const SORT_OPTIONS: { label: string; sortBy: 'popularity' | 'vote_average' | 'release_date'; order: 'desc' | 'asc' }[] = [

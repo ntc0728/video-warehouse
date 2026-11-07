@@ -796,6 +796,7 @@ export default function BrowsePage() {
               category={filterValue.category}
               categoryLabel={CATEGORY_LABELS[filterValue.category]}
               regionOptions={regionOptions}
+              collapsible={wideViewport}
             />
           )}
           {/* 智能检索模式：FilterBar（类型行已移至结果区头部，footer 移到 Card 2） */}
@@ -806,6 +807,7 @@ export default function BrowsePage() {
               genres={currentGenres}
               excludedGenreIds={excludedGenreIds}
               regionOptions={regionOptions}
+              collapsible={wideViewport}
               totalResults={discoverPagination.totalResults}
               categoryLabel={CATEGORY_LABELS[filterValue.category]}
               hideFooter

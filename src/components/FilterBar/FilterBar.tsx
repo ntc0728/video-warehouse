@@ -10,10 +10,10 @@
  *
  * 所有筛选 tab 均全展开（不限行、无折叠 / 「更多」按钮）
  */
-import { useCallback, useMemo, type CSSProperties } from 'react';
+import { useCallback, useMemo, useState, type CSSProperties } from 'react';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import type { TMDBGenre } from '@/types/tmdb';
-import { MEDIA_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type FilterBarValue, type FilterBarCategoryOption, type RegionOption } from './constants';
+import { MEDIA_OPTIONS, SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, FILTER_COLLAPSE_LIMIT, type FilterBarValue, type FilterBarCategoryOption, type RegionOption } from './constants';
 import './FilterBar.css';
 
 export type { FilterBarValue } from './constants';
@@ -46,6 +46,13 @@ export interface FilterBarProps {
   excludedGenreIds?: number[];
   /** 地区选项（由调用方用 buildRegionOptions(store.countries) 生成；缺省回退内置常量） */
   regionOptions?: RegionOption[];
+  /**
+   * 组内折叠（2026-11-07 用户拍板，仅 Browse ≥2560 单列启用）。
+   * 单列时三组共 59 项 → 左栏需 1590px、1440 高视口仅 1274px 可用，必然滚动。
+   * 开启后每组默认只露前 N 项（分类 16 / 地区 6 / 年份 6）+「展开」按钮，
+   * 默认总高 ≈980px，一屏放下、不产生滚动条。
+   */
+  collapsible?: boolean;
   /** 结果总数 */
   totalResults?: number;
   /** 当前分类显示名称（替换默认的"分类"label） */
@@ -73,6 +80,7 @@ export default function FilterBar({
   hideRegion = false,
   excludedGenreIds = [],
   regionOptions = [],
+  collapsible = false,
   totalResults = 0,
   categoryLabel,
   hideFooter = false,
@@ -81,6 +89,32 @@ export default function FilterBar({
   showGenreRowShell = false,
 }: FilterBarProps) {
   const isMobile = useIsMobile();
+
+  // ── 组内折叠（collapsible）──────────────────────────────────────────
+  // 每组的默认展示上限。按 1440 高视口预算：16+6+6 = 28 项 ≈ 711px + 3 组标题 ≈ 72px
+  // → 默认总高 ≈ 980px（含展开按钮），低于可用 1274px，不产生滚动条。
+  // 分类是最主要的筛选维度，给最多；地区/年份只需常见几项。
+  const COLLAPSE_LIMIT = FILTER_COLLAPSE_LIMIT;
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  /** 折叠时只取前 limit 项；展开或未启用折叠时全量 */
+  const sliceGroup = <T,>(list: T[], key: keyof typeof COLLAPSE_LIMIT): T[] =>
+    collapsible && !openGroups[key] ? list.slice(0, COLLAPSE_LIMIT[key]) : list;
+  const toggleGroup = (key: string) => setOpenGroups((s) => ({ ...s, [key]: !s[key] }));
+  /** 折叠态的「展开 N 项 / 收起」按钮 */
+  const MoreButton = ({ total, shown, groupKey }: { total: number; shown: number; groupKey: string }) => {
+    if (!collapsible || total <= shown) return null;
+    const opened = !!openGroups[groupKey];
+    return (
+      <button
+        type="button"
+        className="filter-bar__chip filter-bar__chip--more"
+        onClick={() => toggleGroup(groupKey)}
+        aria-expanded={opened}
+      >
+        {opened ? '收起' : `+${total - shown} 展开`}
+      </button>
+    );
+  };
 
   // 过滤掉分类自身默认的 genre（仍在 value.genreIds 中参与 API）
   const visibleGenres = useMemo(
@@ -190,7 +224,7 @@ export default function FilterBar({
             >
               全部
             </button>
-            {visibleGenres.map((g) => (
+            {sliceGroup(visibleGenres, 'genre').map((g) => (
               <button
                 key={g.id}
                 className={chipCls(value.genreIds.includes(g.id))}
@@ -200,11 +234,16 @@ export default function FilterBar({
                 {g.name}
               </button>
             ))}
+            <MoreButton
+              total={visibleGenres.length}
+              shown={sliceGroup(visibleGenres, 'genre').length}
+              groupKey="genre"
+            />
           </div>
         </div>
       )}
 
-      {/* 地区 — 全展开（桌面/移动均 wrap 多行，无折叠） */}
+      {/* 地区 */}
       {!hideRegion && (
         <div className="filter-bar__row filter-bar__row--scroll">
           <span className="filter-bar__label">
@@ -218,7 +257,7 @@ export default function FilterBar({
             >
               全部
             </button>
-            {regionOptions.map((r) => (
+            {sliceGroup(regionOptions, 'region').map((r) => (
               <button
                 key={r.code ?? 'all'}
                 className={chipCls(value.region === r.code)}
@@ -228,6 +267,11 @@ export default function FilterBar({
                 {r.label}
               </button>
             ))}
+            <MoreButton
+              total={regionOptions.length}
+              shown={sliceGroup(regionOptions, 'region').length}
+              groupKey="region"
+            />
           </div>
         </div>
       )}
@@ -245,7 +289,7 @@ export default function FilterBar({
           >
             全部
           </button>
-          {YEAR_OPTIONS.map((y) => (
+          {sliceGroup(YEAR_OPTIONS, 'year').map((y) => (
             <button
               key={y.value}
               className={chipCls(value.year === y.value && !value.olderThan2015)}
@@ -255,6 +299,7 @@ export default function FilterBar({
               {y.label}
             </button>
           ))}
+          {/* 「其他」（2015 前）语义独立，折叠时也始终可见 */}
           <button
             type="button"
             className={chipCls(value.olderThan2015)}
@@ -263,6 +308,11 @@ export default function FilterBar({
           >
             {YEAR_OLDER_LABEL}
           </button>
+          <MoreButton
+            total={YEAR_OPTIONS.length}
+            shown={sliceGroup(YEAR_OPTIONS, 'year').length}
+            groupKey="year"
+          />
         </div>
       </div>
 

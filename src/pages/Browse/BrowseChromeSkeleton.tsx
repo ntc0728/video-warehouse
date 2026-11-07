@@ -19,7 +19,7 @@ import Skeleton from '@/components/common/Skeleton';
 import { useTMDBStore } from '@/stores';
 import { VISIBLE_CATEGORY_KEYS, CATEGORY_CONFIG } from './constants';
 import type { CategoryKey } from '@/components/CategoryQuickAccess';
-import { SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type RegionOption } from '@/components/FilterBar/constants';
+import { SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, FILTER_COLLAPSE_LIMIT, type RegionOption } from '@/components/FilterBar/constants';
 import './BrowseChromeSkeleton.css';
 
 // 结果区头部类型行 4 档（电影/剧集/排行榜/纪录片，与 constants VISIBLE_CATEGORY_KEYS 单点同源）
@@ -43,8 +43,9 @@ function chipStyle(label: string): CSSProperties {
 }
 
 /** 真实标签组（地区 / 年份）：宽度逐个还原 + FILL_CHIPS 桌面撑满块；
- *  超出 MOBILE_CHIPS 的标签移动端不渲染（--fill），≥1024 复活。 */
-function LabeledChipGroup({ labels }: { labels: string[] }) {
+ *  超出 MOBILE_CHIPS 的标签移动端不渲染（--fill），≥1024 复活。
+ *  `extra`：折叠态下的「展开」按钮占位数（真实行多渲染一个按钮 chip）。 */
+function LabeledChipGroup({ labels, extra = 0 }: { labels: string[]; extra?: number }) {
   return (
     <>
       {labels.map((label, i) => (
@@ -53,6 +54,9 @@ function LabeledChipGroup({ labels }: { labels: string[] }) {
           className={`browse-chrome-skeleton__chip${i >= MOBILE_CHIPS ? ' browse-chrome-skeleton__chip--fill' : ''}`}
           style={chipStyle(label)}
         />
+      ))}
+      {Array.from({ length: extra }, (_, i) => (
+        <Skeleton key={`more-${i}`} className="browse-chrome-skeleton__chip" style={chipStyle('+99 展开')} />
       ))}
       {Array.from({ length: FILL_CHIPS }, (_, i) => (
         <Skeleton key={`fill-${i}`} className="browse-chrome-skeleton__chip browse-chrome-skeleton__chip--fill" />
@@ -88,8 +92,12 @@ function useGenreChipCount(category: CategoryKey): number {
   return base.filter((g) => !excluded.has(g.id)).length;
 }
 
-function GenreChips({ category }: { category: CategoryKey }) {
-  const count = useGenreChipCount(category);
+function GenreChips({ category, collapsible }: { category: CategoryKey; collapsible: boolean }) {
+  const raw = useGenreChipCount(category);
+  // 折叠态：真实 FilterBar 只渲染前 limit 项 + 一个「展开」按钮 → 骨架等量
+  const count = collapsible
+    ? Math.min(raw, FILTER_COLLAPSE_LIMIT.genre) + (raw > FILTER_COLLAPSE_LIMIT.genre ? 1 : 0)
+    : raw;
   return (
     <>
       <Skeleton key="chip-all" className="browse-chrome-skeleton__chip" style={chipStyle('全部')} />
@@ -111,13 +119,17 @@ export function BrowseFilterChromeSkeleton({
   category = 'movie',
   categoryLabel,
   regionOptions = [],
+  collapsible = false,
 }: {
   category?: CategoryKey;
   /** 与真实 FilterBar 一致的分组标题（真实用 CATEGORY_LABELS[category]，如「电影」） */
   categoryLabel?: string;
   /** 与真实 FilterBar 同一份地区选项（TMDB 真实国家校验后），保证骨架占位数等量 */
   regionOptions?: RegionOption[];
+  /** ≥2560 单列时真实 FilterBar 会折叠长尾，骨架同步截断 + 留「展开」占位 */
+  collapsible?: boolean;
 }) {
+
   return (
     <div
       className="filter-bar browse-chrome-skeleton browse-chrome-skeleton--filters skeleton-scope"
@@ -135,7 +147,7 @@ export function BrowseFilterChromeSkeleton({
            * genre 数；默认「电影」时等价于「全部」1 枚 + movieGenres 全量。骨架与真实行等量，
            * 首屏不跳动；genres 未落地时仅「全部」，FILL_CHIPS 撑满不露底。
            */}
-          <GenreChips category={category} />
+          <GenreChips category={category} collapsible={collapsible} />
         </div>
       </div>
       <div className="filter-bar__row filter-bar__row--scroll">
@@ -143,7 +155,10 @@ export function BrowseFilterChromeSkeleton({
         <div className="filter-bar__chips-scroll">
           {/* 真实地区行 = 「全部」+ regionOptions，骨架须含「全部」占位才等量 */}
           <Skeleton className="browse-chrome-skeleton__chip" style={chipStyle('全部')} />
-          <LabeledChipGroup labels={regionOptions.map((o) => o.label)} />
+          <LabeledChipGroup
+            labels={regionOptions.slice(0, collapsible ? FILTER_COLLAPSE_LIMIT.region : undefined).map((o) => o.label)}
+            extra={collapsible && regionOptions.length > FILTER_COLLAPSE_LIMIT.region ? 1 : 0}
+          />
         </div>
       </div>
       <div className="filter-bar__row filter-bar__row--scroll">
@@ -151,7 +166,14 @@ export function BrowseFilterChromeSkeleton({
         <div className="filter-bar__chips-scroll">
           {/* 真实年份行 = 「全部」+ YEAR_OPTIONS + 「其他」，骨架同样含「全部」 */}
           <Skeleton className="browse-chrome-skeleton__chip" style={chipStyle('全部')} />
-          <LabeledChipGroup labels={[...YEAR_OPTIONS.map((o) => o.label), YEAR_OLDER_LABEL]} />
+          {/* 年份：「其他」语义独立、折叠时也始终可见，故先截断年份数字再拼「其他」 */}
+          <LabeledChipGroup
+            labels={[
+              ...YEAR_OPTIONS.slice(0, collapsible ? FILTER_COLLAPSE_LIMIT.year : undefined).map((o) => o.label),
+              YEAR_OLDER_LABEL,
+            ]}
+            extra={collapsible && YEAR_OPTIONS.length > FILTER_COLLAPSE_LIMIT.year ? 1 : 0}
+          />
         </div>
       </div>
     </div>
