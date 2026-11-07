@@ -437,7 +437,7 @@ test.describe('3.8 推荐区域', () => {
 });
 
 test.describe('3.11 剧照灯箱', () => {
-  test('DETAIL-090: 缩放控件位于当前显示图片正下方（slide 内 flex 锚定）', async ({ page }) => {
+  test('DETAIL-090: 缩放控件位于主图舞台正下方且不被放大图覆盖', async ({ page }) => {
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.detail-stills-item', { timeout: 10000 });
     await page.locator('.detail-stills-item').first().click();
@@ -446,9 +446,11 @@ test.describe('3.11 剧照灯箱', () => {
     await expect(lightbox).toBeVisible({ timeout: 10000 });
 
     const geo = await lightbox.evaluate((el) => {
-      // zoom 已移入当前 slide、作为 img 的 flex 兄弟节点（2026-11-08）
+      // zoom 在当前 slide 内；img 包在 overflow:hidden 的主图舞台（stage）里——
+      // 放大/平移溢出在舞台边界裁切，永不覆盖 zoom 行或其它元素（2026-11-08）
       const slide = el.querySelector('.stills-lightbox__slide');
-      const img = slide?.querySelector('img');
+      const stage = slide?.querySelector('.stills-lightbox__stage');
+      const img = stage?.querySelector('img');
       const zoomEl = slide?.querySelector('.stills-lightbox__zoom');
       const thumbsEl = el.querySelector('.stills-lightbox__thumbs');
       const box = (n: Element | null | undefined) => {
@@ -457,26 +459,28 @@ test.describe('3.11 剧照灯箱', () => {
         return { top: r.top, bottom: r.bottom, centerX: r.left + r.width / 2 };
       };
       return {
-        img: box(img),
+        zoomInsideSlide: !!zoomEl && !!slide && zoomEl.parentElement === slide,
+        stageOverflow: stage ? getComputedStyle(stage).overflow : null,
+        imgInStage: !!img && !!stage && img.parentElement === stage,
+        stage: box(stage),
         zoom: box(zoomEl),
         thumbs: box(thumbsEl),
-        zoomInsideSlide: !!zoomEl && !!slide && zoomEl.parentElement === slide,
         zoomPosition: zoomEl ? getComputedStyle(zoomEl).position : null,
         thumbsPosition: thumbsEl ? getComputedStyle(thumbsEl).position : null,
       };
     });
 
-    // zoom 在当前 slide 内、紧贴图片正下方（定间距 margin-top xs，非随图高漂移的剩余空间）
     expect(geo.zoomInsideSlide).toBe(true);
+    expect(geo.imgInStage).toBe(true);
+    expect(geo.stageOverflow).toBe('hidden');
     expect(geo.zoomPosition).toBe('relative');
-    expect(geo.img).not.toBeNull();
-    expect(geo.zoom!.top).toBeGreaterThanOrEqual(geo.img!.bottom - 1);
-    expect(geo.zoom!.top - geo.img!.bottom).toBeLessThan(12);
 
-    // 水平与图片同轴（slide 内 flex 居中）
-    expect(Math.abs(geo.zoom!.centerX - geo.img!.centerX)).toBeLessThanOrEqual(2);
+    // zoom 在舞台框正下方（定间距 = slide gap xs），横向与舞台同轴
+    expect(geo.zoom!.top).toBeGreaterThanOrEqual(geo.stage!.bottom - 1);
+    expect(geo.zoom!.top - geo.stage!.bottom).toBeLessThan(12);
+    expect(Math.abs(geo.zoom!.centerX - geo.stage!.centerX)).toBeLessThanOrEqual(2);
 
-    // 竖向次序：slide（图+zoom）→ 缩略图条
+    // 竖向次序：slide（舞台+zoom）→ 缩略图条
     if (geo.thumbs) {
       expect(geo.thumbsPosition).toBe('relative');
       expect(geo.thumbs.top).toBeGreaterThanOrEqual(geo.zoom!.bottom - 1);

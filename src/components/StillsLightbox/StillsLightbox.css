@@ -128,11 +128,12 @@
 
 .stills-lightbox__slide {
   display: flex;
-  /* 纵向布局（2026-11-08）：img + zoom 成组垂直居中——zoom 是 img 的 flex 兄弟节点，
-     「图底→zoom 间距」恒等于 margin-top(xs)，不随图高漂移；水平同轴居中 */
+  /* 纵向布局（2026-11-08 定稿）：主图舞台（flex:1 吃满 zoom 行之外的高度）+ zoom 行。
+     舞台是 overflow:hidden 的定界框——放大/平移的溢出全部裁在框内，
+     图片永不覆盖 zoom 行或其它元素（zoom 100% = 舞台内 contain 适配基准） */
   flex: 0 0 auto;
   flex-direction: column;
-  gap: 0;
+  gap: var(--space-xs);
   justify-content: center;
   align-items: center;
   width: 100%;
@@ -140,11 +141,22 @@
   height: 100%;
 }
 
-.stills-lightbox__slide img {
-  /* max-height 预留 zoom 行高度（行高 ~36px + margin xs ≈ 40px，留 4rem 余量），
-     否则高图 + zoom 挤出 slide 底被 scroll 裁掉 */
+/* 主图舞台：图片的定界裁切框 */
+.stills-lightbox__stage {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.stills-lightbox__stage img {
   max-width: 100%;
-  max-height: calc(100% - 4rem);
+  max-height: 100%;
   object-fit: contain;
   border-radius: var(--radius-sm);
   user-select: none;
@@ -157,16 +169,16 @@
 /* （2026-11-08 曾试过 ≥1920 默认 scale 1.2 放大档，因「居中 vs 贴底」取舍
    用户改回居中构图，该档已删除；zoom 100% 恢复为 contain 适配基准） */
 
-.stills-lightbox__slide img.is-loaded {
+.stills-lightbox__stage img.is-loaded {
   opacity: 1;
 }
 
 /* 放大后可拖拽平移：抓取光标；拖拽过程中去掉 transform 过渡，避免跟手延迟 */
-.stills-lightbox__slide img.is-zoomed {
+.stills-lightbox__stage img.is-zoomed {
   cursor: grab;
 }
 
-.stills-lightbox__slide img.is-panning {
+.stills-lightbox__stage img.is-panning {
   cursor: grabbing;
   transition: none;
 }
@@ -174,15 +186,14 @@
 /* ── 缩放控件（2026-09-10 由 Detail 剧照标题行移入灯箱）─────
    形态：− 按钮 / 百分比数值（可点击复位）/ + 按钮；每级 5%，范围 50%~200%。 */
 .stills-lightbox__zoom {
-  /* zoom 在当前 slide 内、img 的 flex 兄弟（2026-11-08 移入）：margin-top = 与图底的
-     定间距（xs ≈ 4px + 视觉呼吸 ≈ 间距要求），不再依赖容器 gap（那会随图高漂移） */
+  /* zoom 是主图舞台的 flex 兄弟（2026-11-08 移入当前 slide）：位于舞台框正下方，
+     与图片完全无叠压（放大溢出已在舞台边界裁切）；与舞台间距 = slide gap(xs) */
   position: relative;
   z-index: 20;
   display: flex;
   flex: none;
   gap: var(--space-2xs);
   align-items: center;
-  margin-top: var(--space-xs);
   padding: var(--space-2xs);
   border-radius: var(--radius-full);
   background: rgba(0, 0, 0, 0.55);

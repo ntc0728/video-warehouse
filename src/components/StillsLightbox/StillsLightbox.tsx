@@ -302,19 +302,23 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
           const zoomed = isCurrent && (zoom !== ZOOM_DEFAULT || pan.x !== 0 || pan.y !== 0);
           return (
             <div key={url} className="stills-lightbox__slide">
-              <img
-                src={url}
-                alt={`剧照 ${i + 1}`}
-                loading={Math.abs(i - currentIndex) <= 2 ? 'eager' : 'lazy'}
-                draggable={false}
-                className={`${loadedMap[i] ? 'is-loaded' : ''}${isCurrent && zoom !== ZOOM_DEFAULT ? ' is-zoomed' : ''}${panning ? ' is-panning' : ''}`}
-                style={zoomed
-                  ? { transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})` }
-                  : undefined}
-                onMouseDown={isCurrent ? handleMainMouseDown : undefined}
-                onLoad={() => setLoadedMap((p) => ({ ...p, [i]: true }))}
-                onError={() => setLoadedMap((p) => ({ ...p, [i]: true }))}
-              />
+              {/* 主图舞台（2026-11-08）：overflow:hidden 的定界框——zoom/平移的溢出
+                  全部裁在框内，永不覆盖 zoom 行或其它元素 */}
+              <div className="stills-lightbox__stage">
+                <img
+                  src={url}
+                  alt={`剧照 ${i + 1}`}
+                  loading={Math.abs(i - currentIndex) <= 2 ? 'eager' : 'lazy'}
+                  draggable={false}
+                  className={`${loadedMap[i] ? 'is-loaded' : ''}${isCurrent && zoom !== ZOOM_DEFAULT ? ' is-zoomed' : ''}${panning ? ' is-panning' : ''}`}
+                  style={zoomed
+                    ? { transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})` }
+                    : undefined}
+                  onMouseDown={isCurrent ? handleMainMouseDown : undefined}
+                  onLoad={() => setLoadedMap((p) => ({ ...p, [i]: true }))}
+                  onError={() => setLoadedMap((p) => ({ ...p, [i]: true }))}
+                />
+              </div>
               {isCurrent && (
                 <div className="stills-lightbox__zoom" role="group" aria-label="剧照缩放">
                   <button
