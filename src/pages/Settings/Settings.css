@@ -429,7 +429,13 @@ body.skin-transitioning .skin-btn.active {
   flex-basis: var(--rail-w);
   gap: var(--space-sm);
   align-self: flex-start;
-  padding: var(--space-lg) var(--space-sm) var(--space-xl) 0;
+  /* 2026-11-05 两侧留白对称 + 撑满可视高（与 Browse / 收藏·历史 / IPTV 左栏同批修复）：
+     ① 原 `padding: … 0` 左内距为 0（靠条目自身 padding 撑），文字左缘距栏边 ≈9.7px、
+        右缘 ≈20.4px（条目右内距 + 栏右内距 + 1px 边框）→ 内容整体偏左。改为左右对称 --space-sm；
+     ② 原高度 = 内容自然高（398px @2560），可视高 1357px → 下方空 959px。补 min-height 撑满，
+        写法与 Browse.css 一致（min(视口高, 100%)：短页取 100% 落视口底、长页取 100dvh−header）。 */
+  min-height: min(calc(100dvh - var(--header-height) - var(--space-sm)), 100%);
+  padding: var(--space-lg) var(--space-sm) var(--space-xl);
   border-right: 1px solid var(--color-border-light);
   /* 2026-09-08 去卡片化：不再铺 surface 底色。此处透明是安全的——
      左栏与内容区是并列的 flex 列，右侧内容横向不与左栏重叠，sticky 悬浮时
@@ -523,6 +529,9 @@ body.skin-transitioning .skin-btn.active {
   gap: var(--space-xs);
   align-items: center;
   margin-right: var(--space-xs);
+  /* 2026-11-05：左栏改为两侧对称 padding 后，标题仍保留自身 --space-sm 左内距 ——
+     栏补了 --space-sm、条目自身也有 --space-sm 左内距，两者叠加后标题图标才与
+     tab 图标同左缘（归零会让标题左移 9.7px，与下方 tab 图标错开）。 */
   padding-left: var(--space-sm);
   color: var(--color-text);
   font-size: var(--text-base);
