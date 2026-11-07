@@ -109,9 +109,12 @@ function GenreChips({ category }: { category: CategoryKey }) {
 
 export function BrowseFilterChromeSkeleton({
   category = 'movie',
+  categoryLabel,
   regionOptions = [],
 }: {
   category?: CategoryKey;
+  /** 与真实 FilterBar 一致的分组标题（真实用 CATEGORY_LABELS[category]，如「电影」） */
+  categoryLabel?: string;
   /** 与真实 FilterBar 同一份地区选项（TMDB 真实国家校验后），保证骨架占位数等量 */
   regionOptions?: RegionOption[];
 }) {
@@ -122,7 +125,10 @@ export function BrowseFilterChromeSkeleton({
       aria-label="筛选加载中"
     >
       <div className="filter-bar__row filter-bar__row--wrap">
-        <span className="filter-bar__label filter-bar__label--as-chip">分类</span>
+        {/* 与真实 FilterBar 同文案：分类行 label = categoryLabel || '分类' */}
+        <span className="filter-bar__label filter-bar__label--as-chip">
+          {categoryLabel || '分类'}
+        </span>
         <div className="filter-bar__chips-wrap">
           {/*
            * 分类组按当前 category 的 CATEGORY_CONFIG（genresSource）镜像真实
@@ -135,13 +141,16 @@ export function BrowseFilterChromeSkeleton({
       <div className="filter-bar__row filter-bar__row--scroll">
         <span className="filter-bar__label">地区</span>
         <div className="filter-bar__chips-scroll">
-          {/* 与 smart 模式真实 FilterBar 等量：用同一份 regionOptions（TMDB 真实国家校验后） */}
+          {/* 真实地区行 = 「全部」+ regionOptions，骨架须含「全部」占位才等量 */}
+          <Skeleton className="browse-chrome-skeleton__chip" style={chipStyle('全部')} />
           <LabeledChipGroup labels={regionOptions.map((o) => o.label)} />
         </div>
       </div>
       <div className="filter-bar__row filter-bar__row--scroll">
         <span className="filter-bar__label">年份</span>
         <div className="filter-bar__chips-scroll">
+          {/* 真实年份行 = 「全部」+ YEAR_OPTIONS + 「其他」，骨架同样含「全部」 */}
+          <Skeleton className="browse-chrome-skeleton__chip" style={chipStyle('全部')} />
           <LabeledChipGroup labels={[...YEAR_OPTIONS.map((o) => o.label), YEAR_OLDER_LABEL]} />
         </div>
       </div>

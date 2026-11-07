@@ -9,6 +9,9 @@
 }
 
 /* ── 左栏 chips：高度/圆角/左右对齐/间距全部继承真实规则 ──
+   ⚠️ 当前 Browse 的 chrome 骨架**只在 ≥1024 桌面渲染**（index.tsx 的 `!isPhone` 分支），
+      移动端由 BrowseMobileBar 承载、不出现该骨架。下面「<1024 / 移动」档属于历史保留分支，
+      若将来移动端也要挂这套骨架，它才生效。
    基础档（<1024 / 移动）：胶囊占满 2 列格宽（width:100%）。
    桌面 ≥1024 非 app/tv：chips 容器复用真实 .filter-bar__chips-* 类 →
    display:grid 2 列、gap --space-xs/--space-2xs、margin-top --space-xs、

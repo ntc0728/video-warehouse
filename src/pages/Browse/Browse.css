@@ -796,13 +796,7 @@
     font-weight: 500;
   }
 
-  /* chips 列数：全宽度两列（2026-11-07 定稿）。
-        · 曾试过「≥2560 改单列」——否决：单列会让行数翻倍，且把「格内横向留白」
-          变成「每行右侧留白」，两个问题都没解决反而更差。
-        · 实测 ≥2560 时 --ui-scale=1.08 放大字号/间距、而 --rail-w 不放大，
-          两列格宽 81.8px / 四字 chip 71.3px = 占 87%，并不空；
-          「观感差」的真因是当时 chip 在格内**居中**（两侧各空一半），不是两列本身。
-        · 故恒用两列，chip 统一贴左（见下方 justify-self:start）。
+  /* chips 列数：<2560 两列；≥2560 单列（后者见文件末尾的 @media 块，2026-11-07 定稿）。
      同一规则作用于四组：chips-scroll（分类/类型/地区）与 chips-wrap（年份）。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar__chips-scroll,
@@ -813,7 +807,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     /* row-gap = --space-xs（2026-09-12 由 2xs 回补，行距 24.2px）；
        column-gap = --space-xl（1440 档 ≈16–20px，历次 2xs→3xl→md→xl 收敛结果）。
-       列数由上面的 auto-fill 决定，间距只影响可容纳列数、不再用于「对齐补偿」。 */
+       ⚠️ 列数由 grid-template-columns 固定（<2560 两列 / ≥2560 单列），与间距无关。 */
     gap: var(--space-xs) var(--space-xl);
     justify-items: stretch;
     align-content: start;
@@ -882,20 +876,9 @@
     box-shadow: none;
   }
 
-  /* 2026-11-07：chip 已统一 justify-self:start 贴格左缘，四字与两字天然同一条左基线，
-     原先为「补偿格内居中缩进」而写的 --wide margin-left 计算（含 rail-w 反推）整体删除，
-     不再需要该补偿，也不再依赖 --rail-w 与列宽的关系。 */
-
-
-  /* 2026-11-07：--full 的「独占/换行/nowrap」规则整体删除 —— 列数现在由 auto-fill 决定
-     且 chip 统一贴左（宽度贴合文字），基础 .filter-bar__chip 本就 white-space:nowrap，
-     长标签单行完整显示不再需要单独覆盖。 */
-
-
-  /* 组标题（「电影」= label--as-chip，同时带 .filter-bar__chip 类）会被上方 chip 居中
-     规则误伤：display:flex + width:auto 撑满整行 + justify-content:center 把文字推到中间
-     （2026-11-06 用户截图红框）。用户拍板「三个组标题统一左对齐」→ 单独恢复左对齐，
-     不改基础 chip 选择器（避免抬高特异性压过 --full 规则）。地区/年份 label 本就左对齐。 */
+  /* 组标题（「电影」= label--as-chip，同时带 .filter-bar__chip 类）会被上方 chip 规则影响：
+     显式恢复左对齐，保证三个分组标题（分类/地区/年份）同一条左基线。
+     用同特异性 + 书写顺序靠后覆盖，不改基础 chip 选择器。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__label--as-chip {
     display: inline-flex;
@@ -921,9 +904,10 @@
            两字为基准（不补偿），n 字 chip 左缘偏左 (n−2)/2 个字，
            故 m 取 (n−2) 个字宽 → 净右移 (n−2)/2 个字，正好补齐。
            三字净移 0.5 字、四字净移 1 字，与两字严格同一条左缘。
-     ⑤ 模式胶囊（browse-search-tabs）移入结果区头部行（browse-sort-bar）居中：
-        首行改为跨两列的 head（不再有 tabs 左列），胶囊与类型/排序同排居中；
+     ⑤ 模式胶囊（browse-search-tabs）移入结果区头部行（browse-sort-bar）：
+        首行改为跨两列的 head（不再有 tabs 左列），胶囊与类型/排序**同一行、左起**排列；
         DOM 侧由 index.tsx 按 wideViewport 条件渲染到 sort-bar 内。
+        直链搜索无 sort-bar，胶囊落在 .browse-cms-head（同为 row 布局、左起）。
    作用域：仅 Browse、仅 ≥2560、仅桌面（非 app/tv）；<2560 完全零回归
    （<2560 仍是 'tabs head' / 'filters results' 两列首行 + 胶囊占左列首格）。 */
 @media (width >= 2560px) {

@@ -783,7 +783,11 @@ export default function BrowsePage() {
           {!wideViewport && tabsBlock}
           {/* 首屏 chrome 骨架：接口未响应前左栏不渲染真实筛选项 */}
           {showChromeSkeleton && (
-            <BrowseFilterChromeSkeleton category={filterValue.category} regionOptions={regionOptions} />
+            <BrowseFilterChromeSkeleton
+              category={filterValue.category}
+              categoryLabel={CATEGORY_LABELS[filterValue.category]}
+              regionOptions={regionOptions}
+            />
           )}
           {/* 智能检索模式：FilterBar（类型行已移至结果区头部，footer 移到 Card 2） */}
           {!showChromeSkeleton && searchMode === 'smart' && (
