@@ -864,33 +864,34 @@ export default function BrowsePage() {
           </div>
         )}
 
-        {/* 直链搜索：无 sort-bar，模式胶囊独立成行（任意视口都要能切回智能检索）。
-            包一层 --row 容器：≥2560 的 grid 只有 head/filters/results，无 tabs 区域，
-            裸 tabs 会退化成自动放置而错位（2026-11-07 用户反馈）。 */}
+        {/* 直链搜索头部：模式胶囊 + 源状态行，必须包在同一容器里。
+            ⚠️ 两个子项都声明 grid-area:head，若不包容器会**同格重叠** → 胶囊被统计行盖住
+              （2026-11-07 用户反馈「切到直链搜索 tabs 直接没了」）。
+            · <2560：容器 display:contents，子项各自回 tabs / head 区域（零回归）；
+            · ≥2560：容器整体占 head（grid 无 tabs 区域），内部纵向排列、胶囊居中。
+            任意视口都保留胶囊，才能从直链搜索切回智能检索。 */}
         {searchMode === 'cms' && (
-          <div className="browse-search-tabs-row">{tabsBlock}</div>
-        )}
-
-      {/* 源状态行（仅直链搜索）：左侧结果数 + 右侧源状态。
-            搜索中 = 折叠 pill（UI 不变）；搜索结束 = demo 同款逐源 badge 卡片行 */}
-        {searchMode === 'cms' && (
-          <div
-            className={[
-              'browse-source-status-row',
-              completedSources >= totalSources ? 'browse-source-status-row--done' : '',
-            ].filter(Boolean).join(' ')}
-          >
-            <span className="browse-results-count">
-              结果数 <b>{filteredCmsResults.length}</b>
-            </span>
-            {/* 未搜索（totalSources=0）不渲染 badges，避免一排「源名 0」橙档空态 */}
-            {totalSources > 0 && (
-              <SourceStatusIndicator
-                totalSources={totalSources}
-                totalCompleted={completedSources}
-                stats={cmsSourceStats}
-              />
-            )}
+          <div className="browse-cms-head">
+            <div className="browse-search-tabs-row">{tabsBlock}</div>
+            {/* 源状态行：左侧结果数 + 右侧源状态（搜索中折叠 pill / 结束逐源 badge） */}
+            <div
+              className={[
+                'browse-source-status-row',
+                completedSources >= totalSources ? 'browse-source-status-row--done' : '',
+              ].filter(Boolean).join(' ')}
+            >
+              <span className="browse-results-count">
+                结果数 <b>{filteredCmsResults.length}</b>
+              </span>
+              {/* 未搜索（totalSources=0）不渲染 badges，避免一排「源名 0」橙档空态 */}
+              {totalSources > 0 && (
+                <SourceStatusIndicator
+                  totalSources={totalSources}
+                  totalCompleted={completedSources}
+                  stats={cmsSourceStats}
+                />
+              )}
+            </div>
           </div>
         )}
 

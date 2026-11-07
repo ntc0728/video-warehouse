@@ -576,6 +576,13 @@
     display: contents;
   }
 
+  /* 直链搜索头部容器：<2560 用 contents「拆开」，让胶囊与源状态行各自回到
+     tabs / head 区域（与合并前的布局完全一致，零回归）。≥2560 见下方覆盖。 */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-cms-head {
+    display: contents;
+  }
+
   /* 直链搜索独立行容器：<2560 回左列首格（≥2560 由下方块改到 head 居中） */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-search-tabs-row {
@@ -968,14 +975,29 @@
     width: auto;
   }
 
-  /* 直链搜索：胶囊独立成行，放到 head 区域居中（否则无 tabs 区域会错位） */
+  /* 直链搜索头部：容器整体占 head（grid 无 tabs 区域），胶囊居中在上、状态行在下。
+     ⚠️ 必须由容器占位，不能给两个子项各自 grid-area:head —— 那会同格重叠，
+        胶囊被源状态行盖住（2026-11-07 用户反馈「tabs 直接没了」）。 */
   html:not([data-device="app"]):not([data-device="tv"])
-    .browse-page .browse-search-tabs-row {
+    .browse-page .browse-cms-head {
     display: flex;
+    flex-direction: column;
     grid-area: head;
-    justify-content: center;
-    justify-self: stretch;
+    gap: var(--space-xs);
+    align-items: center;
     padding-bottom: var(--space-sm);
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-cms-head .browse-search-tabs-row {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* 源状态行在容器内按内容宽排布（不拉满整行） */
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-cms-head .browse-source-status-row {
+    justify-content: center;
   }
 
   /* 胶囊宽度略放大（原 auto 只贴文字，两侧过挤）+ 内部字号收一档。
