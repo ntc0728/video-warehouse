@@ -151,6 +151,18 @@
   transition: opacity var(--dur-lg) ease, transform var(--dur-xs) ease;
 }
 
+/* 大视口默认放大档（2026-11-08 用户定稿）：contain 适配结果 ×1.2 作为默认「100%」。
+   用独立 scale 属性（非 transform）——用户缩放的 inline transform 会整体替换
+   transform 属性，两者相乘组合，JS 零改动（zoom 50%~200% 语义不变）。
+   transform-origin bottom：底边钉死继续贴 zoom 行，顶部先吃 96px 顶栏 padding，
+   仍溢出部分在 scroll 边界裁切（16:9 @1920×900 实测裁图顶约 5%，视口越高越多）。 */
+@media (width >= 1920px) {
+  .stills-lightbox__slide img {
+    scale: 1.2;
+    transform-origin: bottom center;
+  }
+}
+
 .stills-lightbox__slide img.is-loaded {
   opacity: 1;
 }
@@ -169,7 +181,9 @@
    形态：− 按钮 / 百分比数值（可点击复位）/ + 按钮；每级 5%，范围 50%~200%。 */
 .stills-lightbox__zoom {
   /* 流内第二行：水平居中于当前显示的图片（用户 2026-09-10 要求「放到当前显示图片的下方」）。
-     保留 position:relative + z-index 是为了仍绘制在 .stills-lightbox__scroll（z-index:5）之上 */
+     保留 position:relative + z-index 是为了仍绘制在 .stills-lightbox__scroll（z-index:5）之上。
+     margin-top（2026-11-08 用户定稿）：与图片底缘保持一定间距（底对齐后图底=本行上缘
+     仅隔容器 gap，叠加 xs ≈ 14~17px），zoom↔缩略图间距仍为容器 gap */
   position: relative;
   z-index: 20;
   display: flex;
@@ -177,6 +191,7 @@
   gap: var(--space-2xs);
   align-items: center;
   align-self: center;
+  margin-top: var(--space-xs);
   padding: var(--space-2xs);
   border-radius: var(--radius-full);
   background: rgba(0, 0, 0, 0.55);
@@ -234,8 +249,8 @@
   flex: none;
   gap: var(--space-2xs);
   align-self: center;
-  width: 80vw;
-  max-width: 60rem;
+  /* 2026-11-08 随缩略图加大放宽容器（80rem→~1280px），大视口可见 ~9 张 */
+  width: min(86vw, 80rem);
   padding: var(--space-2xs);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.4);
@@ -257,11 +272,10 @@
 
 .stills-lightbox__thumb {
   flex: 0 0 auto;
-  /* 2026-11-08 用户反馈「太小」加大一档：宽 clamp 顶 72→104（封顶点 1333→1828），
-     高改 aspect-ratio 16/9 播高——与剧照原图同形状，去掉旧 3:2 盒子对 16:9 图
-     的竖向裁切（object-fit: cover 从「裁 15%」变零裁切） */
+  /* 2026-11-08 二次加大（用户反馈上档「几乎没变化」）：宽 clamp 顶 104→144
+     （1920 ≈ 124.6 / ≥2400 封顶 144），16:9 aspect-ratio 不变（1920 ≈ 124.6×70） */
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  width: clamp(56px, 40px + 3.5vw, 104px);
+  width: clamp(64px, 44px + 4.2vw, 144px);
   aspect-ratio: 16 / 9;
   padding: 0;
   border: 2px solid transparent;
@@ -305,8 +319,8 @@
 
 [data-device="tv"] .stills-lightbox__thumb {
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  width: clamp(72px, 54px + 2vw, 112px);
-  /* 高由基类 aspect-ratio 16/9 播出（1080p ≈ 102×57） */
+  width: clamp(88px, 66px + 2vw, 144px);
+  /* 高由基类 aspect-ratio 16/9 播出（1080p ≈ 128×72） */
 }
 
 /* ── Mobile ────────────────────────────────────── */
