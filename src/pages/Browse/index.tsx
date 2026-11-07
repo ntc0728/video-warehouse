@@ -160,8 +160,8 @@ export default function BrowsePage() {
     [],
   );
 
-  // CMS 直链搜索是纯前端按 type 过滤，其「全部」= 不限类型（与 TMDB 的 tv+movie 合并页无关），
-  // 默认值单独构造，避免被智能检索的新默认（电影）带偏。
+  // CMS 直链搜索是纯前端按 type 过滤，其「全部」= 不限类型；
+  // 默认值单独构造，避免被智能检索的默认（电影）带偏。
   const getDefaultCmsFilterValue = (): FilterBarValue => ({
     ...getDefaultFilterValue(), category: 'all', mediaType: 'all',
   });
@@ -347,10 +347,7 @@ export default function BrowsePage() {
   /**
    * 钉定的**可达条目数**（= 末页 × 每页 − 末页余量）。
    *
-   * ⚠️ 为什么不能直接显示 `total_results`（2026-11-05 用户要求「准确的页数」）：
-   * TMDB 自报的 total_results 远超 `page ≤·500` 能取到的量（实测合计 27073，
-   * 实际可达 14152），而「全部」的合并页只存在于 movie / tv 都有数据的区间（1..354）。
-   * 继续显示 27073 会与「末页 405 页」自相矛盾 —— 用户按 27073 折算会得到另一套页数。
+   * `total_results` 不能直接显示：它远超 `page ≤ 500` 能取到的量，会与末页数自相矛盾。
    * 与 pinnedTotal 同策略钉定（首次非零为准），避免翻页时数字闪变。
    */
   const [pinnedReachable, setPinnedReachable] = useState(0);
@@ -387,9 +384,7 @@ export default function BrowsePage() {
     }
   }, [hasToken, movieGenres.length, tvGenres.length, fetchGenresAndCountries]);
 
-  // ── 结果区头部「类型」行（2026-11-07 起 4 档：电影/剧集/排行榜/纪录片，无「全部」/综艺/动漫）──
-  // 「全部」= movie+tv 合并页，两路 total_pages 不同且 500 页硬顶，页数/入参无法稳定对齐；
-  // 已由用户拍板删除，默认选中「电影」。列表由 constants 单点维护。
+  // ── 结果区头部「类型」行（4 档：电影/剧集/排行榜/纪录片），列表由 constants 单点维护 ──
   const CATEGORY_OPTIONS = VISIBLE_CATEGORY_OPTIONS;
 
   // ── 当前分类下的可选类型 ────────────────────────
@@ -413,9 +408,8 @@ export default function BrowsePage() {
   const regionOptions = useMemo(() => buildRegionOptions(countries), [countries]);
   const isCmsLoading = cmsLoading;
 
-  // ── 逻辑分页组装层：每页恒定 cols×4 行（2026-11-06 由 5 改 4）——
-  //    P = cols×4；单路 M 恒定 → 算术精确定位；页数 = ceil(可达条目 / P)。
-  //    「全部」= tv+movie 合并页已下线（页数天然不稳），默认「电影」单路。 ──
+  // ── 逻辑分页组装层：每页恒定 cols×4 行 ——
+  //    P = cols×4；单路 M 恒定 → 算术精确定位；页数 = ceil(可达条目 / P)。 ──
   const cardCols = useCardCols();
   // ⚠️ 必须包含 searchMode：从「直链搜索」切回「智能检索」时，query / filterValue
   // 都没变，若上下文不含 mode 则本值不变 → 下方取页 effect 不重跑 → 不重新调接口
@@ -507,11 +501,9 @@ export default function BrowsePage() {
     contextKey: logicalContext,
     fetchPage: fetchTmdbPage,
     total: pinnedTotal || discoverPagination.totalResults,
-    // 最大页数的**真源**（2026-11-05 重做）：各取页路的真实可达量（页数 + 条目），
+    // 最大页数的**真源**：各取页路的真实可达量（页数 + 条目），
     // 由 store 按 min(total_pages, 500) / min(total_results, 20×页数) 算好。
-    // 不能用 total_results 折算 —— 它远大于 500 页能返回的量（实测 movie 报 20001、
-    // 实际只有 10000），且两路页数不同（movie 500 / tv 354）导致合并页大小在尾部退化为
-    // 20 条/页；旧公式因此算出 572 页（真实 488 页），并在稀疏区重复渲染同一批卡片。
+    // 不能用 total_results 折算 —— 它远大于 500 页能返回的量。
     reach: discoverPagination.reach,
     // 列数跨档的隐式重切由 hook 内部发起：它若抢占了在飞取页（对方返回 false 后
     // 放弃收尾），必须由这条回调接管 loading 收尾，否则 isRefreshing 永驻 →

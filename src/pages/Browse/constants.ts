@@ -19,13 +19,9 @@ export const CATEGORY_LABELS: Record<CategoryKey, string> = {
 
 // ── 分类默认筛选配置（单真源：类型行点击 → URL → store → TMDB 接口）────────
 /**
- * 2026-11-07 现状（综艺/动漫入口删除后的收敛结果）：
- *  类型行只暴露 电影 / 剧集 / 排行榜 / 纪录片 四档（见 VISIBLE_CATEGORY_KEYS）。
- *  variety / anime 作为 CategoryKey 仍保留在 Record 里（Chart 页 tab、CMS 类型、VideoType
- *  等别处在用），但**永远不会经 Browse 激活** —— parseFromUrl 会把
- *  category=variety/anime 兜底改写成 tv。
- *  因此曾为二者加的 genreMatch / keywordIds / genreDenylist 及相关常量已全部移除
- *  （2026-11-07 用户要求清理死代码）。
+ * 类型行只暴露 电影 / 剧集 / 排行榜 / 纪录片 四档（见 VISIBLE_CATEGORY_KEYS）。
+ * variety / anime 作为 CategoryKey 仍保留在 Record 里（Chart 页 tab、CMS 类型、VideoType
+ * 等别处在用），但不经 Browse 激活 —— parseFromUrl 会把 category=variety/anime 改写成 tv。
  */
 export interface CategoryConfig {
   mediaType: 'all' | 'movie' | 'tv';

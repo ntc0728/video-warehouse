@@ -451,9 +451,6 @@
   opacity: 0.5;
 }
 
-/* 2026-11-07：端点 chip「首页 / 末页」已按用户要求删除，
-   --page--edge 样式与窄视口隐藏规则一并移除（无残留引用）。 */
-
 .browse-pagination__pages {
   display: flex;
   gap: var(--space-2xs);
@@ -941,7 +938,7 @@
   /* 首行：胶囊 + 类型 + 排序 + 计数**同一行**，沿用 sort-bar 原有排列（不额外居中）。
      ⚠️ 禁止 flex-wrap / 胶囊 flex-basis:100% —— 会把胶囊挤成单独一行、类型排序掉到第二行。
      ⚠️ 不写 justify-content —— 保持 sort-bar 原本的 flex-start 左起排列，
-        与下方结果区左边缘对齐（此前误加 center 导致整行居中，已移除）。 */
+        与下方结果区左边缘对齐。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .browse-page .browse-sort-bar {
     flex-wrap: nowrap;

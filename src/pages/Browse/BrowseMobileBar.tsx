@@ -68,7 +68,7 @@ export default function BrowseMobileBar({
 
   const defaultDraft = (base: FilterBarValue): FilterBarValue => ({
     ...base,
-    // mediaType 由 category 决定（「全部」已下线），重置时不再回写 'all'
+    // mediaType 由 category 决定，重置时不回写 'all'
     genreIds: [...excludedGenreIds],
     region: null,
     year: null,

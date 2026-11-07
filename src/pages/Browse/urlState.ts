@@ -65,9 +65,9 @@ export function parseFromUrl(params: URLSearchParams): FilterBarValue {
 
   const categoryRaw = params.get('category') ?? def.category;
   // 类型行可见档位 = VISIBLE_CATEGORY_KEYS 白名单，旧/非法 category 一律兜底：
-  //   · category=all（「全部」已下线，2026-11-05）→ 默认「电影」；
-  //   · category=variety / anime（综艺/动漫入口已删除，2026-11-07）→ 剧集 'tv'
-  //     （二者本质属剧集，避免落到「类型行已不显示、配置却还在」的孤立状态）；
+  //   · category=all → 默认「电影」；
+  //   · category=variety / anime → 剧集 'tv'（二者本质属剧集，避免落到
+  //     「类型行不显示、配置却还在」的孤立状态）；
   //   · 其它非法值 → 默认「电影」。
   const legacyTv = categoryRaw === 'variety' || categoryRaw === 'anime';
   const category: CategoryKey =
