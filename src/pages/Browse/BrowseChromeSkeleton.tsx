@@ -22,7 +22,7 @@ import type { CategoryKey } from '@/components/CategoryQuickAccess';
 import { SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, type RegionOption } from '@/components/FilterBar/constants';
 import './BrowseChromeSkeleton.css';
 
-// 结果区头部类型行已下线「全部」→ 6 档（与 constants 单点同源）
+// 结果区头部类型行 4 档（电影/剧集/排行榜/纪录片，与 constants VISIBLE_CATEGORY_KEYS 单点同源）
 const TYPE_COUNT = VISIBLE_CATEGORY_KEYS.length;
 const SORT_COUNT = SORT_OPTIONS.length;
 /** 地区/年份组 <1024 移动档保留的占位数：真实标签超出此数的标 --fill，

@@ -168,7 +168,7 @@ export default function BrowsePage() {
   const [cmsFilterValue, setCmsFilterValue] = useState<FilterBarValue>(getDefaultCmsFilterValue);
   const handleCmsFilterChange = useCallback((next: FilterBarValue) => setCmsFilterValue(next), []);
 
-  // vod_area 是自由文本（大陆/内地/中国大陆/香港…），REGION_OPTIONS 是 ISO 码 → 别名表匹配
+  // vod_area 是自由文本（大陆/内地/中国大陆/香港…），region code 是 ISO 码 → 别名表匹配
   const CMS_REGION_ALIASES: Record<string, string[]> = useMemo(
     () => ({
       CN: ['大陆', '内地', '中国'],
