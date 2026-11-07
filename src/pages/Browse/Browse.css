@@ -451,25 +451,8 @@
   opacity: 0.5;
 }
 
-/* 端点 chip「首页 / 末页」（2026-11-05 用户报「缺少首页 chip」）：
-   与 上一页/下一页 同一族（到端点即置灰），故常态用 step 的弱化色、不参与 active 高亮。 */
-.browse-pagination__page--edge {
-  color: var(--color-text-tertiary);
-  font-weight: 500;
-}
-
-.browse-pagination__page--edge:hover:not(:disabled) {
-  color: var(--color-text);
-}
-
-/* 窄视口隐藏端点 chip：375 宽下「上一页 + 页码条 + 跳页 + 下一页」已占满 349px，
-   再加两枚 chip 会溢出 4px（实测）。移动端保留原布局，桌面（≥1024，栏宽 ≥148px 的
-   页码条只有 ~227px）空间充裕，两枚 chip 常驻。 */
-@media (width <= 1023px) {
-  .browse-pagination__page--edge {
-    display: none;
-  }
-}
+/* 2026-11-07：端点 chip「首页 / 末页」已按用户要求删除，
+   --page--edge 样式与窄视口隐藏规则一并移除（无残留引用）。 */
 
 .browse-pagination__pages {
   display: flex;

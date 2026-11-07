@@ -31,8 +31,12 @@ export interface BrowsePaginationProps {
 }
 
 /**
- * 页码窗口：首页与末页常驻，当前页 ±1 常驻，其余折叠为省略号。
+ * 页码窗口：首末页数字常驻，当前页 ±1 常驻，其余折叠为省略号。
  * 总页数 ≤ 7 时全量展开（省略号反而比数字还占地方）。
+ *
+ * 2026-11-07（用户拍板删除）：曾于 2026-11-05 在两端补过独立的「首页 / 末页」快捷 chip，
+ * 与页码条里的「1 / 末页数字」语义重复，已按用户要求移除；跳转远端仍可用「上一页/下一页」
+ * 连点或右侧「跳页输入框」。`__page--edge` 类名与对应 CSS 一并删除。
  */
 function buildPageItems(page: number, total: number): (number | 'gap')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
