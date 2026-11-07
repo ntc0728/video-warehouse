@@ -486,4 +486,38 @@ test.describe('3.11 剧照灯箱', () => {
       expect(geo.thumbs.top).toBeGreaterThanOrEqual(geo.zoom!.bottom - 1);
     }
   });
+
+  test('DETAIL-091: 主图区域鼠标滚轮缩放', async ({ page }) => {
+    await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.detail-stills-item', { timeout: 10000 });
+    await page.locator('.detail-stills-item').first().click();
+
+    const lightbox = page.locator('.stills-lightbox').first();
+    await expect(lightbox).toBeVisible({ timeout: 10000 });
+
+    const zoomValue = lightbox.locator('.stills-lightbox__zoom-value');
+    await expect(zoomValue).toHaveText('100%', { timeout: 10000 });
+
+    // 滚轮上滚 ×3（每格 deltaY -100 = ±10%）：100 → 110 → 120 → 130
+    for (let i = 0; i < 3; i++) {
+      await lightbox.evaluate((el) => {
+        el.querySelector('.stills-lightbox__scroll')!
+          .dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+      });
+    }
+    await expect(zoomValue).toHaveText('130%', { timeout: 10000 });
+
+    // 滚轮下滚 ×2：130 → 110
+    for (let i = 0; i < 2; i++) {
+      await lightbox.evaluate((el) => {
+        el.querySelector('.stills-lightbox__scroll')!
+          .dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true, cancelable: true }));
+      });
+    }
+    await expect(zoomValue).toHaveText('110%', { timeout: 10000 });
+
+    // 点击百分比复位
+    await zoomValue.click();
+    await expect(zoomValue).toHaveText('100%', { timeout: 10000 });
+  });
 });

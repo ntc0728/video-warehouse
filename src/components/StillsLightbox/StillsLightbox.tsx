@@ -4,6 +4,8 @@
  * 增强：主图触摸滑动切换、键盘 Home/End、图片加载淡入
  * 2026-09-10：新增主图缩放（− / + 按钮，每级 5%，50%~200%；放大后可拖拽平移；
  *             单击主图复位到 100%）。缩放控件由 Detail 页的剧照标题行移入本组件。
+ * 2026-11-08：主图区域支持鼠标滚轮缩放（一格 ±10%，累计阈值防触控板过敏；
+ *             原生 wheel 监听 passive:false 才能 preventDefault）。
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -17,6 +19,10 @@ const ZOOM_MIN = 50;
 const ZOOM_MAX = 200;
 const ZOOM_STEP = 5;
 const ZOOM_DEFAULT = 100;
+/** 滚轮缩放：累计 deltaY 每 100（一档滚轮格）走 10%（ZOOM_STEP×2），
+    触控板高频小 delta 平滑累计；监听必须 passive:false 才能 preventDefault */
+const WHEEL_STEP_THRESHOLD = 100;
+const WHEEL_ZOOM_STEP = ZOOM_STEP * 2;
 
 interface StillsLightboxProps {
   urls: string[];
@@ -195,6 +201,26 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
       window.removeEventListener('mouseup', onUp);
     };
   }, [resetZoom]);
+
+  // ── 鼠标滚轮缩放（2026-11-08）：仅在主图区域生效，zoom/平移溢出由舞台框裁切 ──
+  // React 的 onWheel 是 passive 监听无法 preventDefault，必须原生挂载 { passive: false }；
+  // deltaY 累计过阈值才走档（滚轮一格 100 → ±10%），避免触控板高频小 delta 过敏
+  useEffect(() => {
+    if (!open) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    let acc = 0;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      acc += e.deltaY;
+      if (Math.abs(acc) >= WHEEL_STEP_THRESHOLD) {
+        zoomBy(acc < 0 ? WHEEL_ZOOM_STEP : -WHEEL_ZOOM_STEP);
+        acc = 0;
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [open, zoomBy]);
 
   // 键盘导航
   useEffect(() => {
