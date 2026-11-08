@@ -441,13 +441,16 @@ export default function CollectionsPage() {
         <Icon icon={SlidersHorizontal} size="sm" />
         <span className="action-btn__label">更多筛选</span>
       </button>
-      <button type="button" className="action-btn action-btn--clear" onClick={handleClearAll}>
+      {/* 2026-11-08：空列表时清空/批量管理置灰不可点（无数据可操作）；
+          批量管理在批量模式下保持可点（「退出管理」出口不能锁死） */}
+      <button type="button" className="action-btn action-btn--clear" disabled={allIds.length === 0} onClick={handleClearAll}>
         <Icon icon={Trash2} size="sm" />
         <span className="action-btn__label">清空收藏</span>
       </button>
       <button
         type="button"
         className={`action-btn action-btn--batch${batchMode ? ' is-active' : ''}`}
+        disabled={allIds.length === 0 && !batchMode}
         onClick={toggleBatchMode}
       >
         <Icon icon={ListChecks} size="sm" />
@@ -475,7 +478,7 @@ export default function CollectionsPage() {
         onSortChange: (v) => setSortBy(v as SortKey),
       }}
       overflowActions={
-        <button type="button" className="record-pop-item record-pop-item--danger" onClick={handleClearAll} role="menuitem">
+        <button type="button" className="record-pop-item record-pop-item--danger" disabled={allIds.length === 0} onClick={handleClearAll} role="menuitem">
           清空收藏…
         </button>
       }

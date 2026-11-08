@@ -526,6 +526,12 @@
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
+/* 2026-11-08：空列表时清空/批量管理置灰（pointer-events:none 同时压掉 hover 变色） */
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 .action-btn svg {
   flex-shrink: 0;
 }
@@ -691,9 +697,14 @@ html[data-device="app"] .action-btn__label {
 .record-pop-item--danger {
   color: var(--color-danger);
 }
-.record-pop-item--danger:hover {
+.record-pop-item--danger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-danger) 8%, transparent);
   color: var(--color-danger);
+}
+.record-pop-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

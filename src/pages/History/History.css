@@ -23,9 +23,11 @@
 
 /* ── 空状态居中（整条父级链必须都支持 flex 拉伸） ───────────────────────────
    2026-09-08：RecordShell 在 {children} 外包了 .record-content 层，
-   故 .empty-state-wrapper 不再是 .record-main 的直接子节点，路径需补 .record-content。 */
+   故 .empty-state-wrapper 不再是 .record-main 的直接子节点，路径需补 .record-content。
+   2026-11-08：空态又移入 .history-body 内部（与其内容共用撑满链），路径补 history-body。 */
 .history-page > .empty-state-wrapper,
-.history-page .record-main > .record-content > .empty-state-wrapper {
+.history-page .record-main > .record-content > .empty-state-wrapper,
+.history-page .record-main > .record-content > .history-body > .empty-state-wrapper {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -39,8 +41,11 @@
 /* ── 时间轴 + 卡片 布局 ────────────────── */
 .history-body {
   /* 2026-11-08：对齐收藏页 .collection-content —— 内容少时撑满剩余高度，
-     把批量操作浮动栏（sticky bottom）推到滚动区底部，而不是悬在卡片正下方。 */
+     把批量操作浮动栏（sticky bottom）推到滚动区底部，而不是悬在卡片正下方。
+     display:flex 让空态 .empty-state-wrapper（flex:1 1 auto）在本层内独占拉伸居中。 */
+  display: flex;
   flex: 1 1 0;
+  flex-direction: column;
   width: 100%;
   min-width: 0;
 }

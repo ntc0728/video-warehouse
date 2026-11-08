@@ -796,13 +796,16 @@ export default function HistoryPage() {
         <Icon icon={SlidersHorizontal} size="sm" />
         <span className="action-btn__label">更多筛选</span>
       </button>
-      <button type="button" className="action-btn action-btn--clear" onClick={handleClearAll}>
+      {/* 2026-11-08：空列表时清空/批量管理置灰不可点（无数据可操作）；
+          批量管理在批量模式下保持可点（「退出管理」出口不能锁死） */}
+      <button type="button" className="action-btn action-btn--clear" disabled={currentList.length === 0} onClick={handleClearAll}>
         <Icon icon={Trash2} size="sm" />
         <span className="action-btn__label">清空历史</span>
       </button>
       <button
         type="button"
         className={`action-btn action-btn--batch${batchMode ? ' is-active' : ''}`}
+        disabled={currentList.length === 0 && !batchMode}
         onClick={toggleBatchMode}
       >
         <Icon icon={ListChecks} size="sm" />
@@ -832,7 +835,7 @@ export default function HistoryPage() {
         onSortChange: (v) => setSortBy(v as SortKey),
       }}
       overflowActions={
-        <button type="button" className="record-pop-item record-pop-item--danger" onClick={handleClearAll} role="menuitem">
+        <button type="button" className="record-pop-item record-pop-item--danger" disabled={currentList.length === 0} onClick={handleClearAll} role="menuitem">
           清空历史…
         </button>
       }
@@ -938,24 +941,27 @@ export default function HistoryPage() {
             </div>
           </div>
         ) : null}
+        {/* 2026-11-08：空态渲染进 .history-body 内部——此前它是 .record-content 下与
+            .history-body（flex:1 1 0）并列的兄弟，两者把剩余高度对半分，
+            空态块被顶到 ~55% 处不居中。移入后由 body 撑满、wrapper 独占拉伸居中。 */}
+        {!userLoading && currentList.length === 0 && (
+          loadError ? (
+            // 读库失败（2026-09-16）：与「真没看过任何片」区分开——否则用户以为记录被清空了，
+            // 且原实现下没有任何重试入口。
+            <Empty
+              status="error"
+              title="观看记录读取失败"
+              description={loadError}
+              onRetry={() => { void useUserStore.getState().reload().catch(() => { /* 失败态已写入 loadError */ }); }}
+            />
+          ) : (
+            <Empty
+              title={statusFilter === 'all' ? '暂无观看记录' : `暂无${STATUS_CONFIG[statusFilter].label}记录`}
+              description="看一部影片，记录从这里开始"
+            />
+          )
+        )}
       </div>
-      {!userLoading && currentList.length === 0 && (
-        loadError ? (
-          // 读库失败（2026-09-16）：与「真没看过任何片」区分开——否则用户以为记录被清空了，
-          // 且原实现下没有任何重试入口。
-          <Empty
-            status="error"
-            title="观看记录读取失败"
-            description={loadError}
-            onRetry={() => { void useUserStore.getState().reload().catch(() => { /* 失败态已写入 loadError */ }); }}
-          />
-        ) : (
-          <Empty
-            title={statusFilter === 'all' ? '暂无观看记录' : `暂无${STATUS_CONFIG[statusFilter].label}记录`}
-            description="看一部影片，记录从这里开始"
-          />
-        )
-      )}
 
       {currentList.length > 0 && <div ref={sentinelRef} aria-hidden="true" />}
 
