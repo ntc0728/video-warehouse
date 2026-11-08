@@ -47,14 +47,20 @@ const CMS_DEBOUNCE_MS = 2000;
  *
  * detail → /play → detail 返回时组件重新挂载，TMDB detail + 剧照会重新请求。
  * 用模块级 Map 在「会话内」缓存成功结果（TTL 10min），返回时直接回显、零网络请求；
- * 过期或未命中则走正常加载。CMS 播放源结果不缓存——其语义依赖「当前启用的视频源」，
- * 且只在用户切到播放列表 tab 时按需加载（返回 detail 时 activeTab 重置为 info，不触发）。
+ * 过期或未命中则走正常加载。
+ *
+ * CMS 播放源结果同样缓存（2026-11-08）：detail → /play → detail 返回后再切到
+ * 播放列表 tab 时，多源并发搜索 + 逐季解析是最贵的一跳，整段重搜毫无必要。
+ * 其「依赖当前启用视频源」的语义通过把启用源索引编入缓存 key 保留——源配置
+ * 变化后 key 不同自动失效；下拉刷新（nonce>0）绕过缓存强制重拉。
  */
 interface DetailCacheEntry {
   tmdbDetail: TMDBMovieDetail | TMDBTVShowDetail | null;
   tmdbError: string | null;
   tmdbMediaType: 'movie' | 'tv';
   stills: string[];
+  /** CMS 播放源结果（sourceKey = 启用源索引串，fetchedAt 独立于 tmdb 的 fetchedAt） */
+  cms?: { results: DetailSourceResult[]; sourceKey: string; fetchedAt: number };
   fetchedAt: number;
 }
 const detailCache = new Map<string, DetailCacheEntry>();
@@ -415,12 +421,25 @@ export default function DetailPage() {
     const now = Date.now();
     if (now - cmsLastFetchRef.current < CMS_DEBOUNCE_MS) return;
     cmsLastFetchRef.current = now;
+
+    const indices = await getEnabledVideoSourceIndices();
+
+    // CMS 结果会话缓存：命中直接回显，零网络重搜（detail → /play → detail 最贵一跳）。
+    // sourceKey 编入启用源索引，源配置变化自动失效；下拉刷新（nonce>0）绕过。
+    if (pullRefreshNonce === 0) {
+      const cached = readDetailCache(id);
+      const sourceKey = indices.join(',');
+      if (cached?.cms && cached.cms.sourceKey === sourceKey && Date.now() - cached.cms.fetchedAt <= DETAIL_CACHE_TTL_MS) {
+        setCmsResults(cached.cms.results);
+        setCmsLoaded(true);
+        return;
+      }
+    }
+
     if (cmsAbortRef.current) cmsAbortRef.current.abort();
     const ctrl = new AbortController();
     cmsAbortRef.current = ctrl;
     setCmsLoading(true); setCmsError(null); setCmsResults([]);
-
-    const indices = await getEnabledVideoSourceIndices();
 
     // 填充查询动画轮播用的真实源名称
     try {
@@ -440,8 +459,10 @@ export default function DetailPage() {
     try {
       // 增量上屏（2026-10-10 用户要求）：每源一返回即 setCmsResults 追加，
       // 首条可用结果到达即停掉网格大转圈、显示数据，其余源陆续补上。
+      const collected: DetailSourceResult[] = [];
       const pushOne = (r: DetailSourceResult) => {
         if (ctrl.signal.aborted) return;
+        collected.push(r);
         setCmsResults((prev) => [...prev, r]);
       };
       if (tmdbMediaType === 'tv') {
@@ -508,6 +529,8 @@ export default function DetailPage() {
         );
       }
       if (ctrl.signal.aborted) return;
+      // 成功完成才写缓存（含部分源失败的 results 也算完成语义，重拉大概率同样结果）
+      writeDetailCache(id, { cms: { results: collected, sourceKey: indices.join(','), fetchedAt: Date.now() } });
       setCmsLoaded(true);
     } catch (err) {
       // 每源已各自 catch，此处仅兜底整体异常（如 getEnabledVideoSourceIndices 失败）
@@ -516,7 +539,7 @@ export default function DetailPage() {
       if (!ctrl.signal.aborted) setCmsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, tmdbDetail]);
+  }, [id, tmdbDetail, pullRefreshNonce]);
 
   useEffect(() => {
     if (activeTab === 'sources' && !cmsLoaded && !cmsLoading) fetchCMSSources();
