@@ -1,5 +1,37 @@
 import { describe, it, expect } from 'vitest';
-import { parsePlaySources, pickTitle, isValidVideoUrl, detectSourceType } from './vodParser';
+import { parsePlaySources, pickTitle, isValidVideoUrl, detectSourceType, parseEpisodeNumber } from './vodParser';
+
+describe('parseEpisodeNumber', () => {
+  it('中文「第N集/话/話/期」', () => {
+    expect(parseEpisodeNumber('第01集')).toBe(1);
+    expect(parseEpisodeNumber('第 12 集')).toBe(12);
+    expect(parseEpisodeNumber('第123话')).toBe(123);
+    expect(parseEpisodeNumber('第3話')).toBe(3);
+    expect(parseEpisodeNumber('第08期')).toBe(8);
+  });
+
+  it('EP/E 前缀形态', () => {
+    expect(parseEpisodeNumber('EP01')).toBe(1);
+    expect(parseEpisodeNumber('ep-12')).toBe(12);
+    expect(parseEpisodeNumber('E.103')).toBe(103);
+  });
+
+  it('整串数字标题「01」', () => {
+    expect(parseEpisodeNumber('01')).toBe(1);
+    expect(parseEpisodeNumber(' 012 ')).toBe(12);
+  });
+
+  it('无集号信息返回 undefined', () => {
+    expect(parseEpisodeNumber('上')).toBeUndefined();
+    expect(parseEpisodeNumber('正片')).toBeUndefined();
+    expect(parseEpisodeNumber('')).toBeUndefined();
+  });
+
+  it('防误判：数字开头的片名不当代集号（仅整串数字才认）', () => {
+    expect(parseEpisodeNumber('2012世界末日')).toBeUndefined();
+    expect(parseEpisodeNumber('007大战黄金枪')).toBeUndefined();
+  });
+});
 
 describe('pickTitle', () => {
   it('从 $ 分隔的 parts 中提取标题', () => {
@@ -233,6 +265,16 @@ describe('parsePlaySources', () => {
     it('无扩展名的 URL 被过滤', () => {
       const result = parsePlaySources('第1集$http://example.com/noext');
       expect(result.episodes).toBeUndefined();
+    });
+
+    it('中间集 URL 无效被过滤后，集号仍按标题解析不前移', () => {
+      // 2026-11-08 回归：此前 number=过滤后插入序号，第03集会错标成 2
+      const result = parsePlaySources(
+        '第01集$http://a.com/v1.m3u8#第02集$http://example.com/noext#第03集$http://a.com/v3.m3u8'
+      );
+      expect(result.episodes).toHaveLength(2);
+      expect(result.episodes![0].number).toBe(1);
+      expect(result.episodes![1].number).toBe(3);
     });
 
     it('空 $$$ 分段被忽略', () => {

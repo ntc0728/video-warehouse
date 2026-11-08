@@ -51,6 +51,29 @@ export function detectSourceType(url: string): 'm3u8' | 'dash' | 'mp4' | 'flv' {
   return 'mp4';
 }
 
+/**
+ * 从分集标题解析集号（2026-11-08）。
+ * 此前 episodes.number 一律用过滤后的插入序号（index+1）：中间集 URL 无效被
+ * isValidVideoUrl 过滤后，后续集编号整体前移，与 CMS 标题「第05集」错位，
+ * 播放进度记录与跨源换集（findEpisodeByNumber 按 number 匹配）都会错集。
+ * 现优先从标题提取集号，提取失败再回退插入序号。
+ * 刻意保守：纯数字形态只认「整串数字」（如「01」），避免「2012世界末日」类
+ * 标题把年份误判成集号。
+ */
+export function parseEpisodeNumber(title: string): number | undefined {
+  const t = title.trim();
+  if (!t) return undefined;
+  // 「第12集 / 第12话 / 第12話 / 第12期」
+  const cn = t.match(/第\s*(\d{1,4})\s*[集话話期]/);
+  if (cn) return parseInt(cn[1], 10);
+  // 「EP12 / E12 / ep-12 / ep.12」
+  const ep = t.match(/EP?[-. ]?(\d{1,4})\b/i);
+  if (ep) return parseInt(ep[1], 10);
+  // 整串数字标题「01」
+  if (/^\d{1,4}$/.test(t)) return parseInt(t, 10);
+  return undefined;
+}
+
 /** 解析播放源字符串，提取源列表和分集信息 */
 export function parsePlaySources(vodPlayUrl: string, vodType?: VideoType): { sources: Video['sources']; episodes: Video['episodes'] } {
   const isMovie = vodType === 'movie';
@@ -168,7 +191,9 @@ export function parsePlaySources(vodPlayUrl: string, vodType?: VideoType): { sou
   let episodes: Video['episodes'] | undefined;
   if (episodesMap.size > 0) {
     episodes = Array.from(episodesMap.entries()).map(([key, ep], index) => ({
-      id: key, vodId: '', url: ep.url, title: ep.title, number: index + 1, sources: ep.sources,
+      id: key, vodId: '', url: ep.url, title: ep.title,
+      // 集号优先取标题解析值；标题无集号信息（如「上/下」「正片」）才回退插入序号
+      number: parseEpisodeNumber(ep.title) ?? index + 1, sources: ep.sources,
     }));
   }
   return { sources: allSources, episodes };
