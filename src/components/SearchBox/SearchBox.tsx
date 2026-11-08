@@ -214,7 +214,7 @@ export default function SearchBox({
     lastSearchedRef.current = '';
   }, [location.pathname]);
 
-  const handleSearch = useCallback((query?: string) => {
+  const handleSearch = useCallback((query?: string, opts?: { mediaType?: 'movie' | 'tv'; year?: number }) => {
     const q = (query ?? value).trim();
     if (!q) return;
     // 有 onSearch 回调时（如 Browse 页）不做去重 —— 允许重复搜索同一关键词；
@@ -226,7 +226,14 @@ export default function SearchBox({
     if (onSearch) {
       onSearch(q);
     } else {
-      navigate('/browse', { state: { q } });
+      // 点击实时建议进入时携带类型/年份（2026-11-08 用户要求）：Browse 的
+      // filterValue 直接 parseFromUrl，?category=xx&year=xx 即选中对应档位；
+      // mediaType 不写 URL——parseFromUrl 一律由 category 推导（见 urlState.ts）。
+      const params = new URLSearchParams();
+      if (opts?.mediaType) params.set('category', opts.mediaType);
+      if (opts?.year) params.set('year', String(opts.year));
+      const qs = params.toString();
+      navigate(qs ? `/browse?${qs}` : '/browse', { state: { q } });
     }
   }, [value, onSearch, navigate, addHistory]);
 
@@ -234,7 +241,13 @@ export default function SearchBox({
     // 点击建议 → 跳转到 Browse 页并填入关键词搜索（不再直达详情页）
     const q = item.name || item.title || item.original_name || item.original_title || '';
     setValue(q);
-    handleSearch(q);
+    // 带上建议项自身的类型/年份：person 无影视类型不传 category；
+    // 年份取 release_date/first_air_date 前 4 位（/search/multi 已返回，此前未利用）
+    const year = Number.parseInt((item.release_date || item.first_air_date || '').slice(0, 4), 10);
+    handleSearch(q, {
+      mediaType: item.media_type === 'movie' || item.media_type === 'tv' ? item.media_type : undefined,
+      year: Number.isFinite(year) && year > 1900 ? year : undefined,
+    });
     inputRef.current?.blur();
     setIsDropdownOpen(false);
   }, [handleSearch]);
@@ -456,20 +469,27 @@ export default function SearchBox({
               )}
               {suggestStatus === 'success' && suggestions.length > 0 && (
                 <ul className="search-box-dropdown__list">
-                  {suggestions.map((item) => (
-                    <li
-                      key={`${item.media_type}-${item.id}`}
-                      className="search-box-dropdown__item search-box-dropdown__item--suggestion"
-                      role="option"
-                      onClick={() => handleSuggestionClick(item)}
-                    >
-                      <Icon icon={Search} size="xs" className="search-box-dropdown__suggestion-icon" aria-hidden="true" />
-                      <span className="search-box-dropdown__text">
-                        {item.name || item.title || item.original_name || item.original_title || ''}
-                      </span>
-                      <span className="search-box-dropdown__type">{suggestionTypeLabel(item.media_type)}</span>
-                    </li>
-                  ))}
+                  {suggestions.map((item) => {
+                    // 剧集取 first_air_date、电影取 release_date 的年份；person 无日期不显示
+                    const year = (item.first_air_date || item.release_date || '').slice(0, 4);
+                    return (
+                      <li
+                        key={`${item.media_type}-${item.id}`}
+                        className="search-box-dropdown__item search-box-dropdown__item--suggestion"
+                        role="option"
+                        onClick={() => handleSuggestionClick(item)}
+                      >
+                        <Icon icon={Search} size="xs" className="search-box-dropdown__suggestion-icon" aria-hidden="true" />
+                        <span className="search-box-dropdown__text">
+                          {item.name || item.title || item.original_name || item.original_title || ''}
+                        </span>
+                        {/^\d{4}$/.test(year) && (
+                          <span className="search-box-dropdown__meta">{year}</span>
+                        )}
+                        <span className="search-box-dropdown__type">{suggestionTypeLabel(item.media_type)}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </>
