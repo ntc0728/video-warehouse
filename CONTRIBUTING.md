@@ -1,6 +1,6 @@
 # 贡献指南（CONTRIBUTING）
 
-> 本文面向**人类协作者**：如何开始、怎么提代码、文档与知识库怎么同步。AI 辅助工具（Cursor / Claude / Copilot）请读 `AGENTS.md`。
+> 本文介绍如何开始、怎么提代码、测试怎么跑。
 
 ## 1. 项目简介
 
@@ -24,14 +24,14 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-TMDB 数据需在设置页填入 Access Token 后才会加载（详见 `KNOWLEDGE.md` 开发指南）。
+TMDB 数据需在设置页填入 Access Token 后才会加载。
 
 ## 3. 分支与 PR 工作流
 
 - 从 `master` 切功能分支，命名建议：`feat/xxx`、`fix/xxx`、`docs/xxx`、`refactor/xxx`。
 - **小步提交**：一次 PR 聚焦一件事，描述写清「做了什么 + 为什么」。
-- 至少 **1 人 review** 后合并；**知识库（`AGENTS.md` 等）改动同样需要 review**——它和代码一样重要。
-- 合并前请运行 `pnpm lint:all` 并跑受影响的测试（见第 7 节）。
+- 至少 **1 人 review** 后合并；文档改动同样需要 review。
+- 合并前请运行 `pnpm lint:all` 并跑受影响的测试（见第 5 节）。
 
 ## 4. 提交规范
 
@@ -41,7 +41,7 @@ TMDB 数据需在设置页填入 Access Token 后才会加载（详见 `KNOWLEDG
 |------|------|
 | `feat:` | 新功能 |
 | `fix:` | Bug 修复 |
-| `docs:` | 文档 / 知识库变更 |
+| `docs:` | 文档变更 |
 | `style:` | 样式调整（不影响逻辑） |
 | `refactor:` | 重构 |
 | `test:` | 测试 |
@@ -51,29 +51,14 @@ TMDB 数据需在设置页填入 Access Token 后才会加载（详见 `KNOWLEDG
 
 ```
 feat: 卡片模块 UI 风格（首页/侧边栏/顶栏/loading 卡片化，仅桌面端生效）
-docs: 同步卡片模块约定与 RecordShell 桌面横向布局到知识库与原理图
+docs: 更新 README 的部署说明
 ```
 
-## 5. 知识库与文档同步
-
-- `AGENTS.md` 是 AI Agent 的**唯一事实源**，所有架构 / 约定以它（及 `KNOWLEDGE.md`、原理图）为准。
-- 改完代码后，**先写 `changelogs/_pending/` 片段**（当天不直接写当日归档，也不把当日流水直接塞进长期文档）；**push 前**按 `docs/agents/docs-protocol.md` 的「文档同步协议」提炼归位：**测试脚本 / 知识库 / 原理图 / 流程图 / 本地记忆**，该更的更、不该更的不动。
-- **不要把本地 AI 记忆提交进仓库**：`.workbuddy/`、`.claude/`、`.opencode/` 已在 `.gitignore` 忽略——那是每个人机器上 AI 的私人笔记，允许不同，无需统一。
-- 非显然的架构 / 约定决策，写入 `docs/KNOWLEDGE.md` 的「架构决策记录（ADR）」。
-
-## 6. 架构决策记录（ADR）
-
-- **何时写**：做了有长远影响的选型 / 约定（断点策略、状态方案、代理分层、卡片化范围等）。
-- **写到哪**：`docs/KNOWLEDGE.md` 的「架构决策记录（ADR）」区，编号顺延 `ADR-XXX`，含 **背景 / 决策 / 后果 / 替代方案**。
-- **模板**：见 `KNOWLEDGE.md` 对应章节，直接复制填写即可。
-
-> 为什么要有 ADR：聊天里定的约定如果不落档，换个人接手就丢了；ADR 让「为什么这么定」可追溯、可 review。
-
-## 7. 测试要求
+## 5. 测试要求
 
 - 改了 **CSS 类名 / 选择器 / DOM 结构** → 必须在**同一次 commit** 更新 `scripts/*.spec.ts` 对应选择器。
-- **精准跑测试**，不要全量（省时）：改动映射见 `AGENTS.md` 的「测试依赖映射」。
-- ⚠️ **禁止裸调 `npx playwright test`**（AGENTS.md 红线 7）：config 的 `webServer.command` 在 Windows 下经 shell 启动，收尾只杀到 shell，vite 会成为孤儿进程长期占端口。一律走下面两个入口：
+- **精准跑测试**，不要全量（省时）：改动与测试的对应关系见 `scripts/README.md` 的「增量测试规则」。
+- ⚠️ **禁止裸调 `npx playwright test`**：config 的 `webServer.command` 在 Windows 下经 shell 启动，收尾只杀到 shell，vite 会成为孤儿进程长期占端口。一律走下面两个入口：
 
   ```bash
   # ① 指定 spec 即「调试档」：单轮墙钟 ≤120s、retries=0
@@ -88,10 +73,8 @@ docs: 同步卡片模块约定与 RecordShell 桌面横向布局到知识库与�
 - 单步等待/超时一律 ≤10s；改动测试映射或增删用例后必须跑 `pnpm test:count` 校验一致性。
 - 单元测试：`pnpm test`。
 
-## 8. 协作问答
+## 6. 其他问题
 
-**Q：我的 AI 本地记忆和同事的不一样，要同步吗？**
-A：不需要，也不应该。`.workbuddy/` 本来就不提交。大家对齐的是提交进仓库的 `AGENTS.md` / `KNOWLEDGE.md` / 原理图。本地记忆冲突时，以提交的文档为准。
+- 有疑问或发现 Bug，请提交 Issue；提交前请先搜索是否已有同类问题。
+- 界面 / UX / 全站布局类的大改动，建议先开 Issue 讨论方案再动手。
 
-**Q：我改了布局/约定，文档要动吗？**
-A：按 `docs/agents/docs-protocol.md` 的「文档同步协议」判断。结构/架构级变更要动原理图/知识库；纯颜色/间距微调通常不用。

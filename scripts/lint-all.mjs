@@ -1,29 +1,28 @@
 #!/usr/bin/env node
 /**
- * lint:all 总闸（护栏演进 §5.2 第 2 项：全跑不短路）。
+ * lint:all 总闸（全跑不短路）。
  *
  * 原实现 `a && b && c && d`：前面的检查一失败，后面的根本不执行——
  * 一次只能看到一个门的结果，修完再跑才能发现下一个门还有问题。
  * 本脚本顺序跑完全部检查（每步失败也继续），最后汇总报告，任一失败 exit 1。
  *
- * 门禁清单（**8 门**，2026-10-11）：
+ * 门禁清单（**8 门**）：
  *   lint:design / lint:css / lint:json / lint:version-sync / lint:test-map /
  *   **lint:lock-pnpm** / lint(eslint) / build。
- * - `lint:version-sync`（2026-09-23 新增）= `sync-android-version.mjs --check`，拦 `capacitor.config.ts`
+ * - `lint:version-sync` = `sync-android-version.mjs --check`，拦 `capacitor.config.ts`
  *   版本号漂移（CI 只在临时 checkout 里 sync、不回写仓库，故仓库副本会长期落后）。
- * - `lint:test-map`（2026-09-23 新增）= `test-count-report.mjs --check`，拦**测试映射腐化**：
+ * - `lint:test-map` = `test-count-report.mjs --check`，拦**测试映射腐化**：
  *   run-tests.ps1 里引用了不存在的 spec / pattern 基路径不存在（改了目录却没改映射）/
  *   grep 的某个 `|` 片段永远不命中（编号合并成 `BROWSE-020/023/025` 后写 `BROWSE-023` 即此）/
- *   档位恒等式被破坏 / `docs/agents/testing.md` 的生成块过期。它只跑 `playwright --list`（1–2s），
+ *   档位恒等式被破坏 / 测试映射文档的生成块过期。它只跑 `playwright --list`（1–2s），
  *   不起浏览器。补映射或加删用例后跑 `npm run test:count -- --write` 同步文档即可。
- * - `lint:lock-pnpm`（2026-10-11 新增）= `pnpm install --frozen-lockfile --lockfile-only`，拦
+ * - `lint:lock-pnpm` = `pnpm install --frozen-lockfile --lockfile-only`，拦
  *   **pnpm 依赖配置漂移**：package.json 的 pnpm.* 配置（patchedDependencies 等）与
  *   pnpm-lock.yaml 不一致。背景：本仓日常走 npm run（lint-all 内部虽用 pnpm run 也只是转发，
- *   不读 lock/不 apply patch），而 Cloudflare 部署 CI 的 `pnpm install` 默认 frozen——
- *   2026-10-11 的 vite patch 漂移就是首爆在部署环节（见 changelogs/2026-10-11.md）。
+ *   不读 lock/不 apply patch），而 Cloudflare 部署 CI 的 `pnpm install` 默认 frozen。
  *   `--lockfile-only` 不碰 node_modules、不下载（命中锁时 <1s，需重算时 ~7s），零副作用。
  *
- * ── 受限沙箱（WorkBuddy / CodeBuddy）适配，2026-09-22 ─────────────────────────
+ * ── 受限沙箱环境适配 ─────────────────────────────────────────────────────────
  * 1. 子进程一律走**异步 `spawn`**：沙箱 node 语言 shim 会拦截同步子进程创建，
  *    `execFileSync('git', …)` 这类调用直接抛 `spawnSync git EBUSY`，把检查打成假失败。
  * 2. `build` 步骤在检测到 shim 生效时，对该子进程设 `CODEBUDDY_SAFE_DELETE_ENABLED=0`：

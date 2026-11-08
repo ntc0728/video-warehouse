@@ -94,7 +94,7 @@ const IPTV_STORE = {
   version: 0,
 };
 
-// 防卡死探针（2026-09-20）：E2E 端口上的 Vite 可能处于「TCP 通、HTTP 永不响应」的
+// 防卡死探针：E2E 端口上的 Vite 可能处于「TCP 通、HTTP 永不响应」的
 // 僵尸态，webServer.reuseExistingServer 判不出来 → 后续每条 goto 白耗 45s，
 // 全量跑变成十几分钟无输出的「卡死」。这里用带超时的 HTTP 探测提前 fail-fast。
 function probeHttp(url: string, timeoutMs = 3000): Promise<boolean> {
@@ -143,7 +143,7 @@ export default async function globalSetup(_config: FullConfig) {
   // 先加载应用页面，使 localStorage 域生效
   await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
 
-  // 时序竞态修复（2026-08-11 根因不变；2026-09-20 由固定 sleep 3.6s 改为收敛轮询）：
+  // 时序竞态处理（收敛轮询）：
   // 应用启动后有「异步写回风暴」（settingsStore 加密落盘重放 + sourceManager bootstrap
   // 回写全量索引），最终写入者胜。轮询判据 = 连续两次读到「存储值 === 注入值」才放行，
   // 风暴期最多回推重注，上限 4s；正常 1s 内收敛，比固定 sleep 快且更可靠。

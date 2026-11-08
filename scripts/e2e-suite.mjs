@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * E2E 总编排器 —— 默认全量入口 `npm run test:e2e`。
- * 完整指令清单与分级门禁见 docs/agents/testing.md「E2E 指令」小节（本文件不重复维护指令表，避免两处漂移）。
+ * 完整指令清单见 `scripts/README.md` 与 `package.json` 的 `test:e2e:*` 脚本。
  *
  * 阶段（串行，总预算默认 300s，到点看门狗击杀并判失败）：
  *   A（dev）     行为全套：除 PREVIEW_SPECS / A_EXCLUDE 外所有 spec。dev 是 cross-tab
@@ -12,18 +12,17 @@
  *   - 取证截图 boot-splash-shots                       → npm run test:e2e:shots
  *   - 骨架：skeleton / boot-splash                     → npm run test:e2e:skeleton
  *           boot-splash-iso（七视口同构）               → npm run test:e2e:boot-iso
- *     （2026-09-23 由「三兄弟一档」拆开：合跑 110–128s 卡 120s 看门狗边界）
+ *     （合跑会贴近看门狗边界，故拆开各自单跑）
  *   - 设置页子页 source-checker / proxy-setup           → npm run test:e2e:subpages
  *
  * 报告：两阶段各只写一份 **blob**（`.pw-blob`），跑完 merge 成一份含 A+B 全量的
  *   `playwright-report/`（html + list）。
- *   ⚠ 旧行为（2026-09-22 修复）：两阶段共用 config 的 html outputFolder，Stage B 后跑
- *   会把 Stage A 报告整份覆盖 → 默认套最终只剩 24 条 player 系用例，Stage A 那 108 条的
- *   耗时/失败明细全丢。
+ *   ⚠ 两阶段若共用 config 的 html outputFolder，后跑的会把先跑的报告整份覆盖，
+ *   所以各写一份 blob 再 merge。
  *
  * 关键不可逆结论（勿反复试探）：
- *   - 行为套整体改投 preview 已实测证伪（home 面板稳定性 / cross-tab 依赖 dev；preview 单轮 245s 且红）。
- *   - 两阶段并行已实测否决（本机 8 chromium 抢 CPU → Stage B 播放器/骨架成片超时 16 failed）；
+ *   - 行为套整体改投 preview 不可行（home 面板稳定性 / cross-tab 依赖 dev）。
+ *   - 两阶段并行默认关闭（CPU 争用导致 Stage B 播放器/骨架探针超时假红）；
  *     仅强 CPU 机可 E2E_PARALLEL=1 开（两阶段 blob 写同一 .pw-blob 后 merge-reports 汇总）。
  *
  * 用法：
@@ -39,10 +38,10 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
 
-// 沙箱（WorkBuddy CLI）经 NODE_OPTIONS 注入 node-language/delete-shim：同一 turn 内删除
+// 受限沙箱经 NODE_OPTIONS 注入 node-language/delete-shim：同一 turn 内删除
 // 超过 50 个文件即抛 SAFE_DELETE_BULK_CONFIRM_REQUIRED。而 Playwright 启动时会清理上一轮的
-// --output 目录（数百文件）→ 一被拒整个 run 直接异常退出（2026-09-22 实测：上轮 .pw-out-A
-// 253 文件，整轮 12.2s 秒崩）；retry 阶段清 artifacts 失败还会被记成用例 failed 假红。
+// --output 目录（数百文件）→ 一被拒整个 run 直接异常退出；retry 阶段清 artifacts 失败
+// 还会被记成用例 failed 假红。
 // 既定解法与本仓 scripts/run-tests.ps1:481-482 一致：对子进程清空 NODE_OPTIONS。
 delete process.env.NODE_OPTIONS;
 
@@ -115,8 +114,8 @@ if (onlyIdx >= 0) {
 say(`E2E 套件开跑（预算 ${(BUDGET_MS / 1000).toFixed(0)}s，模式：${process.env.E2E_PARALLEL === '1' ? '并行分片' : '串行'}）`);
 
 // 播放器系只能 preview（生产单包挂载快且稳）。
-// 例外：smoke-player-fs-mobile 留 dev —— `.up-fs-corner` 等横屏全屏 UI 在生产 bundle 下不出现
-// （preview 实测整族挂），属构建形态差异（2026-09-20）。
+// 例外：smoke-player-fs-mobile 留 dev —— `.up-fs-corner` 等横屏全屏 UI 在生产 bundle 下不出现，
+// 属构建形态差异。
 const PREVIEW_SPECS = [
   'scripts/player.spec.ts',
   'scripts/player-failover.spec.ts',
@@ -127,16 +126,15 @@ const PREVIEW_SPECS = [
 // 注：chart / person 是顶级业务路由，保留默认套（只移子页、不移顶级路由）。
 const A_EXCLUDE = ['skeleton', 'boot-splash', 'boot-splash-iso', 'boot-splash-shots', 'source-checker', 'proxy-setup', 'player', 'player-failover', 'player-cms-error', 'iptv-player'].join(',');
 
-// Stage A（dev 行为套）：稳定档 3 worker（4 worker dev 编译争用会挤挂时序敏感断言，实测）。
+// Stage A（dev 行为套）：稳定档 3 worker（4 worker dev 编译争用会挤挂时序敏感断言）。
 const STAGE_A_ARGS = ['--all', '--dev', '--workers', '3'];
 const STAGE_A_ENV = { E2E_SKIP_SHOTS: '1', E2E_EXCLUDE_SPECS: A_EXCLUDE };
 // Stage B（preview 契约+播放器）：生产单包无 dev 编译争用 → 5 worker 并行化 iso 42 探针。
 const STAGE_B_ARGS = ['--all', '--budget', '150', '--retries', '1', '--workers', '5', ...PREVIEW_SPECS];
 
 // 并行分片（实验性，默认关）：两阶段各起独立 server + 各写 blob，跑完 merge 成一份报告。
-// ❌ 2026-09-21 实测：本机并行下 8 chromium 抢 CPU → preview 阶段播放器 10s 挂载窗/骨架探针被
-//   饿死，Stage B 成片 16 failed（墙钟虽降到 ~156s，但拿稳定性换时间不划算）→ 默认串行。
-//   仅在强 CPU 机用 `E2E_PARALLEL=1` 显式开启。
+// 并行下 chromium 抢 CPU → preview 阶段播放器挂载窗/骨架探针被饿死、Stage B 成片假红
+//   → 默认串行。仅在强 CPU 机用 `E2E_PARALLEL=1` 显式开启。
 const PARALLEL = process.env.E2E_PARALLEL === '1';
 const results = [];
 
@@ -144,9 +142,9 @@ const results = [];
 // 避免「后一阶段把前一阶段的报告整份覆盖掉」。
 //
 // ⚠ 两阶段必须**分目录**：blob reporter 产物名固定为 `report-<hash>.zip`，写同一目录时后跑的
-//   会把前一份整个盖掉（2026-09-22 实测：merge 后只剩 24 条 player 用例，Stage A 那 108 条全丢）。
+//   会把前一份整个盖掉。
 //   而 merge-reports 只收**一个**目录参数 → 收尾前用 collectBlobs() 把 B 的 zip 归集进 A 的目录
-//   （实测同目录多 zip 会被全部合并；两份 zip 名各带内容 hash，天然不撞）。
+//   （同目录多 zip 会被全部合并；两份 zip 名各带内容 hash，天然不撞）。
 // stdout 侧仍保留 list（跑批过程可见 + 预算击杀可诊断），差别见下：
 //   Stage A 是 FULL 档，e2e-skeleton 不给 --reporter（走 config 的 html+list）→ 这里补 list；
 //   Stage B 是 ad-hoc 档，e2e-skeleton 已自带 --reporter=list → 只补 blob，避免 list 重复注册。
@@ -174,7 +172,7 @@ function collectBlobs(from, to) {
 }
 
 /** 合并两阶段 blob → playwright-report/。
- *  用**异步** spawn：受限沙箱（Bash 工具直起的 node）里 `spawnSync` 一律 EBUSY（2026-09-22 实测），
+ *  用**异步** spawn：受限沙箱里 `spawnSync` 一律 EBUSY，
  *  而 merge 失败只会让报告不完整、不会让套件变红 → 静默踩坑，故此处必须避开 spawnSync。*/
 function mergeReports() {
   const moved = collectBlobs(BLOB_DIR_B, BLOB_DIR_A);

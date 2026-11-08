@@ -20,23 +20,17 @@ jobs:
           # 默认用 GITHUB_TOKEN；若该仓库未开启「Allow GitHub Actions to create and approve
           # pull requests」（私有库/组织策略常禁用），请创建带 repo 权限的 PAT 存入
           # 仓库 Secrets 的 RELEASE_PLEASE_TOKEN，即可绕过该限制自动开版 PR。
-          # ⚠️ 注意：未配置 PAT 时 release 由 GITHUB_TOKEN 创建（author=github-actions[bot]），
-          # 该事件被 GitHub 递归保护吞掉，`on: release: published` 永远不会触发；
-          # 配置 PAT 后 release 由 PAT 身份创建 → 事件可正常触发（release-android.yml 复活）。
+          # 注意：未配置 PAT 时 release 由 GITHUB_TOKEN 创建，该事件被 GitHub 递归保护
+          # 吞掉，`on: release: published` 不会触发；配置 PAT 后事件可正常触发。
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  # APK 构建（2026-08-14 终版）：
-  # 门控 = 本次 push 是否为 release PR 的 merge commit（commit message 含
-  # "release-please--branches--master"，GitHub 生成的 merge commit 格式固定，100% 可靠）。
-  # 为什么不用 release_created / API 探测：
-  # - release_created：release 由 GITHUB_TOKEN 通道创建（v1.7.1~v1.7.4 实证 author=
-  #   github-actions[bot]），action 再运行时 release 已存在 → 恒 false → 恒 skipped。
-  # - API 探测（target_commitish==GITHUB_SHA）：与 release 发布存在竞态——check 步骤
-  #   运行时 release 可能尚在 draft/未入列表（列表 API 不返回 draft），v1.7.4 实测仍 skipped。
-  # 本方案零探测：merge commit 必为发版 commit，版本号直接从 checkout 的
-  # package.json 读取（release PR 已 bump 版本），无需 tag/release 状态。
+  # APK 构建：门控 = 本次 push 是否为 release PR 的 merge commit（commit message 含
+  # "release-please--branches--master"，GitHub 生成的 merge commit 格式固定）。
+  # 不用 release_created / API 探测：前者在 GITHUB_TOKEN 通道下恒为 false，后者与
+  # release 发布存在竞态。版本号直接从 checkout 的 package.json 读取
+  # （release PR 已 bump 版本），无需 tag/release 状态。
   build-apk:
     if: contains(github.event.head_commit.message, 'release-please--branches--master')
     runs-on: ubuntu-latest
@@ -60,13 +54,9 @@ jobs:
       # 必须安装 Android SDK：compileSdk 34 + build-tools（含 apksigner）。
       # 否则 ANDROID_HOME 为空，gradle 无法编译、签名步骤找不到 apksigner，
       # 整个 workflow 在 build/sign 阶段失败导致 APK 缺失。
-      # ⚠️ 2026-09-16（run 35065794865 实证）：setup-android **v4 已无 api-level 入参**
-      #   （有效入参仅 cmdline-tools-version / accept-android-sdk-licenses /
-      #   log-accepted-android-sdk-licenses / packages），必须用 packages 显式声明；
-      #   且其默认 packages=`tools platform-tools` 里的 legacy `tools` 已被 Google
-      #   从 SDK 仓库下架 → sdkmanager 报 "Failed to find package 'tools'" 并 exit 1，
-      #   本步骤直接失败（连带 gradle/build/sign 全部 skipped）。故改为显式包列表，
-      #   版本与 android/variables.gradle 的 compileSdkVersion=34 + AGP 8.2.1 对齐。
+      # setup-android v4 没有 api-level 入参，必须用 packages 显式声明；且其默认
+      # packages 含 legacy `tools`（已从 SDK 仓库下架，sdkmanager 会报错），故显式
+      # 列出包列表，版本与 android/variables.gradle 的 compileSdkVersion=34 + AGP 8.2.1 对齐。
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
@@ -82,11 +72,10 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/android
-          # ⚠️ android/ 已被 .gitignore 忽略（CI checkout 时该目录不存在），
-          #   hashFiles 对不存在的路径恒返回空 → 原 key 实际只随 package.json 变化，
-          #   wrapper 换版本时缓存永不失效。故 wrapper 版本改用显式常量
-          #   （当前 gradle-8.2.1，与下方 distributionUrl 一致），
-          #   依赖漂移交给 lockfile + capacitor.config.ts 兜住。
+          # android/ 已被 .gitignore 忽略（CI checkout 时该目录不存在），
+          # hashFiles 对不存在的路径恒返回空，所以 key 实际只随 package.json 变化；
+          # wrapper 版本改用显式常量（当前 gradle-8.2.1，与下方 distributionUrl 一致），
+          # 依赖漂移交给 lockfile + capacitor.config.ts 兜住。
           key: ${{ runner.os }}-gradle-8.2.1-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'capacitor.config.ts') }}
           restore-keys: |
             ${{ runner.os }}-gradle-8.2.1-

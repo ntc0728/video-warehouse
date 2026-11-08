@@ -1,16 +1,14 @@
 name: Build Android APK
 
 # APK 补传/兜底入口：
-# - release 事件：⚠️ 2026-08-14 实测（v1.7.2）release 由 GITHUB_TOKEN 创建
-#   （author=github-actions[bot]），GITHUB_TOKEN 创建的事件被 GitHub 递归保护吞掉，
-#   `on: release: published` **不会触发**本 workflow——此通道仅当 release 由 PAT/App
-#   身份创建时可用（配置 RELEASE_PLEASE_TOKEN 后 release 由 PAT 创建 → 自动复活）。
-#   自动上传的可靠通道 = release-please.yml 内的 build-apk（release 存在性门控）。
+# - release 事件：GITHUB_TOKEN 创建的 release 会触发 GitHub 的递归保护，
+#   `on: release: published` 不会触发本 workflow——此通道仅当 release 由 PAT/App
+#   身份创建时可用（配置 RELEASE_PLEASE_TOKEN 后 release 由 PAT 创建）。自动上传的
+#   可靠通道 = release-please.yml 内的 build-apk（release 存在性门控）。
 # - workflow_dispatch：手动补传任意版本（填版本号如 1.7.2 → 上传 kinoTv-v1.7.2.apk
 #   到 kinotv-v1.7.2 release）。
-# ⚠️ tag 前缀必须是 `kinotv-v`（release-please 按 package.json name=kinotv 派生，
-#   实际 tag 如 kinotv-v1.7.2）——曾拼 `v${version}` 导致 checkout git exit 1，
-#   版本号提取亦须用 `${TAG#kinotv-v}`（`${TAG#v}` 删不掉前缀）。
+# tag 前缀必须是 `kinotv-v`（release-please 按 package.json name=kinotv 派生，
+#   实际 tag 如 kinotv-v1.7.2），版本号提取须用 `${TAG#kinotv-v}`。
 # 命名规范：kinoTv-v<版本号>.apk（如 kinoTv-v1.7.2.apk）。
 
 on:
@@ -62,13 +60,9 @@ jobs:
       # 必须安装 Android SDK：compileSdk 34 + build-tools（含 apksigner）。
       # 否则 ANDROID_HOME 为空，gradle 无法编译、签名步骤找不到 apksigner，
       # 整个 workflow 在 build/sign 阶段失败导致 APK 缺失。
-      # ⚠️ 2026-09-16（run 35065794865 实证）：setup-android **v4 已无 api-level 入参**
-      #   （有效入参仅 cmdline-tools-version / accept-android-sdk-licenses /
-      #   log-accepted-android-sdk-licenses / packages），必须用 packages 显式声明；
-      #   且其默认 packages=`tools platform-tools` 里的 legacy `tools` 已被 Google
-      #   从 SDK 仓库下架 → sdkmanager 报 "Failed to find package 'tools'" 并 exit 1，
-      #   本步骤直接失败（连带 gradle/build/sign 全部 skipped）。故改为显式包列表，
-      #   版本与 android/variables.gradle 的 compileSdkVersion=34 + AGP 8.2.1 对齐。
+      # setup-android v4 没有 api-level 入参，必须用 packages 显式声明；且其默认
+      # packages 含 legacy `tools`（已从 SDK 仓库下架，sdkmanager 会报错），故显式
+      # 列出包列表，版本与 android/variables.gradle 的 compileSdkVersion=34 + AGP 8.2.1 对齐。
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
@@ -84,11 +78,10 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/android
-          # ⚠️ android/ 已被 .gitignore 忽略（CI checkout 时该目录不存在），
-          #   hashFiles 对不存在的路径恒返回空 → 原 key 实际只随 package.json 变化，
-          #   wrapper 换版本时缓存永不失效。故 wrapper 版本改用显式常量
-          #   （当前 gradle-8.2.1，与下方 distributionUrl 一致），
-          #   依赖漂移交给 lockfile + capacitor.config.ts 兜住。
+          # android/ 已被 .gitignore 忽略（CI checkout 时该目录不存在），
+          # hashFiles 对不存在的路径恒返回空，所以 key 实际只随 package.json 变化；
+          # wrapper 版本改用显式常量（当前 gradle-8.2.1，与下方 distributionUrl 一致），
+          # 依赖漂移交给 lockfile + capacitor.config.ts 兜住。
           key: ${{ runner.os }}-gradle-8.2.1-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'capacitor.config.ts') }}
           restore-keys: |
             ${{ runner.os }}-gradle-8.2.1-

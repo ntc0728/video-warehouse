@@ -1,5 +1,5 @@
 # Enforce LF line endings for all text files
-# Prevents agent edits from causing CRLF↔LF flips (whole-file git diff)
+# Prevents editor/tooling edits from causing CRLF↔LF flips (whole-file git diff)
 * text=auto eol=lf
 
 # Explicitly set for common source files

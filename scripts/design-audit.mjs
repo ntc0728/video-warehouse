@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 设计基线审计（B7.2 护栏）
+ * 设计基线审计（护栏）
  *
  * 补 ESLint 覆盖不到的盲区：CSS 文件里的硬编码色 / 语义色误用 / 裸 z-index 等。
  * ESLint 侧只管 .tsx 的 className、style={{}} 与颜色常量（见 eslint-rules/no-hardcoded-colors.js）。
@@ -41,7 +41,7 @@ const TOKEN_FILES = [
 
 /**
  * 沙盒（调研 demo）目录排除钩子：与 .stylelintrc.json 的 ignoreFiles 同源。
- * 2026-09-21：PlayerLab / PlayerMobileLab demo 已整体删除，当前无排除对象。
+ * 当前无排除对象。
  */
 const EXCLUDE_DIRS = [];
 
@@ -125,13 +125,13 @@ const CHECKS = [
     enforce: true,
     desc: '页级裸 z-index（≥100 必须走 --z-* token；50–99 为组件局部抬升过渡带）',
     /**
-     * 阈值口径（2026-09-15 D5 校准）：
+     * 阈值口径：
      *   ≥100  = 页级覆盖层起点（--z-overlay），必检 —— 落在这一带的裸数字会与
      *           侧边栏 / 抽屉 / 弹窗 / toast / 幕布等页级浮层互相打架，必须走 token。
      *   <100  = 组件自身 stacking context 内的相对层梯（播放器 chrome 的 20/25/60/70/95，
      *           图表的 flex 子项等），只在本组件内部比较大小，不参与页级层叠。
-     *           契约与 §5.3「触碰 <50 的 z-index 无收益」一致，故不再逐条报警，
-     *           否则 93 处合法局部值会淹没真正的页级冲突（原实现连 1/2/3 也报）。
+     *           触碰 <50 的 z-index 无收益，故不再逐条报警，
+     *           否则大量合法局部值会淹没真正的页级冲突。
      */
     match: (raw) => {
       const m = raw.match(/z-index\s*:\s*(-?\d+)/);
@@ -154,15 +154,12 @@ const CHECKS = [
     enforce: true,
     desc: 'transition/animation 内联时长字面量（新代码应走 --dur-* token）',
     /**
-     * 2026-09-15 D6 起由 observe 转 enforce：
-     * 新增 --dur-2xs/xs/sm/md/lg 五档交互阶梯（值取自既有字面量频次前 5 名）
-     * 与 --dur-shimmer/pulse/marquee 三个装饰循环档后，存量 426 处已降 156 处，
-     * 其余为**刻意保留**的两类（见 docs/design/BASELINE.md §时长）：
+     * enforce 语义 = 「不许再新增字面量」：存量已快照进基线，只拦新增。
+     * 刻意保留字面量的两类：
      *   ① animation-delay 的错峰值（列表逐项进场 0.15/0.18/0.20s…）——是「第几个出场」，
      *      不是「动多快」，套 --dur-* 会把节奏语义搞混；
      *   ② 一次性微调与特定循环（30/60/88/…/390ms 与 1s/1.4s/2.4s/8s/25s 等）——
-     *      归档会改变观感节奏（§5.3 明确不做）。
-     * 现在的 enforce 语义 = 「不许再新增字面量」：存量已快照进基线，只拦新增。
+     *      归档会改变观感节奏。
      */
     match: (raw) => {
       const m = raw.match(/(?:transition|animation)[^:]*:\s*[^;]*?\b\d*\.?\d+m?s\b/);
@@ -170,16 +167,15 @@ const CHECKS = [
     },
   },
   /**
-   * 盒尺寸 / 定位类裸 px —— 2026-09-15 D5 从 stylelint 的 unit-disallowed 规则移出后，
-   * 在此以 observe 模式保留度量（不阻塞提交）。
+   * 盒尺寸 / 定位类裸 px：以 observe 模式保留度量（不阻塞提交）。
    *
-   * 移出理由：这些属性承载的是**刻意固定**的尺寸，而非流体语言：
+   * 不纳管的理由：这些属性承载的是**刻意固定**的尺寸，而非流体语言：
    *   ① 结构细线 1–2px（分隔线 / 进度轨 / 负 margin 描边）
-   *   ② 装饰圆点 ≤12px（token 文档已明确豁免「圆点 / 圆角 / 滚动条」）
+   *   ② 装饰圆点 ≤12px（token 约定已明确豁免「圆点 / 圆角 / 滚动条」）
    *   ③ 媒体比例盒（封面 160×90 / 112×168，尺寸由比例与网格决定，流体化会让行高跳动）
    *   ④ 运行时变量兜底 var(--js 注入, Npx)（如 --player-toast-top / --detail-hero-h）
    * 改成 token 会引入无收益的观感漂移；而在 stylelint 里逐行 disable 会生成
-   * 上百条注释噪音（该规则的 ignore:["inside-function"] 在 17.x 实测无效）。
+   * 上百条注释噪音（该规则的 ignore:["inside-function"] 在 stylelint 17.x 下无效）。
    * 故：enforce 交给「间距/字号/圆角」，盒尺寸保留本 observe 指标，便于后续收紧。
    */
   {

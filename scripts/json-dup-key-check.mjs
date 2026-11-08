@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
- * JSON 配置重复 key 检测（护栏，方案 §5.2 第 3 项）。
+ * JSON 配置重复 key 检测（护栏）。
  *
- * 背景：JSON.parse 对同一对象内的重复 key **静默保留最后一个**，无警告无报错——
- * 与 A1（--ui-scale 同块重复定义）/ B7（JSON 重复 key）同属「静默失效」家族根因。
+ * 背景：JSON.parse 对同一对象内的重复 key **静默保留最后一个**，无警告无报错。
  * 编辑器 diff 看不出、构建不报错，直到运行时行为诡异才暴露。
  *
  * 实现：字符级扫描（支持 JSONC 注释，tsconfig 系列带注释），逐对象层级记录
@@ -19,9 +18,9 @@ const EXCLUDE = /(^|\/)(package-lock\.json|pnpm-lock\.yaml|.*\.min\.json)$/;
 
 /**
  * 异步 spawn 收集 stdout。
- * 为什么不用 execFileSync：受限沙箱（WorkBuddy safe-delete shim）会拦截**同步**子进程创建，
+ * 为什么不用 execFileSync：受限沙箱的 safe-delete shim 会拦截**同步**子进程创建，
  * `execFileSync('git', ...)` 直接抛 `spawnSync git EBUSY`，导致本检查必然失败；
- * 异步 `spawn` 不受影响（同一环境下实测 exit 0）。
+ * 异步 `spawn` 不受影响。
  */
 function runCapture(cmd, args) {
   return new Promise((resolve, reject) => {

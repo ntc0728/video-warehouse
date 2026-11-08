@@ -1,7 +1,7 @@
 /**
  * fetch-diagram-data.mjs — 通用数据获取脚本
  *
- * 从真实 API 获取 TMDB / CMS / IPTV 数据，输出 JSON 供 docs/page-diagrams 页面使用。
+ * 从真实 API 获取 TMDB / CMS / IPTV 数据，输出 JSON 供页面原理图使用。
  *
  * 用法：
  *   node scripts/fetch-diagram-data.mjs                      # 默认抓取 CMS + IPTV
@@ -12,7 +12,7 @@
  *   VIDEO_PROXY  = https://your-video-proxy.example.com  (CORS 代理，用于 CMS API / M3U 文件获取)
  *   IPTV_PROXY   = https://your-iptv-proxy.example.com   (M3U8 流代理，用于播放链接)
  *
- * 输出：docs/page-diagrams/diagram-data.json
+ * 输出：diagram-data.json（写入脚本头部的 OUTPUT_PATH）
  */
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';

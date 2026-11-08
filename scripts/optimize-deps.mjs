@@ -3,12 +3,12 @@
  * postinstall：把 Vite 的首次「依赖预打包（optimize）」从「首次打开 dev server」
  * 提前到「依赖安装完成时」。
  *
- * 为什么需要（2026-09-11 实测）：
+ * 为什么需要：
  *   Vite dev server 的 Environment.listen() 里有 `await this.depsOptimizer.init()`，
- *   缓存（node_modules/.vite）缺失时要跑 scanner + 完整 optimize —— 本机实测
- *   **≈4062 ms / 20 个 dep**。这期间 HTTP 层不返回 index.html，浏览器表现为「纯白」
+ *   缓存（node_modules/.vite）缺失时要跑 scanner + 完整 optimize（20 个 dep 需数秒）。
+ *   这期间 HTTP 层不返回 index.html，浏览器表现为「纯白」
  *   （index.html 里的启动骨架也来不及显示，因为 HTML 本身还没到）。
- *   把这一步前移到 install 后，dev 启动时只做 hash 校验（实测 `Hash is consistent. Skipping.`），
+ *   把这一步前移到 install 后，dev 启动时只做 hash 校验即可直接复用，
  *   clone → install → dev 首开不再白屏。
  *
  * 硬性约束（勿改）：
@@ -21,13 +21,13 @@
  *      一律容错：未来若被移除，本节只 warn 并 exit 0，dev 启动时会自动重试优化。
  *   4. 需要跳过时设置环境变量 `VITE_SKIP_OPTIMIZE=1`。
  *
- * ── 受限沙箱（WorkBuddy / CodeBuddy）适配，2026-09-23 ─────────────────────
+ * ── 受限沙箱环境适配 ─────────────────────────────────────────────────────────
  * 症状：脚本**看着成功、实际没预打包**（日志只有 `预打包未成功（exit 1）→ 已忽略`），
- *   于是 dev 首开现场 optimize（实测首启 12.9s vs 稳态 5.2s）。
- * 根因：需要重建缓存时 vite 会 `fs.rm(node_modules/.vite/deps)`（实测 89 文件），命中沙箱
+ *   于是 dev 首开现场 optimize，明显变慢。
+ * 根因：需要重建缓存时 vite 会 `fs.rm(node_modules/.vite/deps)`（数十文件），命中沙箱
  *   删除护栏阈值（`node-safe-delete-shim.cjs`，>50 文件要确认）→ `SAFE_DELETE_BULK_CONFIRM_REQUIRED`。
  * 修法（与 `scripts/lint-all.mjs` 同源模式）：
- *   a. 子进程从 `spawnSync` 改为**异步 `spawn`**（沙箱对同步子进程拦截表现不稳定，见 ref-code-runtime）；
+ *   a. 子进程从 `spawnSync` 改为**异步 `spawn`**（沙箱对同步子进程拦截表现不稳定）；
  *   b. **只对 optimize 这一个子进程**注入 `CODEBUDDY_SAFE_DELETE_ENABLED=0`，其余 shim 行为保留；
  *      该变量在沙箱外不存在 → **对 CI / 本机终端零影响**；
  *   c. 保留「永不以非零码退出」硬约束，只把失败原因打成醒目 ⚠️ 便于排查。

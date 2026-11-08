@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 /**
- * test-count-report.mjs —— E2E 用例计数 / 测试映射一致性报告（2026-09-23 新增）
+ * test-count-report.mjs —— E2E 用例计数 / 测试映射一致性报告
  *
  * ── 它解决什么问题 ────────────────────────────────────────────────────────────
- * 1. `docs/agents/testing.md` 的「test 数」列长期靠人工维护，多轮合并/迁移后变成历史
- *    快照（曾出现「home 列写 46、实际 13」这类错值），且同一数字在多个文档里各写一份
+ * 1. 用例数若靠人工维护，多轮合并/迁移后容易变成历史快照，且同一数字在多个文档里各写一份
  *    → 必然漂移。本脚本把「数字」变成**可重算的产物**，文档只引用它。
  * 2. `scripts/run-tests.ps1` 的映射表（$uiTestMap / $uiPrecisionMap / $logicTestMap）
  *    在文件改名、describe 段重编号后会**静默失效**（引用不存在的 spec、grep 片段永不命中），
@@ -20,14 +19,14 @@
  *   node scripts/test-count-report.mjs                 # 打印完整报告（人读）
  *   node scripts/test-count-report.mjs --markdown      # 只打印可粘贴的 markdown 片段
  *   node scripts/test-count-report.mjs --list-file <p> # 复用已有 --list 输出（离线/加速）
- *   node scripts/test-count-report.mjs --write         # 把生成块写回 docs/agents/testing.md
+ *   node scripts/test-count-report.mjs --write         # 把生成块写回测试映射文档
  *   node scripts/test-count-report.mjs --check         # 只校验（exit 1 = 有问题）
  *
  * `--check` 的校验项（也是 `npm run lint:test-map` 的内容）：
  *   A. 映射/分组/按需档里引用的 spec 文件**必须存在**（防改名后死引用）
  *   B. grep 的每个 `|` 片段在它声明的 spec 里**必须至少命中 1 条**（防段号重编号后死 grep）
  *   C. 档位恒等式：Stage A + Stage B = 默认套；默认套 + 按需档 = 全仓 `--list` 总数
- *   D. `docs/agents/testing.md` 的生成块与本次实算一致（防文档过期）
+ *   D. 测试映射文档的生成块与本次实算一致（防文档过期）
  *
  * 退出码：0 全部通过；1 有任一校验失败；2 环境/参数错误（如 --list 跑不起来）。
  */
@@ -380,6 +379,21 @@ md.push(BLOCK_END);
 const generated = md.join('\n');
 
 // ── 5.5 校验 D：文档生成块是否与实算一致 ────────────────────────────────────
+// 测试映射文档不入版本控制（本地知识库）。缺失时（如新 clone）跳过该文档校验，
+// 只保留 spec 存在性 / pattern / grep 片段等与文档无关的校验。
+if (!existsSync(DOC_PATH)) {
+  console.log('（跳过文档生成块校验：测试映射文档不存在，仅本地维护）');
+  const errorsOnly = [...refErrors, ...patternErrors, ...grepErrors, ...identityErrors];
+  if (errorsOnly.length) {
+    console.error(errorsOnly.map((e) => `✗ ${e}`).join('\n'));
+    process.exit(1);
+  }
+  const skipLines = [];
+  skipLines.push(`全仓枚举：${total} 条 / ${files.length} spec`);
+  skipLines.push('（文档生成块校验已跳过）');
+  console.log(skipLines.join('\n'));
+  process.exit(0);
+}
 const docSrc = readFileSync(DOC_PATH, 'utf8');
 const bStart = docSrc.indexOf(BLOCK_BEGIN);
 const bEnd = docSrc.indexOf(BLOCK_END);
@@ -388,13 +402,13 @@ const docOutdated = docBlock !== generated;
 
 // ── 6. 输出 ─────────────────────────────────────────────────────────────────
 const errors = [...refErrors, ...patternErrors, ...grepErrors, ...identityErrors];
-if (docOutdated) errors.push('docs/agents/testing.md 的生成块已过期（跑 --write 同步）');
+if (docOutdated) errors.push('测试映射文档的生成块已过期（跑 --write 同步）');
 
 if (OPT.write) {
-  if (bStart < 0 || bEnd < bStart) fail('testing.md 里没有 `<!-- test-counts:begin … -->` … `<!-- test-counts:end -->` 标记，无法写入');
+  if (bStart < 0 || bEnd < bStart) fail('测试映射文档里没有 `<!-- test-counts:begin … -->` … `<!-- test-counts:end -->` 标记，无法写入');
   const next = docSrc.slice(0, bStart) + generated + docSrc.slice(bEnd + BLOCK_END.length);
   writeFileSync(DOC_PATH, next);
-  console.log(`✓ 已写入 docs/agents/testing.md（${generated.split('\n').length} 行）`);
+  console.log(`✓ 已写入测试映射文档（${generated.split('\n').length} 行）`);
   process.exit(0);
 }
 

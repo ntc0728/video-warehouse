@@ -11,9 +11,9 @@
     [switch]$RealApi               # 关闭 mock，使用真实 TMDB API（发版前回归）
 )
 
-# ── 子进程输出编码（2026-09-23）──────────────────────────────
+# ── 子进程输出编码 ───────────────────────────────────────────
 # 本脚本把 node / playwright 的输出透传到自己的 stdout。Windows 默认控制台代码页是 GBK，
-# PowerShell 会用它解码子进程的 UTF-8 字节 → 中文诊断全变乱码（实测「跑批开始」→「璺戞壒寮€濮�」）。
+# PowerShell 会用它解码子进程的 UTF-8 字节 → 中文诊断全变乱码。
 # 统一按 UTF-8 处理，否则跑批器打印的预算/收尾信息在日志里不可读。
 try {
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -37,7 +37,7 @@ if ($RealApi) {
 }
 
 # ── UI 层：文件 → 测试文件（粗粒度，兜底） ──────────────────
-# 生效条件（2026-09-23 明确）：**仅当该文件未命中 $uiPrecisionMap 任何条目时**才走本表。
+# 生效条件：**仅当该文件未命中 $uiPrecisionMap 任何条目时**才走本表。
 # 也就是说「同一 pattern 在两处都出现」时，精粒度那条会覆盖本表 —— 本表真正在服务的是
 # 精粒度未逐一列出的边角文件（如 `src/pages/Browse/useLogicalPage.ts`、`BrowseGrid.tsx`）。
 $uiTestMap = @{
@@ -112,23 +112,20 @@ $uiPrecisionMap = @{
     }
     "src/pages/Browse/useBrowseData.ts" = @{
         spec = @("scripts/browse.spec.ts")
-        # 2026-09-23 校准：原写 BROWSE-020|BROWSE-023|BROWSE-025|…，其中 023/025 已并入
-        # BROWSE-020 的合并标题（`BROWSE-020/023/025: …`）→ 单独写成 BROWSE-023 永远不命中。
-        # 保留的 020 已覆盖那两条。新增片段请先用 `npm run test:count` 验证命中数 > 0。
+        # grep 写合并标题的段首编号（BROWSE-020 的合并标题已覆盖 023/025，单独写 023/025 永远不命中）。
+        # 新增片段请先用 `npm run test:count` 验证命中数 > 0。
         grep = "BROWSE-020|BROWSE-030|BROWSE-060"
     }
     "src/pages/Browse/BrowseMobileBar.tsx" = @{
         spec = @("scripts/browse.spec.ts")
-        # 2026-09-23 校准：原逐个列 BROWSE-070|071|072|074|077|078|079|080|081|082，
-        # 但 spec 侧是合并标题（`BROWSE-070/071/072/074/078/080: …`）→ 只有段首编号能命中。
-        # 改为「命中真实存在的 3 个段首」，语义等价、且段内新增用例自动涵盖（grep 用段号更稳）。
+        # spec 侧是合并标题（如 `BROWSE-070/071/072/074/078/080: …`）→ 只写真实存在的段首编号，
+        # 语义等价、且段内新增用例自动涵盖（grep 用段号更稳）。
         grep = "BROWSE-070|BROWSE-077|BROWSE-081"
     }
-    # FilterBar / SortBar（2026-09-23 校准）
-    #   原 key 写作 `src/pages/Browse/FilterBar/**` 与 `src/pages/Browse/SortBar/**`，
-    #   但这两个目录**早已不存在**（FilterBar 迁到 `src/components/FilterBar/`，排序 UI 是同目录
-    #   `constants.ts` 的 SORT_OPTIONS，没有独立 SortBar）→ 映射永不命中 = 改筛选条时静默不跑测试。
-    #   现在指向真实路径；SortBar 条目删除（其唯一活着的片段 BROWSE-030 已含在下面）。
+    # FilterBar / SortBar
+    #   FilterBar 在 `src/components/FilterBar/`，排序 UI 是同目录 `constants.ts` 的 SORT_OPTIONS，
+    #   没有独立 SortBar；映射 key 必须指向真实存在的目录，否则永不命中
+    #   = 改筛选条时静默不跑测试（SortBar 条目不设，其片段 BROWSE-030 已含在下面）。
     "src/components/FilterBar/**" = @{
         spec = @("scripts/browse.spec.ts")
         grep = "BROWSE-020|BROWSE-030|BROWSE-060|BROWSE-070"
@@ -159,11 +156,7 @@ $uiPrecisionMap = @{
     # ── 全局壳（Layout/StickyHeader/SearchBox 影响所有页面首屏）──
     "src/components/Layout/**" = @{
         # spec 列表：一个页面一个「首屏用例」所在的 spec（cross-tab 与 regression 各一条壳层断言）。
-        # 2026-09-23 校准：原先 `scripts/regression.spec.ts` 被写了 3 遍（历史遗留：cross-page /
-        # regression-detail / fix-2026-08 三个 spec 合并成 1 个后没收敛），HashSet 会去重所以行为
-        # 无碍，但读起来像三份不同目标 → 收敛为 1 份。
         spec = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/player.spec.ts", "scripts/iptv.spec.ts", "scripts/settings.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/source-checker.spec.ts", "scripts/person.spec.ts", "scripts/cross-tab.spec.ts", "scripts/regression.spec.ts")
-        # 2026-09-23 校准：删掉零命中的 `13\.1|13\.12|3\.17`（旧编号，随合并消失）。
         grep = "1\.1|1\.3b|1\.5|2\.1|3\.1|4\.1|5\.1|6\.1|7\.1|8\.1|9\.1|10\.1|桌面端|移动端"
     }
     "src/components/StickyHeader/**" = @{
@@ -172,14 +165,12 @@ $uiPrecisionMap = @{
     }
     "src/components/SearchBox/**" = @{
         spec = @("scripts/browse.spec.ts", "scripts/settings.spec.ts", "scripts/iptv.spec.ts", "scripts/cross-tab.spec.ts", "scripts/regression.spec.ts")
-        # 2026-09-23 校准：删掉零命中的 `5\.9`（iptv.spec 无该段）。
         grep = "2\.1|2\.2|6\.9|跨页联动回归|桌面端"
     }
 
     # ── 卡片模块 ──
     "src/components/VideoCard/**" = @{
         spec = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/person.spec.ts")
-        # 2026-09-23 校准：删掉零命中的 `2\.5|2\.6`（browse.spec 无该段）。
         grep = "1\.4|2\.2|3\.8|7\.2|7\.4|8\.2|8\.3|8\.4|8\.5|10\.4"
     }
     "src/components/LazyImage/**" = @{
@@ -190,8 +181,6 @@ $uiPrecisionMap = @{
     # ── 收藏/历史共用 ──
     "src/components/RecordShell/**" = @{
         spec = @("scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/regression.spec.ts")
-        # 2026-09-23 校准：删掉零命中的 `7\.6`（collections.spec 只有 7.1/7.2/7.4）与
-        # `收藏页动画`（该 describe 名已不存在）。
         grep = "7\.1|8\.1|8\.5"
     }
     "src/components/StatusTabs/**" = @{
@@ -208,14 +197,12 @@ $uiPrecisionMap = @{
     # ── IPTV ──
     "src/components/IPTVChannelCard/**" = @{
         spec = @("scripts/iptv.spec.ts", "scripts/regression.spec.ts")
-        # 2026-09-23 校准：删掉零命中的 `IPTV 卡片`（该 describe 名已不存在）。
         grep = "5\.1|5\.2|5\.10|5\.11"
     }
     "src/components/EPGProgramList/**" = @{
         spec = @("scripts/iptv.spec.ts")
-        # 2026-09-23 校准：删掉零命中的 `5\.9`（iptv.spec 无该段）。
         # ⚠️ 已知缺口：EPG 的渲染用例主要在 `scripts/iptv-player.spec.ts` 的 `11.5 EPG 节目单`，
-        #    本条目未包含它（旧文档曾声称包含）→ 需要时显式 `-Files` + `-Grep 11\.5` 补跑。
+        #    本条目未包含它 → 需要时显式 `-Files` + `-Grep 11\.5` 补跑。
         grep = "5\.5"
     }
 
@@ -253,9 +240,8 @@ $logicTestMap = @{
     }
     "src/services/epgService.ts" = @{
         spec = @("vitest", "scripts/iptv.spec.ts")
-        # 2026-09-23 校准：删掉零命中的 `5\.9`。
         # ⚠️ 已知缺口：`scripts/iptv-player.spec.ts` 的 `11.5 EPG 节目单`（渲染侧）未纳入
-        #    （旧文档曾声称含 iptv-player）→ 需要时显式 `-Files` + `-Grep 11\.5` 补跑。
+        #    → 需要时显式 `-Files` + `-Grep 11\.5` 补跑。
         grep = "5\.1|5\.5"
     }
     "src/services/channelLogo.ts" = @{
@@ -296,7 +282,6 @@ $logicTestMap = @{
     }
     "src/stores/usePlayerStore.ts" = @{
         spec = @("vitest", "scripts/player.spec.ts")
-        # 2026-09-23 校准：删掉零命中的 `4\.10`（4.10 段从未存在）。
         # 注：`4\.[1-9]` 是**子串**匹配，天然覆盖 4.10~4.19 的两位编号（"4.10" 含 "4.1"），
         #     所以 4.11/4.12/4.13/4.14 这些段其实已经被覆盖，无需再单独列。
         grep = "4\.[1-9]"
@@ -339,16 +324,15 @@ $testGroups = @{
 # 自动检测改动文件
 # （手动 -Grep 指定编号时无需检测：直接跑分组文件 + grep 过滤）
 #
-# 语义（2026-09-23 改）：**留空 $Since = 「未提交改动」**（工作树 + 暂存区 + 未跟踪）。
-#   旧版用 `git diff --name-only HEAD~1`，比的是「上一个提交 ↔ 工作树」——
-#   HEAD 本身含 src 改动（或刚 pull 完）时**工作树干净也会命中一大批文件**，
-#   叠加全局壳映射（Layout/StickyHeader 各挂 11–13 个 spec）→ 无感受地跑全量回归（实测单轮 828s）。
+# 语义：**留空 $Since = 「未提交改动」**（工作树 + 暂存区 + 未跟踪）。
+#   若比「上一个提交 ↔ 工作树」，HEAD 本身含 src 改动（或刚 pull 完）时
+#   **工作树干净也会命中一大批文件**，
+#   叠加全局壳映射（Layout/StickyHeader 各挂 11–13 个 spec）→ 无感受地跑全量回归。
 #   需要「相对某 ref 的改动」时显式传 -Since（如 -Since HEAD~1 / -Since origin/master）。
 $autoDetected = $false
 # 显式分组档（-Group <name>，且未显式 -AutoDetect / -Grep / -Files）**不侦测改动**：
 # 它是「按组跑固定 spec 集合」的语义（test:regression），与「改了什么就跑什么」相反。
-# 2026-09-23 修补：此前 -Group regression 无参时会落入下面的侦测分支，工作树无 src 改动就直接
-# `exit 0` → 发版回归档静默什么都不跑（旧版靠 HEAD~1 的错误侦测"歪打正着"才有东西可跑）。
+# 若落入下面的侦测分支，工作树无 src 改动会直接 exit 0 → 回归档静默什么都不跑。
 if (-not $AutoDetect -and $Group -ne "all" -and $Files.Count -eq 0 -and -not $Grep) {
     Write-Host "`nExplicit group '$Group' → 跳过改动侦测，直接跑该组 spec"
 } elseif (-not $Grep -and ($AutoDetect -or $Files.Count -eq 0)) {
@@ -488,7 +472,7 @@ if ($Grep) {
 # ⚠️ 本检测是「整条 grep 在某个 spec 上全零命中才报」的**宽松**口径（见下方 $anyMatch）：
 #    它抓不到「一条 grep 里只有个别 `|` 片段失效」的情况——例如
 #    `grep = "BROWSE-020|BROWSE-023|BROWSE-025"` 里 023/025 早已随合并标题失效，
-#    但只要 020 还能命中，这里就不报警（2026-09-23 实测确实发生过，且静默了很久）。
+#    但只要 020 还能命中，这里就不报警。
 #    **逐片段**的死 grep 检测由 `npm run test:count`（scripts/test-count-report.mjs --check）
 #    负责，并已挂进 `npm run lint:all` 第 7 门；改映射后请跑它。两处互补，别只依赖这里。
 if ($grepPairs.Count -gt 0 -and -not $Grep) {
@@ -532,9 +516,9 @@ if ($Group -ne "all" -and $testGroups.ContainsKey($Group)) {
     Write-Host "Applied '$Group' group filter."
 }
 
-# ── 护栏：自动侦测命中过多 spec 时停手，不静默跑全量回归（2026-09-23）──
+# ── 护栏：自动侦测命中过多 spec 时停手，不静默跑全量回归 ──
 # 全局壳映射（Layout/StickyHeader 各挂 11–13 个 spec）会让「只改一行壳层」退化成全量回归，
-# 叠加重试即单轮 828s（2026-09-22 实测）。这里在**真正调 playwright 之前**拦下。
+# 叠加重试后单轮耗时极长。这里在**真正调 playwright 之前**拦下。
 # 仅约束「自动侦测」路径；显式 -Files / -Grep 是使用者自己的意图，不受限。
 $SpecCap = 3
 if ($autoDetected -and -not $Full -and $matchedPlaywrightTests.Count -gt $SpecCap) {
@@ -557,10 +541,10 @@ if ($matchedPlaywrightTests.Count -gt 0) {
     Write-Host "`nRunning playwright tests (UI layer) with retries=${Retries}, workers=${Workers}:"
     $matchedPlaywrightTests | ForEach-Object { Write-Host "  - $_" }
 
-    # ── 自建 server + 封顶 + 收尾（2026-09-23）─────────────────────────────
+    # ── 自建 server + 封顶 + 收尾 ─────────────────────────────────────────
     # 不再把 playwright 直接交给 config 的 webServer：其 command 是**字符串**，Windows 下由
     # shell 启动 → 收尾只杀到 shell、vite 成孤儿继续占端口，playwright 等不到 webServer 关闭。
-    # 2026-09-23 实测症状：用例与 globalTeardown 早已跑完，进程 632s 不返回，残留
+    # 症状：用例与 globalTeardown 早已跑完，进程仍长期不返回，残留
     # `node scripts/e2e-vite-server.cjs --port <n>`（只剩 globalTimeout 30min 兜底）。
     # 改委派给 scripts/e2e-skeleton.mjs —— 本仓唯一已实现「动态端口 + HTTP 200 探活 +
     # 预算封顶 + 进程树收尾」的单轮跑批器（e2e-suite.mjs 也走它，行为已验证）：
@@ -595,7 +579,7 @@ if ($matchedPlaywrightTests.Count -gt 0) {
     # 绕过沙箱 delete-shim：清空注入的 NODE_OPTIONS（否则清理 outputDir 时 trash 失败假崩）
     $env:NODE_OPTIONS = ""
     & $nodeExe @runnerArgs
-    # 透传退出码：否则失败用例仍 exit 0，调用方无法感知（2026-09-22 修复）
+    # 透传退出码：否则失败用例仍 exit 0，调用方无法感知
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 

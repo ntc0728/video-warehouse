@@ -8,7 +8,7 @@
  *   / `e2e-suite.mjs`（Stage A --dev、Stage B preview）/ `run-tests.ps1`（增量档，`--dev` 传具体 spec）。
  *   → 凡是要跑 playwright 的地方都应走这里，**不要**裸调 `playwright test`：
  *     config 的 `webServer.command` 是字符串，Windows 下经 shell 启动，收尾只杀到 shell、
- *     vite 成孤儿继续占端口，playwright 等不到 webServer 关闭（2026-09-23 实测 632s 不返回）。
+ *     vite 成孤儿继续占端口，playwright 等不到 webServer 关闭（进程长期不返回）。
  *
  * ── 为什么需要它：直接 `playwright test scripts/skeleton.spec.ts` 会「卡死 / 至少 10 分钟」
  *
@@ -106,7 +106,7 @@ const SPEC_FILES = collectSpecFiles();
 // 全量档 = `--all` 且未指定任何文件；其余（-g 过滤 / 指定文件 / 默认骨架）都是 ad-hoc 调试档
 const FULL = ALL && SPEC_FILES.length === 0;
 
-// ── 临时跑批硬规矩（2026-09-21 用户拍板，AGENTS 红线）──
+// ── 临时跑批硬规矩 ──
 // 单轮墙钟预算：全量默认 300s；ad-hoc 调试默认 120s，到点击杀并退码 2。
 // 调试默认 retries=0：重试是套件概念，诊断场景只会双倍烧时间与稀释信号。
 const WORKERS = val('--workers', '3');
@@ -123,7 +123,7 @@ const say = (msg) => console.log(`[${String(Math.round((Date.now() - T0) / 1000)
  * 识别 = 命令行含 scripts/e2e-vite-server.cjs 标记（本跑批器/config webServer 唯一起服务入口，
  * 正常服务不可能带它）；再加一道 HTTP 探活 —— 还能响应 200 的跳过（可能是并发跑批或你手动起的），
  * 无响应（TCP 通 HTTP 死的僵尸 / 进程残骸）才杀。
- * **禁止**回到按端口占用者乱杀的老路（2026-09-20 用户红线：别的服务占任何端口都不能被测试杀）。
+ * **禁止**回到按端口占用者乱杀的老路（红线：别的服务占用的端口绝不能被测试杀）。
  */
 async function killZombieE2EServers() {
   // suite 多阶段下跳过：无法区分「兄弟阶段刚起还没 200 的 server」，会误杀；

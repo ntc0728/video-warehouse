@@ -34,24 +34,19 @@
 | `boot-splash-iso.spec.ts` | 七视口同构（按需 boot-iso） | `七视口同构 @375/768/1024/1280/1440/1920/2560px` × home/browse/collections 等 | 42 |
 | `boot-splash-shots.spec.ts` | 骨架截图取证（按需 shots） | 多主题/多视口截图 + 摘除验证（人工核查，不进默认套） | 29 |
 
-> **上表用例数为 2026-09-23 实测**（`npx playwright test --list`），全仓合计 **246 条 / 22 spec**。
-> **唯一事实源 = `npm run test:count`**（`docs/agents/testing.md` 的生成块与之一致，由 `lint:test-map` 校验）；
+> **上表用例数由 `npm run test:count` 统计**（`npx playwright test --list`），全仓合计 **246 条 / 22 spec**。
+> **唯一事实源 = `npm run test:count`**（测试映射文档的生成块与之一致，由 `lint:test-map` 校验）；
 > 加删用例后请重跑 `npm run test:count -- --write`，**不要手改上面任何一个数字**。
-> 已删除的历史 spec（`cross-page` / `regression-detail` / `fix-2026-08` / `ui-fixes` / `global-fixes` /
-> `collection|user|iptv|settings-cross-tab` / `verify-grid` / `search-features` / `mobile-web-sidebar` …）
-> 已分别并入 `regression.spec.ts` 与 `cross-tab.spec.ts`（2026-09-09），其原条目不再有效。
 
 ### 测试辅助工具
 
 | 文件 | 说明 |
 |------|------|
 | `global-setup.ts` | Playwright 全局设置（注入 TMDB Token / CORS 代理 / IPTV 代理） |
-| `test-count-report.mjs` | **用例计数 / 测试映射一致性报告**（不启浏览器，1–2s）。`--check` 校验五项：映射引用的 spec 存在 / pattern 基路径存在 / grep 每个 `\|` 片段真命中 / 档位恒等式 / `testing.md` 生成块未过期（= `npm run lint:test-map`，已入 `lint:all` 第 7 门）；`--write` 把生成块写回 `docs/agents/testing.md` |
-| `global-setup.ts` | Playwright 全局设置（注入 TMDB Token / CORS 代理 / IPTV 代理） |
+| `test-count-report.mjs` | **用例计数 / 测试映射一致性报告**（不启浏览器，1–2s）。`--check` 校验五项：映射引用的 spec 存在 / pattern 基路径存在 / grep 每个 `\|` 片段真命中 / 档位恒等式 / 测试映射文档生成块未过期（= `npm run lint:test-map`，已入 `lint:all` 第 7 门）；`--write` 把生成块写回测试映射文档 |
 | `run-tests.ps1` | 增量测试运行（按「未提交改动」自动跑对应 spec；命中 >3 spec 需 -Full 放行；playwright 段委派 `e2e-skeleton.mjs --dev`，带 -Budget 封顶） |
 | `e2e-skeleton.mjs` | **全仓唯一跑 playwright 的入口**（自建 server + HTTP 200 探活 + 预算封顶 + 进程树收尾）；`test:e2e:*` / `e2e-suite.mjs` 各阶段 / `run-tests.ps1` 增量档共用。**别裸调 `playwright test`**（config 的 webServer 经 shell 启动，收尾会留孤儿 vite） |
 | `e2e-suite.mjs` | 全量编排（Stage A dev 行为套 + Stage B preview 播放器），两段串跑并 merge blob 报告 |
-| `localize-report.mjs` | Playwright HTML 报告中文化后处理 |
 
 ### 构建脚本
 
@@ -59,26 +54,7 @@
 |------|------|
 | `build-android.bat` | Android 构建（批处理） |
 | `build-android.ps1` | Android 构建（PowerShell） |
-| `generate-icons.mjs` | Android 图标生成（sharp 库） |
-| `generate-icons.ps1` | Android 图标生成（PowerShell） |
-| `css-px-to-token.mjs` | CSS 硬编码 px → Design Token 自动替换（项目约定：组件视觉尺寸一律走 token，仅逻辑阈值可保留字面量；用法见 `docs/KNOWLEDGE.md` ADR-006） |
-| `clean-compressed.js` | 清理 dist 中 .gz/.br 预压缩文件 |
-
-### 开发工具
-
-| 文件 | 说明 |
-|------|------|
-| `check-dev-server.ps1` | 检查开发服务器端口占用 |
-| `close.ps1` | 关闭 agent-browser 进程 |
-| `backup-target-files.mjs` | 批量备份指定源文件 |
-| `split-single-line-decls.mjs` | CSS 单行声明拆分为多行 |
 | `optimize-deps.mjs` | postinstall 钩子：把 Vite 首次「依赖预打包」前移到安装阶段，消除 dev 冷启动白屏（`VITE_SKIP_OPTIMIZE=1` 跳过；CI/CAPACITOR 自动跳过） |
-
-### 备份
-
-| 目录 | 说明 |
-|------|------|
-| `backup-specs/` | 旧版测试脚本备份（308 个用例，已 gitignore，**不参与 E2E**；`playwright.config.ts` 需配置 `testIgnore` 排除，见「测试基建修复」） |
 
 ## 增量测试规则
 
@@ -87,7 +63,7 @@
 | 修改路径 | 运行测试 |
 |----------|----------|
 | `src/pages/Home/**` | `npx playwright test scripts/home.spec.ts` |
-| `src/pages/Detail/**` | `npx playwright test scripts/detail.spec.ts scripts/regression-detail.spec.ts` |
+| `src/pages/Detail/**` | `npx playwright test scripts/detail.spec.ts scripts/regression.spec.ts` |
 | `src/pages/Settings/**` | `npx playwright test scripts/settings.spec.ts` |
 | `src/pages/Browse/**` | `npx playwright test scripts/browse.spec.ts` |
 | `src/pages/Collections/**` | `npx playwright test scripts/collections.spec.ts` |
@@ -100,7 +76,7 @@
 | `src/components/RecordShell/**` | `npx playwright test scripts/collections.spec.ts scripts/history.spec.ts` |
 | `src/stores/**` | `npm test`（vitest 单元测试） |
 | `src/hooks/**` | `npm test`（vitest 单元测试） |
-| `src/components/Layout/**` | `npx playwright test scripts/cross-page.spec.ts scripts/home.spec.ts scripts/browse.spec.ts` |
+| `src/components/Layout/**` | `npx playwright test scripts/cross-tab.spec.ts scripts/home.spec.ts scripts/browse.spec.ts` |
 
 ### 全量测试（提交代码前）
 
@@ -167,7 +143,7 @@ TMDB_MOCK=false npm run test:e2e
 
 # 计数 / 映射一致性（不跑浏览器）
 npm run test:count                     # 报告 + 校验
-npm run test:count -- --write          # 同步 docs/agents/testing.md 生成块
+npm run test:count -- --write          # 同步测试映射文档生成块
 npm run lint:test-map                  # 只校验（lint:all 第 7 门）
 
 # 用 run-tests.ps1 增量测试
@@ -198,7 +174,7 @@ npm run lint:test-map                  # 只校验（lint:all 第 7 门）
 | 脚本类型 | 命名规范 | 示例 |
 |----------|----------|------|
 | 页面测试 | `<page-name>.spec.ts` | `home.spec.ts` |
-| 交叉测试 | `cross-page.spec.ts` | 页面跳转交互 |
+| 交叉测试 | `cross-tab.spec.ts` | 页面跳转交互 |
 | 构建脚本 | `build-*.ps1` | `build-android.ps1` |
 | 工具脚本 | `*.mjs` / `*.ps1` | `css-px-to-token.mjs` |
 
