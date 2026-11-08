@@ -22,32 +22,17 @@
   background: var(--color-surface);
   overflow: hidden;
 }
-/* 第二行：筛选按钮居左、结果数居右，中间为已选筛选摘要 */
+/* 第二行：筛选按钮居左、结果数居右 */
 .bmb-bar-row {
   display: flex;
   gap: var(--space-sm);
   justify-content: space-between;
   align-items: center;
 }
-/* 已选筛选摘要：占中间剩余宽度但不上挤压两端（按钮/结果数 shrink:0），
-   单行不换行，内容过多省略号截断（2026-11-08 用户要求） */
-.bmb-filter-summary {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
 .bmb-result-count {
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   white-space: nowrap;
-}
-.bmb-filter-trigger,
-.bmb-result-count {
-  flex-shrink: 0;
 }
 .bmb-seg {
   /* 2026-10-10 用户反馈移动端模式段钮太高：本组件仅 <768px 生效，
