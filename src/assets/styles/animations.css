@@ -445,4 +445,30 @@
     animation-duration: 1s !important;
     animation-iteration-count: infinite !important;
   }
+
+  /* ── 关键操作反馈动画白名单（2026-11-08 用户拍板）──────────────────
+     用户系统开着 Windows「动画效果关闭」→ 上面 * 规则把 fab 进出场/
+     换一换转圈全压成 0.01ms（用户报「图标不转动了」「fab 僵硬」「点顶部跳变」）。
+     这三类属**点击/出现反馈**而非装饰，应用侧刻意无视系统减少动态，显式还原因子：
+     时长全部 token 派生（calc/var），不再引入 timing-literal。
+     若要恢复 a11y 全禁行为：删掉本段即可。 */
+  .hero-bili__shuffle.is-spinning .hero-bili__shuffle-icon {
+    animation-duration: calc(var(--dur-md) * 2.4) !important; /* = 600ms，方案 C */
+  }
+
+  .fab-stack--visible {
+    animation-duration: calc(var(--dur-md) * 2.4) !important; /* 入场方案 C */
+    transition-duration: var(--dur-md) !important;            /* 退场淡出 */
+  }
+
+  .fab-stack {
+    transition-duration: var(--dur-md) !important; /* scrolling/出场过渡 */
+  }
+
+  .back-to-top-button,
+  .back-to-top-button--visible,
+  .back-to-top-button--exiting {
+    animation-duration: var(--dur-md) !important;
+    transition-duration: var(--dur-md) !important;
+  }
 }

@@ -644,14 +644,17 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   to { transform: rotate(360deg); }
 }
 
-/* ── Reduced motion ──────────────────────────────────────────────────── */
+/* ── Reduced motion ────────────────────────────────────────────────────
+   ⚠️ 换一换转圈（.hero-bili__shuffle.is-spinning .hero-bili__shuffle-icon）已于
+   2026-11-08 按用户拍板从本豁免块摘出：用户系统开着 Windows「动画效果关闭」，
+   豁免块把转圈整个禁掉（用户报「图标不转动了」）。转圈属点击反馈动画，应用侧
+   刻意无视系统减少动态；若要恢复 a11y 行为，把该选择器加回下方列表即可。 */
 
 @media (prefers-reduced-motion: reduce) {
   .hero-bili__banner-img,
   .hero-side-card,
   .hero-side-card__img,
-  .hero-side-card__title.is-marquee .hero-side-card__title-track,
-  .hero-bili__shuffle.is-spinning .hero-bili__shuffle-icon {
+  .hero-side-card__title.is-marquee .hero-side-card__title-track {
     transition: none !important;
     animation: none !important;
   }

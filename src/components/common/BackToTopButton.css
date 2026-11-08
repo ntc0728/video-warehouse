@@ -148,19 +148,12 @@
 
 
 
-/* ── Reduced motion：关闭所有动画 ────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .back-to-top-button {
-    transition: none;
-    animation: none !important;
-  }
-
-  .back-to-top-button:hover,
-  .back-to-top-button:active,
-  .back-to-top-button--visible {
-    transform: none;
-  }
-}
+/* ── Reduced motion：本组件豁免（2026-11-08 用户拍板）──
+   原「prefers-reduced-motion: reduce 时关闭所有动画」块已整体移除：用户系统开着
+   Windows「动画效果关闭」，豁免块会杀掉 fab 进出场/点击滚动的全部动画
+   （用户报「换一换不转/fab 僵硬」的共同根因）。本组件的进出场属于**关键操作反馈**
+   （出现/点击后去哪），应用侧刻意无视系统减少动态，始终播放。
+   若将来要恢复 a11y 豁免：给下面两个媒体查询还原 transition/animation:none 即可。 */
 
 @keyframes back-to-top-button-slide-in {
   0% {
@@ -377,20 +370,4 @@
   background: rgb(20 20 20 / 72%);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .fab-stack,
-  .back-to-top-button--square {
-    transition: none;
-  }
-
-  .fab-stack--visible {
-    animation: none;
-  }
-
-  .back-to-top-button--square:hover,
-  .back-to-top-button--square:active,
-  .fab-stack__refresh:hover,
-  .fab-stack__refresh:active {
-    transform: none;
-  }
-}
+/* fab-stack 侧的 reduced-motion 豁免块已于 2026-11-08 按用户拍板整体移除（见文件上方说明）。 */

@@ -134,16 +134,14 @@ export default function BackToTopButton({
 
   /** 点击「顶部」：rAF 平滑滚动（固定 450ms + ease-out-expo，各端观感一致）。
    *  原生 behavior:'smooth' 时长由浏览器自定且各端差异大（用户反馈僵硬）；
-   *  用户滚轮/触摸接管时立即让位；reduced-motion 直接跳顶。 */
+   *  用户滚轮/触摸接管时立即让位。
+   *  ⚠️ 2026-11-08：不再检查 prefers-reduced-motion——用户系统开着 Windows
+   *  「动画效果关闭」，检查会把平滑滚动退化成瞬间跳顶（用户拍板豁免，见 CSS 注释）。 */
   const handleClick = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
     const from = el.scrollTop;
     if (from <= 0) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      el.scrollTop = 0;
-      return;
-    }
     if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
     const t0 = performance.now();
     let interrupted = false;
