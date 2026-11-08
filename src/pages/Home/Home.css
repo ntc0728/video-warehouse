@@ -283,14 +283,16 @@ html[data-device="app"] .home-disclaimer {
   flex: 1 1 0;
   min-width: 0;
   height: 100%;
-  /* 不设 aspect-ratio，与真实主图区一致（flex 子项上 aspect-ratio 会导致循环矛盾） */
+  /* 不设 aspect-ratio，与真实主图区一致（flex 子项上 aspect-ratio 会导致循环矛盾）。
+     2026-11-08 统一压暗层（25% 黑垫底 + overlay），见 LazyImage.css 同日注释 */
   background: linear-gradient(
     90deg,
     var(--color-placeholder-shimmer-a) 25%,
     var(--color-placeholder-shimmer-b) 50%,
     var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
+  ), rgba(0, 0, 0, 0.25);
+  background-size: 200% 100%, 100% 100%;
+  background-blend-mode: overlay;
   overflow: hidden;
   animation: shimmer var(--card-shimmer-duration) infinite;
 }
@@ -420,8 +422,9 @@ html[data-device="app"] .home-disclaimer {
       var(--color-placeholder-shimmer-a) 25%,
       var(--color-placeholder-shimmer-b) 50%,
       var(--color-placeholder-shimmer-a) 75%
-    );
-    background-size: 200% 100%;
+    ), rgba(0, 0, 0, 0.25);
+    background-size: 200% 100%, 100% 100%;
+    background-blend-mode: overlay;
     animation: shimmer var(--card-shimmer-duration) infinite;
   }
 
@@ -430,15 +433,16 @@ html[data-device="app"] .home-disclaimer {
   }
 
   /* 右列 banner 槽：容器仍是真实 .hero-bili__banner（高度由 --hero-banner-h 派生、
-     圆角随 --hero-card-radius），只把底色换成 shimmer。 */
+     圆角随 --hero-card-radius），只把底色换成 shimmer（2026-11-08 统一压暗层）。 */
   .home-skeleton-bili__banner {
     background: linear-gradient(
       90deg,
       var(--color-placeholder-shimmer-a) 25%,
       var(--color-placeholder-shimmer-b) 50%,
       var(--color-placeholder-shimmer-a) 75%
-    );
-    background-size: 200% 100%;
+    ), rgba(0, 0, 0, 0.25);
+    background-size: 200% 100%, 100% 100%;
+    background-blend-mode: overlay;
     animation: shimmer var(--card-shimmer-duration) infinite;
   }
 

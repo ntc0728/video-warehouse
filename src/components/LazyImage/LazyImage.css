@@ -30,8 +30,11 @@
    卡片封面加载不再显示转圈（原 .image-spinner），统一为项目级骨架占位图。
    背景与卡片网格级骨架（SkeletonCard / 行级 SkeletonCards / 缩略图骨架）共用
    --color-placeholder-shimmer-* 渐变 + shimmer 扫光动画，视觉同源不漂移。
-   同时提供 solid 底色兜底：若 shimmer gradient 因尺寸/浏览器问题未渲染，
-   仍有实色背景防止短暂露白。 */
+   2026-11-08（用户拍板）：与 .thumbnail-skeleton-bg（index.css）同构，加
+   25% 黑垫底 + overlay 压暗层 —— 纯渐变对 #fff 页底过近，压暗后与 hero
+   侧卡骨架同档；暗档对照实验实测略加深仍清晰可辨。
+   黑垫底层同时兼任 solid 底色兜底（原 background-color 职责由 rgba 层
+   承担，shorthand 两层写法下不再单声明 background-color）。 */
 .lazy-image-skeleton {
   position: absolute;
   inset: 0;
@@ -40,9 +43,9 @@
     var(--color-placeholder-shimmer-a) 25%,
     var(--color-placeholder-shimmer-b) 50%,
     var(--color-placeholder-shimmer-a) 75%
-  );
-  background-color: var(--color-placeholder-shimmer-a);
-  background-size: 200% 100%;
+  ), rgba(0, 0, 0, 0.25);
+  background-size: 200% 100%, 100% 100%;
+  background-blend-mode: overlay;
   animation: shimmer var(--card-shimmer-duration) var(--ease-in-out-quart) infinite;
 }
 

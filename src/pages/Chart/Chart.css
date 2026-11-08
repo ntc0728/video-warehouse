@@ -373,8 +373,10 @@
 .chart-list__skeleton .sk {
   display: block;
   border-radius: var(--radius-md);
-  background: linear-gradient(100deg, var(--color-placeholder-shimmer-a) 40%, var(--color-placeholder-shimmer-b) 50%, var(--color-placeholder-shimmer-a) 60%);
-  background-size: 200% 100%;
+  /* 2026-11-08 统一压暗层（25% 黑垫底 + overlay），见 LazyImage.css 同日注释 */
+  background: linear-gradient(100deg, var(--color-placeholder-shimmer-a) 40%, var(--color-placeholder-shimmer-b) 50%, var(--color-placeholder-shimmer-a) 60%), rgba(0, 0, 0, 0.25);
+  background-size: 200% 100%, 100% 100%;
+  background-blend-mode: overlay;
   animation: chart-shimmer var(--card-shimmer-duration) infinite;
 }
 

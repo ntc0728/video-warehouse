@@ -1,5 +1,8 @@
 /* 骨架 shimmer 基座：只负责扫光动效与底色，
-   尺寸 / 圆角 / 比例由各页面骨架的修饰类覆盖（见各页 *Skeleton.css）。 */
+   尺寸 / 圆角 / 比例由各页面骨架的修饰类覆盖（见各页 *Skeleton.css）。
+   2026-11-08（用户拍板）：全站扫光统一加 25% 黑垫底 + overlay 压暗层
+   （与 .thumbnail-skeleton-bg / .lazy-image-skeleton 同构），
+   亮档对 #fff 页底拉开色阶，暗档实测仍清晰可辨。 */
 .skeleton-block {
   border-radius: var(--radius-sm);
   background: linear-gradient(
@@ -7,8 +10,9 @@
     var(--color-placeholder-shimmer-a) 25%,
     var(--color-placeholder-shimmer-b) 50%,
     var(--color-placeholder-shimmer-a) 75%
-  );
-  background-size: 200% 100%;
+  ), rgba(0, 0, 0, 0.25);
+  background-size: 200% 100%, 100% 100%;
+  background-blend-mode: overlay;
   animation: shimmer var(--card-shimmer-duration) var(--ease-in-out-quart) infinite;
 }
 

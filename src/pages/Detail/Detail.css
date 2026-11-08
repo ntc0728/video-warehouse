@@ -48,8 +48,10 @@
 }
 
 .detail-hero--skeleton {
-  background: linear-gradient(135deg, var(--color-skeleton) 25%, var(--color-skeleton-shine) 50%, var(--color-skeleton) 75%);
-  background-size: 200% 100%;
+  /* 2026-11-08 统一压暗层（25% 黑垫底 + overlay），见 LazyImage.css 同日注释 */
+  background: linear-gradient(135deg, var(--color-skeleton) 25%, var(--color-skeleton-shine) 50%, var(--color-skeleton) 75%), rgba(0, 0, 0, 0.25);
+  background-size: 200% 100%, 100% 100%;
+  background-blend-mode: overlay;
   animation: skeletonShimmer var(--dur-shimmer) ease-in-out infinite;
 }
 
@@ -740,13 +742,15 @@
 .detail-stills-skeleton {
   aspect-ratio: 16 / 9;
   border-radius: var(--radius-md);
+  /* 2026-11-08 统一压暗层（25% 黑垫底 + overlay），见 LazyImage.css 同日注释 */
   background: linear-gradient(
     135deg,
     var(--color-skeleton) 25%,
     var(--color-skeleton-shine) 50%,
     var(--color-skeleton) 75%
-  );
-  background-size: 200% 100%;
+  ), rgba(0, 0, 0, 0.25);
+  background-size: 200% 100%, 100% 100%;
+  background-blend-mode: overlay;
   animation: skeletonShimmer var(--dur-shimmer) ease-in-out infinite;
 }
 
