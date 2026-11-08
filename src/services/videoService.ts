@@ -718,6 +718,27 @@ export async function searchVideoSeasonsFromSingleSource(
     }
 
     /**
+     * 翻页聚合（2026-11-08）：CMS 把每季存为独立 vod 条目，长篇剧 + 同名改编
+     * 的命中数很容易超过单页容量，只取第一页会静默漏季（detail 页季列表不全）。
+     * 按 total 补拉后续页，PAGE_LIMIT 封顶防御异常 total；按 vod_id 去重防页间重叠。
+     */
+    const SEASON_PAGE_LIMIT = 4;
+    const mergedList: CMSVideoItem[] = [...data.list];
+    const totalCount = typeof data.total === 'number' ? data.total : 0;
+    const seenIds = new Set(mergedList.map((i) => String(i.vod_id)));
+    for (let pg = 2; mergedList.length < totalCount && pg <= SEASON_PAGE_LIMIT; pg++) {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      const pageData = await fetchCmsList(`${searchUrl}&pg=${pg}`, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
+      if (!pageData.list || !Array.isArray(pageData.list) || pageData.list.length === 0) break;
+      for (const item of pageData.list) {
+        const idKey = String(item.vod_id);
+        if (seenIds.has(idKey)) continue;
+        seenIds.add(idKey);
+        mergedList.push(item);
+      }
+    }
+
+    /**
      * ── 阶段 1：同步筛选（不发请求）────────────────────────────
      * 把 data.list 拆成「待解析的季条目」：同一季号只取**首个**（原 `seasons.has` 去重的语义），
      * 无季号条目仍是第 1 季回退候选（名称与标题完全一致的优先）。
@@ -734,7 +755,7 @@ export async function searchVideoSeasonsFromSingleSource(
     const claimedSeasons = new Set<number>();
     let fallbackItem: CMSVideoItem | undefined;
     let fallbackExact = false;
-    for (const item of data.list) {
+    for (const item of mergedList) {
       const vodName = item.vod_name ?? '';
       const seasonNumber = extractSeasonNumber(vodName);
       if (seasonNumber === undefined) {
