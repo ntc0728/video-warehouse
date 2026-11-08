@@ -9,8 +9,9 @@
   align-items: center;
   width: 100%;
   min-width: 0;
-  /* 2026-11-09 用户拍板：本页主体宽度单独处理，桌面端比全局内容上限（2200px）收窄（首版 1120 过窄，放宽到 1280） */
-  max-width: min(var(--layout-content-max-width), 1280px);
+  /* 2026-11-09 用户拍板：本页主体宽度单独处理，桌面端比全局内容上限（2200px）收窄；
+     档位经两轮反馈定稿 1920（1120 过窄 → 1280 在 ≥2560 显小） */
+  max-width: min(var(--layout-content-max-width), 1920px);
   margin-inline: auto;
   padding: var(--space-xl) var(--space-md);
 }
