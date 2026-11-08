@@ -890,6 +890,18 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   .video-card-landscape__title {
     font-size: var(--text-2xs);
   }
+
+  /* 封面便签文本统一压到全站最小字号档（2026-11-08 用户要求）：
+     源徽章（爱奇艺资源 / 电影天堂·9季第13集）原 --text-xs → --text-2xs；
+     进度时间胶囊与标题已是 --text-2xs（全站最小文本 token，见 variables.css），
+     此处显式声明以锚定「移动端恒最小」契约（若设了 ui-scale 仍会等比放大）。 */
+  .video-card-landscape__source-badge {
+    font-size: var(--text-2xs);
+  }
+
+  .video-card--landscape .video-card-landscape__progress-text {
+    font-size: var(--text-2xs);
+  }
 }
 
 /* TV 端放大 */
