@@ -2,7 +2,9 @@
  * ProxySetup — 一键配置代理页（隐藏入口：设置页「关于」点 KinoTV 3 次）
  *
  * 
- * - 三栏：左步骤导航（① 选部署项 → ② 登录凭证 → ③ 部署回写）/ 中当前步面板（上一步·下一步）/ 右深色控制台常驻
+ * - 两栏 + 日志坞：左步骤导航（① 选部署项 → ② 登录凭证 → ③ 部署回写）/ 右当前步面板（上一步·下一步）；
+ *   深色部署日志收成页面底部「吸底日志坞」（收起 = 一行状态条，点开抽屉看全量，部署中自动展开，2026-11-09 用户拍板方案 B）
+ * - 步骤门控：下一步与未解锁的步骤导航项在必填值未填时置灰不可点（不再走点击时报错提示）
  * - 两个独立入口：视频采集 CORS 代理 / IPTV 流代理（互不关联）
  * - 登录 Cloudflare（API Token + Account ID）→ 一键上传 Worker 脚本；部署按钮仅在第 3 步
  * - 自定义域名（可选，真实功能：填了覆盖 Worker 链接；DNS CNAME 需自行在 Cloudflare 配）
@@ -11,7 +13,7 @@
  */
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, ArrowLeft, ArrowRight, Cloud, Copy, Rocket } from 'lucide-react';
+import { Activity, ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Cloud, Copy, Rocket } from 'lucide-react';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useIPTVStore } from '@/stores/useIPTVStore';
 import { useIsMobileLayout } from '@/hooks/useMediaQuery';
@@ -62,7 +64,7 @@ export default function ProxySetup() {
   const [accountId, setAccountId] = useState('');
   const [domain, setDomain] = useState('');
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [hint, setHint] = useState<string | null>(null);
+  const [dockOpen, setDockOpen] = useState(false);
   const [logs, setLogs] = useState<LogLine[]>(() => [
     // 初始提示方位随布局变：≥1024 非 app 三栏在左侧；app/窄视口步骤导航横排居顶部（原固定「上方」为误）
     { time: nowTime(), msg: `> 等待配置开始，请在${isDesktop && !isMobile ? '左侧' : '上方'}选择一个配置入口...`, type: 'info' },
@@ -79,7 +81,6 @@ export default function ProxySetup() {
   const handleSelectKind = useCallback((k: 'cors' | 'iptv') => {
     setKind(k);
     setResultUrl('');
-    setHint(null);
     appendLog(k === 'cors' ? '已选择：视频采集 CORS 代理' : '已选择：IPTV 流代理', 'info');
   }, [appendLog]);
 
@@ -101,6 +102,7 @@ export default function ProxySetup() {
     }
     setDeploying(true);
     setResultUrl('');
+    setDockOpen(true); // 部署开始即展开日志坞，进展随时可见
     appendLog(`开始配置「${kind === 'cors' ? '视频采集 CORS 代理' : 'IPTV 流代理'}」...`, 'info');
     try {
       const res = await deployProxyWorker(token.trim(), accountId.trim(), kind, (msg, type = 'info') => appendLog(msg, type));
@@ -168,21 +170,18 @@ export default function ProxySetup() {
     3: Boolean(resultUrl),
   };
   const stepCls = (s: 1 | 2 | 3) =>
-    `proxy-setup__stepnav-item${stepDone[s] ? ' is-done' : ''}${step === s ? ' is-on' : ''}${hint && step === s ? ' is-error' : ''}`;
+    `proxy-setup__stepnav-item${stepDone[s] ? ' is-done' : ''}${step === s ? ' is-on' : ''}${stepReachable(s) ? '' : ' is-locked'}`;
 
-  // 下一步校验：点击时提示、不拦截（不置灰，未填完停留本步 + 页内红字提示）
+  // 步骤门控（2026-11-09 用户拍板）：必填值未填时「下一步」置灰、未解锁的步骤导航项置灰不可点（替代原「点击时报红字提示」）
   const stepValid1 = kind !== null;
   const stepValid2 = Boolean(token.trim() && accountId.trim());
-  const goNext = useCallback(() => {
-    if (step === 1) {
-      if (!stepValid1) { setHint('请先选择一个部署项'); return; }
-      setHint(null); setStep(2);
-    } else if (step === 2) {
-      if (!stepValid2) { setHint('请填写 API Token 与 Account ID'); return; }
-      setHint(null); setStep(3);
-    }
-  }, [step, stepValid1, stepValid2]);
-  const goStep = useCallback((n: 1 | 2 | 3) => { setHint(null); setStep(n); }, []);
+  const stepReachable = (n: 1 | 2 | 3) => {
+    if (n <= step) return true; // 当前步与回退恒可点
+    if (n === 2) return stepValid1;
+    return stepValid1 && stepValid2;
+  };
+  const goNext = useCallback(() => { setStep((s) => (s === 1 ? 2 : 3)); }, []);
+  const goStep = useCallback((n: 1 | 2 | 3) => { setStep(n); }, []);
 
   // 第3步「部署确认摘要」（真实字段派生）
   const normDomain = domain.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
@@ -214,13 +213,13 @@ export default function ProxySetup() {
           {/* 左：步骤导航 */}
           <nav className="proxy-setup__stepnav" aria-label="部署步骤">
             <h4>部署步骤</h4>
-            <button type="button" className={stepCls(1)} onClick={() => goStep(1)}>
+            <button type="button" className={stepCls(1)} disabled={!stepReachable(1)} onClick={() => goStep(1)}>
               <span className="proxy-setup__stepnav-no">①</span> 选择部署项
             </button>
-            <button type="button" className={stepCls(2)} onClick={() => goStep(2)}>
+            <button type="button" className={stepCls(2)} disabled={!stepReachable(2)} onClick={() => goStep(2)}>
               <span className="proxy-setup__stepnav-no">②</span> 登录凭证
             </button>
-            <button type="button" className={stepCls(3)} onClick={() => goStep(3)}>
+            <button type="button" className={stepCls(3)} disabled={!stepReachable(3)} onClick={() => goStep(3)}>
               <span className="proxy-setup__stepnav-no">③</span> 部署与回写
             </button>
           </nav>
@@ -252,11 +251,15 @@ export default function ProxySetup() {
               </div>
               <div className="proxy-setup__nav-row">
                 <span />
-                <button type="button" className="proxy-setup__btn proxy-setup__btn--primary proxy-setup__btn--sm" onClick={goNext}>
+                <button
+                  type="button"
+                  className="proxy-setup__btn proxy-setup__btn--primary proxy-setup__btn--sm"
+                  onClick={goNext}
+                  disabled={!stepValid1}
+                >
                   下一步：填凭证 <Icon icon={ArrowRight} size="sm" />
                 </button>
               </div>
-              {hint && step === 1 && <p className="proxy-setup__hint proxy-setup__hint--error">{hint}</p>}
             </div>
 
             <div className="proxy-setup__panel" hidden={step !== 2}>
@@ -268,8 +271,7 @@ export default function ProxySetup() {
                     id="cf-token"
                     type={showToken ? 'text' : 'password'}
                     value={token}
-                    onChange={(e) => { setToken(e.target.value); setHint(null); }}
-                    className={hint && !token.trim() ? ' is-invalid' : ''}
+                    onChange={(e) => setToken(e.target.value)}
                     placeholder="粘贴 API Token（Workers Scripts → Edit 权限）"
                   />
                   <button type="button" className="proxy-setup__btn proxy-setup__btn--ghost" onClick={() => setShowToken((v) => !v)}>
@@ -287,8 +289,7 @@ export default function ProxySetup() {
                   id="cf-account"
                   type="text"
                   value={accountId}
-                  onChange={(e) => { setAccountId(e.target.value); setHint(null); }}
-                  className={hint && !accountId.trim() ? ' is-invalid' : ''}
+                  onChange={(e) => setAccountId(e.target.value)}
                   placeholder="dash.cloudflare.com 右侧可查"
                 />
               </div>
@@ -306,11 +307,15 @@ export default function ProxySetup() {
                 <button type="button" className="proxy-setup__btn proxy-setup__btn--sm" onClick={() => goStep(1)}>
                   <Icon icon={ArrowLeft} size="sm" /> 上一步
                 </button>
-                <button type="button" className="proxy-setup__btn proxy-setup__btn--primary proxy-setup__btn--sm" onClick={goNext}>
+                <button
+                  type="button"
+                  className="proxy-setup__btn proxy-setup__btn--primary proxy-setup__btn--sm"
+                  onClick={goNext}
+                  disabled={!stepValid2}
+                >
                   下一步：部署 <Icon icon={ArrowRight} size="sm" />
                 </button>
               </div>
-              {hint && step === 2 && <p className="proxy-setup__hint proxy-setup__hint--error">{hint}</p>}
             </div>
 
             <div className="proxy-setup__panel" hidden={step !== 3}>
@@ -366,14 +371,11 @@ export default function ProxySetup() {
             </div>
           </div>
 
-          {/* 右：深色控制台常驻 */}
-          <div className="proxy-setup__console-wrap">
-            <div className="proxy-setup__console-bar" aria-hidden="true">
-              <span className="proxy-setup__console-dot" />
-              <span className="proxy-setup__console-dot" />
-              <span className="proxy-setup__console-dot" />
-              <span className="proxy-setup__console-file">deploy.log</span>
-            </div>
+        </div>
+
+        {/* 底部日志坞（方案 B）：吸底常驻；收起 = 一行状态条（条数 + 最近一条），点开抽屉看全量；部署中自动展开 */}
+        <div className={`proxy-setup__dock${deploying ? ' is-busy' : ''}`}>
+          <div className="proxy-setup__dock-drawer" hidden={!dockOpen}>
             <div className="proxy-setup__console" ref={logRef}>
               {logs.map((l, i) => (
                 <span key={i} className={`proxy-setup__log proxy-setup__log--${l.type}`}>
@@ -382,6 +384,17 @@ export default function ProxySetup() {
               ))}
             </div>
           </div>
+          <button
+            type="button"
+            className="proxy-setup__dock-bar"
+            aria-expanded={dockOpen}
+            onClick={() => setDockOpen((v) => !v)}
+          >
+            <span className="proxy-setup__dock-dot" aria-hidden="true" />
+            <span className="proxy-setup__dock-count">部署日志 · {logs.length} 条</span>
+            <span className="proxy-setup__dock-last">{logs[logs.length - 1]?.msg}</span>
+            <Icon icon={dockOpen ? ChevronDown : ChevronUp} size="sm" />
+          </button>
         </div>
       </div>
     </div>

@@ -19,11 +19,12 @@ test.describe('代理配置', () => {
     expect(title).toContain('一键配置代理');
     const cardCount = await page.locator('.proxy-setup__card').count();
     expect(cardCount).toBe(2);
-    const consoleVisible = await page.locator('.proxy-setup__console').isVisible().catch(() => false);
-    expect(consoleVisible).toBe(true);
+    // 2026-11-09 方案 B：右栏常驻控制台改为底部日志坞（收起为一行状态条）
+    const dockBarVisible = await page.locator('.proxy-setup__dock-bar').isVisible().catch(() => false);
+    expect(dockBarVisible).toBe(true);
   });
 
-  test('PROXY-002/003: 选择高亮 + 未填 Token 报错', async ({ page }) => {
+  test('PROXY-002/003: 选择高亮 + 步骤门控（未填置灰）', async ({ page }) => {
     await page.goto('/proxy-setup', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.proxy-setup', { timeout: 10000 });
     // 等卡片渲染，替代固定 800ms 睡眠
@@ -37,14 +38,22 @@ test.describe('代理配置', () => {
     const logText = await page.locator('.proxy-setup__console').textContent();
     expect(logText).toContain('已选择');
 
-    // PROXY-003：2026-10-10 落地「己 · 分步向导」后，部署按钮在第 3 步（隐藏于步骤 1/2）。
-    // 先经左侧步骤导航跳到「③ 部署与回写」（导航按钮常驻可见、唯一），再点部署。
-    await page.getByRole('button', { name: /部署与回写/ }).click();
-    await page.getByRole('button', { name: /开始一键配置 Worker/ }).click();
-    // 等控制台输出「请填写 Cloudflare API Token」，替代固定 300ms 睡眠
+    // PROXY-003：2026-11-09 步骤门控 —— 必填值未填时「下一步」与未解锁的步骤导航项置灰不可点
+    const step3Btn = page.getByRole('button', { name: /部署与回写/ });
+    await expect(step3Btn).toBeDisabled({ timeout: 2000 });
+    await page.getByRole('button', { name: /下一步：填凭证/ }).click();
+    // 凭证未填：③ 仍锁定
+    await expect(step3Btn).toBeDisabled({ timeout: 2000 });
+    await page.locator('#cf-token').fill('test-token');
+    await page.locator('#cf-account').fill('test-account');
+    await expect(step3Btn).toBeEnabled({ timeout: 2000 });
+    await step3Btn.click();
+    const deployBtn = page.getByRole('button', { name: /开始一键配置 Worker/ });
+    await expect(deployBtn).toBeVisible({ timeout: 2000 });
+    // 拦截真实 Cloudflare 请求（快速失败），部署入口日志为同步写入，断言不依赖网络结果
+    await page.route('**api.cloudflare.com/**', (route) => route.abort());
+    await deployBtn.click();
     await expect.poll(async () => (await page.locator('.proxy-setup__console').textContent()) ?? '',
-      { timeout: 2000 }).toContain('请填写 Cloudflare API Token');
-    const logText2 = await page.locator('.proxy-setup__console').textContent();
-    expect(logText2).toContain('请填写 Cloudflare API Token');
+      { timeout: 2000 }).toContain('开始配置「视频采集 CORS 代理」');
   });
 });

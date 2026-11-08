@@ -1,6 +1,7 @@
 /* ── ProxySetup（一键配置代理页）──────────────
- 「三栏分步向导」：左步骤导航 / 中分步面板（上一步·下一步）/ 右深色控制台常驻。
- 全用 Design Token（无裸 hex / 无 transition:all），亮/暗主题自适应。 */
+ 「两栏分步向导 + 底部日志坞」：左步骤导航 / 右分步面板（上一步·下一步）；
+ 部署日志收成页面底部吸底「日志坞」（收起一行状态条，点开抽屉，部署中自动展开，2026-11-09 方案 B）。
+ 主体宽度本页单独收窄（表单向导不需要 2200px 全宽），全用 Design Token（无裸 hex / 无 transition:all）。 */
 .proxy-setup {
   display: flex;
   flex: 1 1 0;
@@ -8,7 +9,8 @@
   align-items: center;
   width: 100%;
   min-width: 0;
-  max-width: var(--layout-content-max-width);
+  /* 2026-11-09 用户拍板：本页主体宽度单独处理，桌面端比全局内容上限（2200px）收窄（首版 1120 过窄，放宽到 1280） */
+  max-width: min(var(--layout-content-max-width), 1280px);
   margin-inline: auto;
   padding: var(--space-xl) var(--space-md);
 }
@@ -69,7 +71,7 @@
   font-weight: 600;
 }
 
-/* ── 三栏：左步骤导航 / 中面板 / 右控制台 ── */
+/* ── 两栏：左步骤导航 / 右面板（日志已下沉为底部日志坞）── */
 .proxy-setup__cols {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -79,7 +81,7 @@
 
 @media (width >= 1024px) {
   .proxy-setup__cols {
-    grid-template-columns: 160px minmax(0, 1fr) minmax(320px, 380px);
+    grid-template-columns: 160px minmax(0, 1fr);
   }
 }
 
@@ -147,13 +149,18 @@ html[data-device="app"] .proxy-setup__cols {
 .proxy-setup__stepnav-item.is-on.is-done .proxy-setup__stepnav-no {
   color: var(--color-text-inverse);
 }
-/* 校验未过（点下一步时）：当前步导航项标红底，填完/选完自动恢复 */
-.proxy-setup__stepnav-item.is-error {
-  background: var(--color-error-bg);
-  color: var(--color-error-text);
+/* 步骤门控：未解锁（前置步骤必填值未填）的导航项置灰不可点；当前步/回退恒可点 */
+.proxy-setup__stepnav-item:disabled,
+.proxy-setup__stepnav-item.is-locked {
+  background: transparent;
+  color: var(--color-text-tertiary);
+  opacity: 0.55;
+  cursor: not-allowed;
 }
-.proxy-setup__stepnav-item.is-error .proxy-setup__stepnav-no {
-  color: var(--color-error-text);
+.proxy-setup__stepnav-item:disabled:hover,
+.proxy-setup__stepnav-item.is-locked:hover {
+  background: transparent;
+  color: var(--color-text-tertiary);
 }
 
 @media (width < 1024px) {
@@ -345,19 +352,6 @@ html[data-device="app"] .proxy-setup__grid {
   text-decoration: underline;
 }
 
-/* 校验错误提示与标红（点击下一步不拦截、仅提示） */
-.proxy-setup__hint--error {
-  color: var(--color-error-text);
-  font-weight: 500;
-}
-.proxy-setup__field input.is-invalid,
-.proxy-setup__input-row input.is-invalid {
-  border-color: var(--color-error);
-}
-.proxy-setup__field input.is-invalid:focus {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 14%, transparent);
-}
-
 /* 第3步部署确认摘要 */
 .proxy-setup__summary {
   display: flex;
@@ -396,67 +390,84 @@ html[data-device="app"] .proxy-setup__grid {
   color: var(--color-text-tertiary);
 }
 
-/* 深色控制台：mac 标题栏 + 日志，右栏常驻，桌面 sticky */
-.proxy-setup__console-wrap {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+/* 底部日志坞（方案 B）：吸底常驻于页面滚动区；抽屉 = 深色日志，状态条 = 一行摘要 */
+.proxy-setup__dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin-top: var(--space-md);
+  border: 1px solid var(--console-border);
   border-radius: var(--radius-md);
-  background: var(--console-bg);
+  background: var(--color-surface);
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
-.proxy-setup__console-bar {
-  display: flex;
-  flex-shrink: 0;
-  gap: var(--space-2xs);
-  align-items: center;
-  padding: var(--space-xs) var(--space-sm);
-  background: color-mix(in srgb, var(--console-bg) 82%, var(--color-text-inverse));
+.proxy-setup__dock-drawer {
+  max-height: 16rem;
+  background: var(--console-bg);
+  overflow-y: auto;
   border-bottom: 1px solid var(--console-border);
 }
-.proxy-setup__console-dot {
-  width: 0.625rem;
-  height: 0.625rem;
+.proxy-setup__dock-bar {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.proxy-setup__dock-bar:hover {
+  background: var(--color-surface-hover);
+}
+.proxy-setup__dock-dot {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: var(--radius-full);
   background: var(--console-muted);
 }
-.proxy-setup__console-dot:nth-child(1) { background: var(--color-error); }
-.proxy-setup__console-dot:nth-child(2) { background: var(--color-warning); }
-.proxy-setup__console-dot:nth-child(3) { background: var(--color-success); }
-.proxy-setup__console-file {
-  margin-left: var(--space-xs);
-  color: var(--console-muted);
+.proxy-setup__dock.is-busy .proxy-setup__dock-dot {
+  background: var(--color-success);
+  animation: ps-pulse var(--dur-slow) var(--ease-standard) infinite;
+}
+.proxy-setup__dock-count {
+  flex-shrink: 0;
+  color: var(--color-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.proxy-setup__dock-last {
+  flex: 1 1 0;
+  min-width: 0;
+  color: var(--color-text-tertiary);
   font-family: "SF Mono", Consolas, monospace;
   font-size: var(--text-2xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 .proxy-setup__console {
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);
-  min-height: 10rem;
-  max-height: 16rem;
   padding: var(--space-md);
   background: transparent;
   font-family: "SF Mono", Consolas, "Courier New", monospace;
   font-size: var(--text-xs);
   line-height: 1.7;
   white-space: pre-wrap;
-  overflow-y: auto;
   word-break: break-all;
 }
 
-@media (width >= 1024px) {
-  html:not([data-device="app"]) .proxy-setup__console-wrap {
-    position: sticky;
-    top: var(--space-md);
-    align-self: stretch;
-    box-shadow: var(--shadow-md);
-  }
-  html:not([data-device="app"]) .proxy-setup__console {
-    flex: 1 1 auto;
-    min-height: 26rem;
-    max-height: 34rem;
-  }
+@keyframes ps-pulse {
+  50% { opacity: 0.3; }
 }
 .proxy-setup__log { display: block; }
 .proxy-setup__log-time {
