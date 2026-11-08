@@ -320,6 +320,31 @@ export default function BrowsePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key, isPop]);
 
+  // ── 入口筛选（2026-11-08）：顶部搜索建议点击经 location.state 携带类型/年份 ──
+  // ⚠️ 不写 URL 参数（用户拍板：进 Browse 后还要继续筛选/换词，入口不污染路由），
+  // 与上方 state.q 同一消费先例：仅 PUSH 导航读取，POP（刷新/后退）忽略。
+  // 应用走 updateFilter 标准链路：setSearchParams(replace) → filterValue 变化 →
+  // filterSig effect 防抖写 store → logicalContext 变化 → 取页 effect 以新筛选
+  // 装载第 1 页。首帧旧筛选触发的取页由 liveCtxRef 的 isStale 弃权丢弃。
+  // entryFilterAppliedKeyRef：每个入口（location.key）只应用一次——同页停留期间
+  // location.key 不变，effect 不会重跑覆盖用户后续手动筛选；新搜索进入 = 新 key。
+  const entryFilterAppliedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (isPop) return;
+    const st = location.state as { mediaType?: 'movie' | 'tv'; year?: number } | null;
+    const mediaType = st?.mediaType === 'movie' || st?.mediaType === 'tv' ? st.mediaType : undefined;
+    const year = typeof st?.year === 'number' && Number.isFinite(st.year) && st.year > 1900 ? st.year : undefined;
+    if (!mediaType && !year) return;
+    if (entryFilterAppliedKeyRef.current === location.key) return;
+    entryFilterAppliedKeyRef.current = location.key;
+    updateFilter({
+      ...filterValue,
+      ...(mediaType ? { category: mediaType, mediaType } : {}),
+      ...(year ? { year } : {}),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key, isPop]);
+
   // ── 分类导航进入：清空残留搜索词 + 立即刷新（跳过 filterSig 300ms debounce）──
   // useLayoutEffect 保证绘制前完成：清空 query 后顶部搜索框首帧即为空、
   // hardRefresh 同步置 loading 并在同一帧发起 force 取页，首帧即显示 loading 遮罩，

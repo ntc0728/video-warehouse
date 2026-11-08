@@ -226,14 +226,10 @@ export default function SearchBox({
     if (onSearch) {
       onSearch(q);
     } else {
-      // 点击实时建议进入时携带类型/年份（2026-11-08 用户要求）：Browse 的
-      // filterValue 直接 parseFromUrl，?category=xx&year=xx 即选中对应档位；
-      // mediaType 不写 URL——parseFromUrl 一律由 category 推导（见 urlState.ts）。
-      const params = new URLSearchParams();
-      if (opts?.mediaType) params.set('category', opts.mediaType);
-      if (opts?.year) params.set('year', String(opts.year));
-      const qs = params.toString();
-      navigate(qs ? `/browse?${qs}` : '/browse', { state: { q } });
+      // 点击实时建议进入时携带类型/年份（2026-11-08 用户要求）。⚠️ 只走 location.state、
+      // 不写 URL 参数（用户拍板：进 Browse 后还要继续筛选/换词，入口不该污染路由）；
+      // Browse 侧 PUSH-only 消费（与 state.q 同一先例），经 updateFilter 标准链路应用。
+      navigate('/browse', { state: { q, mediaType: opts?.mediaType, year: opts?.year } });
     }
   }, [value, onSearch, navigate, addHistory]);
 
