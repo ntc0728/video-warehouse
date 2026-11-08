@@ -291,6 +291,9 @@
 /* ── 简介 ──────────────────────────────────────── */
 
 .detail-hero-desc {
+  /* 上限 80em（2026-11-08 用户定稿：比旧 65em 放宽 ~23%，但保留上限不全开——
+     大尺寸下右侧仍留一定画面余量，可读区不做无限延伸） */
+  max-width: 80em;
   margin: 0;
   /* 影院 on-image 白 + 文字阴影 */
   color: rgba(255, 255, 255, 0.92);
@@ -1623,17 +1626,17 @@ html:not([data-device="tv"]) .detail-hero-desc .detail-collapse {
   min-height: 0;
 }
 html:not([data-device="tv"]) .detail-hero-desc .detail-collapse-txt {
-  /* 收起态 = 弹性收缩填满可用空间（按钮贴文本下缘）；展开态 = 内容撑满 basis 后被压回
-     剩余空间（min-height:0 允许 flex 收缩，overflow:hidden 由基类 clamp 规则提供） */
+  /* 收起态 = 动态行数 clamp（TSX RO 按可用高度÷行高取整写回 --collapse-lines，
+     整行裁切不裁半行）；展开态 = 原地滚动（见 txt--open） */
   flex: 0 1 auto;
+  /* 文字底板（2026-11-08）：半透暗 chip + fit-content 贴文字——backdrop 明暗不可控，
+     亮图上白字靠底板保证对比（HeroBanner desc 同语言），亮暗图通吃 */
+  width: fit-content;
+  max-width: 100%;
   min-height: 0;
-}
-
-/* fill 变体（2026-11-08）：折叠行数按可用空间决定，不再写死 3 行——
-   卸掉 clamp 后 txt 是 flex 收缩项，几行由空间决定，文本超空间才出「展开」。
-   2026-11-08 随固定高度扩展到移动端/app（scope 全宽度非 TV），全设备按可用空间折叠 */
-html:not([data-device="tv"]) .detail-hero-desc .detail-collapse-txt--fill {
-  -webkit-line-clamp: unset;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.42);
 }
 
 /* 展开态原地滚动：超长简介在弹性区内滚看，收起按钮（flex 尾随）恒可见不被裁 */

@@ -562,7 +562,8 @@ test.describe('3.12 Hero 简介折叠', () => {
       };
     });
     // 卸 clamp（fill）+ flex 收缩填满弹性区：死区 < 40px（旧 3 行固定时约 200px）
-    expect(geo.clamp).toBe('none');
+    const clampN = parseInt(geo.clamp, 10);
+    expect(clampN).toBeGreaterThanOrEqual(2);
     expect(geo.hasBtn).toBe(true);
     expect(geo.deadGap).toBeLessThan(40);
 

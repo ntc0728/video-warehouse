@@ -1415,19 +1415,22 @@ function formatProgressTime(seconds: number): string {
 // ⚠️ 两处实测坑（Demo 2026-10-10 验证）：① 不能用 scrollHeight 判溢出——Chromium 下
 // -webkit-line-clamp 的 scrollHeight 可能等于 clientHeight（漏检）；② 测量克隆节点必须挂在
 // 原父节点内——挂 document.body 会丢元素自身字号，自然高算大→假阳性。
-// fill 变体（2026-11-08，hero 简介）：折叠行数不再是常量——txt 卸掉 clamp 后是
-// flex:0 1 auto 弹性项，flex 收缩天然「按可用空间截断」（几行由空间决定）；
-// 溢出检测仍成立（渲染高=被收缩的可用空间 vs 克隆自然高），文本超过空间才出按钮。
+// fill 变体（2026-11-08，hero 简介）：折叠行数由「弹性区可用高度 ÷ 行高」动态取整决定
+// （RO 量 .detail-hero-desc 高 → 整数行写回 --collapse-lines）——clamp 天然整行裁切，
+// 绝不出现 flex 收缩的「裁半行」；文本超过可用行数才出「展开」按钮。
 // 展开态在 hero 作用域加 overflow-y:auto（Detail.css），超长简介原地滚动、收起恒可见。
-// <768 / app 端无固定高度弹性区，--fill 不卸 clamp（CSS 作用域控制），仍 3 行折叠。
+// 非 fill（基础信息表等）：保持固定行数 + 旧克隆比对检测。
 function CollapsibleValue({ lines, expandLabel = '展开', fill = false, children }: { lines: number; expandLabel?: string; fill?: boolean; children?: ReactNode }) {
   const txtRef = useRef<HTMLSpanElement>(null);
   const [overflow, setOverflow] = useState(false);
   const [open, setOpen] = useState(false);
+  const [dynLines, setDynLines] = useState(lines);
   useLayoutEffect(() => {
     const el = txtRef.current;
-    if (!el || open) return;
+    if (!el) return;
+    const region = fill ? ((el.closest('.detail-hero-body') as HTMLElement | null) ?? el.parentElement) : null;
     const measure = () => {
+      if (open) return;
       const rect = el.getBoundingClientRect();
       if (rect.width <= 0) return;
       const clone = el.cloneNode(true) as HTMLElement;
@@ -1437,18 +1440,45 @@ function CollapsibleValue({ lines, expandLabel = '展开', fill = false, childre
       parent.appendChild(clone);
       const full = clone.getBoundingClientRect().height;
       parent.removeChild(clone);
-      setOverflow(full > rect.height + 2);
+      if (fill && region) {
+        // 可用空间 = body 固定高 - 其余兄弟元素 - gap - 按钮槽位 - 底板 padding。
+        // ⚠️ 不能用简介区自身高度：它是 flex 收缩项，clamp 越小它越矮，
+        // 会形成「行数→高度→行数」向下收敛的反馈死循环（实测 1440 收敛到 2 行）。
+        // body 高度是定值（--detail-hero-h），与简介内容无关，测量无回路。
+        const cs = getComputedStyle(el);
+        const lh = parseFloat(cs.lineHeight) || 21;
+        const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+        const desc = el.closest('.detail-hero-desc') as HTMLElement | null;
+        const kids = Array.from(region.children).filter((k) => k !== desc) as HTMLElement[];
+        const others = kids.reduce((sum, k) => sum + k.offsetHeight, 0);
+        const gap = parseFloat(getComputedStyle(region).rowGap) || 0;
+        const btn = desc?.querySelector('.detail-collapse-btn') as HTMLElement | null;
+        const btnH = btn ? btn.offsetHeight : 26; // 按钮未渲染时的槽位预估（实际 ~20px）
+        const avail = region.clientHeight - others - gap * kids.length - btnH - padY;
+        const n = Math.max(2, Math.floor(avail / lh));
+        setDynLines(n);
+        setOverflow(full - padY > n * lh + 2); // 克隆自然高含底板 padding，比对按纯文本行高计
+      } else {
+        setOverflow(full > rect.height + 2);
+      }
     };
     measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    if (region) ro.observe(region);
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [open]);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [fill, open]);
+  const collapseLines = fill ? dynLines : lines;
   return (
     <span className="detail-collapse">
       <span
         ref={txtRef}
         className={`detail-collapse-txt${fill ? ' detail-collapse-txt--fill' : ''}${open ? ' detail-collapse-txt--open' : ''}`}
-        style={{ '--collapse-lines': lines } as CSSProperties}
+        style={{ '--collapse-lines': collapseLines } as CSSProperties}
       >
         {children}
       </span>
