@@ -28,12 +28,22 @@
    基座 = 移动单列（隐藏海报列）；≥768 两列；app 恒单列；TV 视口 ≥1024 走桌面规则。
    旧 16:9 全屏大图 / G1 全出血 / 双层渐变随 C1 一并移除——hero 高度改由内容驱动。 */
 .detail-hero {
+  /* 固定高度（2026-11-08 扩展到移动端）：移动端 vh 流体档（58vh，340~460 封顶），
+     桌面 ≥768 档位覆盖为 440/480/520——展开简介永不撑大 hero（fill 溢出隐藏） */
+  --detail-hero-h: clamp(340px, 58vh, 460px);
   position: relative;
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-md);
   align-items: stretch;
+  height: var(--detail-hero-h);
   margin-top: var(--space-xs);
+}
+
+/* TV 恢复内容驱动高度：fill/收缩/贴底机制均 :not(tv)（TV 字号 15→30px 放大，
+   固定 340~460px 会溢出裁掉 CTA）；TV 简介恒 3 行 clamp，高度天然稳定 */
+[data-device="tv"] .detail-hero {
+  height: auto;
 }
 
 .detail-hero--skeleton {
@@ -281,7 +291,6 @@
 /* ── 简介 ──────────────────────────────────────── */
 
 .detail-hero-desc {
-  max-width: 65em;
   margin: 0;
   /* 影院 on-image 白 + 文字阴影 */
   color: rgba(255, 255, 255, 0.92);
@@ -292,13 +301,13 @@
 
 /* ── 按钮组 ────────────────────────────────────── */
 
-/* CTA 钉底区（margin-top:auto 撑开，贴齐海报下沿；与简介脱开由 padding-top 保底） */
+/* CTA 区（2026-11-08 用户要求删 padding-top；margin-top:auto 仅 <768 前提下残留，
+     ≥768 贴底块中已归零） */
 .detail-hero-cta-zone {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
   margin-top: auto;
-  padding-top: clamp(var(--space-xl), 3vh, var(--space-2xl));
 }
 
 .detail-hero-actions {
@@ -542,11 +551,9 @@
   letter-spacing: 0.02em;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .playlist-query-spinner {
-    animation: none;
-  }
-}
+/* （PRM 下本组件曾有 animation:none，与 animations.css 的功能性转圈白名单口径冲突：
+   白名单 !important 只补 duration/iteration、管不住 name:none → 转圈静止（2026-11-08
+   用户反馈「不转动」根因）。转圈是加载中的唯一视觉信号，PRM 下仍须旋转，规则已删。） */
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
@@ -989,9 +996,19 @@
 
 .detail-sources-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  /* nowrap（2026-11-08 用户要求）：重新匹配 + 源检测 pill 恒一行，pill 收缩省略不换行 */
+  flex-wrap: nowrap;
   gap: var(--space-sm);
   align-items: center;
+}
+.detail-sources-toolbar .retry-btn {
+  flex-shrink: 0;
+}
+.detail-sources-toolbar .sdp {
+  min-width: 0;
+}
+.detail-sources-toolbar .sdp-pill {
+  max-width: 100%;
 }
 
 .detail-sources-grid {
@@ -1554,75 +1571,77 @@
   html:not([data-device="app"]) .detail-hero {
     --detail-hero-h: 440px;
     grid-template-columns: minmax(0, min(calc(var(--detail-hero-h) * 2 / 3), 330px)) minmax(0, 1fr);
-    /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- 对开栏间距为布局比例值，随视口流体；px 地板/顶为刻意固定档（同 grid 列宽公式，grid-template 例外口径） */
-    gap: clamp(20px, 2.6vw, 44px);
+    /* gap 已删（2026-11-08 用户要求）：海报列与文本列齐贴 */
     height: var(--detail-hero-h);
   }
 
   html:not([data-device="app"]) .detail-hero-poster {
     display: block;
   }
-
-  /* 文本列体固定在 info 内框高度（min-height:0 允许 flex 收缩，否则内容高会把 body
-     撑到超出 info 被 overflow:hidden 连 CTA 一起裁掉——展开简介后按钮不可见）。
-     内容簇贴底（2026-11-08 用户定稿）：全部元素尽量靠近 CTA 按钮，空区上浮；
-     长简介向上抬升直至撑满（唯一可收缩项），仍有剩余则出「展开简介」 */
-  html:not([data-device="app"]) .detail-hero-body {
-    justify-content: flex-end;
-    min-height: 0;
-  }
-  /* 固定元素不参与收缩（默认 shrink:1 会让标题/meta 被压扁），只有简介可收缩抬升 */
-  html:not([data-device="app"]) .detail-hero-body > * {
-    flex-shrink: 0;
-  }
-  /* topline 恒在顶部（2026-11-08 用户要求）：内容簇贴底但 kicker/官方页面行例外——
-     margin-bottom:auto 吸收全部剩余空间，把其余元素压向底部；
-     长简介撑满时簇整体抬升，topline 自然仍在顶 */
-  html:not([data-device="app"]) .detail-hero-topline {
-    margin-bottom: auto;
-  }
-  /* CTA 原以 margin-top:auto 钉底（内容顶堆叠时代的产物）——内容簇贴底后它会把
-     简介与按钮重新拉开死区，必须归零（间距由 body 的 gap 承担） */
-  html:not([data-device="app"]) .detail-hero-cta-zone {
-    margin-top: 0;
-  }
-
-  /* 简介区 = 唯一可收缩项：短简介自然高贴住 meta 下方，长简介向上抬升
-     直至元素撑满 hero，超出部分裁切；展开后原地滚动（见 txt--open）。
-     按钮挂简介区末尾（flex 不参与收缩）保证「收起」始终可见、不被文本推出裁切。 */
-  html:not([data-device="app"]) .detail-hero-desc {
-    display: flex;
-    flex: 0 1 auto;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-  }
-  html:not([data-device="app"]) .detail-hero-desc .detail-collapse {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-height: 0;
-  }
-  html:not([data-device="app"]) .detail-hero-desc .detail-collapse-txt {
-    /* 收起态 = 弹性收缩填满可用空间（按钮贴文本下缘）；展开态 = 内容撑满 basis 后被压回
-       剩余空间（min-height:0 允许 flex 收缩，overflow:hidden 由基类 clamp 规则提供） */
-    flex: 0 1 auto;
-    min-height: 0;
-  }
-
-  /* fill 变体（2026-11-08）：折叠行数按可用空间决定，不再写死 3 行——
-     卸掉 clamp 后 txt 是 flex 收缩项，几行由空间决定，文本超空间才出「展开」。
-     仅 ≥768 固定高度弹性区；<768 / app 无弹性区，保持 3 行 clamp */
-  html:not([data-device="app"]) .detail-hero-desc .detail-collapse-txt--fill {
-    -webkit-line-clamp: unset;
-  }
-
-  /* 展开态原地滚动：超长简介在弹性区内滚看，收起按钮（flex 尾随）恒可见不被裁 */
-  html:not([data-device="app"]) .detail-hero-desc .detail-collapse-txt--open {
-    overflow-y: auto;
-    scrollbar-width: thin;
-  }
 }
+
+/* ── hero 内容簇贴底 + 简介弹性收缩（2026-11-08 scope 扩展：全宽度、除 TV 外全设备）──
+   移动端 hero 也固定高度（基础规则 clamp(340px,58vh,460px)），展开简介永不撑大 hero */
+/* 文本列体固定在 info 内框高度（min-height:0 允许 flex 收缩，否则内容高会把 body
+   撑到超出 info 被 overflow:hidden 连 CTA 一起裁掉——展开简介后按钮不可见）。
+   内容簇贴底（2026-11-08 用户定稿）：全部元素尽量靠近 CTA 按钮，空区上浮；
+   长简介向上抬升直至撑满（唯一可收缩项），仍有剩余则出「展开简介」 */
+html:not([data-device="tv"]) .detail-hero-body {
+  justify-content: flex-end;
+  min-height: 0;
+}
+/* 固定元素不参与收缩（默认 shrink:1 会让标题/meta 被压扁），只有简介可收缩抬升 */
+html:not([data-device="tv"]) .detail-hero-body > * {
+  flex-shrink: 0;
+}
+/* topline 恒在顶部（2026-11-08 用户要求）：内容簇贴底但 kicker/官方页面行例外——
+   margin-bottom:auto 吸收全部剩余空间，把其余元素压向底部；
+   长简介撑满时簇整体抬升，topline 自然仍在顶 */
+html:not([data-device="tv"]) .detail-hero-topline {
+  margin-bottom: auto;
+}
+/* CTA 原以 margin-top:auto 钉底（内容顶堆叠时代的产物）——内容簇贴底后它会把
+   简介与按钮重新拉开死区，必须归零（间距由 body 的 gap 承担） */
+html:not([data-device="tv"]) .detail-hero-cta-zone {
+  margin-top: 0;
+}
+
+/* 简介区 = 唯一可收缩项：短简介自然高贴住 meta 下方，长简介向上抬升
+   直至元素撑满 hero，超出部分裁切；展开后原地滚动（见 txt--open）。
+   按钮挂简介区末尾（flex 不参与收缩）保证「收起」始终可见、不被文本推出裁切。 */
+html:not([data-device="tv"]) .detail-hero-desc {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+html:not([data-device="tv"]) .detail-hero-desc .detail-collapse {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+html:not([data-device="tv"]) .detail-hero-desc .detail-collapse-txt {
+  /* 收起态 = 弹性收缩填满可用空间（按钮贴文本下缘）；展开态 = 内容撑满 basis 后被压回
+     剩余空间（min-height:0 允许 flex 收缩，overflow:hidden 由基类 clamp 规则提供） */
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+/* fill 变体（2026-11-08）：折叠行数按可用空间决定，不再写死 3 行——
+   卸掉 clamp 后 txt 是 flex 收缩项，几行由空间决定，文本超空间才出「展开」。
+   2026-11-08 随固定高度扩展到移动端/app（scope 全宽度非 TV），全设备按可用空间折叠 */
+html:not([data-device="tv"]) .detail-hero-desc .detail-collapse-txt--fill {
+  -webkit-line-clamp: unset;
+}
+
+/* 展开态原地滚动：超长简介在弹性区内滚看，收起按钮（flex 尾随）恒可见不被裁 */
+html:not([data-device="tv"]) .detail-hero-desc .detail-collapse-txt--open {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
 
 /* 固定高度分档：中屏 / 大屏各抬一档（海报宽随之 293 → 320 → 330 封顶） */
 @media (width >= 1280px) {
