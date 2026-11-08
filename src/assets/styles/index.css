@@ -633,6 +633,18 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   outline-color: var(--color-text-inverse) !important;
 }
 
+/* 文本输入类豁免：input/textarea 聚焦必命中 :focus-visible（含 autoFocus、移动端/鼠标点按——
+   文本框在任何聚焦方式下都匹配），2px outline 环叠在其自身边框外呈「黑色粗环」观感。
+   文本类输入聚焦态已由 border-color 变化表达，故豁免 outline 环；
+   checkbox/radio/range/file 无替代聚焦指示，仍走上方全局环。 */
+:root:not([data-device="tv"]):not([data-device="projector"])
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus-visible,
+:root:not([data-device="tv"]):not([data-device="projector"]) textarea:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
 /* ── Tab 通用基类（下划线式） ─────────────────────────────
    Detail / Person 页共用，避免重复定义 */
 .tab-underline {
