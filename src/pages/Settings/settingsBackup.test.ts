@@ -2,8 +2,8 @@
  * settingsBackup 单元测试
  *
  * 覆盖：collectBackup / parseBackup / applyBackup 三条链路，
- *   含敏感字段（tmdbAccessToken/translationApiKey）经 setter 写入、
- *   收藏/历史恢复、非法文件校验。
+ * 含敏感字段（tmdbAccessToken/translationApiKey）经 setter 写入、
+ * 收藏/历史恢复、非法文件校验。
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { collectBackup, parseBackup, applyBackup, type SettingsBackup } from './settingsBackup';

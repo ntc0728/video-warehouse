@@ -2,13 +2,13 @@
  * 收藏页专属骨架 — 与真实内容区逐层同构，且**分区数跟随当前 tab**。
  *
  * 真实内容区（Collections/index.tsx:446-497）：
- *   .collection-content
- *     [mainTab ≠ 'iptv']  section.collection-section → .collection-section-head（影视 / 共 N 条）
- *                                                     + 竖版卡网格（--card-cols）
- *     [showChannels]      section.collection-section → .collection-section-head（直播 / 共 N 个频道）
- *                                                     + 频道网格（--iptv-cols）
+ * .collection-content
+ * [mainTab ≠ 'iptv'] section.collection-section → .collection-section-head（影视 / 共 N 条）
+ * + 竖版卡网格（--card-cols）
+ * [showChannels] section.collection-section → .collection-section-head（直播 / 共 N 个频道）
+ * + 频道网格（--iptv-cols）
  *
- * 「已知常量不当未知」（2026-09-18 用户要求）：**分区数量不是固定的 2**，而是由
+ * 「已知常量不当未知」：**分区数量不是固定的 2**，而是由
  * 真实页同一个判定量决定 —— `mainTab !== 'iptv'`（影视区）与 `showChannels`
  * （直播区，= mainTab==='iptv' || (mainTab==='all' && statusFilter==='all')）→ 由页面
  * 以 props 传入。切到「视频」tab 时骨架只剩 1 个分区，与真实内容一致；不再恒渲染 2 个
@@ -48,16 +48,16 @@ export default function CollectionsSkeleton({
     <div className="collection-content collections-skeleton skeleton-scope" role="status" aria-label="加载中">
       {showVideo && (
         <section className="collection-section">
-          {/* 分区头复用真实类：标题为静态常量 → 直接渲染真实文字（2026-09-22 方向 A），
-              计数为动态数据 → 保持灰条 */}
+          {/* 分区头复用真实类：标题为静态常量 → 直接渲染真实文字，
+ 计数为动态数据 → 保持灰条 */}
           <div className="collection-section-head">
             <span className="collection-section-head__title">影视</span>
             <Skeleton className="collections-skeleton__head-count" />
           </div>
           <div ref={videoGridRef} className="collections-skeleton__video-grid">
             {Array.from({ length: videoCols * videoRows }, (_, i) => (
-              /* 2026-11-04 二次定稿：镜像真实 VideoCard 竖版 —— 封面 2:3 + 四角标
-                 + info 区标题灰线（封面内标题方案已回滚）。 */
+              /* 镜像真实 VideoCard 竖版 —— 封面 2:3 + 四角标
+ + info 区标题灰线（封面内标题已回退）。 */
               <div key={i} className="collections-skeleton__card">
                 <Skeleton className="collections-skeleton__video-cover" />
                 <Skeleton className="collections-skeleton__line" />

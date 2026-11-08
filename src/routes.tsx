@@ -7,7 +7,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import AppLoading from './components/common/AppLoading';
 import { isNativePlatform } from '@/lib/platform';
 
-// 9.1：IPTVPlayerPage 改为懒加载 —— 原静态导入使播放器（hls.js/dashjs/mpegts）打进
+//IPTVPlayerPage 改为懒加载 —— 原静态导入使播放器（hls.js/dashjs/mpegts）打进
 // entry 首包（冷启动被迫下载 hls-vendor 517KB）。lazy 后播放器独立 chunk，
 // 进入 /iptv/play 才拉取，首屏链路显著瘦身。
 const IPTVPlayerPage = lazy(() => import('./pages/IPTV/IPTVPlayer'));

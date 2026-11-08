@@ -12,9 +12,9 @@ const COLLAPSE_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
  *
  * ── 为什么不再用纯 CSS ──────────────────────────────────────────────
  * · max-height 过渡（旧实现）：阈值恒写 80vh，内容远低于阈值时前段完全无视觉变化，
- *   表现为「停顿一下再猛地收起」，展开则提前结束 —— 这是生硬感的根因；
+ * 表现为「停顿一下再猛地收起」，展开则提前结束 —— 这是生硬感的根因；
  * · grid-template-rows 0fr↔1fr：只在容器高度为 auto（内容驱动）时成立。桌面端面板
- *   高度由 .player-sidebar 的 1fr 行分配（容器高度固定），fr 行恒填满 → 动画无效。
+ * 高度由 .player-sidebar 的 1fr 行分配（容器高度固定），fr 行恒填满 → 动画无效。
  * 因此改为「测量真实高度 → from/to 关键帧」，px 精确且与布局策略无关。
  *
  * ── 与 grid 侧栏的配合 ──────────────────────────────────────────────
@@ -57,8 +57,8 @@ export function usePanelCollapse<T extends HTMLElement>(collapsed: boolean) {
     const to = el.offsetHeight;
     stableH.current = to;
 
-    // 首次挂载 / 高度未变 / 用户要求减少动效 → 不动画
-    // 2026-11-08 全局放开：折叠动画不再随系统 prefers-reduced-motion 跳过
+    // 首次挂载 / 高度未变 / 减少动效 → 不动画
+    // 全局放开：折叠动画不再随系统 prefers-reduced-motion 跳过
     if (!from || Math.abs(to - from) < 2) return;
 
     const duration = collapsed ? COLLAPSE_MS : EXPAND_MS;

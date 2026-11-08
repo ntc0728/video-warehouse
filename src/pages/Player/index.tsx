@@ -38,8 +38,8 @@ import { Icon } from "@/components/ui/Icon";
 // 每次进入都是空缓存、等于每次重拉。放模块级则「会话内」跨挂载存活。
 // 缓存项记录 sourceIndex + fetchedAt：命中需「同一源 && 5 分钟内」，
 // 既避免 5 分钟内反复进入同一视频（同源）重复请求，也保证：
-//   - 超过 5 分钟重拉 → 播放地址保鲜（CMS 源 URL 可能带时效签名）；
-//   - 不同源（详情页指定 A vs 历史恢复 B）→ 缓存不命中，播对源。
+// - 超过 5 分钟重拉 → 播放地址保鲜（CMS 源 URL 可能带时效签名）；
+// - 不同源（详情页指定 A vs 历史恢复 B）→ 缓存不命中，播对源。
 const VIDEO_CACHE_TTL_MS = 5 * 60 * 1000;
 
 /** 收集一个 Video 所有可播放分源 URL（电影线路 + 剧集每集首线路），用于故障转移去重 */
@@ -123,7 +123,7 @@ export default function PlayerPage() {
     : seasonFromQuery !== undefined && Number.isFinite(seasonFromQuery)
       ? seasonFromQuery
       : undefined;
-  // 2026-10-11（弹窗点集竞态加固）：弹窗点「集」时额外携带集号 epn——
+  // （弹窗点集竞态加固）：弹窗点「集」时额外携带集号 epn——
   // CMS 同名资源多版本/轮转时 routePlayUrl 精确匹配可能落空，按（季,集号）兜底定位，
   // 杜绝「点了第 N 集却有概率播第 1 集」。
   const epnFromQuery = searchParams.has('epn') ? Number(searchParams.get('epn')) : undefined;
@@ -273,7 +273,7 @@ export default function PlayerPage() {
   });
   const cmsResultsRef = useRef(cmsResults);
   cmsResultsRef.current = cmsResults;
-  // 聚合探测期间的源死亡错误挂起区（2026-10-11 用户定稿：播放失败判定必须在所有
+  // 聚合探测期间的源死亡错误挂起区（播放失败判定必须在所有
   // CMS 源响应结束后做）；probeSettledSeq 到达后用完整 cmsResults 重放。
   const pendingFailoverErrorRef = useRef<Error | null>(null);
 
@@ -372,11 +372,11 @@ export default function PlayerPage() {
     }
 
     /**
-     * 加载视频数据
-     * 1. 从历史记录恢复 CMS 源
-     * 2. 从缓存或 API 获取视频数据
-     * 3. 设置播放源和选集
-     */
+ * 加载视频数据
+ * 1. 从历史记录恢复 CMS 源
+ * 2. 从缓存或 API 获取视频数据
+ * 3. 设置播放源和选集
+ */
     const loadVideo = async () => {
       if (!id) return;
       setLoadError(null);
@@ -414,10 +414,10 @@ export default function PlayerPage() {
 
       try {
         /**
-         * 从缓存获取视频数据（方案 2：5 分钟短暂缓存 + 源校验）
-         * 命中条件：同源 && 5 分钟内 && 非 tmdb- id（tmdb- 走 fetchCMSSources，不走这里）
-         * 不满足任一 → 视为无缓存，重新拉取（过期重拉可拿到最新播放地址）
-         */
+ * 从缓存获取视频数据（方案 2：5 分钟短暂缓存 + 源校验）
+ * 命中条件：同源 && 5 分钟内 && 非 tmdb- id（tmdb- 走 fetchCMSSources，不走这里）
+ * 不满足任一 → 视为无缓存，重新拉取（过期重拉可拿到最新播放地址）
+ */
         const cachedEntry = id.startsWith('tmdb-') ? undefined : videoCache.get(id);
         const cacheHit = cachedEntry
           && cachedEntry.sourceIndex === activeSourceIndex
@@ -446,12 +446,12 @@ export default function PlayerPage() {
           setVideo(foundVideo);
 
           /**
-           * cmsSourceIdRef 保护逻辑
-           *
-           * 仅当没有明确指定 routeSourceIndex 时，才使用历史记录的 CMS 源信息。
-           * 原因：用户从详情页点击具体 CMS 源播放时，routeSourceIndex 已指定，
-           * 不应被历史记录中的源覆盖。
-           */
+ * cmsSourceIdRef 保护逻辑
+ *
+ * 仅当没有明确指定 routeSourceIndex 时，才使用历史记录的 CMS 源信息。
+ * 原因：用户从详情页点击具体 CMS 源播放时，routeSourceIndex 已指定，
+ * 不应被历史记录中的源覆盖。
+ */
           if (routeSourceIndex === undefined) {
             if (historyRecord?.cmsSourceId) cmsSourceIdRef.current = historyRecord.cmsSourceId;
             if (historyRecord?.cmsSourceName) cmsSourceNameRef.current = historyRecord.cmsSourceName;
@@ -548,7 +548,7 @@ export default function PlayerPage() {
       const next = { ...prev };
       if (prev[key]) {
         // 桌面（≥1024，面板高度互斥分配）不允许把所有面板都收起 —— 至少保留一个展开，
-        // 否则侧栏只剩三条 header、播放器右侧空一大片（2026-09-30 用户定稿）。
+        // 否则侧栏只剩三条 header、播放器右侧空一大片。
         // 移动端各面板独立展开/收起（不做此限制，保留原有行为）。
         if (!isMobile) {
           // 只统计「当前变体下真实存在」的面板：movie 变体没有选季面板，
@@ -655,7 +655,7 @@ export default function PlayerPage() {
       return;
     }
 
-    // 2026-10-11 集号兜底（用户报「弹窗点线路/集有概率播第一个」）：URL 精确匹配落空
+    // 集号兜底（弹窗点线路/集有概率播第一个）：URL 精确匹配落空
     // （CMS 同名多版本/轮转导致本次搜索结果 url 与弹窗展示不一致）时，
     // 改用弹窗携带的（季号, 集号）定位；命中后线路按 URL 再试一次，落空则默认首线。
     if (routeEpisodeNumber != null) {
@@ -841,7 +841,7 @@ export default function PlayerPage() {
               )}
             </div>
             {/* 导演 / 演员：独占一行块（不进 meta 行，避免与评分/年份等挤在同一行），
-                内容一行显示不全时自然折行显示多行（标签不换行，见 .player-detail-meta-block） */}
+ 内容一行显示不全时自然折行显示多行（标签不换行，见 .player-detail-meta-block） */}
             {director && (
               <div className="player-detail-meta-block">
                 <span className="player-detail-meta-label">导演:</span><span className="player-detail-meta-value">{director}</span>

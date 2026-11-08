@@ -1,16 +1,16 @@
 /**
- * 错误日志收集服务（2026-10-11 新增）
+ * 错误日志收集服务
  * ─────────────────────────────────────────────────────────────
  * 用途：本地记录 JS 运行错误、未处理 Promise、接口（HTTP/超时）错误，
  * 供「设置 → 个人设置 → 错误日志」弹窗查看与一键清除，帮助排查与维护项目。
  *
  * 设计约束：
- *  · 纯 localStorage 存储（key: kino-error-logs），上限 MAX_ENTRIES 条，超出丢最旧；
- *    本服务不依赖任何其它 service（避免循环 import），httpClient/videoService 单向调用它。
- *  · 防风暴去重：同 (kind+source+message) 指纹在 DEDUP_WINDOW_MS 内只保留一条并累加 count，
- *    避免坏网下重试机制把日志刷爆。
- *  · 写入/读取全程 try-catch —— 日志本身绝不能再产生未捕获错误。
- *  · 订阅：window CustomEvent('kino:error-logs')，同文档内即时刷新（设置页弹窗消费）。
+ * · 纯 localStorage 存储（key: kino-error-logs），上限 MAX_ENTRIES 条，超出丢最旧；
+ * 本服务不依赖任何其它 service（避免循环 import），httpClient/videoService 单向调用它。
+ * · 防风暴去重：同 (kind+source+message) 指纹在 DEDUP_WINDOW_MS 内只保留一条并累加 count，
+ * 避免坏网下重试机制把日志刷爆。
+ * · 写入/读取全程 try-catch —— 日志本身绝不能再产生未捕获错误。
+ * · 订阅：window CustomEvent('kino:error-logs')，同文档内即时刷新（设置页弹窗消费）。
  */
 
 export type ErrorLogKind = 'js' | 'promise' | 'api';
@@ -127,8 +127,8 @@ export function subscribeErrorLogs(cb: () => void): () => void {
 
 /**
  * 安装全局错误捕获（main.tsx 尽早调用，幂等）：
- *  · error            —— JS 运行时错误（含跨域脚本的 "Script error." 也记录，便于定位）
- *  · unhandledrejection —— 未处理的 Promise 拒绝（fetch 封装漏 catch 的场景多在此暴露）
+ * · error —— JS 运行时错误（含跨域脚本的 "Script error." 也记录，便于定位）
+ * · unhandledrejection —— 未处理的 Promise 拒绝（fetch 封装漏 catch 的场景多在此暴露）
  * 资源加载错误（img/script onerror 捕获阶段）暂不记录：量大且多为封面外链 404 类噪声，
  * 如需可后续加开关。
  */

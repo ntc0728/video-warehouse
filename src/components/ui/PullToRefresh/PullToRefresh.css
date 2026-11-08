@@ -1,12 +1,12 @@
 /* ============================================================
-   PullToRefresh —— 全局下拉刷新浮层样式（复刻 B 站小电视同款）
-   设计约束：
-   - 浮层为应用级（仅 AppLayout 挂载一次），不向页面注入任何 DOM
-   - 页面内容绝不发生位移；仅浮层指示器随手势做入场 / 位移动画
-   - 指示器：图标（小电视角色）为主、文本为辅；严禁下拉箭头 / 通用环形图标
-   - default 变体：顶部导航栏下方居中；settings 变体：页面中间位移刷新按钮
-   - 全部走项目 token（黑白灰配色：描边/眼睛/电波走 --color-text，腮红走 --color-border-light）
-   ============================================================ */
+ PullToRefresh —— 全局下拉刷新浮层样式（复刻 B 站小电视同款）
+ 设计约束：
+ - 浮层为应用级（仅 AppLayout 挂载一次），不向页面注入任何 DOM
+ - 页面内容绝不发生位移；仅浮层指示器随手势做入场 / 位移动画
+ - 指示器：图标（小电视角色）为主、文本为辅；严禁下拉箭头 / 通用环形图标
+ - default 变体：顶部导航栏下方居中；settings 变体：页面中间位移刷新按钮
+ - 全部走项目 token（黑白灰配色：描边/眼睛/电波走 --color-text，腮红走 --color-border-light）
+ ============================================================ */
 
 .ptr-overlay {
   position: absolute;
@@ -34,7 +34,7 @@
 }
 
 /* default 变体：不使用背景色 / 阴影，仅靠 SVG filter 光晕（#ptr-halo）把小电视「托起」与图片分离。
-   光晕加在 .ptr-tv 上（见下方规则）；此容器仅负责内边距与定位，不再有任何背景 / 阴影。 */
+ 光晕加在 .ptr-tv 上（见下方规则）；此容器仅负责内边距与定位，不再有任何背景 / 阴影。 */
 .ptr-overlay__indicator--default .ptr-indicator {
   padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-lg);
@@ -46,10 +46,10 @@
   left: 50%;
 }
 
-/* ---------- 方案 C：default 变体专属（浮于图片上时） ----------
-   不使用任何背景色 / box-shadow，靠两处「白描边」让黑白线稿 + 文字在任意图片底色上自带着色轮廓：
-   1) 小电视整体套一层 SVG filter 光晕（#ptr-halo，见 PullToRefreshOverlay 注入的 <defs>）；
-   2) 文字用「深色填充 + 白色描边」（paint-order: stroke fill），浅底看深色字、深底看白描边。 */
+/* ----------：default 变体专属（浮于图片上时） ----------
+ 不使用任何背景色 / box-shadow，靠两处「白描边」让黑白线稿 + 文字在任意图片底色上自带着色轮廓：
+ 1) 小电视整体套一层 SVG filter 光晕（#ptr-halo，见 PullToRefreshOverlay 注入的 <defs>）；
+ 2) 文字用「深色填充 + 白色描边」（paint-order: stroke fill），浅底看深色字、深底看白描边。 */
 .ptr-overlay__indicator--default .ptr-tv {
   filter: url("#ptr-halo");
 }
@@ -64,7 +64,7 @@
   paint-order: stroke fill;
 }
 
-/* 方案 C 的 SVG 光晕 filter 定义容器：全局仅渲染一次，零尺寸、不占布局 */
+/* 的 SVG 光晕 filter 定义容器：全局仅渲染一次，零尺寸、不占布局 */
 .ptr-halo-defs {
   position: absolute;
   width: 0;
@@ -98,8 +98,8 @@
 }
 
 /* tips：文本为辅 —— 更小、更弱。
-   颜色走 --color-on-image（白字），供 settings 变体（自带 surface 圆钮）使用；
-   default 变体（浮于图片上）由下方 .ptr-overlay__indicator--default 规则改写为双描边。 */
+ 颜色走 --color-on-image（白字），供 settings 变体（自带 surface 圆钮）使用；
+ default 变体（浮于图片上）由下方 .ptr-overlay__indicator--default 规则改写为双描边。 */
 .ptr-indicator__text {
   color: var(--color-on-image);
   font-size: var(--text-xs);
@@ -116,7 +116,7 @@
 
 /* ---------- 小电视角色 ---------- */
 /* ── 小电视 mascot 基础样式已迁移到 components/ui/TvMascot/TvMascot.css
-   （下拉刷新与播放器加载态共用同一份 SVG + 配色，避免重复定义） ── */
+ （下拉刷新与播放器加载态共用同一份 SVG + 配色，避免重复定义） ── */
 
 /* ---------- settings 变体：页面中间的圆形刷新按钮 ---------- */
 .ptr-indicator__btn {
@@ -141,7 +141,7 @@
   background: var(--color-surface);
   box-shadow: var(--shadow-card-hover);
   /* settings 变体自带浅色圆钮 + 浅色文本胶囊：必须走主题文字色，
-     不能继承 base 的 --color-on-image（白字），否则浅色主题下白字压白底不可见 */
+ 不能继承 base 的 --color-on-image（白字），否则浅色主题下白字压白底不可见 */
   color: var(--color-text-secondary);
 }
 .ptr-indicator--settings .ptr-indicator__meta {
@@ -155,5 +155,5 @@
 /* mascot 的摇摆/眨眼/电波动画与 @keyframes 已迁移到 components/ui/TvMascot/TvMascot.css */
 
 /* 降低动效偏好：关闭指示器入场/位移动画（仅去过渡，保留 translate 定位）；
-   mascot 的眨眼/电波/摇摆减弱已迁移到 TvMascot.css */
+ mascot 的眨眼/电波/摇摆减弱已迁移到 TvMascot.css */
 

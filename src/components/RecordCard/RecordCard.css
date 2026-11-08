@@ -1,13 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   RecordCard — 历史页 / 收藏页统一记录卡（视频 / IPTV 同尺寸）
-   默认竖版（≥480px，2 列起）：上封面（16:9，宽 = 卡内容宽）+ 下 2 行文字：
-     第 1 行：标题独占整行（溢出无缝跑马灯，副本间距 var(--space-lg)）
-     第 2 行：类型徽标 + 来源·集数（靠左成链）+ 观看时间（贴行尾右对齐，永不压缩）
-   窄视口（<480px，1 列）自动切横版（见文末 @media width < 480px）：
-     封面固定 124px 宽（比例沿用旧横版 132:92）+ 右信息逐行排布。
-   作用域：.history-page / .collection-page（2026-10-10 收藏页 IPTV 改用本组件
-   后两页必须同款；:is() 特异性 = 单类，与原 .history-page 前缀完全一致）。
-   ═══════════════════════════════════════════════════════════════════════ */
+ RecordCard — 历史页 / 收藏页统一记录卡（视频 / IPTV 同尺寸）
+ 默认竖版（≥480px，2 列起）：上封面（16:9，宽 = 卡内容宽）+ 下 2 行文字：
+ 第 1 行：标题独占整行（溢出无缝跑马灯，副本间距 var(--space-lg)）
+ 第 2 行：类型徽标 + 来源·集数（靠左成链）+ 观看时间（贴行尾右对齐，永不压缩）
+ 窄视口（<480px，1 列）自动切横版（见文末 @media width < 480px）：
+ 封面固定 124px 宽（比例沿用旧横版 132:92）+ 右信息逐行排布。
+ 作用域：.history-page / .collection-page（收藏页 IPTV 改用本组件
+ 后两页必须同款；:is() 特异性 = 单类，与原 .history-page 前缀完全一致）。
+ ═══════════════════════════════════════════════════════════════════════ */
 
 :is(.history-page, .collection-page) .record-card {
   position: relative;
@@ -15,9 +15,9 @@
   flex-direction: column;
   gap: var(--space-xs-plus);
   align-items: stretch;
-  /* 2026-09-08 用户指令：封面图上/左/右不受 padding 影响（通铺出血）——
-     卡片 padding 归零，内文区 .record-card__body 补回 padding；
-     顶部圆角由卡片 overflow:hidden 按卡片 radius 裁切。 */
+  /* 封面图上/左/右不受 padding 影响（通铺出血）——
+ 卡片 padding 归零，内文区 .record-card__body 补回 padding；
+ 顶部圆角由卡片 overflow:hidden 按卡片 radius 裁切。 */
   padding: 0;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
@@ -27,11 +27,11 @@
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
-  /* 2026-11-04：hover 上浮与封面缩放需要过渡（与 VideoCard 同款时长） */
+  /* hover 上浮与封面缩放需要过渡（与 VideoCard 同款时长） */
   transition: transform var(--dur-md) ease, border-color var(--dur-md) ease, box-shadow var(--dur-md) ease;
 }
 
-/* hover：边框加强 + 悬浮阴影 + 上浮（2026-11-04：与 VideoCard 竖版统一 -3px） */
+/* hover：边框加强 + 悬浮阴影 + 上浮（与 VideoCard 竖版统一 -3px） */
 :is(.history-page, .collection-page) .record-card:hover {
   border-color: var(--color-border-strong);
   box-shadow: var(--shadow-card-hover);
@@ -39,11 +39,11 @@
 }
 
 /* 选中态：边框 + 外发光
-   ⚠️ 必须连 :hover 一起声明：触屏 tap 后卡片残留 :hover 状态，
-   `:is(.history-page, .collection-page) .record-card:hover`（0,3,0）会压过单独的
-   `:is(.history-page, .collection-page) .record-card--selected`（0,2,0），border-color 被
-   强改为 border-strong —— 表现为「移动端批量管理第一次选中，
-   card 边框未变成选中态颜色」（2026-09-08 修复） */
+ ⚠️ 必须连 :hover 一起声明：触屏 tap 后卡片残留 :hover 状态，
+ `:is(.history-page, .collection-page) .record-card:hover`（0,3,0）会压过单独的
+ `:is(.history-page, .collection-page) .record-card--selected`（0,2,0），border-color 被
+ 强改为 border-strong —— 表现为「移动端批量管理第一次选中，
+ card 边框未变成选中态颜色」 */
 :is(.history-page, .collection-page) .record-card--selected,
 :is(.history-page, .collection-page) .record-card--selected:hover {
   border: 2px solid var(--color-primary);
@@ -68,8 +68,8 @@
   height: 100%;
 }
 
-/* 2026-11-08 封面临界态画框（与 VideoCard 同批，用户拍板「方案一加深 + 方案二画框」）：
-   加载/重试期间 1px 内描边锚定边界；门控与失败态衔接逻辑见 VideoCard.css 同名注释。 */
+/* 封面临界态画框（与 VideoCard 同批，「封面加深 + 临界态画框」）：
+ 加载/重试期间 1px 内描边锚定边界；门控与失败态衔接逻辑见 VideoCard.css 同名注释。 */
 :is(.history-page, .collection-page) .record-card__media:has(.lazy-image-placeholder) {
   box-shadow: inset 0 0 0 1px var(--color-placeholder-border);
 }
@@ -80,7 +80,7 @@ html:not([data-theme="dark"]) :is(.history-page, .collection-page) .record-card_
 }
 
 /* 视频封面：图片铺满（16:9 源图按 cover 裁切，保持容器严格 16:9）
-   2026-11-04：hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
+hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
 :is(.history-page, .collection-page) .record-card__media--video .lazy-image,
 :is(.history-page, .collection-page) .record-card__media--video .record-card__media-img {
   object-fit: cover;
@@ -92,9 +92,9 @@ html:not([data-theme="dark"]) :is(.history-page, .collection-page) .record-card_
   transform: scale(1.06);
 }
 
-/* IPTV 台标：cover 占满容器（与 IPTVChannelCard 同一口径，2026-09-23 用户定稿）。
-   原 contain + padding 四周留白松散，现改 cover 铺满、宁裁边不缩居中。
-   lazy-image-fallback 是 Tv 图标兜底节点，保持 cover 不受影响（内含矢量图标，无裁切语义）。 */
+/* IPTV 台标：cover 占满容器（与 IPTVChannelCard 同一口径）。
+ 原 contain + padding 四周留白松散，现改 cover 铺满、宁裁边不缩居中。
+ lazy-image-fallback 是 Tv 图标兜底节点，保持 cover 不受影响（内含矢量图标，无裁切语义）。 */
 :is(.history-page, .collection-page) .record-card__media--logo {
   background: var(--color-surface-hover);
 }
@@ -120,9 +120,9 @@ html:not([data-theme="dark"]) :is(.history-page, .collection-page) .record-card_
 }
 
 /* LIVE 角标：absolute 于封面左上角（与 IPTV 频道卡一致；批量勾选框亦在左上 →
-   批量模式下由 tsx 隐藏本角标，避免重叠）。曾漏 position 声明 → static 排入
-   .lazy-image-container 之后被 media overflow:hidden 裁掉，历史页 iptv 角标
-   一直不可见（2026-09-03 修复）；颜色由全局 .record-card__live-badge 控制 */
+ 批量模式下由 tsx 隐藏本角标，避免重叠）。曾漏 position 声明 → static 排入
+ .lazy-image-container 之后被 media overflow:hidden 裁掉，历史页 iptv 角标
+ 一直不可见；颜色由全局 .record-card__live-badge 控制 */
 :is(.history-page, .collection-page) .record-card__media .record-card__live-badge {
   position: absolute;
   top: var(--space-2xs);
@@ -155,7 +155,7 @@ html:not([data-theme="dark"]) :is(.history-page, .collection-page) .record-card_
   right: var(--space-2xs);
   bottom: calc(var(--space-xs) + var(--space-3xs));
   color: rgba(255, 255, 255, 0.9);
-  font-size: var(--text-xs); /* 2026-09-03 调大：--text-2xs → --text-xs（9→12 / 桌面 11→13） */
+  font-size: var(--text-xs); /* 调大：--text-2xs → --text-xs（9→12 / 桌面 11→13） */
   font-weight: 600;
   line-height: 1;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
@@ -168,15 +168,15 @@ html:not([data-theme="dark"]) :is(.history-page, .collection-page) .record-card_
   flex-direction: column;
   gap: var(--space-xs);
   min-width: 0;
-  /* 2026-09-08 封面通铺配套：原卡片 padding 移到内文区。
-     上 padding 不补（2026-09-08 用户指令）：卡片 gap(--space-xs-plus)
-     已提供封面↔标题间距，再加 body padding-top 会双重间距。 */
+  /* 封面通铺配套：原卡片 padding 移到内文区。
+ 上 padding 不补：卡片 gap(--space-xs-plus)
+ 已提供封面↔标题间距，再加 body padding-top 会双重间距。 */
   padding: 0 var(--space-sm) var(--space-sm);
 }
 
 /* 第 1 行：标题独占整行（观看时间已并入第 2 行行尾），溢出时无缝跑马灯
-   字号/字重/行高与全站通用 .video-card-title 对齐（--text-sm / 500 / 1.5），
-   消除「历史页标题比其他页大一号」的观感差（2026-09-28 统一）。 */
+ 字号/字重/行高与全站通用 .video-card-title 对齐（--text-sm / 500 / 1.5），
+ 消除「历史页标题比其他页大一号」的观感差。 */
 :is(.history-page, .collection-page) .record-card__title {
   width: 100%;
   min-width: 0;
@@ -197,7 +197,7 @@ html:not([data-theme="dark"]) :is(.history-page, .collection-page) .record-card_
   text-overflow: clip;
 }
 /* 无缝跑马灯轨道：标题复制两份等宽、各带尾间距 → 平移 -50% 恰好回起点循环无跳变，
-   两份副本之间保留 var(--space-lg) 间距（不与下一份贴死） */
+ 两份副本之间保留 var(--space-lg) 间距（不与下一份贴死） */
 :is(.history-page, .collection-page) .record-card__title-track {
   display: inline-flex;
 }
@@ -222,8 +222,8 @@ html:not([data-theme="dark"]) :is(.history-page, .collection-page) .record-card_
 }
 
 /* 第 2 行：类型徽标 + 来源·集数 靠左成链；观看时间贴行尾右对齐（两端对齐）。
-   时间 flex:0 0 auto 永不压缩 + margin-left:auto 推至行尾；
-   链中段过长仅 episode 允许收缩省略（source 徽标固定不缩）。 */
+ 时间 flex:0 0 auto 永不压缩 + margin-left:auto 推至行尾；
+ 链中段过长仅 episode 允许收缩省略（source 徽标固定不缩）。 */
 :is(.history-page, .collection-page) .record-card__meta-row {
   display: flex;
   gap: var(--space-sm);
@@ -273,7 +273,7 @@ html:not([data-theme="dark"]) :is(.history-page, .collection-page) .record-card_
   text-overflow: ellipsis;
 }
 /* 窄屏信息列（meta-col）：默认隐藏，仅 <480px 横版生效（见文末 media 块）——
-   与 meta-row 为二选一结构，避免同屏重复渲染两套 meta 文本 */
+ 与 meta-row 为二选一结构，避免同屏重复渲染两套 meta 文本 */
 :is(.history-page, .collection-page) .record-card__meta-col {
   display: none;
 }
@@ -297,15 +297,15 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   窄视口（<480px，history-grid 单列）自动切换「左封面 + 右信息」横版
-   —— 2026-09-03 用户拍板：
-     封面固定 124px 宽、比例沿用旧横版 132:92（RecordCard 历史沿用值）；
-     右侧信息逐行排布：标题 / 类型 / 来源 / 集数 各占一行，
-     集数与观看时间同行两端对齐（集数靠左可缩省略、时间贴行尾右对齐）。
-   实现：TSX 内 meta-row（宽屏单行）与 meta-col（窄屏信息列）二选一显隐——
-     meta-col 默认 display:none，本断点隐藏 meta-row、显示 meta-col；
-     各徽标盒子内容宽（不再撑满行），IPTV 无集数时 bottom 行仅时间、margin-left:auto 贴右。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 窄视口（<480px，history-grid 单列）自动切换「左封面 + 右信息」横版
+ —— ：
+ 封面固定 124px 宽、比例沿用旧横版 132:92（RecordCard 历史沿用值）；
+ 右侧信息逐行排布：标题 / 类型 / 来源 / 集数 各占一行，
+ 集数与观看时间同行两端对齐（集数靠左可缩省略、时间贴行尾右对齐）。
+ 实现：TSX 内 meta-row（宽屏单行）与 meta-col（窄屏信息列）二选一显隐——
+ meta-col 默认 display:none，本断点隐藏 meta-row、显示 meta-col；
+ 各徽标盒子内容宽（不再撑满行），IPTV 无集数时 bottom 行仅时间、margin-left:auto 贴右。
+ ═══════════════════════════════════════════════════════════════════════ */
 @media (width < 480px) {
   :is(.history-page, .collection-page) .record-card {
     flex-direction: row; /* 竖版 column → 横版 row：封面左、信息右 */
@@ -363,9 +363,9 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
   }
 }
 
-/* ── 封面加载门控（2026-09-23）────────────────────────────────────────
-   扫光中隐藏 LIVE 角标与底部进度；成功/失败兜底/空源显示。
-   批量勾选框 .record-card__check 明确不门控（用户拍板）。 */
+/* ── 封面加载门控────────────────────────────────────────
+ 扫光中隐藏 LIVE 角标与底部进度；成功/失败兜底/空源显示。
+ 批量勾选框 .record-card__check 明确不门控。 */
 :is(.history-page, .collection-page) .record-card__media .record-card__live-badge,
 :is(.history-page, .collection-page) .record-card__media .record-card__progress-overlay {
   transition: opacity var(--dur-base) var(--ease-out-expo);

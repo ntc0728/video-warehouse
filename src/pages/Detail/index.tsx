@@ -1,5 +1,5 @@
 /**
- * 视频详情页面 — 方案 A · 海报对开（2026-10-10 拍板，Demo 见 changelogs/demos/detail-layout-2026-10-10）
+ * 视频详情页面 · 海报对开
  *
  * Hero：左列竖海报（返回钮叠左上）| 右列文本区（横板 backdrop 底纹 + kicker/标题/meta/简介折叠/CTA 钉底）
  * 资料区：tab 行居中置顶（概览 = 基础信息表 + 演员 + 剧照；播放列表 / 季信息同原逻辑）+ VideoCard 推荐行
@@ -43,13 +43,13 @@ const CMS_DEBOUNCE_MS = 2000;
 
 
 /**
- * 模块级 Detail 缓存（方案 B：无 Keep-Alive）
+ * 模块级 Detail 缓存（无 Keep-Alive）
  *
  * detail → /play → detail 返回时组件重新挂载，TMDB detail + 剧照会重新请求。
  * 用模块级 Map 在「会话内」缓存成功结果（TTL 10min），返回时直接回显、零网络请求；
  * 过期或未命中则走正常加载。
  *
- * CMS 播放源结果同样缓存（2026-11-08）：detail → /play → detail 返回后再切到
+ * CMS 播放源结果同样缓存：detail → /play → detail 返回后再切到
  * 播放列表 tab 时，多源并发搜索 + 逐季解析是最贵的一跳，整段重搜毫无必要。
  * 其「依赖当前启用视频源」的语义通过把启用源索引编入缓存 key 保留——源配置
  * 变化后 key 不同自动失效；下拉刷新（nonce>0）绕过缓存强制重拉。
@@ -167,7 +167,7 @@ export default function DetailPage() {
 
   const pageRef = useRef<HTMLDivElement>(null);
 
-  // ── 滚动位置保存/恢复（useScrollRestore 接管；方案 B 下挂载即恢复） ────
+  // ── 滚动位置保存/恢复（useScrollRestore 接管； 下挂载即恢复） ────
   useScrollRestore(`detail:${id}`);
 
   // 前进（PUSH/REPLACE）进入新的详情页时归顶；返回（POP）由 useScrollRestore 恢复，不覆盖。
@@ -196,7 +196,7 @@ export default function DetailPage() {
   const [stills, setStills] = useState<string[]>([]);
   const [stillsLoading, setStillsLoading] = useState(false);
 
-  // 剧照区视口懒加载（2026-09-16）：剧照在页面下部（首屏之外），只有接近视口时才请求
+  // 剧照区视口懒加载：剧照在页面下部（首屏之外），只有接近视口时才请求
   // /images 接口。哨兵节点常驻（与剧照区是否已渲染无关），命中后 once 断开、不再回退。
   const { ref: stillsSentinelRef, inView: stillsInView } = useInViewport<HTMLDivElement>({
     rootMargin: '300px',
@@ -211,10 +211,10 @@ export default function DetailPage() {
   const [castExpanded, setCastExpanded] = useState(false);
   const [castOverflow, setCastOverflow] = useState(false);
   const castRowRef = useRef<HTMLDivElement>(null);
-  // hero logo 加载失败：不显示 <img>，回退到标题 <h1>（2026-10-10 用户要求）。
+  // hero logo 加载失败：不显示 <img>，回退到标题 <h1>。
   // 换片（id 变）时重置，避免上一片的失败态残留导致新 logo 不显示。
   const [logoFailed, setLogoFailed] = useState(false);
-  // 发行公司 logo 加载失败集合：失败的公公司只隐图、保留公司名（2026-10-10 用户要求）。
+  // 发行公司 logo 加载失败集合：失败的公公司只隐图、保留公司名。
   const [failedCompanyLogos, setFailedCompanyLogos] = useState<Set<number>>(() => new Set());
   useEffect(() => { setLogoFailed(false); setFailedCompanyLogos(new Set()); }, [id]);
 
@@ -287,7 +287,7 @@ export default function DetailPage() {
     [cmsResults],
   );
 
-  // running 胶囊轮播文本（2026-10-10 用户要求：移入胶囊、末尾不再重复「资源」）。
+  // running 胶囊轮播文本（移入胶囊、末尾不再重复「资源」）。
   // 源名如「豆瓣资源」已含「资源」，旧模板又追一个「资源」→ 「豆瓣资源资源」。
   const runningText = querySourceNames.length > 0
     ? `正在查询${querySourceNames[queryMsgIndex % querySourceNames.length]}…`
@@ -365,7 +365,7 @@ export default function DetailPage() {
   // ── TMDB 加载 ────────────────────────────────
   // 用 useLayoutEffect：id 变化时在「绘制前」同步清空旧数据，避免 hero 先以
   // 「上一个 detail 的 tmdbDetail」绘制一帧（封面/名称闪旧内容）。
-  // 方案 B（无 Keep-Alive）：挂载时先查模块级缓存，命中（detail → /play → detail
+  //（无 Keep-Alive）：挂载时先查模块级缓存，命中（detail → /play → detail
   // 返回）直接回显，不重新请求；未命中走正常加载并写入缓存。
   useLayoutEffect(() => {
     if (!id) return;
@@ -457,7 +457,7 @@ export default function DetailPage() {
     const videoYear = year;
 
     try {
-      // 增量上屏（2026-10-10 用户要求）：每源一返回即 setCmsResults 追加，
+      // 增量上屏：每源一返回即 setCmsResults 追加，
       // 首条可用结果到达即停掉网格大转圈、显示数据，其余源陆续补上。
       const collected: DetailSourceResult[] = [];
       const pushOne = (r: DetailSourceResult) => {
@@ -529,7 +529,7 @@ export default function DetailPage() {
         );
       }
       if (ctrl.signal.aborted) return;
-      // 全失败不写缓存（2026-11-08 用户拍板）：全源超时/断网属偶发瞬时故障，
+      // 全失败不写缓存：全源超时/断网属偶发瞬时故障，
       // 写进去会让 10min TTL 内每次切 tab 都回显空结果，比重搜更差。
       // 部分失败仍照写（单源偶发失败不否定其余源的结果，下拉刷新可强刷）。
       if (collected.some((r) => r.video)) {
@@ -566,7 +566,7 @@ export default function DetailPage() {
   // 而非从 tmdbDetail.images 提取。
   useEffect(() => {
     if (!id || !id.startsWith('tmdb-')) return;
-    // 方案 B 缓存回显：detail → /play → detail 返回时直接恢复剧照，不重新请求；
+    // 缓存回显：detail → /play → detail 返回时直接恢复剧照，不重新请求；
     // 下拉刷新（nonce>0）时绕过缓存，强制重新拉取剧照。
     const cached = pullRefreshNonce === 0 ? readDetailCache(id) : null;
     if (cached?.stills?.length) {
@@ -626,9 +626,9 @@ export default function DetailPage() {
   }, [id, collected, addCollection, removeCollection, tmdbDetail]);
 
   // ── 播放 ──────────────────────────────────────
-  // 方案 B（无 Keep-Alive）：detail 进入 /play 时组件卸载，返回时重新挂载，
+  //（无 Keep-Alive）：detail 进入 /play 时组件卸载，返回时重新挂载，
   // 由模块级 detail 缓存（readDetailCache）回显 TMDB detail + 剧照，避免重新请求。
-  // 2026-09-24 改 <Link>：支持右键/中键新开页签；state 供同标签导航，
+  // 改 <Link>：支持右键/中键新开页签；state 供同标签导航，
   // fresh=1 query 供新开页签时 Player 兜底（state 在新页签会丢）。
   const playFrom = id ? `/detail/${id}` : '';
 
@@ -641,7 +641,7 @@ export default function DetailPage() {
   }
 
   // ── 动态页签标题 ──────────────────────────────
-  // 方案 B（无 Keep-Alive）：detail 只在 /detail 路由挂载，挂载即写标题；
+  //（无 Keep-Alive）：detail 只在 /detail 路由挂载，挂载即写标题；
   // 离开后组件卸载，标题由新页接管，无需「是否激活」守卫。
   useDocumentTitle(title || null);
 
@@ -677,7 +677,7 @@ export default function DetailPage() {
   const companies = d?.production_companies?.slice(0, 3) || [];
   const cast: TMDBCastMember[] = d?.credits?.cast || [];
 
-  // 演员行折叠高度测量（2026-09-10 修复「第二行被裁一半」）：
+  // 演员行折叠高度测量（修复「第二行被裁一半」）：
   // 折叠高度不再硬编码 16rem —— 头像尺寸 --layout-cast-avatar 是流体值
   // （桌面 80→88px × --ui-scale），条目行高随视口变化，固定 16rem 在大屏档
   // 会把第二行裁掉一部分。这里用「首行条目实际高度 × 2 + grid 行间距」精确写入
@@ -774,10 +774,10 @@ export default function DetailPage() {
     );
   }
 
-  /* ── C1 排列（≥1024，2026-09-10 用户拍板）─────────────────────────
-     方案 A · 资料区（2026-10-10 拍板，替换旧 C1 右栏方案）：tab 行居中于资料区头部；
-     概览面板 = 基础信息表 + 演员 + 剧照；播放列表 / 季信息沿用原逻辑。
-     简介改在 hero 文本区 3 行折叠展开，不再单独成块。 */
+  /* ── 排列（≥1024）─────────────────────────
+ · 资料区（替代旧右栏布局）：tab 行居中于资料区头部；
+ 概览面板 = 基础信息表 + 演员 + 剧照；播放列表 / 季信息沿用原逻辑。
+ 简介改在 hero 文本区 3 行折叠展开，不再单独成块。 */
   const factCells: { key: string; label: string; value: ReactNode; hi?: boolean }[] = [];
   if (voteAverage > 0) factCells.push({ key: 'rating', label: 'TMDB 评分', hi: true, value: <>{voteAverage.toFixed(1)} / 10{voteCount > 0 && <span className="detail-vote-count">（{formatVoteCount(voteCount)} 人评价）</span>}</> });
   if (releaseDateStr) factCells.push({ key: 'release', label: '发行时间', value: releaseDateStr });
@@ -785,7 +785,7 @@ export default function DetailPage() {
   if ((runtime ?? 0) > 0) factCells.push({ key: 'runtime', label: '时长', value: `${runtime} 分钟` });
   if (originalLanguage) factCells.push({ key: 'lang', label: '语言', value: `${originalLanguage.toUpperCase()}${spokenLanguages.length > 0 ? ` / ${spokenLanguages.slice(0, 3).join(' / ')}` : ''}` });
   if (director) factCells.push({ key: 'director', label: '导演', value: director });
-  // 主创（createdBy）移出普通格，改与下方「国家 / 发行」一致独占整行（2026-10-10 用户要求）。
+  // 主创（createdBy）移出普通格，改与下方「国家 / 发行」一致独占整行。
   if (d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).budget > 0) factCells.push({ key: 'budget', label: '预算', value: formatCurrency((d as TMDBMovieDetail).budget) });
   if (d && tmdbMediaType === 'movie' && (d as TMDBMovieDetail).revenue > 0) factCells.push({ key: 'revenue', label: '票房', value: formatCurrency((d as TMDBMovieDetail).revenue) });
   if (isTV) factCells.push({ key: 'seasonEp', label: '季 / 集', value: `${totalSeasons} 季 / ${totalEpisodes} 集` });
@@ -795,8 +795,8 @@ export default function DetailPage() {
   return (
     <div ref={pageRef} className="page-padding detail-page content-shell" key={id}>
       {/* ═════════════════════════════════════════
-          HERO（方案 A · 海报对开，2026-10-10 拍板）：左列竖海报（返回钮叠左上）| 右列文本区（横板 backdrop 作底纹）
-          ═════════════════════════════════════════ */}
+ HERO（海报对开）：左列竖海报（返回钮叠左上）| 右列文本区（横板 backdrop 作底纹）
+ ═════════════════════════════════════════ */}
       <section className={`detail-hero${bgLoaded ? '' : ' detail-hero--skeleton'}`}>
         {/* 左列：竖海报（移动端整列隐藏，由 backdrop 底纹承担视觉） */}
         <div className="detail-hero-poster">
@@ -864,8 +864,8 @@ export default function DetailPage() {
                 <span className="detail-hero-meta-item">🔥 {popularity.toFixed(0)}</span>
               )}
             </div>
-            {/* 简介：按可用空间折叠（fill，2026-11-08）——固定高度 hero 下方不留死区，
-                文本超过可用空间才出「展开简介」；<768 / app 仍 3 行折叠（CSS 作用域） */}
+            {/* 简介：按可用空间折叠（fill）——固定高度 hero 下方不留死区，
+ 文本超过可用空间才出「展开简介」；<768 / app 仍 3 行折叠（CSS 作用域） */}
             {overview && (
               <p className="detail-hero-desc">
                 <CollapsibleValue lines={3} expandLabel="展开简介" fill>{overview}</CollapsibleValue>
@@ -916,8 +916,8 @@ export default function DetailPage() {
       </section>
 
       {/* ═════════════════════════════════════════
-          资料区（方案 A）：tab 行居中置顶；概览面板 = 基础信息表 + 演员 + 剧照
-          ═════════════════════════════════════════ */}
+ 资料区：tab 行居中置顶；概览面板 = 基础信息表 + 演员 + 剧照
+ ═════════════════════════════════════════ */}
       <section className="detail-facts">
       <div className="detail-tabs-wrap">
         <div className="detail-tabs">
@@ -946,8 +946,8 @@ export default function DetailPage() {
       </div>
 
       {/* ══════════════════════════════════════════════
-          Tab 内容区
-          ══════════════════════════════════════════════ */}
+ Tab 内容区
+ ══════════════════════════════════════════════ */}
       <div className="detail-content">
         {/* 概览 */}
         {activeTab === 'info' && (
@@ -969,7 +969,7 @@ export default function DetailPage() {
                 </div>
               ))}
               {/* 国家 / 发行：grid 内独占整行（grid-column 1/-1，行距与格同源由 gap 提供），
-                  label 左·值右同行基线对齐，放不下自然换行（不折叠） */}
+ label 左·值右同行基线对齐，放不下自然换行（不折叠） */}
             {isTV && createdBy.length > 0 && (
               <div className="detail-fact detail-fact--full">
                 <span>主创</span>
@@ -1016,7 +1016,7 @@ export default function DetailPage() {
                       className="detail-cast-item"
                     >
                       {/* 演员头像：LazyImage 统一「加载中骨架 / 失败兜底 / 无图」三态，
-                          失败与无 profile_path 都落同一 UsersIcon 占位（与 video card 封面效果一致）。 */}
+ 失败与无 profile_path 都落同一 UsersIcon 占位（与 video card 封面效果一致）。 */}
                       <LazyImage
                         src={c.profile_path ? buildImageUrl(c.profile_path, 'w185') || '' : ''}
                         alt={c.name}
@@ -1038,9 +1038,9 @@ export default function DetailPage() {
 
             {/* 简介已并入 hero 文本区（3 行折叠展开），不再单独成块 */}
 
-            {/* 剧照懒加载哨兵（2026-09-16）：常驻零高节点，不参与布局。
-                放在剧照区之前，元素接近视口（rootMargin 300px）时才触发 /images 请求；
-                剧照区本身是条件渲染（stills.length>0 || stillsLoading），不能承担哨兵职责。 */}
+            {/* 剧照懒加载哨兵：常驻零高节点，不参与布局。
+ 放在剧照区之前，元素接近视口（rootMargin 300px）时才触发 /images 请求；
+ 剧照区本身是条件渲染（stills.length>0 || stillsLoading），不能承担哨兵职责。 */}
             <div ref={stillsSentinelRef} aria-hidden="true" />
 
             {(stills.length > 0 || stillsLoading) && (
@@ -1077,14 +1077,14 @@ export default function DetailPage() {
                             }
                           }}
                         >
-                          {/* 2026-09-14：裸 <img> → LazyImage（用户拍板「外面始终两行，别追加」）。
-                              网格仍是固定 2 行窗口（visibleCount 逻辑不变），
-                              只在「图片下载」这一层做滑动窗口：
-                              LazyImage 用 IntersectionObserver 判定，只有进入视口的剧照才
-                              真正挂载 <img> 并发请求；横向/纵向滚出视口的格子不发请求。
-                              附带收益：加载期有骨架占位、失败有品牌兜底（原先是白块/裂图）。
-                              原始 <img> 的 width/height=1280/720 由 .detail-stills-item 的
-                              aspect-ratio: 16/9 + 容器 100% 尺寸等价承接，无 CLS 回退。 */}
+                          {/* 裸 <img> → LazyImage（外面始终两行，别追加）。
+ 网格仍是固定 2 行窗口（visibleCount 逻辑不变），
+ 只在「图片下载」这一层做滑动窗口：
+ LazyImage 用 IntersectionObserver 判定，只有进入视口的剧照才
+ 真正挂载 <img> 并发请求；横向/纵向滚出视口的格子不发请求。
+ 附带收益：加载期有骨架占位、失败有品牌兜底（原先是白块/裂图）。
+ 原始 <img> 的 width/height=1280/720 由 .detail-stills-item 的
+ aspect-ratio: 16/9 + 容器 100% 尺寸等价承接，无 CLS 回退。 */}
                           <LazyImage
                             src={url}
                             alt={`剧照 ${i + 1}`}
@@ -1151,7 +1151,7 @@ export default function DetailPage() {
                   </div>
                   <div className="detail-sources-toolbar">
                     {/* 搜索未完（CMS 查询中 / 源检测 running）不显示「重新匹配」——
-                        此时重复触发无意义，完成后才出现（2026-11-08 用户要求） */}
+ 此时重复触发无意义，完成后才出现 */}
                     {srcDetect.status !== 'running' && !cmsLoading && (
                       <button
                         className="retry-btn retry-btn--tab"
@@ -1180,7 +1180,7 @@ export default function DetailPage() {
                     const v = result.video!;
                     const playable = isPlayable(v);
                     const lineCount = v.sources.length;
-                    // ⚠️ 取值兜底（2026-09-10 修复「有数据却显示 0 条线路」）：
+                    // ⚠️ 取值兜底（修复「有数据却显示 0 条线路」）：
                     // 部分 CMS 源的 vod_play_url 是按「集」拆分的，parsePlaySources 会把它们
                     // 放进 episodes 而 sources 留空（videoService.resolvePlaySources:322）。
                     // 原实现只读 sources.length → 这类源在播放列表里明明有数据
@@ -1271,7 +1271,7 @@ export default function DetailPage() {
                           from: `/detail/${id}`,
                           sourceIndex: playModal.sourceIndex,
                           seasonNumber: ep.seasonNumber,
-                          // 2026-10-11：集号随 state 透传，Player URL 匹配落空时按（季,集号）兜底
+                          //集号随 state 透传，Player URL 匹配落空时按（季,集号）兜底
                           episodeNumber: ep.episode.number,
                           playUrl: ep.episode.sources[0]?.url,
                         },
@@ -1357,8 +1357,8 @@ export default function DetailPage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          你可能还喜欢（VideoCard 横向推荐行）
-          ══════════════════════════════════════════════ */}
+ 你可能还喜欢（VideoCard 横向推荐行）
+ ══════════════════════════════════════════════ */}
       {similarResults.length > 0 && (
         <section className="detail-recommend">
           <h2 className="detail-recommend-title">相关推荐</h2>
@@ -1445,11 +1445,11 @@ function formatProgressTime(seconds: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-// ── 长字段折叠（方案 A，2026-10-10）：clamp N 行，仅真溢出才出「展开/收起」按钮 ──
-// ⚠️ 两处实测坑（Demo 2026-10-10 验证）：① 不能用 scrollHeight 判溢出——Chromium 下
+// ── 长字段折叠：clamp N 行，仅真溢出才出「展开/收起」按钮 ──
+// ⚠️ 两处实测坑（验证）：① 不能用 scrollHeight 判溢出——Chromium 下
 // -webkit-line-clamp 的 scrollHeight 可能等于 clientHeight（漏检）；② 测量克隆节点必须挂在
 // 原父节点内——挂 document.body 会丢元素自身字号，自然高算大→假阳性。
-// fill 变体（2026-11-08，hero 简介）：折叠行数由「弹性区可用高度 ÷ 行高」动态取整决定
+// fill 变体（hero 简介）：折叠行数由「弹性区可用高度 ÷ 行高」动态取整决定
 // （RO 量 .detail-hero-desc 高 → 整数行写回 --collapse-lines）——clamp 天然整行裁切，
 // 绝不出现 flex 收缩的「裁半行」；文本超过可用行数才出「展开」按钮。
 // 展开态在 hero 作用域加 overflow-y:auto（Detail.css），超长简介原地滚动、收起恒可见。
@@ -1559,8 +1559,8 @@ function SourceThumb({
 }
 
 // ── 内联图标组件（避免过多 import）──────────────
-// （方案 A 资料表无图标后，ClockIcon/GlobeIcon/FilmIcon/DollarIcon 已删；
-//  演员占位仍用 UsersIcon）
+// （资料表无图标后，ClockIcon/GlobeIcon/FilmIcon/DollarIcon 已删；
+// 演员占位仍用 UsersIcon）
 
 function UsersIcon({ size = 'sm' }: { size?: IconSize }) {
   return <svg style={{ width: SIZE_VAR[size], height: SIZE_VAR[size] }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;

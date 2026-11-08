@@ -1,50 +1,50 @@
 /* 布局 token（--card-cols / --iptv-cols / --iptv-page-cols / --history-cols /
-   --rail-w；--home-rail-w 已于 2026-09-29 随首页左栏删除移除）单真源已收敛至
-   layout-tokens.css（2026-09-21）。
-   此处 @import 使 React bundle CSS 自带一份；启动骨架则由 vite 插件把同一文件注入
-   index.html（见 vite.config.ts）。改列数/栏宽只改 layout-tokens.css。 */
+ --rail-w；--home-rail-w 已随首页左栏删除移除）单真源已收敛至
+ layout-tokens.css。
+ 此处 @import 使 React bundle CSS 自带一份；启动骨架则由 vite 插件把同一文件注入
+ index.html（见 vite.config.ts）。改列数/栏宽只改 layout-tokens.css。 */
 @import './layout-tokens.css';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Design Tokens — 流体缩放体系
+ Design Tokens — 流体缩放体系
 
-   ★两套缩放 regime（互不混淆，勿混用）：
-   ① 基准流体 token（--text-*、--space-*、--comp-*、--icon-*、--radius-*、--grid-gap）
-      — 375px(移动) → 768px(桌面) 流体，768px+ 固定取 MAX（坐近看屏，内容更密，
-        不随 4K 继续放大；2× 放大是 TV 模式专属，见 [data-device="tv"] / @media≥1920）。
-      — 实测缩放比（MAX/MIN，由各 token 行内注释佐证；v2 E2 后间距压缩）：
-          · Typography : ≈ 1.04×~1.12×   字号温和、基本稳定，保证各档可读
-          · Spacing    : ≈ 1.5×~1.63×   E2 紧凑端点（v2 前 2.0x~3.0x），布局密度对齐 B 站
-          · Component  : ≈ 1.3×~2.33×   控件尺寸中等增长
-          · Icon       : 派生自 --text-*，随文字曲线；非 2.2× 独立缩放
-          · Radius     : ≈ 1.67×~1.8×
-      — 公式: clamp(MINpx, PREF + COEFF·100vw, MAXpx)
-            PREF  = MIN - COEFF·375
-            COEFF = (MAX - MIN) / 393        （393 = 768 - 375，非 3840 跨度）
-   ② 布局流体 token（--layout-*、--avatar-*、宽度与高度类）
-      — 跨更宽视口（典型 320→1920 或 320→3840）持续流体，不固定在 768。
-      — 见各 token 行内注释（如 OSD 30vw、hero 5vw、弹窗 4vw 等）。
+ ★两套缩放 regime（互不混淆，勿混用）：
+ ① 基准流体 token（--text-*、--space-*、--comp-*、--icon-*、--radius-*、--grid-gap）
+ — 375px(移动) → 768px(桌面) 流体，768px+ 固定取 MAX（坐近看屏，内容更密，
+ 不随 4K 继续放大；2× 放大是 TV 模式专属，见 [data-device="tv"] / @media≥1920）。
+ — 实测缩放比（MAX/MIN，由各 token 行内注释佐证；v2 后间距压缩）：
+ · Typography : ≈ 1.04×~1.12× 字号温和、基本稳定，保证各档可读
+ · Spacing : ≈ 1.5×~1.63× 紧凑端点（v2 前 2.0x~3.0x），布局密度对齐 B 站
+ · Component : ≈ 1.3×~2.33× 控件尺寸中等增长
+ · Icon : 派生自 --text-*，随文字曲线；非 2.2× 独立缩放
+ · Radius : ≈ 1.67×~1.8×
+ — 公式: clamp(MINpx, PREF + COEFF·100vw, MAXpx)
+ PREF = MIN - COEFF·375
+ COEFF = (MAX - MIN) / 393 （393 = 768 - 375，非 3840 跨度）
+ ② 布局流体 token（--layout-*、--avatar-*、宽度与高度类）
+ — 跨更宽视口（典型 320→1920 或 320→3840）持续流体，不固定在 768。
+ — 见各 token 行内注释（如 OSD 30vw、hero 5vw、弹窗 4vw 等）。
 
-   TV 模式（另见 [data-device="tv"] 与 @media≥1920 块）：统一 2× 缩放，
-   强制 clamp(A, (A/19.2)vw, 2A)，max 字面=2×min、斜率共享同一条 vw 曲线。
+ TV 模式（另见 [data-device="tv"] 与 @media≥1920 块）：统一 2× 缩放，
+ 强制 clamp(A, (A/19.2)vw, 2A)，max 字面=2×min、斜率共享同一条 vw 曲线。
 
-   Banner 高度采用双约束策略（防止超宽屏溢出）：
-   max-height: min(VH_CAP, vw流体值)
-     VH_CAP    : 占屏幕高度的上限百分比（HeroBanner 70vh / DetailHero 65vh）
-      vw流体值  : 基于视口宽度的流体 clamp
-   aspect-ratio: 16/9 作为最小保证（窄屏不至于太扁）
+ Banner 高度采用双约束策略（防止超宽屏溢出）：
+ max-height: min(VH_CAP, vw流体值)
+ VH_CAP : 占屏幕高度的上限百分比（HeroBanner 70vh / DetailHero 65vh）
+ vw流体值 : 基于视口宽度的流体 clamp
+ aspect-ratio: 16/9 作为最小保证（窄屏不至于太扁）
 
-   高度类值使用 vh 流体:
-   clamp(MINvh, PREFERRED + COEFF * 100vh, MAXvh)
-         其中 PREFERRED = MINvh - COEFF * minVh
-               COEFF     = (MAXvh - MINvh) / (maxVh - minVh)
-               minVh=600(手机), maxVh=2160(4K TV), range=1560
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 高度类值使用 vh 流体:
+ clamp(MINvh, PREFERRED + COEFF * 100vh, MAXvh)
+ 其中 PREFERRED = MINvh - COEFF * minVh
+ COEFF = (MAXvh - MINvh) / (maxVh - minVh)
+ minVh=600(手机), maxVh=2160(4K TV), range=1560
+ ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── UI 全局缩放（2026-09-04 三段式×大屏整合，阶段 A）── */
+  /* ── UI 全局缩放（三段式×大屏整合）── */
   --ui-scale: 1;
-  /* 卡片固定宽度（阶段 C 消费，≥1280 auto-fill 轨道）：290 设计基 × scale */
+  /* 卡片固定宽度（≥1280 auto-fill 轨道）：290 设计基 × scale */
   --card-size: calc(290px * var(--ui-scale));
   /* ── Colors ─────────────────────────────────────────────────────────── */
   /* 主色 — 按钮/链接/激活态/焦点环/进度条，暗色下反转为白 */
@@ -60,32 +60,32 @@
   --color-bili-light: #ffc4d6;  /* 腮红/浅粉 */
   --color-bili-deep: #e85a8a;   /* 深粉（投影/描边加重） */
 
-  /* ── Z-index 层级体系（2026-09-15 B7.3 全量成梯）───────────────────────
-     浮层必须分档，避免局部浮层与弹窗/遮罩冲突（同档时 DOM 顺序不确定、浮层可能反盖弹窗）。
+  /* ── Z-index 层级体系───────────────────────
+ 浮层必须分档，避免局部浮层与弹窗/遮罩冲突（同档时 DOM 顺序不确定、浮层可能反盖弹窗）。
 
-       token                 值      档位与用途
-       --z-base              1      常规内容层叠（相对定位的子元素）
-       --z-fixed             50     固定 / 吸顶 UI（移动底部 tab bar、吸顶导航、批量操作栏、下拉刷新、源检测胶囊）
-       --z-fixed-header      55     固定吸顶导航（Layout 的 fixed sticky-header，压住 tab bar 与内容）
-       --z-subpage           60     全屏二级页（SubPage / settings-subpage）：高于吸顶导航、低于局部浮层
-       --z-float             90     局部轻浮层（悬浮按钮、遮罩 scrim、播放器局部菜单/局部 toast）
-       --z-overlay           100    页级覆盖层（侧边栏 / 抽屉 / 全屏 loading / 进入过渡 / 灯箱控件 / 搜索下拉 / 全屏滚动条）
-       --z-popover           200    页面级浮层（Select / Popover / Tooltip）
-       --z-modal-overlay     1000   弹窗遮罩
-       --z-modal             1001   弹窗
-       --z-toast             1500   全局提示（含播放器居中 toast）
-       --z-player-fs         9998   播放器伪全屏容器（JS 加的 .up-fs-css-pseudo）
-       --z-fullscreen        9999   全屏页面（IPTV / 播放器实验室）
-       --z-splash            10000  转场幕布 / 启动骨架（必须压住一切）
+ token 值 档位与用途
+ --z-base 1 常规内容层叠（相对定位的子元素）
+ --z-fixed 50 固定 / 吸顶 UI（移动底部 tab bar、吸顶导航、批量操作栏、下拉刷新、源检测胶囊）
+ --z-fixed-header 55 固定吸顶导航（Layout 的 fixed sticky-header，压住 tab bar 与内容）
+ --z-subpage 60 全屏二级页（SubPage / settings-subpage）：高于吸顶导航、低于局部浮层
+ --z-float 90 局部轻浮层（悬浮按钮、遮罩 scrim、播放器局部菜单/局部 toast）
+ --z-overlay 100 页级覆盖层（侧边栏 / 抽屉 / 全屏 loading / 进入过渡 / 灯箱控件 / 搜索下拉 / 全屏滚动条）
+ --z-popover 200 页面级浮层（Select / Popover / Tooltip）
+ --z-modal-overlay 1000 弹窗遮罩
+ --z-modal 1001 弹窗
+ --z-toast 1500 全局提示（含播放器居中 toast）
+ --z-player-fs 9998 播放器伪全屏容器（JS 加的 .up-fs-css-pseudo）
+ --z-fullscreen 9999 全屏页面（IPTV / 播放器实验室）
+ --z-splash 10000 转场幕布 / 启动骨架（必须压住一切）
 
-     ★契约：① 新增浮层必须用 token，禁止裸数字；
-             ② 局部浮层落 --z-popover(200)：高于固定导航（不被侧边栏遮挡）、低于 Modal；
-             ③ **组件内部局部层叠可写字面量**：组件在自身 stacking context 内维持的
-                相对层梯（如播放器 chrome 的 20(控制栏) / 25(seek) / 60(角标/面板) /
-                70(全屏抽屉) / 95(更多菜单)，见 UniversalPlayer.css 内联注释）不属于
-                本体系——它们只在本组件内部比较大小，不参与页级层叠。
-                design-audit 的 raw-z-index 检查因此只拦 **≥100**（页级覆盖层起点）；
-                50–99 的裸值是「组件局部抬升」的过渡带，按需逐条评审，不强制 token 化。 */
+ ★契约：① 新增浮层必须用 token，禁止裸数字；
+ ② 局部浮层落 --z-popover(200)：高于固定导航（不被侧边栏遮挡）、低于 Modal；
+ ③ **组件内部局部层叠可写字面量**：组件在自身 stacking context 内维持的
+ 相对层梯（如播放器 chrome 的 20(控制栏) / 25(seek) / 60(角标/面板) /
+ 70(全屏抽屉) / 95(更多菜单)，见 UniversalPlayer.css 内联注释）不属于
+ 本体系——它们只在本组件内部比较大小，不参与页级层叠。
+ design-audit 的 raw-z-index 检查因此只拦 **≥100**（页级覆盖层起点）；
+ 50–99 的裸值是「组件局部抬升」的过渡带，按需逐条定义，不强制 token 化。 */
   --z-base: 1;
   --z-fixed: 50;
   --z-fixed-header: 55;
@@ -100,26 +100,26 @@
   --z-fullscreen: 9999;
   --z-splash: 10000;
   /* 页面/卡片/文字 — 三级灰阶体系 */
-  --color-background: #fff;                /* 页面底色（2026-10-11 方案一「纸白分层」：浅色升纯白，
-                                              灰专属模块/占位语义；暗色维持 #141414 不变，用户拍板） */
+  --color-background: #fff;                /* 页面底色（「纸白分层」：浅色升纯白，
+ 灰专属模块/占位语义；暗色维持 #141414 不变） */
   --color-surface: #fff;                   /* 卡片/弹窗/输入框背景 */
   --color-surface-hover: rgba(0, 0, 0, 0.05); /* 按钮/卡片 hover */
   --color-hover-bg: rgba(0, 0, 0, 0.05);   /* 通用悬浮背景（与 surface-hover 同值） */
   --color-surface-elevated: #fff;           /* 浮层背景（HelpTooltip/Popover） */
   --color-text: #000;                      /* 主文字 */
   --color-text-secondary: #666;            /* 次要文字（白底 5.74:1） */
-  /* 辅助/说明文字（2026-09-15 提档：#999 → #6b6b6b）
-     原 #999 仅 2.85:1（WCAG AA 正文需 ≥4.5:1），却全站消费 167 处、且多用于
-     承载信息（榜单简介 / 设置说明 / 时长）→ 呈现「灰蒙蒙」。新值白底 5.33:1、
-     页面底改 #fff 后同值 5.33:1，达标。契约：只有「禁用 / 占位 / 纯装饰」可低于 4.5:1。 */
+  /* 辅助/说明文字（提档：#999 → #6b6b6b）
+ 原 #999 仅 2.85:1（WCAG AA 正文需 ≥4.5:1），却全站消费 167 处、且多用于
+ 承载信息（榜单简介 / 设置说明 / 时长）→ 呈现「灰蒙蒙」。新值白底 5.33:1、
+ 页面底改 #fff 后同值 5.33:1，达标。契约：只有「禁用 / 占位 / 纯装饰」可低于 4.5:1。 */
   --color-text-tertiary: #6b6b6b;          /* 辅助文字（≥4.5:1） */
   --color-text-disabled: #bfbfbf;          /* 禁用态/占位符/纯装饰图标（唯一允许 <4.5:1 的文字档） */
   --color-text-inverse: #fff;              /* 反色文字（深色背景上的白字） */
-  /* ── 媒体上下文族（2026-09-15 新增）──────────────────────────────────
-     叠在图片 / 视频帧 / 固定深底上的颜色**必须与主题解耦**：浅色主题下
-     视频画面上的白字也得是白的，不能随主题翻转为深色。与 .badge-chip
-     「中性深玻璃底 + 白字」同一原理。本族**只在 :root 定义一次**，
-     不在暗色块里重复（重复即意味着它会翻转，那就不是媒体上下文了）。 */
+  /* ── 媒体上下文族──────────────────────────────────
+ 叠在图片 / 视频帧 / 固定深底上的颜色**必须与主题解耦**：浅色主题下
+ 视频画面上的白字也得是白的，不能随主题翻转为深色。与 .badge-chip
+ 「中性深玻璃底 + 白字」同一原理。本族**只在 :root 定义一次**，
+ 不在暗色块里重复（重复即意味着它会翻转，那就不是媒体上下文了）。 */
   --color-on-image: #fff;                  /* 媒体上的浅色前景（主） */
   --color-on-image-dark: #1a1a1a;          /* 媒体上的深色前景（半透明白底控件） */
   --color-on-image-rating: #ffc107;        /* 媒体上的评分星色（Hero 评分） */
@@ -131,21 +131,21 @@
   --color-border-light: #e8e8e8;           /* 浅边框（卡片/分组） */
   --color-border-strong: #bfbfbf;          /* 深边框（卡片 hover 加深） */
   /* 骨架屏 / 占位 — 两色交替扫光
-     2026-10-11 方案一「纸白分层」（用户拍板，仅浅色；暗色维持 2026-09-28 档不变）：
-     页面底升 #fff 后，灰只属于模块底与占位/骨架语义，白页上轻/中灰一眼分层；
-     旧值 #e9e9e9 / #ececec↔#dcdcdc 与旧页底 #f5f5f5 只差 1.08~1.26:1 是「灰糊」根因。
-     新值系 demo-bg-system-1（减淡版）；改本组四行即可全站生效（消费方见
-     --color-skeleton 注释「唯一色源」）。
-     2026-11-08 二次加深（用户拍板「方案一加深 + 方案二画框」）：页底 #fff 后
-     旧档 #f3f4f7 对页底仅 ≈1.06:1，卡片封面加载/扫光临界态近乎隐形（尤其
-     「继续观看」横版行）；整体再下压一档提升分层，描边同步加深供加载期画框用。 */
+「纸白分层」（仅浅色；暗色维持原档不变）：
+ 页面底升 #fff 后，灰只属于模块底与占位/骨架语义，白页上轻/中灰一眼分层；
+ 旧值 #e9e9e9 / #ececec↔#dcdcdc 与旧页底 #f5f5f5 只差 1.08~1.26:1 是「灰糊」根因。
+ 新值系减淡版；改本组四行即可全站生效（消费方见
+ --color-skeleton 注释「唯一色源」）。
+ 整体加深（封面加深 + 临界态画框）：页底 #fff 后
+ 旧档 #f3f4f7 对页底仅 ≈1.06:1，卡片封面加载/扫光临界态近乎隐形（尤其
+ 「继续观看」横版行）；整体再下压一档提升分层，描边同步加深供加载期画框用。 */
   --color-placeholder: #e7ebf1;            /* 等待/失败占位底 */
   --color-placeholder-shimmer-a: #eceff5;  /* 扫光起始色 */
   --color-placeholder-shimmer-b: #dde3ec;  /* 扫光终止色（对页面底 ≈1.5:1，微冷相分层） */
   --color-placeholder-border: #cfd6e0;     /* 加载/失败态内描边（叠占位底给出明确边界） */
   /* 标签 / 收藏 / 分页 / 输入框 / Tab
-     2026-10-11 同批：三档旧值 #f5f5f5 与旧页底完全同值（去卡化后隐形），
-     改取模块灰档 #f5f6f8，在白页上清晰成块。 */
+ 同批：三档旧值 #f5f5f5 与旧页底完全同值（去卡化后隐形），
+ 改取模块灰档 #f5f6f8，在白页上清晰成块。 */
   --color-tag-bg: #f5f6f8;                 /* 筛选 tag 背景 */
   --color-favorite-bg: #f5f6f8;            /* 收藏按钮底色 */
   --color-favorite-active-bg: #fff2e8;     /* 已收藏状态背景 */
@@ -157,38 +157,38 @@
   --color-input-border: #d9d9d9;           /* 输入框边框 */
   --color-tab-active-bg: #000;             /* Tab 激活背景 */
   --color-tab-active-text: #fff;           /* Tab 激活文字 */
-  --color-tab-inactive-text: #6b6b6b;      /* Tab 未激活文字（2026-09-15：#a0a0a0→#6b6b6b，与 tertiary 同档） */
+  --color-tab-inactive-text: #6b6b6b;      /* Tab 未激活文字（#a0a0a0→#6b6b6b，与 tertiary 同档） */
   /* 语义色 — 状态反馈
-     ★双档契约（2026-09-15）：下面 4 个 fill 档仅供**填充/描边**（色块、圆点底、进度），
-       在浅底上对比不足（success 2.27 / warning 2.38 / error 3.27 / info 4.10），
-       **不得**直接用于文字或承载信息的图标；承载信息一律用下方 *-text 档。 */
+ ★双档契约：下面 4 个 fill 档仅供**填充/描边**（色块、圆点底、进度），
+ 在浅底上对比不足（success 2.27 / warning 2.38 / error 3.27 / info 4.10），
+ **不得**直接用于文字或承载信息的图标；承载信息一律用下方 *-text 档。 */
   --color-success: #52c41a;                /* 成功/可用（填充档） */
   --color-error: #ff4d4f;                  /* 错误/不可用（填充档） */
-  --color-danger: #cf1322;                 /* 危险红（2026-09-15：#ef4444→#cf1322，白字 5.57:1） */
+  --color-danger: #cf1322;                 /* 危险红（#ef4444→#cf1322，白字 5.57:1） */
   --color-warning: #fa8c16;                /* 警告（填充档） */
   --color-rating: #f5c518;                 /* 评分星色（IMDb 黄） */
   --color-info: #1677ff;                   /* 链接/信息提示蓝色（填充档） */
   --color-info-hover: #4096ff;             /* 链接 hover 态 */
-  /* 语义色「文字/图标档」（2026-09-15 新增）：一个值同时满足
-     「浅底上的文字/图标」与「白字角标的底色」两种角色。 */
+  /* 语义色「文字/图标档」：一个值同时满足
+ 「浅底上的文字/图标」与「白字角标的底色」两种角色。 */
   --color-success-text: #237804;           /* 白底 5.59:1 ／ 旧 #f5f5f5 底 5.12:1 ／ 白字 on it 5.59:1 */
   --color-warning-text: #a05c00;           /* 5.22 ／ 4.78 ／ 5.22 */
   --color-error-text:   #cf1322;           /* 5.57 ／ 5.11 ／ 5.57（原 error #ff4d4f 仅 3.27） */
   --color-info-text:    #0958d9;           /* 6.16 ／ 5.65（原 info #1677ff 仅 4.10） */
-  /* 首页右侧浮层动作按钮（刷新，2026-09-11 用户截图指定）：
-     截图为青蓝强调色，与 --color-info 的靛蓝不同，单独成 token 便于后续统一换肤。 */
+  /* 首页右侧浮层动作按钮（刷新）：
+ 截图为青蓝强调色，与 --color-info 的靛蓝不同，单独成 token 便于后续统一换肤。 */
   --color-action-blue: #00aeef;
   --color-action-blue-hover: #16b8f2;
   --color-error-light: #ff7875;            /* 浅红色，用于 hover 态背景 */
   --color-success-bg: #e8f5ec;             /* 成功底色（Browse 源状态 badge ok 档） */
   --color-warning-bg: #fdf3e7;             /* 警告底色（Browse 源状态 badge warn 档） */
-  --color-warning-border: #ffe58f;         /* 警告描边（2026-09-15 补：IPTV 曾只写 var() fallback，token 从未定义） */
+  --color-warning-border: #ffe58f;         /* 警告描边（IPTV 曾只写 var() fallback，token 从未定义） */
   --color-error-bg: #fdecea;               /* 错误底色（Browse 源状态 badge bad 档） */
-  /* 骨架屏动画 — 2026-09-18 色源收敛（P1）：
-     全站骨架**只有一个色源**，即上方 --color-placeholder-shimmer-a/b（现值 #f3f4f7↔#e8ebf1）。
-     此前并存两套（#e8e8e8↔#f5f5f5 / #f0f0f0↔#e6e6e6），同屏可出现两种灰。
-     这里保留原 token 名作**别名**，历史消费方（Player / Detail / TMDBMovieRow /
-     Home）无需逐个改名；今后换骨架色只改 shimmer 两行。 */
+  /* 骨架屏动画 — 色源收敛：
+ 全站骨架**只有一个色源**，即上方 --color-placeholder-shimmer-a/b（现值 #f3f4f7↔#e8ebf1）。
+ 此前并存两套（#e8e8e8↔#f5f5f5 / #f0f0f0↔#e6e6e6），同屏可出现两种灰。
+ 这里保留原 token 名作**别名**，历史消费方（Player / Detail / TMDBMovieRow /
+ Home）无需逐个改名；今后换骨架色只改 shimmer 两行。 */
   --color-skeleton: var(--color-placeholder-shimmer-a);        /* 别名 → 扫光起始色 */
   --color-skeleton-shine: var(--color-placeholder-shimmer-b);  /* 别名 → 扫光终止色 */
   /* 卡片级骨架/占位扫光时长：统一调慢，避免首页卡片闪烁过快（默认 3s，原 1.5s） */
@@ -197,27 +197,27 @@
   /* ── Player overlay colors (always dark context) ────────────────────── */
   --player-bg: #000;                      /* 播放器底色 */
   --player-text: #fff;                    /* 播放器文字 */
-  /* 播放器 OSD 文字档（2026-09-15 新增）：播放器是**常暗上下文**，不随主题翻转，
-     故不能复用 --color-text-secondary/tertiary（浅色主题下会变深、在 OSD 上不可读）。
-     取值依据：叠在 rgba(0,0,0,.6) 遮罩上，最坏（纯白画面）合成底 ≈ #666 —— 
-     #d9d9d9 对其 4.07:1、对纯黑 12.6:1；#b8b8b8 对纯黑 8.0:1。 */
+  /* 播放器 OSD 文字档：播放器是**常暗上下文**，不随主题翻转，
+ 故不能复用 --color-text-secondary/tertiary（浅色主题下会变深、在 OSD 上不可读）。
+ 取值依据：叠在 rgba(0,0,0,.6) 遮罩上，最坏（纯白画面）合成底 ≈ #666 —— 
+ #d9d9d9 对其 4.07:1、对纯黑 12.6:1；#b8b8b8 对纯黑 8.0:1。 */
   --player-text-secondary: #d9d9d9;       /* OSD 次要文字（网络速度/源文本/回看按钮） */
   --player-text-tertiary:  #b8b8b8;       /* OSD 弱化文字（控制按钮默认态） */
   --player-progress-bg: #fff;             /* 进度条轨道（始终白色） */
   --player-accent: #2d8cf0;               /* 进度条/控制按钮高亮色（蓝色） */
   --player-overlay-bg: rgba(0, 0, 0, 0.6); /* 控制栏/弹层半透明遮罩 */
   /* 播放器「主色」：组件层曾在 .up-universal-player 内直接重定义 --color-primary: #3b82f6。
-     组件层不定义视觉常量（ITCSS），故提到 token 层，由组件引用。 */
+ 组件层不定义视觉常量（ITCSS），故提到 token 层，由组件引用。 */
   --player-primary: #3b82f6;              /* 播放器内 primary（蓝） */
   --player-primary-hover: #60a5fa;        /* 播放器内 primary hover */
-  /* 2026-11-04：播放器内 primary 实底上的文字色。
-     原用 --color-on-image(#fff) → 白字 on #3b82f6 仅 3.68:1（12px 正文需 4.5）。
-     本 token = 深蓝黑，对 #3b82f6 = 5.01:1。只服务「primary 实底文字」，
-     不替换 --color-on-image（后者仍要服务视频帧上的白字）。 */
+  /* 播放器内 primary 实底上的文字色。
+ 原用 --color-on-image(#fff) → 白字 on #3b82f6 仅 3.68:1（12px 正文需 4.5）。
+ 本 token = 深蓝黑，对 #3b82f6 = 5.01:1。只服务「primary 实底文字」，
+ 不替换 --color-on-image（后者仍要服务视频帧上的白字）。 */
   --player-on-primary: #0b1220;
 
   /* ── 控制台（代理设置日志）──────────────────────────────────────────────
-     固定 GitHub-Dark 终端外观，**不随主题翻转**（浅色主题下也是深色终端）。 */
+ 固定 GitHub-Dark 终端外观，**不随主题翻转**（浅色主题下也是深色终端）。 */
   --console-bg: #0d1117;                  /* 终端底 */
   --console-border: #30363d;              /* 终端描边 */
   --console-text: #e6edf3;                /* 终端正文 */
@@ -227,7 +227,7 @@
   --console-warn: #d29922;                /* 终端警告行 */
 
   /* 品牌字金属渐变（暗色主题专用：浅灰→白→灰，抠图质感）。
-     浅色主题用的是 --color-text/-secondary/-tertiary 组合，不走本 token。 */
+ 浅色主题用的是 --color-text/-secondary/-tertiary 组合，不走本 token。 */
   --brand-gradient-dark: linear-gradient(180deg, #e0e0e0 0%, #fff 50%, #888 100%);
 
   /* ── Shadows ─────────────────────────────────────────────────────────── */
@@ -238,7 +238,7 @@
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);  /* 轻量卡片投影（VideoCard/IPTV 等） */
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.12); /* 卡片 hover 投影 */
   --shadow-soft: 0 0 4px rgba(0, 0, 0, 0.08);    /* 对称柔影（无 y 偏移）：分段控件选中态等小控件，
-                                                    避免偏移型阴影在小尺寸上呈现「上下厚左右薄」（2026-09-07） */
+ 避免偏移型阴影在小尺寸上呈现「上下厚左右薄」 */
   --shadow-focus: 0 0 0 3px var(--color-primary); /* 焦点环（键盘导航） */
 
   /* ── Easing ─────────────────────────────────────────────────────────── */
@@ -261,18 +261,18 @@
   --dur-pt-leave: 200ms; /* 来源页离场：进入黑场路由（/iptv/play）时旧页退场 */
   --dur-pt-curtain: 200ms; /* 黑场幕布淡入/淡出：与 src/lib/pageTransition.ts 的 PT_DUR 对齐 */
 
-  /* ── 交互时长阶梯（2026-09-15 D6 扩档）──────────────────────────────────
-     取值直接来自全站 transition/animation 字面量的**出现频次前 5 名**
-     （150 / 200 / 250 / 180 / 300，合计占实测 426 处的 62%），
-     故迁移到 token 是零观感变化。
+  /* ── 交互时长阶梯──────────────────────────────────
+ 取值直接来自全站 transition/animation 字面量的**出现频次前 5 名**
+ （150 / 200 / 250 / 180 / 300，合计占实测 426 处的 62%），
+ 故迁移到 token 是零观感变化。
 
-     ★与上方既有 --dur-* 的分工（刻意不合并）：
-       · 上方按**用途**命名（fast/base/slow/spring/theme/pt-*）——表达「这一步在流程里的角色」；
-       · 本阶梯按**量级**命名（2xs→lg）——表达「只想说多快」的普通过渡。
-       因此 --dur-2xs 与 --dur-fast 同为 150ms、--dur-md 与 --dur-base 同为 250ms，
-       是**有意的别名**：合并会丢失「用途」语义（如 --dur-theme 必须能独立调）。
-     ★未纳入阶梯的值（30/60/80/…/390ms 等一次性微调，以及 1s/1.5s/7s 等循环时长）
-       按 §5.3 保留字面量——强行归档会改变全站动效节奏。 */
+ ★与上方既有 --dur-* 的分工（刻意不合并）：
+ · 上方按**用途**命名（fast/base/slow/spring/theme/pt-*）——表达「这一步在流程里的角色」；
+ · 本阶梯按**量级**命名（2xs→lg）——表达「只想说多快」的普通过渡。
+ 因此 --dur-2xs 与 --dur-fast 同为 150ms、--dur-md 与 --dur-base 同为 250ms，
+ 是**有意的别名**：合并会丢失「用途」语义（如 --dur-theme 必须能独立调）。
+ ★未纳入阶梯的值（30/60/80/…/390ms 等一次性微调，以及 1s/1.5s/7s 等循环时长）
+ 按设计契约保留字面量——强行归档会改变全站动效节奏。 */
   --dur-2xs: 150ms;      /* 微交互：hover / press / 颜色与背景过渡（83 处） */
   --dur-xs:  180ms;      /* 快速：小控件位移 / 透明度（30 处） */
   --dur-sm:  200ms;      /* 短：图标与遮罩渐变（94 处，全站最高频） */
@@ -280,98 +280,97 @@
   --dur-lg:  300ms;      /* 长：展开 / 收起 / 较大位移（34 处） */
 
   /* ── 装饰循环时长（无限动画的节奏）─────────────────────────────────────
-     与「用户等待多久」无关，只决定循环动画的观感速度；
-     单列一组以免被当作交互反馈时长复用（D6 对长时长做的「装饰循环 vs 功能等待」判定）。 */
+ 与「用户等待多久」无关，只决定循环动画的观感速度；
+ 单列一组以免被当作交互反馈时长复用（对长时长做的「装饰循环 vs 功能等待」判定）。 */
   --dur-shimmer: 1.5s;   /* 扫光 / 骨架微光（skeletonShimmer、progress-bar-slide） */
   --dur-pulse:   1.6s;   /* 呼吸 / 脉冲（骨架卡 tmdb-skeleton-pulse、cast-ping） */
   --dur-marquee: 7s;     /* 跑马灯（列表卡标题横向滚动） */
 
   /* ── Typography ───────────────────────────────────────────────────────────
-     三 regime 统一契约：移动端(≤375)=MIN，桌面端 768→2200 流体、≥2200 冻结（2026-09-05
-     方案 A：冻结点 1920→2200 与内容封顶 --layout-content-max-width 对齐），TV=[data-device="tv"] 2×。
-     ★密度契约 v2（2026-09-05 用户拍板「E2 间距 + 字号微降」，demo 对比见
-       changelogs/demos/demo-fluid-endpoints-2026-09-05.html）：
-        · 间距族 space-2xs~3xl + grid-gap = E2 紧凑端点：375 处 MIN 与旧契约相同（手机零回归），
-          768 处 = MIN + (MAX_v2 − MIN)/3（预载 1/3），2200 处 MAX ≈ 旧 × 0.65~0.75；
-        · 字号 = 【2026-09-15 阶梯重构，取代原 v2.1 段2 递减曲线】：
-          小四档 2xs/xs/sm/base = 11 / 12 / 13 / 14 **恒定**（不随视口流动，仅乘 --ui-scale）；
-          大四档段1 流体、段2 从 768 处=段1 末值出发【递增】，1440 命中行业标准档
-          （lg 16 / xl 18 / 2xl 22 / 3xl 28，对齐 M3 title-large 22 + headline-medium 28），随后冻结。
-          契约：**大屏字号不得小于小屏**——原递减曲线令桌面 1920 正文 13px < 平板 768 的 14px，
-          属反向优化，已取消；相邻档位差恒 ≥1px（含 ui-scale 放大后），杜绝 2560 处 xs = 2xs 塌缩。
-          间距族不受本次重构影响，仍为下方 E2 紧凑端点；
-        · 控件族 v2.2 校准（comp-btn/tab/input/thumb + switch-* + vol-* + radio-* + badge，
-          共 15 条段2 曲线）：同字号比例 ×0.8835 递减——768 处=段1 末值（连续），
-          1440 处 = 旧值 ×0.8835，下限 = 1440 目标 ×0.985（同 base 冻结深度）。
-          例：comp-btn-min-height 55.4→48.95 / tab 41.17→36.37 @1440。
-          豁免不校准：--comp-input-height-header（须装进 60px 导航栏、不乘 ui-scale）、
-          --tap-target（WCAG 44px 恒定）、TV 块（独立 2× 契约）、圆点/圆角/滚动条（装饰/随卡片）；
-        · 1440 读数：md 16.23→10.91 / lg 25.17→16.52 / grid-gap 21.88→14.58 /
-          text-base 14.94→13.2 / icon-md 21.36→18.88（E2/B站锚点命中）。
-     小号(text-2xs~base) 与大号(text-lg~3xl) 段1 375→768px 流体、段2 768→2200px 流体：
-        · 坐近看屏，文字稳定保可读，≥2200（内容封顶点）不再继续放大；
-        · 间距/控件/图标/圆角/圆点/grid-gap 同此契约（曾漂到 ~3900px，已重算为 768 起步）；
-        · 任意段2 token 768 处=A(连续无跳变)、2200 处=MAX(冻结)，1920 处仍流动。
-     非 TV 的 4K 桌面：≥2200 后 token 冻结（与内容区同步封顶），TV 模式经
-        [data-device="tv"] 把整条曲线 2×，无失衡。 */
-  /* 小四档恒定（2026-09-15 字号阶梯重构）：不随视口流动，仅随 --ui-scale。
-     依据：HIG caption2 11pt / 行业最小 11px；正文取 Ant Design 5 / TDesign / B 站口径 14px。
-     原曲线的问题：390 处 --text-2xs 实测 9.05px（不可读）、2560 处 xs 与 2xs 同为 11.88px
-     （两档塌缩）；段2 逆视口递减更违反可读性常识（桌面 1920 正文 13px < 平板 768 的 14px）。
-     恒定常量本身即 ≥ 行业下限，**不设可读性下限钳制**（钳制是多余的）。 */
+ 三 regime 统一契约：移动端(≤375)=MIN，桌面端 768→2200 流体、≥2200 冻结（
+冻结点 1920→2200 与内容封顶 --layout-content-max-width 对齐），TV=[data-device="tv"] 2×。
+ ★密度契约 v2（间距 + 字号微降）：
+ · 间距族 space-2xs~3xl + grid-gap = 紧凑端点：375 处 MIN 与旧契约相同（手机零回归），
+ 768 处 = MIN + (MAX_v2 − MIN)/3（预载 1/3），2200 处 MAX ≈ 旧 × 0.65~0.75；
+ · 字号 = ：
+ 小四档 2xs/xs/sm/base = 11 / 12 / 13 / 14 **恒定**（不随视口流动，仅乘 --ui-scale）；
+ 大四档段1 流体、段2 从 768 处=段1 末值出发【递增】，1440 命中行业标准档
+ （lg 16 / xl 18 / 2xl 22 / 3xl 28，对齐 M3 title-large 22 + headline-medium 28），随后冻结。
+ 契约：**大屏字号不得小于小屏**——原递减曲线令桌面 1920 正文 13px < 平板 768 的 14px，
+ 属反向优化，已取消；相邻档位差恒 ≥1px（含 ui-scale 放大后），杜绝 2560 处 xs = 2xs 塌缩。
+ 间距族不受本次重构影响，仍为下方 紧凑端点；
+ · 控件族 v2.2 校准（comp-btn/tab/input/thumb + switch-* + vol-* + radio-* + badge，
+ 共 15 条段2 曲线）：同字号比例 ×0.8835 递减——768 处=段1 末值（连续），
+ 1440 处 = 旧值 ×0.8835，下限 = 1440 目标 ×0.985（同 base 冻结深度）。
+ 例：comp-btn-min-height 55.4→48.95 / tab 41.17→36.37 @1440。
+ 豁免不校准：--comp-input-height-header（须装进 60px 导航栏、不乘 ui-scale）、
+ --tap-target（WCAG 44px 恒定）、TV 块（独立 2× 契约）、圆点/圆角/滚动条（装饰/随卡片）；
+ · 1440 读数：md 16.23→10.91 / lg 25.17→16.52 / grid-gap 21.88→14.58 /
+ text-base 14.94→13.2 / icon-md 21.36→18.88（/B站锚点命中）。
+ 小号(text-2xs~base) 与大号(text-lg~3xl) 段1 375→768px 流体、段2 768→2200px 流体：
+ · 坐近看屏，文字稳定保可读，≥2200（内容封顶点）不再继续放大；
+ · 间距/控件/图标/圆角/圆点/grid-gap 同此契约（曾漂到 ~3900px，已重算为 768 起步）；
+ · 任意段2 token 768 处=A(连续无跳变)、2200 处=MAX(冻结)，1920 处仍流动。
+ 非 TV 的 4K 桌面：≥2200 后 token 冻结（与内容区同步封顶），TV 模式经
+ [data-device="tv"] 把整条曲线 2×，无失衡。 */
+  /* 小四档恒定（字号阶梯重构）：不随视口流动，仅随 --ui-scale。
+ 依据：HIG caption2 11pt / 行业最小 11px；正文取 Ant Design 5 / TDesign / B 站口径 14px。
+ 原曲线的问题：390 处 --text-2xs 实测 9.05px（不可读）、2560 处 xs 与 2xs 同为 11.88px
+ （两档塌缩）；段2 逆视口递减更违反可读性常识（桌面 1920 正文 13px < 平板 768 的 14px）。
+ 恒定常量本身即 ≥ 行业下限，**不设可读性下限钳制**（钳制是多余的）。 */
   --text-2xs: calc(11px * var(--ui-scale)); /* 恒定 11（原 clamp(9px,…,10.333px)） */
   --text-xs:  calc(12px * var(--ui-scale)); /* 恒定 12（原 clamp(12px,…,12.667px)） */
   --text-sm:  calc(13px * var(--ui-scale)); /* 恒定 13（原 clamp(13px,…,13.667px)） */
   --text-base: calc(14px * var(--ui-scale)); /* 恒定 14（正文字号契约；段2 递减已取消）。
-        ⚠️ 本 token 不再是 rem 基准——rem 基准已独立为 --root-font-size（见下）。 */
+ ⚠️ 本 token 不再是 rem 基准——rem 基准已独立为 --root-font-size（见下）。 */
   /* 大四档：段1（375→768）保持流体，段2 见 @media (width >= 768px)：
-     768 处 = 段1 末值（连续无跳变）→ 1440 命中行业标准档 16/18/22/28 → 冻结。 */
+ 768 处 = 段1 末值（连续无跳变）→ 1440 命中行业标准档 16/18/22/28 → 冻结。 */
   /* 段1 MIN 取 15（非原 14）：原 MIN 14 令移动端 lg(14.05) ≈ base(14.00)，相邻档位差仅
-     0.05px → 违反「相邻档差 ≥1px」契约（lg 档在移动端等同虚设）。取 15 后移动端差恒 ≥1px，
-     768 处仍精确续接段2 的 15.333（连续无跳变）。 */
+ 0.05px → 违反「相邻档差 ≥1px」契约（lg 档在移动端等同虚设）。取 15 后移动端差恒 ≥1px，
+ 768 处仍精确续接段2 的 15.333（连续无跳变）。 */
   --text-lg: calc(clamp(15px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale)); /* 15→15.333 */
   --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale)); /* 16→17.333 */
   --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale)); /* 20→22.667 */
   --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale)); /* 26→28.667 */
 
-  /* ── Root Font Size（rem 基准）— 2026-09-15 从 --text-base 解耦 ────────────
-     原 `html { font-size: var(--text-base) }` 让「最常用的正文 token」同时充当
-     rem 基准：改字号会连带移动全仓 ≈200 处 rem 消费点（组件内 rem 字面量 +
-     Tailwind 数字档工具类 p-4 / gap-3 / w-6 等），且 TV 块的 rem 式 token 会被
-     连带改变。现独立成 token，**逐字节复刻**改前实测曲线，零渲染变化。
-     段2 覆盖见下方 @media (width >= 768px)，TV 覆盖见文件末尾 [data-device="tv"]。 */
+  /* ── Root Font Size（rem 基准）— 从 --text-base 解耦 ────────────
+ 原 `html { font-size: var(--text-base) }` 让「最常用的正文 token」同时充当
+ rem 基准：改字号会连带移动全仓 ≈200 处 rem 消费点（组件内 rem 字面量 +
+ Tailwind 数字档工具类 p-4 / gap-3 / w-6 等），且 TV 块的 rem 式 token 会被
+ 连带改变。现独立成 token，**逐字节复刻**改前实测曲线，零渲染变化。
+ 段2 覆盖见下方 @media (width >= 768px)，TV 覆盖见文件末尾 [data-device="tv"]。 */
   --root-font-size: 14px;                  /* <768：恒 14（= 原 --text-base 段1 值） */
 
-  /* ── Font Weight（2026-09-15 新增）────────────────────────────────────────
-     背景：全仓字重为字面量，含 800×6 / 900×2 等跨档写法，缺少语义约束。
-     契约：只允许 regular/medium/semibold/bold 四档；800/900 在组件替换时
-     一次性收敛到 --fw-bold（700）。**先定义 + 文档化，组件分批替换**，
-     不做全站批量改写（避免一次性改变大量观感）。 */
+  /* ── Font Weight────────────────────────────────────────
+ 背景：全仓字重为字面量，含 800×6 / 900×2 等跨档写法，缺少语义约束。
+ 契约：只允许 regular/medium/semibold/bold 四档；800/900 在组件替换时
+ 一次性收敛到 --fw-bold（700）。**先定义 + 文档化，组件分批替换**，
+ 不做全站批量改写（避免一次性改变大量观感）。 */
   --fw-regular: 400;                       /* 正文 */
   --fw-medium: 500;                        /* 次要强调 / 元信息 */
   --fw-semibold: 600;                      /* 小标题 / 激活态 */
   --fw-bold: 700;                          /* 大标题 / 强强调（收敛 800/900） */
 
-  /* ── Line Height（2026-09-15 新增）────────────────────────────────────────
-     背景：无行高 token，组件内写成字面数（1.2 / 1.4 / 1.5 / 1.6 混用）。
-     取值依据：中文正文行高下限 1.5（无衬线）；单元格控件 1.25。
-     ⚠️ 必须单位数（stylelint 的 declaration-property-value-disallowed-list 禁 px 行高）。
-     落地节奏：先用于信息密集组件（榜单简介 / 设置说明 / 详情简介），
-     **不做全局 body { line-height }**（会一次性改变全站行高、大面积位移）。 */
+  /* ── Line Height────────────────────────────────────────
+ 背景：无行高 token，组件内写成字面数（1.2 / 1.4 / 1.5 / 1.6 混用）。
+ 取值依据：中文正文行高下限 1.5（无衬线）；单元格控件 1.25。
+ ⚠️ 必须单位数（stylelint 的 declaration-property-value-disallowed-list 禁 px 行高）。
+ 落地节奏：先用于信息密集组件（榜单简介 / 设置说明 / 详情简介），
+ **不做全局 body { line-height }**（会一次性改变全站行高、大面积位移）。 */
   --lh-tight: 1.25;                        /* 标题 / 单行控件 / 徽标 */
   --lh-base: 1.5;                          /* 中文正文下限 */
   --lh-relaxed: 1.75;                      /* 长文本段落 */
 
-  /* ── Spacing（密度契约 v2 · E2 紧凑端点 2026-09-05）──────────────────
-     段1 375→768：MIN（375 处）与旧契约逐字节相同（手机零回归），768 处值 =
-     MIN + (MAX_v2 − MIN)/3（预载 1/3，平板/小桌面随全局密度收紧）；
-     段2 768→2200：A(768 连续) → MAX_v2（E2 端点 ≈ 旧 MAX × 0.65~0.75）。
-     1440 读数对比旧契约：md 16.23→10.91 / lg 25.17→16.52 / grid-gap 21.88→14.58。 */
+  /* ── Spacing（密度契约 v2 · 紧凑端点 ）──────────────────
+ 段1 375→768：MIN（375 处）与旧契约逐字节相同（手机零回归），768 处值 =
+ MIN + (MAX_v2 − MIN)/3（预载 1/3，平板/小桌面随全局密度收紧）；
+ 段2 768→2200：A(768 连续) → MAX_v2（端点 ≈ 旧 MAX × 0.65~0.75）。
+ 1440 读数对比旧契约：md 16.23→10.91 / lg 25.17→16.52 / grid-gap 21.88→14.58。 */
   --space-3xs: calc(clamp(1px, 0.364px + 0.17vw, 1.667px) * var(--ui-scale)); /* 1→2（亚像素档，v2 不动） */
   --space-2xs: calc(clamp(1px, 0.52289px + 0.12723vw, 1.5px) * var(--ui-scale)); /* 1→1.5→2.5 */
   --space-xs: calc(clamp(3px, 2.52289px + 0.12723vw, 3.5px) * var(--ui-scale)); /* 3→3.5→4.5 */
   --space-xs-plus: calc(clamp(4px, 3.36355px + 0.16972vw, 4.667px) * var(--ui-scale)); /* 4→4.667→6 */
-  --space-sm: calc(clamp(6px, 5.04581px + 0.25445vw, 7px) * var(--ui-scale)); /* 6→7→9   */
+  --space-sm: calc(clamp(6px, 5.04581px + 0.25445vw, 7px) * var(--ui-scale)); /* 6→7→9 */
   --space-md: calc(clamp(8px, 6.5687px + 0.38168vw, 9.5px) * var(--ui-scale)); /* 8→9.5→12.5 */
   --space-lg: calc(clamp(12px, 9.77385px + 0.59364vw, 14.333px) * var(--ui-scale)); /* 12→14.333→19 */
   --space-lg-xl: calc(clamp(14px, 11.1374px + 0.76336vw, 17px) * var(--ui-scale)); /* 14→17→23 lg↔xl 过渡档（分类快选 gap 等） */
@@ -380,15 +379,15 @@
   --space-3xl: calc(clamp(32px, 25.63835px + 1.69644vw, 38.667px) * var(--ui-scale)); /* 32→38.667→52 */
 
   /* ── Icons（派生自文字 token × 固定系数，与文字共享同一条 vw 曲线）──────
-     任意视口下图标/文字比例恒定；<768px 随文字 fluid 放大，TV 随文字自动放大。
-     系数使各档 ≈ 原值并保留层次；:root 补齐 --icon-2xl/--icon-3xl
-     （原仅 TV 定义，桌面引用 size="2xl/3xl" 会 undefined）。 */
+ 任意视口下图标/文字比例恒定；<768px 随文字 fluid 放大，TV 随文字自动放大。
+ 系数使各档 ≈ 原值并保留层次；:root 补齐 --icon-2xl/--icon-3xl
+ （原仅 TV 定义，桌面引用 size="2xl/3xl" 会 undefined）。 */
   --icon-xs:  calc(var(--text-2xs)  * 1.40);   /* 9→11 ×1.40 = 12.6→15.4 */
-  /* 最小图标档（2026-09-15 D5 补：此前 Home / TMDBMovieRow 的骨架角标写
-     `var(--icon-2xs, 10px)` 而本 token **从未定义** → 兜底静默接管，实际恒为 10px。
-     属「引用了不存在的 token」家族（同 A1 的 --ui-scale 重复定义）。
-     与 --text-2xs（恒定 11px）同属「小尺寸恒定」哲学：装饰性骨架角标不该随视口放大，
-     故写成恒定 10px × --ui-scale（ui-scale=1 时与兜底值逐像素一致 → 零观感变化）。 */
+  /* 最小图标档（此前 Home / TMDBMovieRow 的骨架角标写
+ `var(--icon-2xs, 10px)` 而本 token **从未定义** → 兜底静默接管，实际恒为 10px。
+ 属「引用了不存在的 token」家族（同 的 --ui-scale 重复定义）。
+ 与 --text-2xs（恒定 11px）同属「小尺寸恒定」哲学：装饰性骨架角标不该随视口放大，
+ 故写成恒定 10px × --ui-scale（ui-scale=1 时与兜底值逐像素一致 → 零观感变化）。 */
   --icon-2xs: calc(10px * var(--ui-scale));    /* 恒定 10（骨架角标高度） */
   --icon-sm:  calc(var(--text-sm)   * 1.30);   /* 13→14 ×1.30 = 16.9→18.2 */
   --icon-md:  calc(var(--text-base) * 1.43);   /* 14→15 ×1.43 = 20.0→21.5 */
@@ -400,40 +399,40 @@
   --tap-target: 44px;
 
   /* ── Pagination Dots (分页圆点 — TV 经 [data-device="tv"] 与桌面等大(1080p)、4K=2× 同步放大) ─ */
-  --dot-size: calc(clamp(5px, 3.092px + 0.509vw, 7px) * var(--ui-scale)); /* 5→8   圆点 */
+  --dot-size: calc(clamp(5px, 3.092px + 0.509vw, 7px) * var(--ui-scale)); /* 5→8 圆点 */
   --dot-active-w: calc(clamp(16px, 10.911px + 1.357vw, 21.333px) * var(--ui-scale)); /* 16→24 激活胶囊宽 */
-  --dot-active-h: calc(clamp(5px, 3.092px + 0.509vw, 7px) * var(--ui-scale)); /* 5→8   激活胶囊高 */
-  --dot-gap: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale)); /* 3→6   圆点间距 */
+  --dot-active-h: calc(clamp(5px, 3.092px + 0.509vw, 7px) * var(--ui-scale)); /* 5→8 激活胶囊高 */
+  --dot-gap: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale)); /* 3→6 圆点间距 */
 
   /* ── Component Sizes (控件尺寸) ──────────────────────────────────────── */
-  /* 封面/海报按钮（2026-09-15 B6）：390 处实测 34.66px → 44px
-     （HIG 44×44pt / WCAG 2.5.5 AAA）。段1 起点 34→44，768 处仍 51.333（连续），
-     段2 递减曲线不变（48.212 仍 ≥44）。校验：390 → 36.434+1.94×3.9 = 44.00 ✅ */
+  /* 封面/海报按钮：390 处实测 34.66px → 44px
+ （HIG 44×44pt / WCAG 2.5.5 AAA）。段1 起点 34→44，768 处仍 51.333（连续），
+ 段2 递减曲线不变（48.212 仍 ≥44）。校验：390 → 36.434+1.94×3.9 = 44.00 ✅ */
   --comp-btn-min-height: calc(clamp(44px, 36.434px + 1.94vw, 51.333px) * var(--ui-scale));
-  /* 筛选/标签 tab（2026-09-15 B6）：390 处实测 ≈28px → 36px
-     （WCAG 2.5.8 AA 要 24px，标签 chip 取 36 折中并保证行间距 ≥8px；HIG 44 对 chip 过重）。
-     768 处封顶 38.667 与现曲线相同，连续无跳变。校验：390 → 18.545+4.479×3.9 = 36.01 ✅ */
+  /* 筛选/标签 tab：390 处实测 ≈28px → 36px
+ （WCAG 2.5.8 AA 要 24px，标签 chip 取 36 折中并保证行间距 ≥8px；HIG 44 对 chip 过重）。
+ 768 处封顶 38.667 与现曲线相同，连续无跳变。校验：390 → 18.545+4.479×3.9 = 36.01 ✅ */
   --comp-tab-height: calc(clamp(36px, 18.545px + 4.479vw, 38.667px) * var(--ui-scale));
   --comp-btn-min-width: calc(clamp(40px, 27.277px + 3.393vw, 53.333px) * var(--ui-scale)); /* 40→60 圆形按钮（返回/收藏） */
-  --comp-input-height: calc(clamp(40px, 34.911px + 1.357vw, 45.333px) * var(--ui-scale)); /* 40→48 输入框高度（2026-09-04 降 MAX：旧 58 为 R2 遗留，桌面渲染过大） */
+  --comp-input-height: calc(clamp(40px, 34.911px + 1.357vw, 45.333px) * var(--ui-scale)); /* 40→48 输入框高度（降 MAX：旧 58 为遗留，桌面渲染过大） */
   /* 顶部导航 SearchBox 专用矮曲线（契约 375→1920）：宿主 --header-height 是 R3
-     （60→76，不乘 --ui-scale），全尺寸 --comp-input-height 桌面 ≈60px 会撑满 60px 导航栏。
-     同样不乘 --ui-scale——任何缩放档位下都必须装得进导航栏。TV 走 --comp-input-height-tv。
-     2026-09-10 用户要求「搜索框高度减小一点」：曲线 40→48 → 36→42（各档 −4~6px）。
-     仍然只作用于 header 变体；browse / iptv 变体继续用 --comp-input-height / --comp-btn-min-height。
-     ⚠️ 该 token 不乘 ui-scale 是刻意豁免（见本文件顶部豁免清单注释），不要"顺手修正"。 */
+ （60→76，不乘 --ui-scale），全尺寸 --comp-input-height 桌面 ≈60px 会撑满 60px 导航栏。
+ 同样不乘 --ui-scale——任何缩放档位下都必须装得进导航栏。TV 走 --comp-input-height-tv。
+ 「搜索框高度减小一点」：曲线 40→48 → 36→42（各档 −4~6px）。
+ 仍然只作用于 header 变体；browse / iptv 变体继续用 --comp-input-height / --comp-btn-min-height。
+ ⚠️ 该 token 不乘 ui-scale 是刻意豁免（见本文件顶部豁免清单注释），不要"顺手修正"。 */
   --comp-input-height-header: clamp(36px, 34.832px + 0.3108vw, 42px);
   --comp-input-min-w: calc(clamp(180px, 103.664px + 20.356vw, 260px) * var(--ui-scale)); /* 180→300 输入框最小宽度 */
   --comp-thumb-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale)); /* 14→28 滑块拖拽手柄 */
-  /* 榜单页（Chart）封面 / 骨架尺寸（2026-09-15 D0 补供给）：此前在移动端 media query
-     与 html[data-device="app"] 块内直接写 px，被 value 禁令命中且无 token 可换。
-     竖版海报 112×168（2:3），排名列 32。两处共用同一组 token，避免双份字面量漂移。 */
+  /* 榜单页（Chart）封面 / 骨架尺寸：此前在移动端 media query
+ 与 html[data-device="app"] 块内直接写 px，被 value 禁令命中且无 token 可换。
+ 竖版海报 112×168（2:3），排名列 32。两处共用同一组 token，避免双份字面量漂移。 */
   --comp-chart-cover-w: 112px;
   --comp-chart-cover-h: 168px;
   --comp-chart-rank-w:  32px;
   /* 横版封面（列表行内 16:9 缩略盒）：160×90。与上方竖版同族——固定值而非流体，
-     理由同 D0：封面为「媒体比例盒」，尺寸由 2:3 / 16:9 比例与网格决定，
-     不随视口流体（流体会让行高跳动）。桌面与移动端共用同一组值。 */
+ 理由同：封面为「媒体比例盒」，尺寸由 2:3 / 16:9 比例与网格决定，
+ 不随视口流体（流体会让行高跳动）。桌面与移动端共用同一组值。 */
   --comp-chart-cover-land-w: 160px;
   --comp-chart-cover-land-h:  90px;
   /* Switch 开关 */
@@ -444,8 +443,8 @@
   /* 滑块轨道高度（与 Slider.css 共用，供拇指垂直居中 calc 使用） */
   --slider-track-h:      6px;
   /* 音量滑块 */
-  --vol-track-width: calc(clamp(3px, 2.364px + 0.17vw, 3.667px) * var(--ui-scale)); /* 3→4   音量滑块轨道 */
-  --vol-track-radius: calc(clamp(1px, 0.364px + 0.17vw, 1.667px) * var(--ui-scale)); /* 1→2   音量滑块圆角 */
+  --vol-track-width: calc(clamp(3px, 2.364px + 0.17vw, 3.667px) * var(--ui-scale)); /* 3→4 音量滑块轨道 */
+  --vol-track-radius: calc(clamp(1px, 0.364px + 0.17vw, 1.667px) * var(--ui-scale)); /* 1→2 音量滑块圆角 */
   /* 单选按钮 */
   --radio-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale)); /* 14→28 外圈尺寸 */
   --radio-dot-size: calc(clamp(6px, 0.911px + 1.357vw, 11.333px) * var(--ui-scale)); /* 6→14 内圈尺寸 */
@@ -453,13 +452,13 @@
   --badge-size: calc(clamp(10px, 2.366px + 2.036vw, 18px) * var(--ui-scale)); /* 10→22 频道可用性徽章 */
 
   /* ── Border Radius (轻量缩放) ───────────────────────────────────────── */
-  --radius-sm: calc(clamp(3px, 1.728px + 0.339vw, 4.333px) * var(--ui-scale)); /* 3→5   */
-  --radius-md: calc(clamp(6px, 3.455px + 0.679vw, 8.667px) * var(--ui-scale)); /* 6→10  */
+  --radius-sm: calc(clamp(3px, 1.728px + 0.339vw, 4.333px) * var(--ui-scale)); /* 3→5 */
+  --radius-md: calc(clamp(6px, 3.455px + 0.679vw, 8.667px) * var(--ui-scale)); /* 6→10 */
   --radius-lg: calc(clamp(10px, 4.911px + 1.357vw, 15.333px) * var(--ui-scale)); /* 10→18 */
   --radius-full: 9999px;                                /* 胶囊专用：不缩放，圆弧完美 */
 
   /* ── Layout ──────────────────────────────────────────────────────────── */
-  --grid-gap: calc(clamp(12px, 10.72804px + 0.33919vw, 13.333px) * var(--ui-scale)); /* 12→13.333→16（v2 E2） */
+  --grid-gap: calc(clamp(12px, 10.72804px + 0.33919vw, 13.333px) * var(--ui-scale)); /* 12→13.333→16 */
 
   /* ── Focus Ring ──────────────────────────────────────────────────────── */
   /* 双层焦点环：内层底色隔离，外层 primary 色 */
@@ -483,23 +482,23 @@
   --layout-page-min-height: 100%; /* 页面根最小高度：填满滚动区剩余空间。= 100dvh − header − tabbar − TV 安全区，自动跟随断点/顶栏折叠/TV overscan。**勿写 px 或 100dvh**：100dvh 在 AppLayout 内会溢出（多出 header+tabbar），固定 px 在 TV 4K 下失效。⚠️ Player 除外（高度由视频 16:9 派生，用本 token 会破坏比例）。 */
   --layout-loading-min-height: calc(clamp(300px, 185.496px + 30.534vw, 420px) * var(--ui-scale)); /* 加载态最小高度：300→480px 流体 */
   --layout-modal-max-width: calc(clamp(320px, 141.883px + 47.498vw, 506.667px) * var(--ui-scale)); /* 弹窗最大宽度 */
-  /* IPTV OSD 控制栏最大宽度：单条比例曲线 clamp(320px, 78vw, 1400px)（2026-09-10 用户拍板）。
-     改因：原「以 1080p 为锚点」的两段式 clamp（<1024 一档、≥1024 一档）在约 420–1158px
-     视口区间**恒大于「视口 − 2×--space-md」**，被 .iptv-osd-bar 的 max-width 兜底规则吃掉
-     → 这一段 OSD 实际是「贴边」的、宽度 token 完全不起作用（1024 处占视口 98.0%、左右各剩 10px；
-     768 处 97.5%），呈现出「视口越窄、OSD 占比越高」的反直觉曲线。
-     现曲线读数：375→320（85.3%，与旧一致）/ 768→599 / 1024→798.7 / 1280→998.4 /
-     1440→1123.2 / 1920→1400（79.5%…72.9%），全程留白单调、无截断段。
-     上限 1400px 沿用旧封顶值，与内容区封顶哲学一致（4K 不再继续拉宽）。
-     TV 端在 .up-platform-tv 内以独立 2× 契约覆盖（A=1600 → 1080p=1600、4K=3200），不受影响。 */
+  /* IPTV OSD 控制栏最大宽度：单条比例曲线 clamp(320px, 78vw, 1400px)。
+ 改因：原「以 1080p 为锚点」的两段式 clamp（<1024 一档、≥1024 一档）在约 420–1158px
+ 视口区间**恒大于「视口 − 2×--space-md」**，被 .iptv-osd-bar 的 max-width 兜底规则吃掉
+ → 这一段 OSD 实际是「贴边」的、宽度 token 完全不起作用（1024 处占视口 98.0%、左右各剩 10px；
+ 768 处 97.5%），呈现出「视口越窄、OSD 占比越高」的反直觉曲线。
+ 现曲线读数：375→320（85.3%，与旧一致）/ 768→599 / 1024→798.7 / 1280→998.4 /
+ 1440→1123.2 / 1920→1400（79.5%…72.9%），全程留白单调、无截断段。
+ 上限 1400px 沿用旧封顶值，与内容区封顶哲学一致（4K 不再继续拉宽）。
+ TV 端在 .up-platform-tv 内以独立 2× 契约覆盖（A=1600 → 1080p=1600、4K=3200），不受影响。 */
   --layout-osd-max-width: calc(clamp(320px, 78vw, 1400px) * var(--ui-scale));
   /* 内容区最大宽度：移动端(<768)不约束（100%）——旧单条 clamp 曲线 375→320px 会把
-     移动端内容钳到比视口还窄；桌面曲线移至段2（≥768）块，TV 由文件末 html[data-device="tv"] 恒 MIN 覆盖。 */
+ 移动端内容钳到比视口还窄；桌面曲线移至段2（≥768）块，TV 由文件末 html[data-device="tv"] 恒 MIN 覆盖。 */
   --layout-content-max-width: 100%;
   /* 内容区封顶「裸值」单一真源：--layout-content-max-width 是含 100% 的 min() 表达式，
-     无法再参与「先封顶后减两侧留白」的 calc（100% 的基准会变成父内容盒而非视口）。
-     需要「封顶值 − 2×留白」的页面（如播放页把滚动容器铺满视口、封顶下沉到内容块）
-     一律用本变量，不要另写 2200px 字面量。 */
+ 无法再参与「先封顶后减两侧留白」的 calc（100% 的基准会变成父内容盒而非视口）。
+ 需要「封顶值 − 2×留白」的页面（如播放页把滚动容器铺满视口、封顶下沉到内容块）
+ 一律用本变量，不要另写 2200px 字面量。 */
   --layout-content-cap: 2200px;
   --layout-hero-height: calc(clamp(200px, 9.16px + 50.891vw, 400px) * var(--ui-scale)); /* 首页 Hero 高度 */
   --layout-hero-height-mobile: calc(clamp(280px, 241.832px + 10.178vw, 320px) * var(--ui-scale)); /* 移动端 Hero 高度：280→340px 流体 */
@@ -521,20 +520,20 @@
   --layout-time-display-min-w: calc(clamp(90px, 58.193px + 8.482vw, 123.333px) * var(--ui-scale)); /* 时间显示最小宽度：90→140px 流体 */
   /* 频道列表 / 播放器内侧面板宽度 — 连续流体（替代原 6 档离散 + 未接线的 iptv 变体） */
   --layout-panel-medium-w: calc(clamp(280px, 152.774px + 33.927vw, 413.333px) * var(--ui-scale)); /* 280→480px 流体：面板/中等宽封顶通用值（播放器侧面板、logo、错误文案、进度条复用） */
-  /* 频道列表「一级（固定分类）」栏宽度 — **内容派生定值，非视口比例**（2026-09-10 用户拍板方案 A）。
-     背景：一级栏原是面板的硬 50%，而分类是 10 条写死的常量（全部频道 / 央视 CCTV / 主流卫视 …），
-     最长一条在任何视口都只需 ~62–66px；实测「最长分类名 + 计数药丸 + 行内边距」全程只有
-     118.6 / 125.3 / 125.3 / 125.2 / 125.3 / 129.1px（375→1920）——行内边距随档变大、
-     字号 768 后反而变小，两者相抵 → **与视口宽度没有强相关**，故给定值而非 vw 曲线。
-     取 132px = 上限 129.1 + 2% 安全余量（吸收中文字体回退差异）；省下的宽度全部给二级频道名。
-     ⚠️ 量测口径（勿踩）：必须按分类**活跃态 font-weight:600 的自然宽度**量，且不能用渲染宽度
-     —— .up-channel-group-text 带 text-overflow:ellipsis，栏一窄渲染宽就被裁到可用宽，等于自证放得下。
-     ≤479 窄屏档见 :root 块之后的 @media (width <= 479px)（116px，配合组项字号/内边距降档）。 */
-  /* 2026-09-15 重测（B3 字号重构后：桌面正文由 13.0@1920 提为恒定 14px）：
-     需要宽度上限升到 131.1px（1920），原 132px 仅余 0.7% 安全边际 → 提到 136px（余量 3.7%）。
-     逐档实测需要：390→110.2（窄屏档另有 116）/ 768→121.5 / 1024→123.6 /
-     1440→127.2 / 1920→131.1 / 2560→139.3（含 ui-scale 1.08）。
-     量测口径：最长分类名「央视 CCTV」+ 计数药丸「999」（font-weight 600 活跃态）。 */
+  /* 频道列表「一级（固定分类）」栏宽度 — **内容派生定值，非视口比例**。
+ 背景：一级栏原是面板的硬 50%，而分类是 10 条写死的常量（全部频道 / 央视 CCTV / 主流卫视 …），
+ 最长一条在任何视口都只需 ~62–66px；实测「最长分类名 + 计数药丸 + 行内边距」全程只有
+ 118.6 / 125.3 / 125.3 / 125.2 / 125.3 / 129.1px（375→1920）——行内边距随档变大、
+ 字号 768 后反而变小，两者相抵 → **与视口宽度没有强相关**，故给定值而非 vw 曲线。
+ 取 132px = 上限 129.1 + 2% 安全余量（吸收中文字体回退差异）；省下的宽度全部给二级频道名。
+ ⚠️ 量测口径（勿踩）：必须按分类**活跃态 font-weight:600 的自然宽度**量，且不能用渲染宽度
+ —— .up-channel-group-text 带 text-overflow:ellipsis，栏一窄渲染宽就被裁到可用宽，等于自证放得下。
+ ≤479 窄屏档见 :root 块之后的 @media (width <= 479px)（116px，配合组项字号/内边距降档）。 */
+  /* 重测（字号重构后：桌面正文由 13.0@1920 提为恒定 14px）：
+ 需要宽度上限升到 131.1px（1920），原 132px 仅余 0.7% 安全边际 → 提到 136px（余量 3.7%）。
+ 逐档实测需要：390→110.2（窄屏档另有 116）/ 768→121.5 / 1024→123.6 /
+ 1440→127.2 / 1920→131.1 / 2560→139.3（含 ui-scale 1.08）。
+ 量测口径：最长分类名「央视 CCTV」+ 计数药丸「999」（font-weight 600 活跃态）。 */
   --layout-channel-group-w: calc(136px * var(--ui-scale));
   --layout-source-url-max-w: calc(clamp(160px, 109.109px + 13.571vw, 213.333px) * var(--ui-scale)); /* 源地址最大宽度：160→240px 流体 */
   --layout-hero-poster-w: calc(clamp(160px, 83.664px + 20.356vw, 240px) * var(--ui-scale)); /* Hero 海报宽度：160→280px 流体 */
@@ -545,9 +544,9 @@
   --layout-select-w-mobile: calc(clamp(120px, 81.832px + 10.178vw, 160px) * var(--ui-scale)); /* 移动端下拉宽度：120→180px 流体 */
   --layout-epg-max-height:     clamp(200px, 20rem + 5vw, 50vh);     /* EPG 节目列表最大高度 */
   /* R6 大屏兜底（E2a 回退，维持「不动」契约）：保留旧 rem 式——消费点 min(vh,…) 由
-     vh 主导，三段式化收益低、desktop 768–1920 渲染值 +31~41% 不可接受。
-     注：rem 随 D7 在 768→1920 流动（14→16），本组随之轻微上行（≤+14%），与全局 rem
-     消费（Tailwind 数字档等）方向一致，属已接受偏差（v2.1 B15）。 */
+ vh 主导，三段式化收益低、desktop 768–1920 渲染值 +31~41% 不可接受。
+ 注：rem 随 D7 在 768→1920 流动（14→16），本组随之轻微上行（≤+14%），与全局 rem
+ 消费（Tailwind 数字档等）方向一致，属已接受偏差（v2.1 B15）。 */
   --layout-bottomsheet-max-h: clamp(500px, 31.25rem + 3vw, 720px); /* 底部弹出面板最大高度：500→720px 流体 */
   --layout-epg-empty-min-height: calc(clamp(100px, 68.193px + 8.482vw, 133.333px) * var(--ui-scale)); /* EPG 空态最小高度：100→150px 流体 */
   --layout-epg-time-min-width: calc(clamp(100px, 68.193px + 8.482vw, 133.333px) * var(--ui-scale)); /* EPG 时间列最小宽度：100→150px 流体 */
@@ -582,7 +581,7 @@
   --src-det-grid-min: calc(clamp(150px, 105.471px + 11.874vw, 196.667px) * var(--ui-scale)); /* 弹层网格单元最小宽：150→220px 流体 */
   --loading-stripe-size: 20px;                                 /* AppLoading 条纹图案尺寸（装饰，固定） */
   --layout-tabbar-height: calc(clamp(56px, 45.822px + 2.714vw, 66.667px) * var(--ui-scale)); /* 移动端底部 TabBar 高度：56→72px 流体 */
-  --layout-cast-avatar: calc(clamp(56px, 42.641px + 3.562vw, 70px) * var(--ui-scale)); /* Detail 演员头像：56→70px 流体（2026-09-23 用户反馈 64→80 略大，×0.875） */
+  --layout-cast-avatar: calc(clamp(56px, 42.641px + 3.562vw, 70px) * var(--ui-scale)); /* Detail 演员头像：56→70px 流体（64→80 略大，×0.875） */
   --layout-datepicker-width: calc(clamp(340px, 263.664px + 20.356vw, 420px) * var(--ui-scale)); /* 日期选择器宽度：340→460px 流体 */
   --layout-collapse-max-h: calc(clamp(1000px, 745.547px + 67.854vw, 1266.667px) * var(--ui-scale)); /* 折叠面板最大高度：1000→1400px 流体 */
   --layout-detail-poster-w: calc(clamp(128px, -14.494px + 37.998vw, 277.333px) * var(--ui-scale)); /* 详情页海报宽度 */
@@ -590,16 +589,16 @@
   --layout-searchbox-max-w: calc(clamp(280px, -50.789px + 88.21vw, 626.667px) * var(--ui-scale)); /* SearchBox 最大宽度（通用） */
 
   /* ── Card Grid Columns ──
-     ⚠️ --card-cols 基值 + 全部断点阶梯已移至 layout-tokens.css（单真源，2026-09-21）。
-     此处仅保留语义别名 --row-cols（下方）；改列数请改 layout-tokens.css，勿在此重定义。 */
+ ⚠️ --card-cols 基值 + 全部断点阶梯已移至 layout-tokens.css（单真源）。
+ 此处仅保留语义别名 --row-cols（下方）；改列数请改 layout-tokens.css，勿在此重定义。 */
   /* --row-cols = --card-cols 的**语义别名**（首页横滚行 / TMDBMovieRow 读它）。
-     2026-09-18（P1）：原先每个断点都手抄一份 `--row-cols: N`，与 --card-cols 逐档同值，
-     属纯冗余维护点（漏改一档即骨架列数与真实网格错位）。现只保留这一行引用，
-     断点档一律不再重复声明 —— 改列数只改 --card-cols。 */
+原先每个断点都手抄一份 `--row-cols: N`，与 --card-cols 逐档同值，
+ 属纯冗余维护点（漏改一档即骨架列数与真实网格错位）。现只保留这一行引用，
+ 断点档一律不再重复声明 —— 改列数只改 --card-cols。 */
   --row-cols:  var(--card-cols);
   /* 继续观看行（横版 16:9 卡）：独立断点 2/3/5——
-     移动端 2 列、平板 3 列、桌面(≥1280) 5 列。横版卡更宽，列数比竖版少，
-     保证卡片尺寸合理。断点与 --card-cols 对齐（768/1280）便于理解。 */
+ 移动端 2 列、平板 3 列、桌面(≥1280) 5 列。横版卡更宽，列数比竖版少，
+ 保证卡片尺寸合理。断点与 --card-cols 对齐（768/1280）便于理解。 */
   --continue-cols: 2;
 
   /* ── Sticky Header ───────────────────────────────────────────────────── */
@@ -627,11 +626,11 @@
   color-scheme: light;
 }
 
-/* 频道列表一级栏「窄屏档」（≤479，2026-09-10 用户拍板）：
-   280px 的面板上 132px 会占到 47%，与原来的硬 50% 相差无几、等于没收；
-   故这一档把组项字号降到 --text-sm、行内边距降到 --space-sm（见 UniversalPlayer.css），
-   需要宽度同步从 118.6 降到 109.6px → 取 116px（41%），省下的宽度全给二级频道名
-   （同时隐藏质量徽章，375 下频道名可用 54.5 → 128px）。 */
+/* 频道列表一级栏「窄屏档」（≤479）：
+ 280px 的面板上 132px 会占到 47%，与原来的硬 50% 相差无几、等于没收；
+ 故这一档把组项字号降到 --text-sm、行内边距降到 --space-sm（见 UniversalPlayer.css），
+ 需要宽度同步从 118.6 降到 109.6px → 取 116px（41%），省下的宽度全给二级频道名
+ （同时隐藏质量徽章，375 下频道名可用 54.5 → 128px）。 */
 @media (width <= 479px) {
   :root {
     --layout-channel-group-w: calc(116px * var(--ui-scale));
@@ -639,7 +638,7 @@
 }
 
 
-/* ── 三段式段2（768→2200，冻结点与内容封顶 2200 对齐；方案 A 2026-09-05 迁移）── */
+/* ── 三段式段2（768→2200，冻结点与内容封顶 2200 对齐； 迁移）── */
 @media (width >= 768px) {
   :root {
     --avatar-lg: calc(clamp(109.333px, 99.32165px + 1.30356vw, 128px) * var(--ui-scale));
@@ -657,21 +656,21 @@
     --dot-gap: calc(clamp(5px, 4.46369px + 0.06983vw, 6px) * var(--ui-scale));
     --dot-size: calc(clamp(7px, 6.46369px + 0.06983vw, 8px) * var(--ui-scale));
     --error-msg-max-width: calc(clamp(126.667px, 119.51634px + 0.93108vw, 140px) * var(--ui-scale));
-    --grid-gap: calc(clamp(13.333px, 11.90268px + 0.18624vw, 16px) * var(--ui-scale)); /* v2 E2 */
+    --grid-gap: calc(clamp(13.333px, 11.90268px + 0.18624vw, 16px) * var(--ui-scale)); /* v2 */
     --header-height-compact: calc(clamp(58.667px, 55.80684px + 0.37242vw, 64px) * var(--ui-scale));
     /* ▼ R6 兜底 4 个（bottomsheet/detail-hero/modal/program-guide -max-h）无段2：
-       已回退旧 rem 式（E2a），全程单条 clamp，不参与三段式 */
+ 已回退旧 rem 式（E2a），全程单条 clamp，不参与三段式 */
     --layout-brand-font-size: calc(clamp(22.667px, 21.95209px + 0.09309vw, 24px) * var(--ui-scale));
     --layout-brand-font-size-lg: calc(clamp(26.667px, 25.95209px + 0.09309vw, 28px) * var(--ui-scale));
     --layout-brand-font-size-sm: calc(clamp(18.667px, 17.95209px + 0.09309vw, 20px) * var(--ui-scale));
     --layout-card-daily-width: calc(clamp(280px, 258.54749px + 2.7933vw, 320px) * var(--ui-scale));
-    --layout-cast-avatar: calc(clamp(70px, 66.246px + 0.48883vw, 77px) * var(--ui-scale)); /* 70→77：80→88 ×0.875（2026-09-23） */
+    --layout-cast-avatar: calc(clamp(70px, 66.246px + 0.48883vw, 77px) * var(--ui-scale)); /* 70→77：80→88 ×0.875 */
     --layout-channel-num-w: calc(clamp(160px, 149.27374px + 1.39665vw, 180px) * var(--ui-scale));
     --layout-collapse-max-h: calc(clamp(1266.667px, 1195.1588px + 9.31096vw, 1400px) * var(--ui-scale));
-    --layout-content-max-width: min(100%, var(--layout-content-cap)); /* 内容区硬上限（用户拍板 2026-09-04）：桌面满屏、仅 ≥2200 视口封顶居中，替代原「随视口缓增的居中列」曲线；封顶裸值见 --layout-content-cap */
+    --layout-content-max-width: min(100%, var(--layout-content-cap)); /* 内容区硬上限：桌面满屏、仅 ≥2200 视口封顶居中，替代原「随视口缓增的居中列」曲线；封顶裸值见 --layout-content-cap */
     --layout-datepicker-width: calc(clamp(420px, 398.54749px + 2.7933vw, 460px) * var(--ui-scale));
     --layout-detail-hero-play-icon: calc(clamp(173.712px, 163.90391px + 1.27709vw, 192px) * var(--ui-scale));
-    --layout-detail-poster-w: calc(clamp(128px, 32px + 8vw, 352px) * var(--ui-scale)); /* 详情页海报宽度：2026-09-06 恢复 868f4cb 前旧曲线 clamp(8rem,2rem+8vw,22rem)（≈147px@1440 / 186px@1920，用户反馈 277→352 过大） */
+    --layout-detail-poster-w: calc(clamp(128px, 32px + 8vw, 352px) * var(--ui-scale)); /* 详情页海报宽度： 恢复旧曲线 clamp(8rem,2rem+8vw,22rem)（≈147px@1440 / 186px@1920， 277→352 过大） */
     --layout-detail-poster-w-tv: calc(clamp(143.333px, 134.39427px + 1.1639vw, 160px) * var(--ui-scale));
     --layout-epg-empty-min-height: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
     --layout-epg-time-min-width: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
@@ -685,9 +684,9 @@
     --layout-hero-poster-w: calc(clamp(240px, 218.54749px + 2.7933vw, 280px) * var(--ui-scale));
     --layout-loading-min-height: calc(clamp(420px, 387.82123px + 4.18994vw, 480px) * var(--ui-scale));
     --layout-modal-max-width: calc(clamp(506.667px, 456.61131px + 6.51767vw, 600px) * var(--ui-scale));
-    /* --layout-osd-max-width 此处原有「≥1024 档」锚点覆盖，2026-09-10 已删除：
-       该 token 现为单条比例曲线 clamp(320px, 78vw, 1400px)，:root 一处定义即贯通全档，
-       段2 再覆盖会造成「token 生效区间分裂」——正是本轮要修掉的旧问题。 */
+    /* --layout-osd-max-width 此处原有「≥1024 档」锚点覆盖， 已删除：
+ 该 token 现为单条比例曲线 clamp(320px, 78vw, 1400px)，:root 一处定义即贯通全档，
+ 段2 再覆盖会造成「token 生效区间分裂」——正是要修掉的旧问题。 */
     --layout-osd-timeshift-dot: calc(clamp(8.667px, 7.95209px + 0.09309vw, 10px) * var(--ui-scale));
     --layout-outline-width: calc(clamp(2.667px, 2.48841px + 0.02325vw, 3px) * var(--ui-scale));
     --layout-panel-medium-w: calc(clamp(413.333px, 377.57863px + 4.65552vw, 480px) * var(--ui-scale));
@@ -734,10 +733,10 @@
     --switch-thumb-size: calc(clamp(19.346px, 21.83957px - 0.15268vw, 20.667px) * var(--ui-scale)); /* 递减：20.667@768 → 19.641@1440 → 19.346 */
     --switch-track-height: calc(clamp(19.962px, 23.98171px - 0.25804vw, 22px) * var(--ui-scale)); /* 递减：22@768 → 20.266@1440 → 19.962 */
     --switch-track-width: calc(clamp(39.308px, 45.82129px - 0.41071vw, 42.667px) * var(--ui-scale)); /* 递减：42.667@768 → 39.907@1440 → 39.308 */
-    /* 字号段2（2026-09-15 重构）：小四档已在 :root 恒定，此处不再覆盖；
-       大四档从段1 末值续接 —— 768 处 = 段1 末值（连续无跳变）→ 1440 命中行业标准档 → 冻结。
-       斜率校验：lg 14.5707 + 0.09926×7.68 = 15.333 ✅ ／ +0.09926×14.4 = 16.000 ✅
-                3xl 29.4293 − 0.09926×7.68 = 28.667 ✅ ／ −0.09926×14.4 = 28.000 ✅ */
+    /* 字号段2：小四档已在 :root 恒定，此处不再覆盖；
+ 大四档从段1 末值续接 —— 768 处 = 段1 末值（连续无跳变）→ 1440 命中行业标准档 → 冻结。
+ 斜率校验：lg 14.5707 + 0.09926×7.68 = 15.333 ✅ ／ +0.09926×14.4 = 16.000 ✅
+ 3xl 29.4293 − 0.09926×7.68 = 28.667 ✅ ／ −0.09926×14.4 = 28.000 ✅ */
     --text-lg:  calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale)); /* 15.333@768 → 16@1440 → 16 冻结 */
     --text-xl:  calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale)); /* 17.333@768 → 18@1440 → 18 */
     --text-2xl: calc(clamp(22px, 23.4293px - 0.09926vw, 22.667px) * var(--ui-scale));  /* 22.667@768 → 22@1440 → 22 */
@@ -748,31 +747,31 @@
 }
 
 /* Typography & icon tokens use fixed values in :root (see above).
-   TV-only scale-up is handled by [data-device="tv"] at the bottom of this file. */
+ TV-only scale-up is handled by [data-device="tv"] at the bottom of this file. */
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Card Columns — 视口断点梯度（2026-09-04 用户调整：>768 每档列数 −1；
-   2026-09-07 用户拍板：1280→6 / 1440→7 每档 +1；≥2200 → 8；
-   2026-09-07 二次修正：card-cols 不参与「大屏 UI 起点右移到 1440」——
-   1440 起点仅针对页面整体布局，非 card 排列，故列数梯度保留 ≥1280→6 档）
-   < 768  → 3   (移动 — 硬约束：用户要求移动端始终 3 列)
-   ≥ 768  → 4   (平板 / 小桌面，原 5)
-   ≥ 1024 → 5   (原 6)
-   ≥ 1280 → 6   (2026-09-07：原 7，旧 5→7 跳两档已拆；本次回退右移影响，保留 1280 档)
-   ≥ 1440 → 7   (列数 +1；与页面大屏起点 1440 同点)
-   ≥ 1920 → 8   (2K 起点：7 → 8)
-   ≥ 2200 → 8   (内容区封顶点，卡宽封顶、列数恒 8；横版卡继续行维持 5)
-   ≥ 2200 之后不再有 2560 / 3840 档：内容区 2200 封顶后 C 恒 2200、N 恒 8，
-     卡宽逐像素恒定，加档只会是无变化的冗余（2026-09-07 已清理原 3840 占位块）
-   TV 端恒 8 列（文件末尾 html[data-device="tv"] 无条件覆盖，不受本梯度影响）
-   注：竖向网格（History 等）≥1280 走自身 5 列 / ≥1920 6 列（2026-09-07 拍板，
-   与 --card-cols 的 6/7 不同步——横版记录卡更宽，独立分档）；
-   --card-cols 驱动首页横滚行（TMDBMovieRow / Home calc）、收藏、Browse、Detail 多列网格。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ Card Columns — 视口断点梯度（>768 每档列数 −1；
+1280→6 / 1440→7 每档 +1；≥2200 → 8；
+card-cols 不参与「大屏 UI 起点右移到 1440」——
+ 1440 起点仅针对页面整体布局，非 card 排列，故列数梯度保留 ≥1280→6 档）
+ < 768 → 3 (移动 — 硬约束：移动端始终 3 列)
+ ≥ 768 → 4 (平板 / 小桌面，原 5)
+ ≥ 1024 → 5 (原 6)
+ ≥ 1280 → 6 (：原 7，旧 5→7 跳两档已拆；保留 1280 档)
+ ≥ 1440 → 7 (列数 +1；与页面大屏起点 1440 同点)
+ ≥ 1920 → 8 (2K 起点：7 → 8)
+ ≥ 2200 → 8 (内容区封顶点，卡宽封顶、列数恒 8；横版卡继续行维持 5)
+ ≥ 2200 之后不再有 2560 / 3840 档：内容区 2200 封顶后 C 恒 2200、N 恒 8，
+ 卡宽逐像素恒定，加档只会是无变化的冗余（已清理原 3840 占位块）
+ TV 端恒 8 列（文件末尾 html[data-device="tv"] 无条件覆盖，不受本梯度影响）
+ 注：竖向网格（History 等）≥1280 走自身 5 列 / ≥1920 6 列（
+ 与 --card-cols 的 6/7 不同步——横版记录卡更宽，独立分档）；
+ --card-cols 驱动首页横滚行（TMDBMovieRow / Home calc）、收藏、Browse、Detail 多列网格。
+ ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
   html:not([data-device="app"]) {
-    /* 继续观看行：768–1279 平板 3 列（用户反馈 2 列稀疏，回调 +1）；--card-cols 已移至 layout-tokens.css */
+    /* 继续观看行：768–1279 平板 3 列（2 列稀疏，回调 +1）；--card-cols 已移至 layout-tokens.css */
     --continue-cols: 3;
   }
 }
@@ -796,44 +795,44 @@
     --continue-cols: 5;
   }
 }
-/* 2026-09-07 清理：原「≥3840 → 8 列」块已删。内容区 2200 封顶后 C 恒 2200、
-   列数恒 8，4K 与 2200 档逐像素同值，是纯冗余维护点；将来要 4K 专属差异
-   时在此处按 @media (width >= 3840px) 单独加回即可。 */
+/* 清理：原「≥3840 → 8 列」块已删。内容区 2200 封顶后 C 恒 2200、
+ 列数恒 8，4K 与 2200 档逐像素同值，是纯冗余维护点；将来要 4K 专属差异
+ 时在此处按 @media (width >= 3840px) 单独加回即可。 */
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   大屏自动缩放（2026-09-07 定稿：连续曲线取代离散档）
-   ---------------------------------------------------------------------------
-   根因（旧实现）：「≥1920 → 1.0」+「≥2560 → 1.08」两段离散 —— 1920–2559 区间
-   零补偿，到 2560 一夕 +8% 硬跳；且「CSS 宽 + dpr<1.5」区分不了同宽不同 PPI
-   （24 寸 1080p PPI 92 与 32 寸 1080p PPI 69 被判成同一档）。
-   现改为 1920→2560 线性连续：1.00 → 1.08（斜率 0.000125/px），≥2560 由
-   clamp 上限冻结 1.08（与旧 2560 档终点完全一致）。
+ 大屏自动缩放（连续曲线取代离散档）
+ ---------------------------------------------------------------------------
+ 根因（旧实现）：「≥1920 → 1.0」+「≥2560 → 1.08」两段离散 —— 1920–2559 区间
+ 零补偿，到 2560 一夕 +8% 硬跳；且「CSS 宽 + dpr<1.5」区分不了同宽不同 PPI
+ （24 寸 1080p PPI 92 与 32 寸 1080p PPI 69 被判成同一档）。
+ 现改为 1920→2560 线性连续：1.00 → 1.08（斜率 0.000125/px），≥2560 由
+ clamp 上限冻结 1.08（与旧 2560 档终点完全一致）。
 
-   数学：--ui-scale = 0.76 + V / 8000（V = 视口宽 px 数值）
-     1920 → 1.000 │ 2048 → 1.016 │ 2200 → 1.035 │ 2400 → 1.060 │ 2560 → 1.080
-     ≥2560 → clamp 上限 1.08（4K 同样 1.08，不再累加）
-    单位剥离技巧：tan(atan2(100vw, 1px)) = 视口宽的 px 数值（无单位 <number>），
-    属 CSS Values 4 标准行为；消费端 calc(x * var(--ui-scale)) 一行不用改。
-    ⚠️ 2026-09-15 D2：斜率原写作 `0.000125 * V`，0.000125 是 6 位小数，会触发
-    stylelint `number-max-precision`（上限 5）。等值改写为 `V / 8000`（8000 为整数，
-    1920/8000 = 0.24 与 0.000125×1920 逐位相同），既清违规又不牺牲精度。
+ 数学：--ui-scale = 0.76 + V / 8000（V = 视口宽 px 数值）
+ 1920 → 1.000 │ 2048 → 1.016 │ 2200 → 1.035 │ 2400 → 1.060 │ 2560 → 1.080
+ ≥2560 → clamp 上限 1.08（4K 同样 1.08，不再累加）
+ 单位剥离技巧：tan(atan2(100vw, 1px)) = 视口宽的 px 数值（无单位 <number>），
+ 属 CSS Values 4 标准行为；消费端 calc(x * var(--ui-scale)) 一行不用改。
+ ⚠️ 斜率原写作 `0.000125 * V`，0.000125 是 6 位小数，会触发
+ stylelint `number-max-precision`（上限 5）。等值改写为 `V / 8000`（8000 为整数，
+ 1920/8000 = 0.24 与 0.000125×1920 逐位相同），既清违规又不牺牲精度。
 
-   降级安全：不支持 tan()/atan2() 的浏览器（Chrome <111 / 老 Android WebView）
-   由外层 @supports 特性检测拦截，整块不应用 → --ui-scale 保持 :root 默认值 1，
-   与改动前逐像素一致，零回归。
-   ⚠️ 2026-09-15 D2 修正（A1）：此前写作同一声明块内两条 --ui-scale（先 1 后 clamp）
-   企图做「表达式解析失败则回退」。但 CSS 自定义属性在同一声明块内**后者无条件
-   覆盖**前者——不存在「上一条兜底」的语义，所谓静态回退从未生效
-   （stylelint declaration-block-no-duplicate-custom-properties 已报出）。
-   正解是 @supports 分流。与 B7 挖出的 .stylelintrc.json 重复 key 属同一
-   「静默失效」bug 家族：不报错、不崩溃，只是没按意图工作。
+ 降级安全：不支持 tan()/atan2() 的浏览器（Chrome <111 / 老 Android WebView）
+ 由外层 @supports 特性检测拦截，整块不应用 → --ui-scale 保持 :root 默认值 1，
+ 与改动前逐像素一致，零回归。
+ ⚠️ 修正：此前写作同一声明块内两条 --ui-scale（先 1 后 clamp）
+ 企图做「表达式解析失败则回退」。但 CSS 自定义属性在同一声明块内**后者无条件
+ 覆盖**前者——不存在「上一条兜底」的语义，所谓静态回退从未生效
+ （stylelint declaration-block-no-duplicate-custom-properties 已报出）。
+ 正解是 @supports 分流。与 B7 挖出的 .stylelintrc.json 重复 key 属同一
+ 「静默失效」bug 家族：不报错、不崩溃，只是没按意图工作。
 
-   契约（沿用 U-1）：
-   - resolution < 1.5dppx：系统缩放 ≥150% 的高分屏 CSS px 密度已足够，不补偿；
-   - 排除 app/tv：原生端由系统缩放，TV 走独立 [data-device="tv"] 2× 曲线；
-   - 手动档（AppSettings.uiScale 内联，AppLayout.tsx:137）始终最高优先；
-   - R3 契约 token 不乘 --ui-scale → 不受影响。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 契约（沿用 U-1）：
+ - resolution < 1.5dppx：系统缩放 ≥150% 的高分屏 CSS px 密度已足够，不补偿；
+ - 排除 app/tv：原生端由系统缩放，TV 走独立 [data-device="tv"] 2× 曲线；
+ - 手动档（AppSettings.uiScale 内联，AppLayout.tsx:137）始终最高优先；
+ - R3 契约 token 不乘 --ui-scale → 不受影响。
+ ═══════════════════════════════════════════════════════════════════════════ */
 @supports (width: calc(1px * tan(atan2(1, 1)))) {
   @media (width >= 1920px) and (resolution < 1.5dppx) {
     html:not([data-device="app"]):not([data-device="tv"]) {
@@ -843,15 +842,15 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   U-2（2026-09-07 G3 定稿）：≥2560 边框对比度提档（浅色主题限定）
-   根因：--color-border #d9d9d9 对 #fff ≈1.57:1（WCAG 非文本建议 ≥3:1），
-   --color-border-light #e8e8e8 ≈1.33:1 → 大屏下搜索框 / tab / chip 描边过浅。
-   契约：
-   - token 覆写让所有消费 var(--color-border/-light) 的描边一次性提档；
-   - :not([data-theme="dark"]) 三重排他——暗色边框 #363636 对深底对比足够，
-     绝不能被浅色提档值污染（暗色选择器 = variables.css [data-theme="dark"]）；
-   - 仅 ≥2560 生效：1440 基线与暗色主题零变化。
-   ═══════════════════════════════════════════════════════════════════════════ */
+≥2560 边框对比度提档（浅色主题限定）
+ 根因：--color-border #d9d9d9 对 #fff ≈1.57:1（WCAG 非文本建议 ≥3:1），
+ --color-border-light #e8e8e8 ≈1.33:1 → 大屏下搜索框 / tab / chip 描边过浅。
+ 契约：
+ - token 覆写让所有消费 var(--color-border/-light) 的描边一次性提档；
+ - :not([data-theme="dark"]) 三重排他——暗色边框 #363636 对深底对比足够，
+ 绝不能被浅色提档值污染（暗色选择器 = variables.css [data-theme="dark"]）；
+ - 仅 ≥2560 生效：1440 基线与暗色主题零变化。
+ ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 2560px) {
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"]) {
     --color-border: #bfbfbf;       /* = 既有 --color-border-strong 取值，3.0:1 */
@@ -861,8 +860,8 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Dark Theme — colors & shadows only (dimension tokens from :root)
-   ═══════════════════════════════════════════════════════════════════════════ */
+ Dark Theme — colors & shadows only (dimension tokens from :root)
+ ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
   /* 暗色主题 — primary 反转为白色，背景/表面整体加深 */
   --color-primary: #fff;
@@ -878,16 +877,16 @@
   --color-surface-elevated: #262626;
   --color-text: #fff;
   --color-text-secondary: #a0a0a0;
-  --color-text-tertiary: #8c8c8c;          /* 2026-09-15 提档：#666(2.87:1)→#8c8c8c（#1f1f1f 上 4.90:1） */
+  --color-text-tertiary: #8c8c8c;          /* 提档：#666(2.87:1)→#8c8c8c（#1f1f1f 上 4.90:1） */
   --color-text-disabled: #5a5a5a;          /* 禁用/占位/纯装饰（暗色档） */
   --color-text-inverse: #141414;
   --color-border: #363636;
   --color-border-light: #2b2b2b;
   --color-border-strong: #4a4a4a;
   --color-placeholder: #2b2b2b;
-  /* 暗色三态（2026-09-28 同批提档；2026-10-11 用户拍板维持不变，浅色另走方案一纸白分层；
-     2026-11-08 随浅色「二次加深」同步微加深一档，与卡片封面加载期画框描边配套）：
-     对页面底 #141414 拉开到 ΔE≥8，a 提亮与 placeholder 同档、b 微升，扫光在深底上仍可辨。 */
+  /* 暗色三态（同批提档；暗色此后维持不变，浅色另走纸白分层；
+ 随浅色「加深」同步微加深一档，与卡片封面加载期画框描边配套）：
+ 对页面底 #141414 拉开到 ΔE≥8，a 提亮与 placeholder 同档、b 微升，扫光在深底上仍可辨。 */
   --color-placeholder-shimmer-a: #2b2b2b;
   --color-placeholder-shimmer-b: #3d3d3d;
   --color-placeholder-border: #454545;     /* 加载/失败态描边暗档（原 #363636 加深一档） */
@@ -904,11 +903,11 @@
   --color-tab-active-text: #000;
   --color-tab-inactive-text: #a0a0a0;
   --color-success: #49aa19;
-  --color-error: #ff7875;                  /* 2026-09-15 提档：#d32029(3.15:1)→#ff7875(6.43:1) */
+  --color-error: #ff7875;                  /* 提档：#d32029(3.15:1)→#ff7875(6.43:1) */
   --color-danger: #cf1322;                 /* 与浅色同值：白字 5.57:1（原 #ef4444 仅 3.76） */
   --color-warning: #d89614;
   --color-rating: #ffd54a;                 /* 评分星色（暗底提亮） */
-  --color-info: #3c9ae8;                   /* 暗色主题链接蓝（2026-09-15 提档：#177ddc 3.93→5.48） */
+  --color-info: #3c9ae8;                   /* 暗色主题链接蓝（提档：#177ddc 3.93→5.48） */
   --color-info-hover: #69b1ff;             /* 暗色主题链接 hover（比 info 更亮一档） */
   /* 语义色文字/图标档（暗底需「亮档」而非「深档」，与浅色档互为镜像） */
   --color-success-text: #73d13d;           /* #1f1f1f 上 8.57:1 */
@@ -922,12 +921,12 @@
   --color-success-bg: rgba(73, 170, 25, 0.16);   /* 成功底色（暗色半透明档） */
   --color-warning-bg: rgba(216, 150, 20, 0.16);  /* 警告底色（暗色半透明档） */
   /* 警告描边暗色档：与 --color-warning-bg 同 rgb 三元组，仅提高不透明度到可辨识描边级别。
-     注：补此 token 前 IPTV 的 var(--color-warning-border, #ffe58f) 在暗色下取的是
-     浅色档 #ffe58f（浅黄描边压深底），属「token 缺失 → fallback 静默接管」型 bug。 */
+ 注：补此 token 前 IPTV 的 var(--color-warning-border, #ffe58f) 在暗色下取的是
+ 浅色档 #ffe58f（浅黄描边压深底），属「token 缺失 → fallback 静默接管」型 bug。 */
   --color-warning-border: rgba(216, 150, 20, 0.4);
   --color-error-bg: rgba(211, 32, 41, 0.16);     /* 错误底色（暗色半透明档） */
-  --color-skeleton: var(--color-placeholder-shimmer-a);        /* 别名，色源见浅色块注释（P1 收敛） */
-  --color-skeleton-shine: var(--color-placeholder-shimmer-b);  /* 别名，色源见浅色块注释（P1 收敛） */
+  --color-skeleton: var(--color-placeholder-shimmer-a);        /* 别名，色源见浅色块注释 */
+  --color-skeleton-shine: var(--color-placeholder-shimmer-b);  /* 别名，色源见浅色块注释 */
 
   /* ── Player overlay colors (always dark context) ────────────────────── */
   --player-bg: #000;                      /* 播放器底色（始终黑色） */
@@ -960,38 +959,38 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TV — discrete overrides (minimum touch targets, focus ring, safe area)
-   ═══════════════════════════════════════════════════════════════════════════ */
+ TV — discrete overrides (minimum touch targets, focus ring, safe area)
+ ═══════════════════════════════════════════════════════════════════════════ */
 [data-device="tv"] {
   /* ── Typography & icon scale-up（比例化 1920px → 3840px 视口）────────────
-     旧版 slope 过缓 + clamp 上限在视口宽 ≈3730px 即触顶(仅 ≈1.4×)，导致 4K 下
-     所有文字/图标元素停在接近 1080p 的大小、相对 4K 屏显小；间距 token 更从未缩放。
-     比例化：1920px = 桌面冻结值(A)（1080p-TV 与桌面等大），3840px(4K) = 2×A，中间线性。
-     因图标派生自文字 token，所有消费文本/图标 token 的组件（导航/卡片/分类按钮/
-     下拉等）一并正确放大，无需逐组件 patch。
-     ★强制约定（防回归）：本块内任意尺寸 clamp 一律写成 clamp(A, (A/19.2)vw, 2A)，
-     即 min=A(1080p 基线=桌面冻结值)、max=2A(4K)、斜率=A/1920——保证 max 字面=2×min
-     且所有 token 共享同一条 vw 曲线，任意分辨率下比例恒定。圆点/间距/下拉等旧值凡
-     不满足此形式者均已改写。新增 TV 尺寸 token 必须遵循，否则会出现"部分放大部分没放大"错乱。 */
-  /* 2026-09-15 B5：TV 字号对齐 10-foot UI 主流实践（原值低于行业下限）
-     依据：Android TV / Google TV 10-foot UI 通行区间 —— 正文 ≥18sp@1080p（舒适区 18–24）、
-     次要 ≥16sp、角标 ≥14sp、标题 24–36sp。原基线（正文 15 / 角标 11）在 3m 视距下不可读，
-     且继承暗色 tertiary #666（2.87:1）。
-     ★书写改用 px 基准：TV 根字号实测 15px（非 16），沿用 rem 会使 1.25rem 渲染成 18.75px
-     而非 20px，形成「文档值 ≠ 实测值」的二次偏差。形态严格遵守项目 TV 契约
-     clamp(A, (A/19.2)vw, 2A)：1080p=A、4K=2A、中间线性。 */
-  --text-2xs:  clamp(14px, 0.72917vw, 28px);   /* 14→28   角标/次要信息下限 14sp */
-  --text-xs:   clamp(16px, 0.83333vw, 32px);   /* 16→32   列表/标签 16sp */
-  --text-sm:   clamp(18px, 0.9375vw,  36px);   /* 18→36   次要正文 18sp */
-  --text-base: clamp(20px, 1.04167vw, 40px);   /* 20→40   正文 20sp（3m 视距） */
-  --text-lg:   clamp(22px, 1.14583vw, 44px);   /* 22→44   小标题 22sp */
-  --text-xl:   clamp(24px, 1.25vw,    48px);   /* 24→48   区块标题 24sp */
-  --text-2xl:  clamp(30px, 1.5625vw,  60px);   /* 30→60   页面标题 30sp */
-  --text-3xl:  clamp(36px, 1.875vw,   72px);   /* 36→72   Hero 标题 36sp */
+ 旧版 slope 过缓 + clamp 上限在视口宽 ≈3730px 即触顶(仅 ≈1.4×)，导致 4K 下
+ 所有文字/图标元素停在接近 1080p 的大小、相对 4K 屏显小；间距 token 更从未缩放。
+ 比例化：1920px = 桌面冻结值(A)（1080p-TV 与桌面等大），3840px(4K) = 2×A，中间线性。
+ 因图标派生自文字 token，所有消费文本/图标 token 的组件（导航/卡片/分类按钮/
+ 下拉等）一并正确放大，无需逐组件 patch。
+ ★强制约定（防回归）：本块内任意尺寸 clamp 一律写成 clamp(A, (A/19.2)vw, 2A)，
+ 即 min=A(1080p 基线=桌面冻结值)、max=2A(4K)、斜率=A/1920——保证 max 字面=2×min
+ 且所有 token 共享同一条 vw 曲线，任意分辨率下比例恒定。圆点/间距/下拉等旧值凡
+ 不满足此形式者均已改写。新增 TV 尺寸 token 必须遵循，否则会出现"部分放大部分没放大"错乱。 */
+  /* TV 字号对齐 10-foot UI 主流实践（原值低于行业下限）
+ 依据：Android TV / Google TV 10-foot UI 通行区间 —— 正文 ≥18sp@1080p（舒适区 18–24）、
+ 次要 ≥16sp、角标 ≥14sp、标题 24–36sp。原基线（正文 15 / 角标 11）在 3m 视距下不可读，
+ 且继承暗色 tertiary #666（2.87:1）。
+ ★书写改用 px 基准：TV 根字号实测 15px（非 16），沿用 rem 会使 1.25rem 渲染成 18.75px
+ 而非 20px，形成「文档值 ≠ 实测值」的二次偏差。形态严格遵守项目 TV 契约
+ clamp(A, (A/19.2)vw, 2A)：1080p=A、4K=2A、中间线性。 */
+  --text-2xs:  clamp(14px, 0.72917vw, 28px);   /* 14→28 角标/次要信息下限 14sp */
+  --text-xs:   clamp(16px, 0.83333vw, 32px);   /* 16→32 列表/标签 16sp */
+  --text-sm:   clamp(18px, 0.9375vw,  36px);   /* 18→36 次要正文 18sp */
+  --text-base: clamp(20px, 1.04167vw, 40px);   /* 20→40 正文 20sp（3m 视距） */
+  --text-lg:   clamp(22px, 1.14583vw, 44px);   /* 22→44 小标题 22sp */
+  --text-xl:   clamp(24px, 1.25vw,    48px);   /* 24→48 区块标题 24sp */
+  --text-2xl:  clamp(30px, 1.5625vw,  60px);   /* 30→60 页面标题 30sp */
+  --text-3xl:  clamp(36px, 1.875vw,   72px);   /* 36→72 Hero 标题 36sp */
   /* 根字号（rem 基准）：复刻 TV 下原 --text-base 的 rem 式解析结果 ——
-     rem 用在根元素 font-size 上时以「属性初始值 16px」为基准（CSS Values 3），
-     故原 clamp(0.9375rem, 0.78125vw, 1.875rem) ≡ clamp(15px, 0.78125vw, 30px)：
-     1080p = 15px、4K = 30px，与改前逐值一致。勿改回 rem（会重新引入循环依赖）。 */
+ rem 用在根元素 font-size 上时以「属性初始值 16px」为基准（CSS Values 3），
+ 故原 clamp(0.9375rem, 0.78125vw, 1.875rem) ≡ clamp(15px, 0.78125vw, 30px)：
+ 1080p = 15px、4K = 30px，与改前逐值一致。勿改回 rem（会重新引入循环依赖）。 */
   --root-font-size: clamp(15px, 0.78125vw, 30px);
   /* 图标派生自 TV 文字 token × 固定系数 → 随文字比例化曲线同步放大，比例恒定。 */
   --icon-xs:  calc(var(--text-xs)  * 1.40);
@@ -1001,13 +1000,13 @@
   --icon-xl:  calc(var(--text-2xl) * 1.33);
   --icon-2xl: calc(var(--text-3xl) * 1.30);
   --icon-3xl: calc(var(--text-3xl) * 1.70);
-  --dot-size:     clamp(5px, 0.2604vw, 10px);   /* 5→10  圆点（=桌面 5→10，4K=2×） */
+  --dot-size:     clamp(5px, 0.2604vw, 10px);   /* 5→10 圆点（=桌面 5→10，4K=2×） */
   --dot-active-w: clamp(16px, 0.8333vw, 24px);  /* 16→24 激活胶囊宽（=桌面 16→24，4K=2×） */
-  --dot-active-h: clamp(5px, 0.2604vw, 10px);   /* 5→10  圆点（=桌面 5→10，4K=2×） */
-  --dot-gap:      clamp(3px, 0.1563vw, 6px);    /* 3→6   圆点间距（=桌面 3→6，4K=2×） */
+  --dot-active-h: clamp(5px, 0.2604vw, 10px);   /* 5→10 圆点（=桌面 5→10，4K=2×） */
+  --dot-gap:      clamp(3px, 0.1563vw, 6px);    /* 3→6 圆点间距（=桌面 3→6，4K=2×） */
 
   /* 间距 token：TV 比例化统一 clamp(A, (A/19.2)vw, 2A)，1080p 基线=A=桌面冻结值、4K=2A。 */
-  --space-sm:  clamp(12px, 0.625vw, 24px);   /* 12→24  */
+  --space-sm:  clamp(12px, 0.625vw, 24px);   /* 12→24 */
   --space-md:  clamp(18px, 0.9375vw, 36px);     /* 18→36 */
   --space-lg:  clamp(28px, 1.4583vw, 56px);   /* 28→56 */
   --space-xl:  clamp(40px, 2.0833vw, 80px);    /* 40→80 */
@@ -1016,35 +1015,35 @@
 
   /* ── Layout（TV 比例化：1080p 基线=旧版尺寸，4K 仍 2×，全分辨率线性）────────── */
   /* safe-area 实际值由 AppLayout 按设置页滑块（tvOverscan 预设 0/5/10/15/20，单位 vw/vh）
-     写入 <html> 的 --safe-area-x/y 内联变量；此处仅作兜底默认值
-     （与 useSettingsStore 的 tvOverscan 默认 5 对齐 —— 2026-09-15 B7.4 修正，原写 3 不一致）。 */
+ 写入 <html> 的 --safe-area-x/y 内联变量；此处仅作兜底默认值
+ （与 useSettingsStore 的 tvOverscan 默认 5 对齐 —— 修正，原写 3 不一致）。 */
   /* 间距补全（小档，TV 基数=桌面冻结值，4K=2×） */
-  --space-3xs:     clamp(2px, 0.1042vw, 4px);   /* 2→4     (桌面 2, 4K=4) */
-  --space-2xs:     clamp(3px, 0.1563vw, 6px); /* 3→6     (桌面 3, 4K=6) */
-  --space-xs:      clamp(6px, 0.3125vw, 12px);   /* 6→12    (桌面 6, 4K=12) */
-  --space-xs-plus: clamp(8px, 0.4167vw, 16px);        /* 8→16    (桌面 8, 4K=16) */
+  --space-3xs:     clamp(2px, 0.1042vw, 4px);   /* 2→4 (桌面 2, 4K=4) */
+  --space-2xs:     clamp(3px, 0.1563vw, 6px); /* 3→6 (桌面 3, 4K=6) */
+  --space-xs:      clamp(6px, 0.3125vw, 12px);   /* 6→12 (桌面 6, 4K=12) */
+  --space-xs-plus: clamp(8px, 0.4167vw, 16px);        /* 8→16 (桌面 8, 4K=16) */
 
   /* ── Component Sizes（TV 基数=桌面冻结值，4K=2×，统一 clamp(A, (A/19.2)vw, 2A)）── */
-  --comp-btn-min-height: clamp(60px, 3.125vw, 120px);      /* 60→120  (桌面60, 4K=120) */
-  --comp-tab-height:     clamp(44px, 2.2917vw, 88px);     /* 44→88   (桌面44, 4K=88) */
-  --comp-btn-min-width:  clamp(60px, 3.125vw, 120px);      /* 60→120  (桌面60, 4K=120) */
+  --comp-btn-min-height: clamp(60px, 3.125vw, 120px);      /* 60→120 (桌面60, 4K=120) */
+  --comp-tab-height:     clamp(44px, 2.2917vw, 88px);     /* 44→88 (桌面44, 4K=88) */
+  --comp-btn-min-width:  clamp(60px, 3.125vw, 120px);      /* 60→120 (桌面60, 4K=120) */
   --comp-input-height:   clamp(58px, 3.0208vw, 116px);   /* 58→116 (TV 自有契约，与桌面 40→48 解耦；TV 导航栏 200px 级) */
   --comp-input-min-w:    clamp(300px, 15.625vw, 600px);   /* 300→600 (桌面300, 4K=600) */
-  --comp-thumb-size:     clamp(28px, 1.4583vw, 56px);     /* 28→56   (桌面28, 4K=56) */
-  --switch-track-height: clamp(24px, 1.25vw, 48px);          /* 24→48   (桌面24, 4K=48) */
-  --switch-track-width:  clamp(48px, 2.5vw, 96px);             /* 48→96   (桌面48, 4K=96) */
-  --switch-thumb-size:   clamp(24px, 1.25vw, 48px);          /* 24→48   (桌面24, 4K=48) */
-  --switch-thumb-offset: clamp(24px, 1.25vw, 48px);          /* 24→48   (桌面24, 4K=48) */
-  --vol-track-width:     clamp(4px, 0.2083vw, 8px);     /* 4→8     (桌面4, 4K=8) */
-  --vol-track-radius:    clamp(2px, 0.1042vw, 4px);   /* 2→4     (桌面2, 4K=4) */
-  --radio-size:          clamp(28px, 1.4583vw, 56px);     /* 28→56   (桌面28, 4K=56) */
-  --radio-dot-size:      clamp(14px, 0.7292vw, 28px);   /* 14→28   (桌面14, 4K=28) */
-  --badge-size:          clamp(22px, 1.1458vw, 44px);   /* 22→44   (桌面22, 4K=44) */
+  --comp-thumb-size:     clamp(28px, 1.4583vw, 56px);     /* 28→56 (桌面28, 4K=56) */
+  --switch-track-height: clamp(24px, 1.25vw, 48px);          /* 24→48 (桌面24, 4K=48) */
+  --switch-track-width:  clamp(48px, 2.5vw, 96px);             /* 48→96 (桌面48, 4K=96) */
+  --switch-thumb-size:   clamp(24px, 1.25vw, 48px);          /* 24→48 (桌面24, 4K=48) */
+  --switch-thumb-offset: clamp(24px, 1.25vw, 48px);          /* 24→48 (桌面24, 4K=48) */
+  --vol-track-width:     clamp(4px, 0.2083vw, 8px);     /* 4→8 (桌面4, 4K=8) */
+  --vol-track-radius:    clamp(2px, 0.1042vw, 4px);   /* 2→4 (桌面2, 4K=4) */
+  --radio-size:          clamp(28px, 1.4583vw, 56px);     /* 28→56 (桌面28, 4K=56) */
+  --radio-dot-size:      clamp(14px, 0.7292vw, 28px);   /* 14→28 (桌面14, 4K=28) */
+  --badge-size:          clamp(22px, 1.1458vw, 44px);   /* 22→44 (桌面22, 4K=44) */
 
   /* ── Border Radius（TV 基数=桌面冻结值，4K=2×）─────────────────────────────── */
-  --radius-sm: clamp(5px, 0.2604vw, 10px);  /* 5→10   (桌面5, 4K=10) */
-  --radius-md: clamp(10px, 0.5208vw, 20px);    /* 10→20  (桌面10, 4K=20) */
-  --radius-lg: clamp(18px, 0.9375vw, 36px);    /* 18→36  (桌面18, 4K=36) */
+  --radius-sm: clamp(5px, 0.2604vw, 10px);  /* 5→10 (桌面5, 4K=10) */
+  --radius-md: clamp(10px, 0.5208vw, 20px);    /* 10→20 (桌面10, 4K=20) */
+  --radius-lg: clamp(18px, 0.9375vw, 36px);    /* 18→36 (桌面18, 4K=36) */
 
   /* ── Grid Gap（TV 基数=桌面冻结值，4K=2×）────────────────────────────────────── */
   --grid-gap: clamp(24px, 1.25vw, 48px);  /* 24→48 (桌面24, 4K=48) */
@@ -1055,21 +1054,21 @@
   --header-height: clamp(76px, 3.9583vw, 152px);   /* 76→152 (桌面76, 4K=152) */
   /* B. Logo：TV 基线=桌面 64px（1.00× 桌面），4K=2×=128px，统一 clamp(A,(A/19.2)vw,2A)。 */
   --layout-logo-size: clamp(64px, 3.3333vw, 128px);     /* 64→128 (桌面64, 4K=128) */
-  /* C. 品牌文字（2026-09-15 B5）：改 px 书写 —— 原 rem 式在 TV 根字号 15px 下渲染为
-     22.5→45px（文档值 ≠ 实测值）。现 1080p=24（与改前一致，零回归）、4K=48。 */
+  /* C. 品牌文字：改 px 书写 —— 原 rem 式在 TV 根字号 15px 下渲染为
+ 22.5→45px（文档值 ≠ 实测值）。现 1080p=24（与改前一致，零回归）、4K=48。 */
   --layout-brand-font-size: clamp(24px, 1.25vw, 48px);
   /* D. 搜索框/提交按钮高度：TV 直接采用桌面 --comp-input-height 的同一条比例化曲线
-     （1080p=桌面值 58px、4K=2×=116px），统一 clamp(A,(A/19.2)vw,2A)。
-     关键修复：SearchBox TV 原用 calc(var(--comp-input-height) * 1.4)，而基础
-     --comp-input-height 自身几乎不随 vw 放大（40→58px），导致大屏导航栏已 200px 高、
-     搜索框却仍 ~81px → 导航栏显空旷、"高度大出一截"。改为跟随同一比例化曲线修复该错乱。 */
+ （1080p=桌面值 58px、4K=2×=116px），统一 clamp(A,(A/19.2)vw,2A)。
+ 关键修复：SearchBox TV 原用 calc(var(--comp-input-height) * 1.4)，而基础
+ --comp-input-height 自身几乎不随 vw 放大（40→58px），导致大屏导航栏已 200px 高、
+ 搜索框却仍 ~81px → 导航栏显空旷、"高度大出一截"。改为跟随同一比例化曲线修复该错乱。 */
   --comp-input-height-tv: clamp(58px, 3.0208vw, 116px);  /* 58→116 (桌面58, 4K=116，与 comp-input-height 一致) */
 
   /* E. 搜索下拉最大高度：TV 比例化标准契约 clamp(A,(A/19.2)vw,2A)，
-     1080p 基线=A=桌面 374px（与桌面 1080p 下拉等高）、4K=2×=748px。
-     历史反例：旧版 TV 用 432→876（A≠桌面 1080p、且 2A=864≠876，不满足契约），现修正为标准形态。
-     ⚠️ D2 修复：旧 rem 式斜率 19.5vw 反算 A = 374.4（契约应为 374/19.2 = 19.4792vw），
-     实测 1080p 374.39 / 4K 748.80 —— 各偏 +0.39 / +0.80px。 */
+ 1080p 基线=A=桌面 374px（与桌面 1080p 下拉等高）、4K=2×=748px。
+ 历史反例：旧版 TV 用 432→876（A≠桌面 1080p、且 2A=864≠876，不满足契约），现修正为标准形态。
+ ⚠️ 修复：旧 rem 式斜率 19.5vw 反算 A = 374.4（契约应为 374/19.2 = 19.4792vw），
+ 实测 1080p 374.39 / 4K 748.80 —— 各偏 +0.39 / +0.80px。 */
   --layout-dropdown-max-h: clamp(374px, 19.4792vw, 748px);  /* 374→748 (桌面374, 4K=748) */
 
 
@@ -1080,32 +1079,32 @@
   --focus-ring: 0 0 0 3px var(--color-background), 0 0 0 6px var(--color-primary);
 
   /* TV 焦点方框：方向键/遥控器导航下统一用 outline 绘制在边框【外侧】，
-     不被元素自身 overflow:hidden / border-radius 裁切（box-shadow 会被 overflow:hidden
-     祖先裁掉，表现为「方框被裁 / 只剩一个小圆点」）。
-     --tv-focus-* 驱动方框粗细与间距，集中在此便于统一调参。 */
+ 不被元素自身 overflow:hidden / border-radius 裁切（box-shadow 会被 overflow:hidden
+ 祖先裁掉，表现为「方框被裁 / 只剩一个小圆点」）。
+ --tv-focus-* 驱动方框粗细与间距，集中在此便于统一调参。 */
   --tv-focus-width: 3px;
   --tv-focus-offset: 2px;
-  /* ── TV 漏斗补钉（阶段 A）：:root 流体但 TV 未覆盖者恒 MIN，零回归 ──
-     注（E2a 回退）：R6 兜底 4 个（bottomsheet/detail-hero/modal/program-guide -max-h）
-     已撤销补钉——其 :root 定义恢复旧 rem 式（= 旧 TV 实际渲染值），无需钉 MIN。 */
+  /* ── TV 漏斗补钉：:root 流体但 TV 未覆盖者恒 MIN，零回归 ──
+ 注（E2a 回退）：R6 兜底 4 个（bottomsheet/detail-hero/modal/program-guide -max-h）
+ 补钉已移除——其 :root 定义恢复旧 rem 式（= 旧 TV 实际渲染值），无需钉 MIN。 */
   --avatar-lg: 72px;
   --avatar-sm: 56px;
   --avatar-xs: 30px;
   --error-msg-max-width: 100px;
   --header-height-compact: 48px;
-  /* 品牌文字大小档（2026-09-15 B5 比例化）：原为「恒 MIN 补钉」（24/16，TV 未覆盖者回到
-     桌面值），与本次正文 20sp 提升不匹配；改为标准 TV 契约曲线，1080p=28/20、4K=56/40。 */
+  /* 品牌文字大小档：原为「恒 MIN 补钉」（24/16，TV 未覆盖者回到
+ 桌面值），与本次正文 20sp 提升不匹配；改为标准 TV 契约曲线，1080p=28/20、4K=56/40。 */
   --layout-brand-font-size-lg: clamp(28px, 1.45833vw, 56px);
   --layout-brand-font-size-sm: clamp(20px, 1.04167vw, 40px);
   --layout-card-daily-width: 200px;
-  --layout-cast-avatar: 56px; /* 64×0.875（2026-09-23） */
+  --layout-cast-avatar: 56px; /* 64×0.875 */
   --layout-channel-num-w: 120px;
-  /* 频道列表一级栏（2026-09-15 B5 重标定）：旧值 A=162 是基于「TV 组项文字 16px」标定的，
-     本次 TV 字号对齐 10-foot 基线后组项改用 --text-lg = 22px（1080p）→ 原宽度不再够用。
-     实测「央视 CCTV」+ 计数药丸需要 201.6px（1080p）/ 403.1px（4K）→ 取 A=208（+3.2% 余量）。
-     按 TV 契约 clamp(A,(A/19.2)vw,2A)：1080p=208、4K=416。
-     ⚠️ 须与 UniversalPlayer.css 的 `.up-platform-tv .up-channel-groups { max-width }` 同步
-     （通用规则的 44% 上限会把它钳回 193.6px）。 */
+  /* 频道列表一级栏：旧值 A=162 是基于「TV 组项文字 16px」标定的，
+ 本次 TV 字号对齐 10-foot 基线后组项改用 --text-lg = 22px（1080p）→ 原宽度不再够用。
+ 实测「央视 CCTV」+ 计数药丸需要 201.6px（1080p）/ 403.1px（4K）→ 取 A=208（+3.2% 余量）。
+ 按 TV 契约 clamp(A,(A/19.2)vw,2A)：1080p=208、4K=416。
+ ⚠️ 须与 UniversalPlayer.css 的 `.up-platform-tv .up-channel-groups { max-width }` 同步
+ （通用规则的 44% 上限会把它钳回 193.6px）。 */
   --layout-channel-group-w: clamp(208px, 10.8333vw, 416px);
   --layout-collapse-max-h: 1000px;
   --layout-content-max-width: 320px;
@@ -1154,22 +1153,22 @@
 }
 
 /* ── lucide 图标尺寸由 --icon-* token 驱动 ───────────────────────────────
-   语义档 xs/sm/md/lg/xl/2xl/3xl 由 --icon-* 提供（响应式，TV 模式经
-   [data-device="tv"] 覆盖自动放大）。源码不再出现像素硬编码：
-   - 经 <Icon icon={X} size="档" /> 调用时由组件注入对应 var（优先级最高）；
-   - 直接 <X /> 调用（lucide 默认 24）由此处默认 lg 接管。 */
+ 语义档 xs/sm/md/lg/xl/2xl/3xl 由 --icon-* 提供（响应式，TV 模式经
+ [data-device="tv"] 覆盖自动放大）。源码不再出现像素硬编码：
+ - 经 <Icon icon={X} size="档" /> 调用时由组件注入对应 var（优先级最高）；
+ - 直接 <X /> 调用（lucide 默认 24）由此处默认 lg 接管。 */
 .lucide {
   width: var(--icon-lg);
   height: var(--icon-lg);
 }
 
 /* ── 大屏覆盖 (≥1920px，含 TV / 桌面 2K / 4K) ────────────────────────────
-   旧版为固定 px/rem 值（如 modal 1100px、bottomsheet 800px）：2K(2560) 与
-   4K(3840) 命中同一固定值 → 2K 未比 1080p 放大、4K 相对屏高显小，且所有中间
-   分辨率（3K 等）一律同值。改比例化 clamp：1920=A（=原固定值，1080p-TV/2K 起点
-   零回归），3840=2A，中间线性 → 2K 自动 1.33A、3K 1.5A、4K 2A，全分辨率覆盖。
-   （这些 token 多配合 min(vh,…) 使用，vh 项本就随屏高 2×，此处只修正漏网的
-   固定 px/rem 上限段。） */
+ 旧版为固定 px/rem 值（如 modal 1100px、bottomsheet 800px）：2K(2560) 与
+ 4K(3840) 命中同一固定值 → 2K 未比 1080p 放大、4K 相对屏高显小，且所有中间
+ 分辨率（3K 等）一律同值。改比例化 clamp：1920=A（=原固定值，1080p-TV/2K 起点
+ 零回归），3840=2A，中间线性 → 2K 自动 1.33A、3K 1.5A、4K 2A，全分辨率覆盖。
+ （这些 token 多配合 min(vh,…) 使用，vh 项本就随屏高 2×，此处只修正漏网的
+ 固定 px/rem 上限段。） */
 @media (width >= 1920px) {
   html:not([data-device="app"]) {
     --layout-detail-hero-max-h:   clamp(50.875rem, 42.4vw,   101.75rem); /* 814→1628px */
@@ -1183,51 +1182,49 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TV 端 --continue-cols — 恒定，不随视口断点变化（2026-09-03；--card-cols:8 已移至 layout-tokens.css）
-   ---------------------------------------------------------------------------
-   ≥2560/≥3840 断点已显式 :not(tv) 排除（E4），本块对 card-cols 不再依赖源码顺序；
-   768/1024/1280 三档仍靠源码顺序取胜（数值 5/6/8，TV 实际渲染恒为下方 8）。
-   TV 端 --space-lg 已是 28→56px 的放大曲线，卡片间距无需额外处理。
-   ═══════════════════════════════════════════════════════════════════════ */
+ TV 端 --continue-cols — 恒定，不随视口断点变化（--card-cols:8 已移至 layout-tokens.css）
+ ---------------------------------------------------------------------------
+ ≥2560/≥3840 断点已显式 :not(tv) 排除（E4），本块对 card-cols 不再依赖源码顺序；
+ 768/1024/1280 三档仍靠源码顺序取胜（数值 5/6/8，TV 实际渲染恒为下方 8）。
+ TV 端 --space-lg 已是 28→56px 的放大曲线，卡片间距无需额外处理。
+ ═══════════════════════════════════════════════════════════════════════ */
 html[data-device="tv"] {
-  /* --card-cols: 8 已移至 layout-tokens.css 的 TV 覆盖块（单真源，2026-09-21）；此处仅留 --continue-cols */
+  /* --card-cols: 8 已移至 layout-tokens.css 的 TV 覆盖块（单真源）；此处仅留 --continue-cols */
   --continue-cols: 6;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   页面全局左右 padding 分档 --page-pad-x + 首页 Hero B 站风 token（2026-09-05）
-   ---------------------------------------------------------------------------
-   --page-pad-x 分档（2026-09-07 用户拍板改渐进；2026-09-08 用户再调两档；
-   2026-09-30 60px 档起点 1440 → 1024，为容纳换一换浮层进页面留白区）：
-   <1024 沿用桌面既有 --space-lg；≥1024 且 <1920 = 60px；≥1920 且 <2560 = 100px；≥2560 = 140px。
-   （历史梯度 16/60/80/140 中的 60/80，2026-09-07 先压成 32/48，2026-09-08 按用户决策
-     恢复并加码为 60/100 —— 现梯度 16/60/100/140 单调递增、无倒挂。）
+ 页面全局左右 padding 分档 --page-pad-x + 首页 Hero B 站风 token
+ ---------------------------------------------------------------------------
+ --page-pad-x 分档（渐进曲线；60px 档起点 1024，为容纳换一换浮层进页面留白区）：
+ <1024 沿用桌面既有 --space-lg；≥1024 且 <1920 = 60px；≥1920 且 <2560 = 100px；≥2560 = 140px。
+ （历史梯度曾为 16/60/80/140，现梯度 16/60/100/140 单调递增、无倒挂。）
 
-   Hero 注释补记：banner-h = 内容宽 × 27.27% → 1440(pad60) 360、1920(pad100) 469、≥2560(pad140) 524。
-   右栏 = 内容宽 × 56% → 1440 739、1920 963、≥2560 1075。（1920 基准原按 pad80 = 480/986 标定，
-   100px 下略低 11px，属用户加宽留白的正常结果。）
-   替换 .page-padding 的桌面左右 padding（index.css），<768 移动端不受影响。
-   TV 红线：分档 @media 必须 html:not([data-device="tv"]) 前缀，TV 恒 --space-lg。
-   HeroBili token 由 layout-tokens.css 的「6:4 + 双 16:9 精确解」统一派生，
-   本节仅保留不依赖右栏宽公式的 gap / 字号 / 圆角 token。
-     min(100vw, 2200px) 与 --layout-content-max-width 的 2200 硬上限契约对齐。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ Hero 注释补记：banner-h = 内容宽 × 27.27% → 1440(pad60) 360、1920(pad100) 469、≥2560(pad140) 524。
+ 右栏 = 内容宽 × 56% → 1440 739、1920 963、≥2560 1075。（1920 基准原按 pad80 = 480/986 标定，
+ 100px 下略低 11px，属加宽留白的正常结果。）
+ 替换 .page-padding 的桌面左右 padding（index.css），<768 移动端不受影响。
+ TV 红线：分档 @media 必须 html:not([data-device="tv"]) 前缀，TV 恒 --space-lg。
+ HeroBili token 由 layout-tokens.css 的「6:4 + 双 16:9 精确解」统一派生，
+ 本节仅保留不依赖右栏宽公式的 gap / 字号 / 圆角 token。
+ min(100vw, 2200px) 与 --layout-content-max-width 的 2200 硬上限契约对齐。
+ ═══════════════════════════════════════════════════════════════════════════ */
 /* stylelint-disable-next-line no-duplicate-selectors -- 分节追加：本块是「布局尺寸契约」独立小节（见上方 banner），与顶部基础 token 块刻意分离；已核实与前块零重叠，D7 甄别为分节追加而非真冗余，不做合并 */
 :root {
   /* ── --page-pad-x / --hero-banner-h / --hero-side-w 已移至 layout-tokens.css ──
-     （2026-09-22 单真源收敛：修复懒 chunk CSS 竞态导致的 banner 骨架超大闪跳；
-     改这些值请改 layout-tokens.css，勿在此重定义） */
+ （单真源收敛：修复懒 chunk CSS 竞态导致的 banner 骨架超大闪跳；
+ 改这些值请改 layout-tokens.css，勿在此重定义） */
 
   /* ── 桌面左栏（rail）统一宽度 --rail-w ──
-     ⚠️ 已移至 layout-tokens.css（单真源，2026-09-21）。消费方：Browse.css / Settings.css /
-     IPTV.css / RecordShell.css / 启动骨架。改栏宽请改 layout-tokens.css，勿在此重定义。 */
+ ⚠️ 已移至 layout-tokens.css（单真源）。消费方：Browse.css / Settings.css /
+ IPTV.css / RecordShell.css / 启动骨架。改栏宽请改 layout-tokens.css，勿在此重定义。 */
 
   /* ── HeroBili 其余专用 token（不依赖右列宽公式，留本文件）── */
   --hero-main-gap: calc(clamp(7.2px, 4px + 0.4167vw, 12px) * var(--ui-scale));      /* 10@1440 → 12@1920 */
   --hero-side-gap: calc(clamp(7.2px, 4px + 0.4167vw, 12px) * var(--ui-scale));
   --hero-title-size: calc(clamp(11.6px, 10px + 0.2083vw, 14px) * var(--ui-scale));  /* 13@1440 → 14@1920 */
-  /* 兼容 token：2026-11-04 封面出血后标题浮在图上、不再占独立下行；
-     保留供旧引用/骨架高度对照使用，真实 banner 高已由 aspect-ratio 派生。 */
+  /* 兼容 token： 封面出血后标题浮在图上、不再占独立下行；
+ 保留供旧引用/骨架高度对照使用，真实 banner 高已由 aspect-ratio 派生。 */
   --hero-title-bar-h: calc(2 * var(--space-xs) + 1.4 * var(--hero-title-size));
   --hero-card-radius: calc(clamp(5.2px, 2px + 0.4167vw, 10px) * var(--ui-scale));   /* 8@1440 → 10@1920 */
 }

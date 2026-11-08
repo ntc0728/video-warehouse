@@ -7,12 +7,12 @@
  * [数据迁移] 旧 localStorage key `subtitle-store` 的 translation API 数据会在首次加载时自动迁移到 `app-settings`
  * [安全] 敏感字段（tmdbAccessToken、translationApiKey）使用 AES-GCM 加密存储
  *
- * [H1 修复 2026-08-05] 内存始终为明文、持久化层才加密：
- *   - setter 只写内存明文，不再异步加密后 setState 覆盖内存（旧实现导致保存 Token 后同一会话
- *     内所有 TMDB 请求携带密文 → 401）。
- *   - 加密收敛到自定义异步 storage：setItem 写 localStorage 前对敏感字段 AES-GCM 加密；
- *     getItem 原样返回密文；onRehydrateStorage 读入时解密为内存明文。
- *   - 兼容旧密文数据：rehydrate 对「疑似密文」解密，对明文原样返回（decryptText 内兼容）。
+ * [H1 修复 ] 内存始终为明文、持久化层才加密：
+ * - setter 只写内存明文，不再异步加密后 setState 覆盖内存（旧实现导致保存 Token 后同一会话
+ * 内所有 TMDB 请求携带密文 → 401）。
+ * - 加密收敛到自定义异步 storage：setItem 写 localStorage 前对敏感字段 AES-GCM 加密；
+ * getItem 原样返回密文；onRehydrateStorage 读入时解密为内存明文。
+ * - 兼容旧密文数据：rehydrate 对「疑似密文」解密，对明文原样返回（decryptText 内兼容）。
  */
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -69,7 +69,7 @@ const SENSITIVE_FIELDS = ['tmdbAccessToken', 'translationApiKey'] as const;
 const APP_SETTINGS_PERSIST_KEY = 'app-settings';
 
 /**
- * uiScale 合法档位上限：120%（2026-11-08 用户定稿，选项 90%–120% + 自动/默认）。
+ * uiScale 合法档位上限：120%（选项 90%–120% + 自动/默认）。
  * 旧档位 130% / 150% 已删除 —— 落盘值超限时钳到上限，避免下拉无匹配项显示空值。
  */
 const UI_SCALE_MAX = 1.2;
@@ -105,7 +105,7 @@ export const DEFAULT_SETTINGS = {
   tvMode: false,
   projectorMode: false,
   tvOverscan: 5,
-  uiScale: 1, // 2026-11-08 默认改为 100%（不缩放）；「自动」仍为可选项
+  uiScale: 1, // 默认改为 100%（不缩放）；「自动」仍为可选项
   username: '',
   avatar: '',
 };
@@ -119,7 +119,7 @@ export const DEFAULT_SETTINGS = {
  *
  * 说明：
  * - persist.setItem 接收 `{ state, version }`，此处异步加密后写盘；即使 persist 不 await
- *   返回的 Promise，也不影响内存值（内存始终是明文）。
+ * 返回的 Promise，也不影响内存值（内存始终是明文）。
  * - 解密失败（兼容旧明文数据）时按明文原样写回，行为与 decryptText 兜底一致。
  */
 const encryptedStorage = createJSONStorage<SettingsState>(() => {
@@ -317,21 +317,21 @@ export const useSettingsStore = create<SettingsState>()(
   )
 );
 
-// ── 跨页签实时同步（2026-09-02）─────────────────────────────
+// ── 跨页签实时同步─────────────────────────────
 // 静态配置（主题/皮肤/视频源选择/代理/EPG/token 等）经 zustand persist 落
 // localStorage（键 APP_SETTINGS_PERSIST_KEY）。同源其它页签写入自动触发本页签
 // window 'storage' 事件，此处做**白名单受控合并**让设置跨页签实时一致。
-//
+
 // ⚠️ 为什么不能用「storage 事件 → persist.rehydrate()」（iptv-store 的做法）：
-//   ① encryptText 每次生成随机 IV → 同一明文每次密文都不同。rehydrate 的解密
-//      onRehydrateStorage 必然 setState → persist 自动写盘 = 全新密文 → 其它页签
-//      再收到事件再 rehydrate → **敏感字段非空时无限事件循环**；
-//   ② persist 水合期自身的 setState 会写盘，而合并值里敏感字段是密文 → 自定义
-//      setItem 对密文再加密 = 双重加密，会污染持久化数据。
-//   所以这里不复用 persist 通道：直接解析事件载荷，逐键解密+比对后才 setState。
-//   收敛性：接收页签仅在「值确实变化」时 set；set 后 persist 写回的内容与自身
-//   内存一致 → 对端再收到事件时逐键比对全相等 → 不再 set → 环自动断裂。
-//
+// ① encryptText 每次生成随机 IV → 同一明文每次密文都不同。rehydrate 的解密
+// onRehydrateStorage 必然 setState → persist 自动写盘 = 全新密文 → 其它页签
+// 再收到事件再 rehydrate → **敏感字段非空时无限事件循环**；
+// ② persist 水合期自身的 setState 会写盘，而合并值里敏感字段是密文 → 自定义
+// setItem 对密文再加密 = 双重加密，会污染持久化数据。
+// 所以这里不复用 persist 通道：直接解析事件载荷，逐键解密+比对后才 setState。
+// 收敛性：接收页签仅在「值确实变化」时 set；set 后 persist 写回的内容与自身
+// 内存一致 → 对端再收到事件时逐键比对全相等 → 不再 set → 环自动断裂。
+
 // 白名单排除（CROSS_TAB_EXCLUDED_KEYS）：tvMode / tvOverscan / projectorMode 属「播放布局类」，
 // 实时灌入会突变另一页签正在播放页的布局（TV 导航框架 + 过扫描安全区 + 设备标识），不同步。
 // 每页签保留自己的值；excluded 键永远不会被写回覆盖，也不参与收敛。

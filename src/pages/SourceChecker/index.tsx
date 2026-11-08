@@ -1,11 +1,11 @@
 /**
  * 源检测页面
  * 检测 5 个维度：网速、IPTV 源、视频源、IPTV 代理、视频代理
- * 布局（2026-10-10 落地「己 · 三栏 + 健康带」）：
- *   顶部健康带（健康环=域通过率 + 延迟对比条形 + 五域磁贴）
- *   + 左分组导航 / 中单列源列表 / 右详情坞（选中才展开，未选中 mid 撑满，对齐真实 is-rail 语义）
- *   详情坞支持「重测该源」（单源探测，2026-10-10 新增）与「重测本组」。
- *   移除项（对齐 demo、去未实现）：近 5 次历史柱、行级「最近」时间列（全局时间复制到每行，易误读）。
+ * 布局（三栏 + 健康带）：
+ * 顶部健康带（健康环=域通过率 + 延迟对比条形 + 五域磁贴）
+ * + 左分组导航 / 中单列源列表 / 右详情坞（选中才展开，未选中 mid 撑满，对齐真实 is-rail 语义）
+ * 详情坞支持「重测该源」（单源探测， 新增）与「重测本组」。
+ * 移除项（对齐、去未实现）：近 5 次历史柱、行级「最近」时间列（全局时间复制到每行，易误读）。
  */
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
@@ -24,7 +24,7 @@ import './SourceChecker.css';
 import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 /**
- * 源探测并发上限（2026-09-16）。原实现逐个 for+await，N 个源 = N×超时易像卡死；
+ * 源探测并发上限。原实现逐个 for+await，N 个源 = N×超时易像卡死；
  * 取 4 并行降到约 1/4，同时避免瞬时对自建站开满连接被限流。
  */
 const SOURCE_CHECK_CONCURRENCY = 4;
@@ -219,7 +219,7 @@ export default function SourceCheckerPage() {
     return { latency, speed, error: null, nodes };
   }, []);
 
-  // 探测口径统一（2026-09-16）：复用 buildSourceProxyUrl，让检测结果与真实取流一致。
+  // 探测口径统一：复用 buildSourceProxyUrl，让检测结果与真实取流一致。
   // 抽出单源探测 probeIPTVSource / probeVideoSource，供「组探测 mapWithConcurrency」与「单源重测」共用。
   const probeIPTVSource = useCallback(async (source: IPTVSourceConfig): Promise<SourceCheckItem> => {
     const proxyUrl = iptvSettings?.proxyUrl;
@@ -421,7 +421,7 @@ export default function SourceCheckerPage() {
     }
   }, [checkNetwork, checkIPTVSources, checkVideoSources, checkIPTVProxy, checkVideoProxy, saveCurrentStateToCache]);
 
-  // ── 单源重测（2026-10-10 新增）：只重探选中的那一个源，就地更新该行 ──
+  // ── 单源重测：只重探选中的那一个源，就地更新该行 ──
   const handleCheckOne = useCallback(async (row: RowVM) => {
     if (row.group === 'network') { void handleCheck('network'); return; }
     if (row.group === 'proxy') { void handleCheck(row.key as TabKey); return; }

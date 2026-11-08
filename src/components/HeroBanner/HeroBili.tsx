@@ -1,23 +1,23 @@
 /**
  * HeroBili — 首页 Hero B 站风（≥1024px 桌面专用，TV 不启用）
- * 断点演进：原 >1280 → 2026-09-07 曾 1280→1440、同日回退 → 2026-09-10 降为 ≥1024。
+ * 断点：原 >1280，后降为 ≥1024。
  *
  * 布局：左侧 16:9 banner 轮播 + 右侧 6:4 视觉比例的横版卡网格 + 脱标「换一换」浮层。
  * 右卡为**满格矩形**、无跨列无空缺，≥1024 全档统一 2 列 × 3 行 = 6 张
  * （双 16:9 + 齐平推导的最小整数解；JS = useHeroSideCols / useHeroSideRows，CSS 同步）。
  * - banner 池固定前 6 张（BANNER_POOL），轮播（5s 自动 / 左右箭头 / 圆点）只在这 6 张内
- *   推进 activeIndex，【绝不重建右侧卡片】
+ * 推进 activeIndex，【绝不重建右侧卡片】
  * - 右侧卡片展示 banner 池之外的条目（第 7 张起）；「换一换」只推进 shuffleOffset、
- *   按卡片数整组推进——activeIndex 与 shuffleOffset 两个状态完全解耦
+ * 按卡片数整组推进——activeIndex 与 shuffleOffset 两个状态完全解耦
  * - banner 保留 继续播放（historyMap 命中时渲染）/ 查看详情 双按钮（沿用 hero-banner__cta token）
  * - 卡片点击跳详情；收藏按钮命中时 toggle 收藏 + 不冒泡（不触发跳转）
  * - 卡标题默认单行 ellipsis 兜底（高度恒定，保 banner 齐平）；hover/focus 且
- *   溢出时切跑马灯（方案 A，2026-09-30 用户确认 demos/hero-title-marquee-demo.html）
+ * 溢出时切跑马灯
  * - 「换一换」防抖 = 动画锁：is-spinning（0.6s 转圈）未结束前点击直接 return
- * - 「换一换」仅手动触发（2026-10-09 用户要求取消自动轮换；原 P3-A 8s 自动轮播已删除）
- * - Banner 信息层：标题 + 评分/年份/类型 chips（P3-B，纯 token 化胶囊，仅有的
- *   数据字段渲染，缺字段不渲染 chip）+ 加深底部渐变；caption 恒 absolute，
- *   不参与布局流，banner 齐平不变量不受影响
+ * - 「换一换」仅手动触发（取消自动轮换；原 8s 自动轮播已删除）
+ * - Banner 信息层：标题 + 评分/年份/类型 chips（纯 token 化胶囊，仅有的
+ * 数据字段渲染，缺字段不渲染 chip）+ 加深底部渐变；caption 恒 absolute，
+ * 不参与布局流，banner 齐平不变量不受影响
  */
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -58,11 +58,11 @@ interface HeroBiliProps {
   active?: boolean;
 }
 
-/** 右侧卡片网格：全档 2 列 × 3 行 = 6 张（2026-11-04 用户定稿）。
+/** 右侧卡片网格：全档 2 列 × 3 行 = 6 张。
  *
- *  唯一真源 = @/hooks 的 useHeroSideCols / useHeroSideRows，CSS 同步。
- *  卡数 = 列数 × 行数，恒为完整矩形：**不跨列、不留空槽**。
- *  该比例与视口宽度无关：banner 与单卡双 16:9 + 下沿齐平要求 R=1.5C。 */
+ * 唯一真源 = @/hooks 的 useHeroSideCols / useHeroSideRows，CSS 同步。
+ * 卡数 = 列数 × 行数，恒为完整矩形：**不跨列、不留空槽**。
+ * 该比例与视口宽度无关：banner 与单卡双 16:9 + 下沿齐平要求 R=1.5C。 */
 /** banner 轮播池：前 6 张 */
 const BANNER_POOL = 6;
 /** 换一换动画锁时长（= 转圈动画时长，防抖窗口） */
@@ -104,7 +104,7 @@ function itemBackdropUrl(item: HeroBiliItem): string {
 
 /** 卡片横版封面：backdrop 优先（横图），缺失时回落竖版海报 */
 function itemCardCoverUrl(item: HeroBiliItem): string {
-  // 2026-09-06 约定（与分类面板横版卡一致）：无横版 backdrop 不再回退竖版海报，
+  // 约定（与分类面板横版卡一致）：无横版 backdrop 不再回退竖版海报，
   // 返回空串 → HeroSideCard 渲染 --empty 骨架占位
   const bd = item.backdropPath || item.backdrop_path || '';
   return bd ? buildImageUrl(bd, 'w780') || '' : '';
@@ -206,7 +206,7 @@ export default function HeroBili({
   }, [shuffleCycles]);
 
   // 换一换：只推进 shuffleOffset（轮播不重建右卡，两个状态解耦）。
-  // 2026-10-09 用户要求：取消 8s 自动轮换（原 P3-A 效果整块删除），仅手动点击触发。
+  //取消 8s 自动轮换（原 效果整块删除），仅手动点击触发。
   const handleShuffle = useCallback(() => {
     if (spinning) return; // 动画锁 = 防抖：0.6s 内最多触发一次
     advanceShuffle();
@@ -266,7 +266,7 @@ export default function HeroBili({
           })}
 
           {/* 主图加载失败兜底：与 HeroBanner / VideoCard / IPTV 卡共用公共品牌样式
-              （此前失败只露 .hero-bili__banner 的 #0b0b0e 深色底） */}
+ （此前失败只露 .hero-bili__banner 的 #0b0b0e 深色底） */}
           {bannerItems[safeActiveIndex] && failedBackdrops.has(itemBackdropUrl(bannerItems[safeActiveIndex])) && (
             <div className="lazy-image-fallback lazy-image-fallback--brand hero-bili__banner-fallback">
               <Icon icon={MonitorPlay} size="2xl" className="lazy-image-fallback__icon" />
@@ -307,12 +307,12 @@ export default function HeroBili({
               )}
               <span className="hero-bili__type">{itemTypeLabel(activeItem)}</span>
             </div>
-            {/* banner 简介（2026-11-04 用户要求：左下按钮上方）。文案来自 TMDB overview，
-                超长截断；小视口降到单行，避免左下块高过按钮。 */}
+            {/* banner 简介（左下按钮上方）。文案来自 TMDB overview，
+ 超长截断；小视口降到单行，避免左下块高过按钮。 */}
             {activeItem.overview ? (
               <p className="hero-bili__desc">
-                {/* 底色挂内层 inline span（2026-11-08 用户要求：底色只贴文本、不铺满整行）；
-                    p 只保留左竖线/排版/行数截断 */}
+                {/* 底色挂内层 inline span（底色只贴文本、不铺满整行）；
+ p 只保留左竖线/排版/行数截断 */}
                 <span className="hero-bili__desc-text">
                   {activeItem.overview.slice(0, 160)}
                   {activeItem.overview.length > 160 ? '…' : ''}
@@ -393,9 +393,9 @@ export default function HeroBili({
  * - 左上评分 / 右上收藏（悬浮显现）/ 封面底部左标题 + 右下竖排 meta（类型在上、年份在下）
  * - 整卡为 <Link>（支持右键新标签页打开详情）；收藏命中时 toggle + preventDefault 不跳转
  * - 卡高由 grid 行均分（双 16:9 精确解），标题与 meta 同一 flex 行，互不覆盖
- * - 标题方案 A（2026-09-30 用户确认）：默认单行 ellipsis 兜底，
- *   hover/键盘聚焦整卡且文本溢出时切换双段无缝跑马灯（4.5s），
- *   移出/失焦即停；reduced-motion 降级静态 ellipsis
+ * - 标题：默认单行 ellipsis 兜底，
+ * hover/键盘聚焦整卡且文本溢出时切换双段无缝跑马灯（4.5s），
+ * 移出/失焦即停；reduced-motion 降级静态 ellipsis
  */
 function HeroSideCard({ item }: { item: HeroBiliItem }) {
   const location = useLocation();
@@ -412,7 +412,7 @@ function HeroSideCard({ item }: { item: HeroBiliItem }) {
 
   // 跑马灯只在「悬浮/聚焦 + 溢出」时启用，移出/失焦即停（不自动滚动）。
   // 溢出测量对象 = 兜底层（.hero-side-card__title-fallback，恒单行 nowrap），
-  // 与 demos/hero-title-marquee-demo.html 的判定一致
+  // 与 的判定一致
   const handleTitleEnter = useCallback(() => {
     const el = titleRef.current?.querySelector('.hero-side-card__title-fallback');
     if (el && el.scrollWidth > el.clientWidth) setMarquee(true);
@@ -451,7 +451,7 @@ function HeroSideCard({ item }: { item: HeroBiliItem }) {
       <div className="hero-side-card__cover">
         {coverUrl ? (
           /* 封面失败兜底与「继续观看」卡（VideoCard → LazyImage）一致：
-             骨架占位加载，失败走默认品牌兜底（MonitorPlay + kinoTV） */
+ 骨架占位加载，失败走默认品牌兜底（MonitorPlay + kinoTV） */
           <LazyImage
             src={coverUrl}
             alt=""
@@ -475,7 +475,7 @@ function HeroSideCard({ item }: { item: HeroBiliItem }) {
         </button>
 
         {/* 底部一行：左标题 + 右元信息（flex 天然保证标题不覆盖右下标签）。
-            2026-11-04 用户定稿：右下改竖排「类型在上、年份在下」。 */}
+右下改竖排「类型在上、年份在下」。 */}
         <div className="hero-side-card__bottom">
           <div
             ref={titleRef}

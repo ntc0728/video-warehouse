@@ -1,14 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   SearchBox — 公共搜索框
-   结构：<div .search-box-wrap> 外层容器
-         ├ <div .search-box__field>  字段容器（box + submit 水平排列）
-         │   ├ <div .search-box>     内部框（仅含 icon + input + clear）
-         │   └ <button .search-box__submit>  搜索按钮
-         └ <div .search-box-dropdown> 搜索历史 + 热门搜索下拉
-   variant="header"：用于顶部 StickyHeader 中央
-   variant="browse"：用于 BrowseHeader 中间
-   主题感知：边框 / 背景 / 文字 / 占位符色全部使用 CSS 变量
-   ═══════════════════════════════════════════════════════════════════════ */
+ SearchBox — 公共搜索框
+ 结构：<div .search-box-wrap> 外层容器
+ ├ <div .search-box__field> 字段容器（box + submit 水平排列）
+ │ ├ <div .search-box> 内部框（仅含 icon + input + clear）
+ │ └ <button .search-box__submit> 搜索按钮
+ └ <div .search-box-dropdown> 搜索历史 + 热门搜索下拉
+ variant="header"：用于顶部 StickyHeader 中央
+ variant="browse"：用于 BrowseHeader 中间
+ 主题感知：边框 / 背景 / 文字 / 占位符色全部使用 CSS 变量
+ ═══════════════════════════════════════════════════════════════════════ */
 
 .search-box-wrap {
   position: relative;
@@ -22,23 +22,23 @@
 
 .search-box-wrap--header {
   /* 流体宽度：视口越窄搜索框越小。
-     ≥1024 桌面（非 TV）已被下方 360px 封顶档接管；本行现主要对 TV 生效
-     （TV 端 token 独立曲线 626→800×ui-scale），≤1023 / app 被下方 max-width:none 覆盖。 */
+ ≥1024 桌面（非 TV）已被下方 360px 封顶档接管；本行现主要对 TV 生效
+ （TV 端 token 独立曲线 626→800×ui-scale），≤1023 / app 被下方 max-width:none 覆盖。 */
   max-width: var(--layout-searchbox-max-w);
 }
 
-/* ── 桌面搜索框统一封顶（2026-09-29 用户反馈「顶部导航栏搜索框宽度太大」）────
-   背景：旧三档口径（1024–1280→420 / 1281–1440→无封顶走 627 曲线 / ≥1441→440）中，
-   1281–1440 与 ≥1920（token 升至 50vw≈960px）两段存在封顶空洞，是「太宽」的主因；
-   且顶栏新增左侧 6 导航项 + 右侧图标组后，中央可用宽度收紧。
-   新口径：≥1024 桌面（非 TV / 非 app）统一封顶 360px×ui-scale ——
-   · 440→360（-18%）：给左侧 6 导航项让宽，1440 视口下左组 ≈470px + 图标组 ≈100px，
-     360 上限下中央仍有呼吸空间；
-   · 360 与 ≤1280 档输入下限 --comp-input-min-w(280) 保留 80px 安全差，
-     icon + input + 「搜索」按钮仍舒适；
-   · 消除 1281–1440 / ≥1920 两段空洞，全桌面档视觉连续（原 420/440/627 三档不一）。
-   TV（--layout-searchbox-max-w 独立 626→800 曲线）与 ≤1023 / app（max-width:none）
-   分支不受本规则影响。 */
+/* ── 桌面搜索框统一封顶（顶部导航栏搜索框宽度太大）────
+ 背景：旧三档口径（1024–1280→420 / 1281–1440→无封顶走 627 曲线 / ≥1441→440）中，
+ 1281–1440 与 ≥1920（token 升至 50vw≈960px）两段存在封顶空洞，是「太宽」的主因；
+ 且顶栏新增左侧 6 导航项 + 右侧图标组后，中央可用宽度收紧。
+ 新口径：≥1024 桌面（非 TV / 非 app）统一封顶 360px×ui-scale ——
+ · 440→360（-18%）：给左侧 6 导航项让宽，1440 视口下左组 ≈470px + 图标组 ≈100px，
+ 360 上限下中央仍有呼吸空间；
+ · 360 与 ≤1280 档输入下限 --comp-input-min-w(280) 保留 80px 安全差，
+ icon + input + 「搜索」按钮仍舒适；
+ · 消除 1281–1440 / ≥1920 两段空洞，全桌面档视觉连续（原 420/440/627 三档不一）。
+ TV（--layout-searchbox-max-w 独立 626→800 曲线）与 ≤1023 / app（max-width:none）
+ 分支不受本规则影响。 */
 @media (width >= 1024px) {
   html:not([data-device="app"]):not([data-device="tv"]) .search-box-wrap--header {
     max-width: min(var(--layout-searchbox-max-w), calc(360px * var(--ui-scale, 1)));
@@ -51,7 +51,7 @@
     max-width: none;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .search-box-wrap--header {
     max-width: none;
@@ -67,9 +67,9 @@
 .search-box-wrap--iptv {
   flex: 1 1 auto;
   /* 父级 toolbar 多为 flex-wrap: wrap,加 min-width 防止被 chip
-     挤压到极窄,避免内部 input 在 focus/输入时触发 flex 重算抖动 */
+ 挤压到极窄,避免内部 input 在 focus/输入时触发 flex 重算抖动 */
   min-width: var(--comp-input-min-w);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   max-width: clamp(224px, 30vw, 352px);
 }
 
@@ -112,8 +112,8 @@
 }
 
 /* header variant 高度预算：顶部导航栏高度 = R3 --header-height（60→76，不随 --ui-scale）。
-   全尺寸 --comp-input-height 桌面 ≈60px 会撑满 60px 导航栏，故 header 场景用专用矮曲线
-   40→48（同样不乘 ui-scale）。:not(tv) 让 TV 继续走下方 --comp-input-height-tv 覆盖。 */
+ 全尺寸 --comp-input-height 桌面 ≈60px 会撑满 60px 导航栏，故 header 场景用专用矮曲线
+ 40→48（同样不乘 ui-scale）。:not(tv) 让 TV 继续走下方 --comp-input-height-tv 覆盖。 */
 html:not([data-device='tv']) .search-box-wrap--header .search-box,
 html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
   height: var(--comp-input-height-header);
@@ -132,34 +132,34 @@ html:not([data-device='tv']) .search-box-wrap--header .search-box__submit {
 }
 
 /* 排除全局粗焦点框（assets/styles/index.css :focus-visible 2px 主色 outline）：
-   搜索框已有 :focus-within 细高亮（border-color → primary），input 再叠一圈粗 outline
-   会形成「黑框/双框」。TV / projector 保留全局焦点框（遥控器需要），其余关闭 input 自身 outline。
-   ⚠️ 特异性必须**严格高于**全局规则——同特异性时本规则必输：
-   全局规则（index.css）在打包产物中的位置远在本组件之后（实测 156523 > 20087），后者胜。
-   · 2026-09-29 全局规则加 :not([data-device="projector"]) 后由 (0,4,0) 抬到 (0,5,0)，
-     与本规则**平手** → 顺序决定 → 全局反超 → 聚焦重新出现 2px #000 黑框
-     （--color-primary 浅色主题 = #000；用户报「搜索框聚焦又出现黑色方型边框」）。
-   · 故本规则同步加 :not([data-device="projector"]) 抬到 **(0,6,0)**（= 6 个 class 级计数）。
-   · 维护提示：index.css 侧的全局规则每多挂一个 :not([...]) 就追平一级，本规则须同步加一级；
-     只加 !important 无效（两边都带 !important，胜负纯看特异性 + 顺序）。 */
+ 搜索框已有 :focus-within 细高亮（border-color → primary），input 再叠一圈粗 outline
+ 会形成「黑框/双框」。TV / projector 保留全局焦点框（遥控器需要），其余关闭 input 自身 outline。
+ ⚠️ 特异性必须**严格高于**全局规则——同特异性时本规则必输：
+ 全局规则（index.css）在打包产物中的位置远在本组件之后（实测 156523 > 20087），后者胜。
+ · 全局规则加 :not([data-device="projector"]) 后由 (0,4,0) 抬到 (0,5,0)，
+ 与本规则**平手** → 顺序决定 → 全局反超 → 聚焦重新出现 2px #000 黑框
+ （--color-primary 浅色主题 = #000；「搜索框聚焦又出现黑色方型边框」）。
+ · 故本规则同步加 :not([data-device="projector"]) 抬到 **(0,6,0)**（= 6 个 class 级计数）。
+ · 维护提示：index.css 侧的全局规则每多挂一个 :not([...]) 就追平一级，本规则须同步加一级；
+ 只加 !important 无效（两边都带 !important，胜负纯看特异性 + 顺序）。 */
 :root:not([data-device="tv"]):not([data-device="projector"]) .search-box .search-box__input:focus-visible {
   outline: none !important;
 }
 
 /* iOS/Android Safari 聚焦字号 <16px 的 input 会局部放大视口（viewport meta 已为
-   WCAG 1.4.4 移除 user-scalable=no，只能靠字号挡）。此前为保 --text-sm(13px) 设计字号
-   把全局 input 16px 豁免掉 → 移动端 web 点搜索框放大回归。现按 data-device 收窄：
-   仅 mobile-web 抬到 16px（任意视口宽度，覆盖横屏 >767px 场景）；app 端保持豁免
-   （data-device 值互斥互不干扰，WebView 沿用既有决策）；桌面走 base 的 inherit → --text-sm。 */
+ WCAG 1.4.4 移除 user-scalable=no，只能靠字号挡）。此前为保 --text-sm(13px) 设计字号
+ 把全局 input 16px 豁免掉 → 移动端 web 点搜索框放大回归。现按 data-device 收窄：
+ 仅 mobile-web 抬到 16px（任意视口宽度，覆盖横屏 >767px 场景）；app 端保持豁免
+ （data-device 值互斥互不干扰，WebView 沿用既有决策）；桌面走 base 的 inherit → --text-sm。 */
 html[data-device="mobile-web"] .search-box__input {
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list */
   font-size: 16px;
 }
 
-/* 占位文本恢复设计字号（2026-11-08 用户反馈「placeholder 字体显示得很大」）：
-   上面的 16px 是 iOS Safari 聚焦防缩放护栏（input 计算字号 <16px 会放大视口），
-   只需要作用在 input 自身——::placeholder 允许独立字号，回到 --text-sm(13px)
-   与「搜索」按钮及全站 UI 同档；用户实际输入时仍是 16px，护栏不受影响。 */
+/* 占位文本恢复设计字号（placeholder 字体显示得很大）：
+ 上面的 16px 是 iOS Safari 聚焦防缩放护栏（input 计算字号 <16px 会放大视口），
+ 只需要作用在 input 自身——::placeholder 允许独立字号，回到 --text-sm(13px)
+ 与「搜索」按钮及全站 UI 同档；用户实际输入时仍是 16px，护栏不受影响。 */
 html[data-device="mobile-web"] .search-box__input::placeholder {
   font-size: var(--text-sm);
 }
@@ -185,7 +185,7 @@ html[data-device="app"] .search-box__input {
 .search-box__input {
   flex: 1 1 0;
   /* 关键:width:0 + flex:1 1 0 让 input 起始宽度 0,完全由 flex 算法分配剩余空间。
-     这样 input 内容(text)变化时不会"撑开"容器,彻底消除 flex 重算抖动。 */
+ 这样 input 内容(text)变化时不会"撑开"容器,彻底消除 flex 重算抖动。 */
   width: 0;
   min-width: 0;
   height: 100%;
@@ -244,13 +244,13 @@ html[data-device="app"] .search-box__input {
   pointer-events: none;
 }
 
-/* 清除按钮未显示时不占位（2026-09-30 用户反馈「清除按钮不显示的时候应该不占空间」）：
-   上方 .search-box__input 的 padding-right: var(--comp-thumb-size) 是常驻的（原为防 X
-   出现/消失时文字宽度抖动），但空态下这段留白白吃掉输入区宽度 → 按 clear 的可见性切换：
-   · data-empty="true"（空，X 透明）→ padding-right 归零，占位符 / 文字可用区加宽；
-   · data-empty="false"（有内容，X 可见）→ 保留预留，文字不被 X 压住。
-   用 :has() 取「紧随其后的兄弟」；项目既有大量 :has() 用法，不支持的老浏览器
-   优雅降级为「常驻留白」= 改前行为，不会更差。 */
+/* 清除按钮未显示时不占位（清除按钮不显示的时候应该不占空间）：
+ 上方 .search-box__input 的 padding-right: var(--comp-thumb-size) 是常驻的（原为防 X
+ 出现/消失时文字宽度抖动），但空态下这段留白白吃掉输入区宽度 → 按 clear 的可见性切换：
+ · data-empty="true"（空，X 透明）→ padding-right 归零，占位符 / 文字可用区加宽；
+ · data-empty="false"（有内容，X 可见）→ 保留预留，文字不被 X 压住。
+ 用 :has() 取「紧随其后的兄弟」；项目既有大量 :has() 用法，不支持的老浏览器
+ 优雅降级为「常驻留白」= 改前行为，不会更差。 */
 .search-box__input:has(+ .search-box__clear[data-empty='true']) {
   padding-right: 0;
 }
@@ -292,8 +292,8 @@ html[data-device="app"] .search-box__input {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Dropdown — 搜索历史 + 热门搜索
-   ═══════════════════════════════════════════════════════════════════════ */
+ Dropdown — 搜索历史 + 热门搜索
+ ═══════════════════════════════════════════════════════════════════════ */
 
 .search-box-dropdown {
   position: absolute;
@@ -330,9 +330,9 @@ html[data-device="app"] .search-box__input {
   animation: search-dropdown-fade-out var(--dur-2xs) ease-in forwards;
 }
 
-/* 2026-09-28 去卡片化（浮层）：桌面端搜索下拉移除边框/圆角/投影，
-   仅保留 surface 底色（浮层无底色会与页面内容重叠不可读）；
-   <=767 / app 恒移动保持上方连接式卡角。 */
+/* 去卡片化（浮层）：桌面端搜索下拉移除边框/圆角/投影，
+ 仅保留 surface 底色（浮层无底色会与页面内容重叠不可读）；
+ <=767 / app 恒移动保持上方连接式卡角。 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .search-box-dropdown,
   html:not([data-device="app"]) .search-box-dropdown--above {
@@ -470,8 +470,8 @@ html[data-device="app"] .search-box__input {
   justify-content: center;
   align-items: center;
   /* 11.3：徽标从 --space-md（桌面 8px）放大——原 8px 装不下 --text-sm（13px）数字导致 1/2/3 被裁切。
-     2026-09-04：不再用 --space-xl（三段式后桌面恒 32px，视觉过大），改派生自字号的
-     --icon-md（20→22，随 --text-base 自动缩放），数字仍装得下。 */
+不再用 --space-xl（三段式后桌面恒 32px，视觉过大），改派生自字号的
+ --icon-md（20→22，随 --text-base 自动缩放），数字仍装得下。 */
   width: var(--icon-md);
   height: var(--icon-md);
   border-radius: var(--radius-sm);
@@ -557,8 +557,8 @@ html[data-device="app"] .search-box__input {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Responsive
-   ═══════════════════════════════════════════════════════════════════════ */
+ Responsive
+ ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── Mobile: 隐藏 submit 文字、显示 submit 图标 ─────── */
 
@@ -567,7 +567,7 @@ html[data-device="app"] .search-box__input {
     flex-shrink: 0;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .search-box-wrap--header .search-box {
     flex-shrink: 0;
@@ -597,8 +597,8 @@ html[data-device="app"] .search-box__input {
 }
 
 /* 下拉最大高度由 CSS min(--layout-dropdown-max-h, --dropdown-avail-h) 控制：
-   --layout-dropdown-max-h 在 TV 块=标准 clamp(A,(A/19.2)vw,2A) 即 374→748（随 vw 缩放），
-   --dropdown-avail-h 由 SearchBox.tsx 按可用视口空间注入，保证不溢出屏幕。两者取小。 */
+ --layout-dropdown-max-h 在 TV 块=标准 clamp(A,(A/19.2)vw,2A) 即 374→748（随 vw 缩放），
+ --dropdown-avail-h 由 SearchBox.tsx 按可用视口空间注入，保证不溢出屏幕。两者取小。 */
 
 
 [data-device="tv"] .search-box-dropdown__item {

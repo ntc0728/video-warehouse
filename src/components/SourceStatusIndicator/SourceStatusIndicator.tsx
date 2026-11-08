@@ -1,6 +1,6 @@
 import './SourceStatusIndicator.css';
 
-/** 逐源统计（结果数 + 失败标记），搜索结束后渲染 demo 同款逐源 badge */
+/** 逐源统计（结果数 + 失败标记），搜索结束后渲染 逐源 badge */
 export interface SourceStatusStat {
   name: string;
   /** 该源贡献的结果数（原始值，不受本地筛选影响） */
@@ -20,10 +20,10 @@ export interface SourceStatusIndicatorProps {
 }
 
 /**
- * 源状态指示（双态，2026-09-07 用户拍板）：
+ * 源状态指示（双态）：
  * - 搜索中：折叠 pill（spinner + 进度条 + 计数），UI 样式与旧版一致；
- * - 搜索结束：demo 同款逐源 badge 行（ok=绿 / warn=橙(0 条) / bad=红(失败)），
- *   不再渲染旧的鼠标悬浮弹层（ssb-pop 已删除）。
+ * - 搜索结束：逐源 badge 行（ok=绿 / warn=橙(0 条) / bad=红(失败)），
+ * 不再渲染旧的鼠标悬浮弹层（ssb-pop 已删除）。
  */
 export function SourceStatusIndicator({
   totalSources,

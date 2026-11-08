@@ -28,7 +28,7 @@ export function useEPGData({ enabled, channels }: UseEPGDataOptions): UseEPGData
   const epgErrorRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // P4：mode 判断迁到能力矩阵，由调用方传入 `enabled`（= hasEPG）。
+    // mode 判断现读能力矩阵，由调用方传入 `enabled`（= hasEPG）。
     // 等价性：原 `mode !== 'iptv'` 对 video 为 true（早退），对 iptv/live 为 false；
     // 现 `!enabled` 对 video（hasEPG=false）为 true（早退），对 iptv/live（hasEPG=true）为 false。逐字等价。
     if (!enabled || channels.length === 0) return;

@@ -3,7 +3,7 @@
  *
  * 当前阶段仅提供「设备发现接口契约 + 状态机类型」：
  * - 原生 DLNA 模块（SSDP 设备发现 + SetAVTransportURI/Play/Pause/Seek 推送）后续作为
- *   独立任务接入，届时在 Android 端注入 `window.CastBridge` 实现即可无缝对接；
+ * 独立任务接入，届时在 Android 端注入 `window.CastBridge` 实现即可无缝对接；
  * - Web / 未注入桥时 `discoverCastDevices()` 返回空数组 → 投屏弹窗展示「未发现设备」空态。
  *
  * E2E 测试可通过 `page.addInitScript` 注入 mock `window.CastBridge` 走完整流程。

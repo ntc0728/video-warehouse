@@ -16,7 +16,7 @@ export { getVideoSources, getEnabledVideoSourceIndices, getEnabledIPTVSourceIndi
 export { parsePlaySources } from './vodParser';
 
 /**
- * 季条目解析的并发上限（2026-09-16）。
+ * 季条目解析的并发上限。
  * 每个「第X季」条目都要经 `resolvePlaySources` 可能再打一次详情接口；原实现串行
  * → 5 季 = 5 次串行 RTT。取 4 是折中：能压掉瀑布，又不会把自建 CMS 站一次打满。
  */
@@ -124,7 +124,7 @@ function parseCmsYear(raw: string | number | undefined): number | undefined {
 }
 
 /**
- * 标题匹配打分（2026-11-08）：
+ * 标题匹配打分：
  * 精确相等（20 分）> 包含关系（10 分），年份一致 +1 仅作加分项。
  * 此前电影搜索把 year 直接拼进 CMS 查询当硬过滤——TMDB 年份与 CMS vod_year
  * 不一致（上映年 vs 上线年）时整源假阴性「未找到匹配资源」，用户看到的可用源
@@ -363,8 +363,8 @@ async function resolvePlaySources(
   forceSeries = false,
 ): Promise<{ sources: Video['sources']; episodes: Video['episodes'] | undefined; item: CMSVideoItem }> {
   // 剧集搜索时 item 已按季号识别，强制以非 movie 类型解析，避免集数被转成线路。
-  //
-  // ⚠️ 2026-09-10 修复「有线路却显示 1 集 / 0 条线路」：
+  
+  // ⚠️ 修复「有线路却显示 1 集 / 0 条线路」：
   // 各 CMS 的 type_id 编码互不统一，VOD_TYPE_MAP 只认 1/2/3/4，未命中时 mapVodType 返回
   // undefined。实测 iqiyizyapi（海洋奇缘：启航）返回 type_id=11 / type_id_1=7，均不在表内
   // → vodType undefined → parsePlaySources 的 isMovie=false → 单条「正片$https://….m3u8」
@@ -513,7 +513,7 @@ export async function searchVideoFromMultipleSources(
       }
 
       try {
-        // 查询不带 year（2026-11-08）：年份改作本地打分加分项，避免 CMS vod_year
+        // 查询不带 year：年份改作本地打分加分项，避免 CMS vod_year
         // 与 TMDB 不一致时硬过滤导致整源假阴性
         const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
         const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
@@ -748,10 +748,10 @@ export async function searchVideoSeasonsFromSingleSource(
     }
 
     /**
-     * 翻页聚合（2026-11-08）：CMS 把每季存为独立 vod 条目，长篇剧 + 同名改编
-     * 的命中数很容易超过单页容量，只取第一页会静默漏季（detail 页季列表不全）。
-     * 按 total 补拉后续页，PAGE_LIMIT 封顶防御异常 total；按 vod_id 去重防页间重叠。
-     */
+ * 翻页聚合：CMS 把每季存为独立 vod 条目，长篇剧 + 同名改编
+ * 的命中数很容易超过单页容量，只取第一页会静默漏季（detail 页季列表不全）。
+ * 按 total 补拉后续页，PAGE_LIMIT 封顶防御异常 total；按 vod_id 去重防页间重叠。
+ */
     const SEASON_PAGE_LIMIT = 4;
     const mergedList: CMSVideoItem[] = [...data.list];
     const totalCount = typeof data.total === 'number' ? data.total : 0;
@@ -769,11 +769,11 @@ export async function searchVideoSeasonsFromSingleSource(
     }
 
     /**
-     * ── 阶段 1：同步筛选（不发请求）────────────────────────────
-     * 把 data.list 拆成「待解析的季条目」：同一季号只取**首个**（原 `seasons.has` 去重的语义），
-     * 无季号条目仍是第 1 季回退候选（名称与标题完全一致的优先）。
-     * 先同步跑完，才能在阶段 2 一次性并发解析，而不是边判断边 await。
-     */
+ * ── 阶段 1：同步筛选（不发请求）────────────────────────────
+ * 把 data.list 拆成「待解析的季条目」：同一季号只取**首个**（原 `seasons.has` 去重的语义），
+ * 无季号条目仍是第 1 季回退候选（名称与标题完全一致的优先）。
+ * 先同步跑完，才能在阶段 2 一次性并发解析，而不是边判断边 await。
+ */
     interface SeasonResolveTask {
       /** 目标季号（回退条目恒为 1） */
       seasonNumber: number;
@@ -808,12 +808,12 @@ export async function searchVideoSeasonsFromSingleSource(
     }
 
     /**
-     * ── 阶段 2：受限并发解析 ───────────────────────────────────
-     * 原实现是 `for + await`：N 个季就 N 次串行详情请求（总耗时 = N × RTT）。
-     * 改为并发上限 4（`SEASON_RESOLVE_CONCURRENCY`）：既压掉串行瀑布，又避免
-     * 把自建 CMS 站一次性打满而被限流。结果顺序由 mapWithConcurrency 保证，
-     * 因此「第 1 季是谁」与写入 Map 的顺序都不变。
-     */
+ * ── 阶段 2：受限并发解析 ───────────────────────────────────
+ * 原实现是 `for + await`：N 个季就 N 次串行详情请求（总耗时 = N × RTT）。
+ * 改为并发上限 4（`SEASON_RESOLVE_CONCURRENCY`）：既压掉串行瀑布，又避免
+ * 把自建 CMS 站一次性打满而被限流。结果顺序由 mapWithConcurrency 保证，
+ * 因此「第 1 季是谁」与写入 Map 的顺序都不变。
+ */
     const resolvedList = await mapWithConcurrency(
       tasks,
       SEASON_RESOLVE_CONCURRENCY,

@@ -3,11 +3,11 @@
  *
  * 布局：单张全宽主背景图（16:9，crossfade / 三联 track 滑动切换）+ 左下文字叠加。
  * - 主图随 activeIndex 切换，采用左右滑动动画（所有客户端一致）；自动轮播也走滑动切换
- * - 【2026-09-11】右侧缩略图列（HeroThumb / .hero-banner__thumbs）已整体删除：
- *   主图区独占整宽，banner 几何退化为纯 16:9，不再依赖 --hero-thumb-count。
- * - 【2026-09-11】接口数据只取前 BANNER_MAX(6) 张驱动轮播；主图背景与标题 logo
- *   在列表就绪时一次性全部取回（≤6 张，量小），不再做「当前 ± 动态 range 预加载」
- *   与「logo 窗口预取 + 空闲递进补齐」分段推进。
+ * - 右侧缩略图列（HeroThumb / .hero-banner__thumbs）已整体删除：
+ * 主图区独占整宽，banner 几何退化为纯 16:9，不再依赖 --hero-thumb-count。
+ * - 接口数据只取前 BANNER_MAX(6) 张驱动轮播；主图背景与标题 logo
+ * 在列表就绪时一次性全部取回（≤6 张，量小），不再做「当前 ± 动态 range 预加载」
+ * 与「logo 窗口预取 + 空闲递进补齐」分段推进。
  * - ≥1024 桌面由 index.ts 分流到 HeroBili，本组件不渲染。
  */
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
@@ -50,12 +50,12 @@ interface HeroBannerProps {
   /** hero 数据是否加载中（加载中且 items 为空时只显示骨架，不显示误导文字） */
   loading?: boolean;
    /**
-    * Keep-Alive 激活信号：首页处于激活路由（页面可见）时为 true；
-    * 切到其他页面时 AppLayout 用 display:none 隐藏（组件不卸载），此时为 false。
-    * 用于：离开时暂停自动轮播（避免隐藏期间 activeIndex/bgIndices/slideDir 继续推进、
-    * 切回时 CSS animation 因 display:none→block 重播导致「闪一下上一张图」），
-    * 切回时重置过渡状态 + 归单层 bgIndices。
-    */
+ * Keep-Alive 激活信号：首页处于激活路由（页面可见）时为 true；
+ * 切到其他页面时 AppLayout 用 display:none 隐藏（组件不卸载），此时为 false。
+ * 用于：离开时暂停自动轮播（避免隐藏期间 activeIndex/bgIndices/slideDir 继续推进、
+ * 切回时 CSS animation 因 display:none→block 重播导致「闪一下上一张图」），
+ * 切回时重置过渡状态 + 归单层 bgIndices。
+ */
    active?: boolean;
    /** 初始淡入延迟（ms）：进入首页时延迟 heroBgFadeIn，等骨架覆盖层消失后再开始，避免叠加混乱。 */
    initialEnterDelay?: number;
@@ -63,7 +63,7 @@ interface HeroBannerProps {
 
 const HERO_MASK_BG = 'var(--hero-mask-dark)';
 /**
- * 首页 banner 轮播池上限（2026-09-11 用户要求）。
+ * 首页 banner 轮播池上限。
  * 接口返回的 trending 动辄 20 条，但 banner 只承载「首屏几张主推图」：
  * 取前 6 张驱动轮播 + 主图/logo 预取，其余条目交给内容行 / HeroBili 右侧卡片。
  * 与 HeroBili 的 BANNER_POOL(6) 同口径，保证两种布局的 banner 池一致。
@@ -75,7 +75,7 @@ const BANNER_MAX = 6;
  * reduced-motion 下动画被禁用、无 animationend 事件，由定时器兜底。
  */
 const STALE_CLEAR_DELAY = 1200;
-/** 预加载 URL 集合容量上限：长会话防无界增长（E 项，LRU 近似 FIFO 淘汰最旧） */
+/** 预加载 URL 集合容量上限：长会话防无界增长（LRU 近似 FIFO 淘汰最旧） */
 const MAX_PRELOADED_URLS = 1000;
 /** 已请求预加载的 URL 集合：快速左右滑动时避免对同一 URL 重复 new Image + 解码（卡顿主因之一） */
 const preloadedSet = new Set<string>();
@@ -108,14 +108,14 @@ const MOBILE_BACKDROP_SIZES = ['w500', 'w780'];
 const DESKTOP_BACKDROP_SIZES = ['w780', 'w1280'];
 
 /** 主图候选尺寸表（与 bgPreloadSize 同口径：<1024 移动档 / ≥1024 桌面档）。
- *  视口变化会经 useIsMobile 触发重渲染，因此渲染期调用即为最新值。 */
+ * 视口变化会经 useIsMobile 触发重渲染，因此渲染期调用即为最新值。 */
 function backdropSizes(): string[] {
   return bgPreloadSize() === 'w780' ? MOBILE_BACKDROP_SIZES : DESKTOP_BACKDROP_SIZES;
 }
 
 /** 背景图预加载尺寸：移动端/窄视口用 w780（banner 实际渲染宽度即为视口宽），宽屏才用 w1280 */
 function bgPreloadSize(): string {
-  // 阈值 1100 → 1024（2026-09-07）：1100 是全项目唯一不在断点体系内的野生阈值，
+  // 阈值 1100 → 1024：1100 是全项目唯一不在断点体系内的野生阈值，
   // 对齐移动端/桌面分界 1024（useIsMobile = max-width:1023px、--card-cols 5 列起点）。
   // 影响：1024–1099 由 w780 升到 w1280（画质提升、不降级），其余视口逐像素不变。
   return window.innerWidth >= 1024 ? 'w1280' : 'w780';
@@ -143,16 +143,16 @@ function recordSwipeData(data: { mainWidth: number; dx: number; threshold: numbe
 
 
 /* ── 首页 banner 标题 logo ──────────────────────────────────────────────
-   Detail 页标题位用 TMDB 详情的 images.logos（.detail-hero-logo 元素）；
-   首页 banner 的数据源是 trending 列表，不含 logo，需要额外请求
-   /movie|tv/{id}/images 才能拿到。
+ Detail 页标题位用 TMDB 详情的 images.logos（.detail-hero-logo 元素）；
+ 首页 banner 的数据源是 trending 列表，不含 logo，需要额外请求
+ /movie|tv/{id}/images 才能拿到。
 
-   2026-09-11（用户要求「banner 图片与 hero-logo 图片一次性全部获取，去掉之前冗余逻辑」）：
-   本列表已被截取到前 6 张，量很小 → 列表就绪即**一次性批量发出全部 logo 请求**
-   （Promise 并发，模块级缓存 + inflight 去重保证同一条目整会话只请求一次），
-   拿到 file_path 即预热同 URL 像素（渲染 <img> 挂载即命中缓存，无现下载/解码）。
-   已删除：窗口预取（focus ± N）、空闲递进补齐（setTimeout 链 + 静默期）、
-   以及随之而来的 HERO_LOGO_WINDOW / _IDLE_STEP_MS / _IDLE_COOLDOWN_MS 三个常量。 */
+ （banner 图片与 hero-logo 图片一次性全部获取，去掉之前冗余逻辑）：
+ 本列表已被截取到前 6 张，量很小 → 列表就绪即**一次性批量发出全部 logo 请求**
+ （Promise 并发，模块级缓存 + inflight 去重保证同一条目整会话只请求一次），
+ 拿到 file_path 即预热同 URL 像素（渲染 <img> 挂载即命中缓存，无现下载/解码）。
+ 已删除：窗口预取（focus ± N）、空闲递进补齐（setTimeout 链 + 静默期）、
+ 以及随之而来的 HERO_LOGO_WINDOW / _IDLE_STEP_MS / _IDLE_COOLDOWN_MS 三个常量。 */
 /** key → logo 文件路径；值为 null 表示该条目确认无 logo，不再重试 */
 const heroLogoCache = new Map<string, string | null>();
 const heroLogoInflight = new Set<string>();
@@ -256,11 +256,11 @@ function HeroBannerClassic({
   const isTV = useIsTV();
   // isTVLike = 焦点交互语义（tv || projector）：遥控器方向键轮播。
   const isTVLike = useIsTVLike();
-  // 2026-09-11：接口数据只取前 6 张驱动轮播（用户要求「<1024 / 移动端只取前 6 张」）。
+  //接口数据只取前 6 张驱动轮播（<1024 / 移动端只取前 6 张）。
   // ⚠️ 必须 useMemo：裸 slice() 每次渲染产生新数组引用，会让下方依赖 [displayItems]
   // 的 useLayoutEffect 每轮都执行，其中 setBgIndices([0]) 传新数组永不 Object.is 相等
   // → setState → 再渲染 → 再 effect ……「Maximum update depth exceeded」死循环
-  // （2026-09-11 实测报错；HeroBili 的 bannerItems 同款 slice 一直是 useMemo，本处补齐）。
+  // （实测报错；HeroBili 的 bannerItems 同款 slice 一直是 useMemo，本处补齐）。
   const displayItems = useMemo(() => items.slice(0, BANNER_MAX), [items]);
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -298,7 +298,7 @@ function HeroBannerClassic({
   // （与 bg track 的 activeIndex 解耦——track 需在切换结束才更新 activeIndex 以保证
   // 滑动方向正确）。这样文字与 banner 滑动几乎同时出现，消除「切换后才延迟显示」的滞后。
   const [switchIndex, setSwitchIndex] = useState(0);
-  // ── 分类切换图片过渡（2026-08-13）──
+  // ── 分类切换图片过渡──
   // 分类切换（items 引用变化）时主图不再硬切：切换渲染当帧起「不渲染新层」，
   // 旧活跃图快照为滞留层（--stale，opacity 1 垫底），同时用 new Image() 预加载
   // 新首项背景图——就绪后 switchReady=true 才挂载新层（图片已缓存 → 立即绘制 +
@@ -436,7 +436,7 @@ function HeroBannerClassic({
     }
     // ⚠️ 依赖必须仅 [displayItems]（不含索引）：
     // 轮播/拖拽会改变索引，若被本 effect 捕获会执行上方的 setActiveIndex(0) 重置，
-    // 导致「轮播切到下一张立刻被重置回 0」的轮播失效（2026-08-13 回归教训）。
+    // 导致「轮播切到下一张立刻被重置回 0」的轮播失效。
     // refs（prevItemsRef/prevActiveIdxRef）的同步已移入下方独立 useLayoutEffect。
   }, [displayItems]);
 
@@ -446,10 +446,10 @@ function HeroBannerClassic({
   // heroBgFadeIn/slide 动画。若此时 bgIndices 是 2 层（轮播/拖拽过），
   // 底层旧图（opacity:1 常显）会在重播淡入期间透出 →「先闪一下上一张图再淡入当前图」。
   // 处理：
-  //  - 切回（active false→true）：归单层 bgIndices（底层无旧图可透出）+ 清 slideDir
-  //    （不重播滑动动画）+ 清滞留层/switchReady 过渡态 + 恢复轮播。
-  //  - 离开（active true→false）：暂停轮播（interval 由 active 守卫控制）+ 清过渡态，
-  //    避免隐藏期间状态残留、切回时被重播。
+  // - 切回（active false→true）：归单层 bgIndices（底层无旧图可透出）+ 清 slideDir
+  // （不重播滑动动画）+ 清滞留层/switchReady 过渡态 + 恢复轮播。
+  // - 离开（active true→false）：暂停轮播（interval 由 active 守卫控制）+ 清过渡态，
+  // 避免隐藏期间状态残留、切回时被重播。
   const prevActiveRef = useRef(active);
   const activeIndexRef = useRef(activeIndex);
   activeIndexRef.current = activeIndex;
@@ -500,7 +500,7 @@ function HeroBannerClassic({
     });
   }, [safeActiveIndex]);
 
-  // ── 主图一次性全部预取（2026-09-11）──
+  // ── 主图一次性全部预取──
   // 列表已截取到前 6 张 → 列表就绪即把 6 张主图全部预热（按当前视口档位尺寸），
   // 切到任意一张都命中缓存。已删除原「当前索引 ± 动态 range（3~6）」的分段预加载
   // 与随之而来的 preloadRangeRef / 滑动速度探测。
@@ -572,11 +572,11 @@ function HeroBannerClassic({
     }
     swipeCooldownRef.current = Date.now();
     lastSlideTimeRef.current = Date.now();
-    // ── 切换收尾（2026-11-08 闪烁修复）──────────────────────────────
+    // ── 切换收尾（闪烁修复）──────────────────────────────
     // 旧实现固定 setTimeout(SLIDE_MS) 收尾，但自动轮播档 track 有 2 帧引导帧
     // （slideBoot，≈16-33ms），过渡实际比定时器晚开始 → 定时器到点时动画还差
     // 几个百分点没走完，收尾把 track 从 -196% 硬切回 -100%，整条文字（按钮）
-    // 肉眼可见「跳一下」（用户报「切换 banner 按钮快速闪烁」）；低端机 jank
+    // 肉眼可见「跳一下」（切换 banner 按钮快速闪烁）；低端机 jank
     // 下偏差更大。改为 transitionend 驱动（bg/text 两个 track 都挂 SLIDE_MS
     // transform 过渡，任一结束即收尾，后者空转），SLIDE_MS+120ms 仅作兜底。
     pendingSlideRef.current = { newIdx };
@@ -928,16 +928,16 @@ function HeroBannerClassic({
   const trackNext = trackTotal > 1 ? ((safeActiveIndex + 1) % trackTotal) : 0;
   const trackIndices = [trackPrev, safeActiveIndex, trackNext];
   // track 是否激活（拖拽中或滑动动画中）——用于背景图 track
-  // 2026-11-08 闪烁修复：加 dragMoved 门控——轻点（<12px，无 dragOffset）不再挂载/
+  // 闪烁修复：加 dragMoved 门控——轻点（<12px，无 dragOffset）不再挂载/
   // 卸载三联 track 与 is-dragging 类（合成层反复创建销毁 + active 层 animation:none
-  // 打断恢复，是用户报「点击 banner 图片闪烁」的抖动源）。真实拖动首帧起才进 track。
+  // 打断恢复，是「点击 banner 图片闪烁」的抖动源）。真实拖动首帧起才进 track。
   const dragMoved = isDragging && dragOffset !== 0;
   const trackActive = dragMoved || slideAnim !== null || bounceBack;
 
   // 文字 track 变换：
-  //  - 拖拽中：与背景图 track 同构，文字跟随 banner 一起水平位移（问题 #2，任何距离都跟随）
-  //  - 切换中：删除文本水平位移（问题 #3），保持居中，垂直 6px 入场由 CSS 负责
-  //  - 回弹中：文字跟随 banner 一起平滑回位（问题 #2），但下一张文本保持 opacity:0（问题 #1）
+  // - 拖拽中：与背景图 track 同构，文字跟随 banner 一起水平位移（问题 #2，任何距离都跟随）
+  // - 切换中：删除文本水平位移（问题 #3），保持居中，垂直 6px 入场由 CSS 负责
+  // - 回弹中：文字跟随 banner 一起平滑回位（问题 #2），但下一张文本保持 opacity:0（问题 #1）
   const textTrackStyle: React.CSSProperties = (() => {
     if (isDragging) {
       // 拖拽：文字随手指水平位移，与背景图完全对齐
@@ -984,23 +984,23 @@ function HeroBannerClassic({
         onTouchEnd={(e) => handleDragEnd(e.changedTouches[0].clientX)}
       >
       {/* ── 主图区 ──
-          两种渲染模式：
-          A) track 模式（拖拽中 / 滑动动画中）：渲染 [prev | current | next] 三张并排，
-             track translateX(-100%) 居中当前图，拖拽时偏移跟随，松手后动画滑出。
-          B) crossfade 模式（默认/分类切换）：absolute 堆叠 + stale 滞留层。 */}
+ 两种渲染模式：
+ A) track 模式（拖拽中 / 滑动动画中）：渲染 [prev | current | next] 三张并排，
+ track translateX(-100%) 居中当前图，拖拽时偏移跟随，松手后动画滑出。
+ B) crossfade 模式（默认/分类切换）：absolute 堆叠 + stale 滞留层。 */}
       <div
         ref={mainRef}
         className={`hero-banner__main${dragMoved ? ' is-dragging' : ''}`}
       >
         {/* crossfade 背景层：始终渲染（track 模式期间被 .hero-banner__track 绝对层盖住）。
-            关键修复：track→crossfade 切换时当前图 <img> 不再重挂载，移动端/App（Capacitor
-            WebView）不会因新 img 元素首帧解码延迟而透明闪出底层旧图。 */}
+ 关键修复：track→crossfade 切换时当前图 <img> 不再重挂载，移动端/App（Capacitor
+ WebView）不会因新 img 元素首帧解码延迟而透明闪出底层旧图。 */}
         <>
           {/* 背景层：仅渲染当前 + 上一张（最多 2 层），crossfade；不预加载全部背景图 */}
           {/* 分类切换过渡：滞留层（--stale，先渲染 = DOM 底层 opacity 1 垫底）承载旧图，
-              新首项层在新图预加载就绪（switchReady）前不渲染（hideNewLayer）——
-              就绪后新层挂载即 is-active（图片已缓存 → heroBgFadeIn 0.8s 淡入完整播放），
-              淡入完成后清理 effect 移除滞留层。无空白无硬切（详见上方 state 注释）。 */}
+ 新首项层在新图预加载就绪（switchReady）前不渲染（hideNewLayer）——
+ 就绪后新层挂载即 is-active（图片已缓存 → heroBgFadeIn 0.8s 淡入完整播放），
+ 淡入完成后清理 effect 移除滞留层。无空白无硬切（详见上方 state 注释）。 */}
           {staleLayer && (
             <img
               key={`stale-${staleLayer.id}`}
@@ -1058,8 +1058,8 @@ function HeroBannerClassic({
           })}
         </>
         {/* 三联 track 模式：仅拖拽 / 滑动动画期间渲染，绝对定位覆盖在 crossfade 背景之上
-            （.hero-banner__track 加 position:absolute; inset:0; z-index:1）。滑动结束 trackActive=false
-            时仅移除该覆盖层，crossfade 已常驻、当前图已解码 → 切换无缝、无闪烁。 */}
+ （.hero-banner__track 加 position:absolute; inset:0; z-index:1）。滑动结束 trackActive=false
+ 时仅移除该覆盖层，crossfade 已常驻、当前图已解码 → 切换无缝、无闪烁。 */}
         {trackActive && (
           /* ── 三联 track 模式 ── */
           <div
@@ -1115,7 +1115,7 @@ function HeroBannerClassic({
           </div>
         )}
         {/* 主图加载失败兜底：复用公共 LazyImage 品牌样式（MonitorPlay + kinoTV）。
-            层叠：背景层(auto) < track(z-index 1) < 本兜底(z-index 1, DOM 在后) < 渐变遮罩(z-index 1, DOM 在后) */}
+ 层叠：背景层(auto) < track(z-index 1) < 本兜底(z-index 1, DOM 在后) < 渐变遮罩(z-index 1, DOM 在后) */}
         {activeBackdropFailed && (
           <div className="lazy-image-fallback lazy-image-fallback--brand hero-banner__fallback">
             <Icon icon={MonitorPlay} size="2xl" className="lazy-image-fallback__icon" />
@@ -1125,10 +1125,10 @@ function HeroBannerClassic({
         <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
 
         {/* 内容叠加（标题/评分/简介/CTA）：文字 track 与背景图 track 同构。
-            拖拽 / 回弹时文字随 banner 一起水平位移（问题 #2，任何距离都跟随）；
-            切换时不水平位移、新文本以 6px 垂直位移错峰淡入（问题 #3）。
-            拖拽 / 回弹期间不挂 is-sliding，右侧下一张文本 opacity 保持 0（问题 #1）；
-            静止当前文字的入场仅在不处于拖拽/切换且允许入场（is-rise）时播。 */}
+ 拖拽 / 回弹时文字随 banner 一起水平位移（问题 #2，任何距离都跟随）；
+ 切换时不水平位移、新文本以 6px 垂直位移错峰淡入（问题 #3）。
+ 拖拽 / 回弹期间不挂 is-sliding，右侧下一张文本 opacity 保持 0（问题 #1）；
+ 静止当前文字的入场仅在不处于拖拽/切换且允许入场（is-rise）时播。 */}
         <div className="hero-banner__content">
           <div
             className={`hero-banner__text-track${slideAnim !== null ? ' is-switching' : ''}${textRiseEnabled && slideAnim === null && !isDragging && !bounceBack ? ' is-rise' : ''}`}
@@ -1169,12 +1169,12 @@ function HeroBannerClassic({
 export default function HeroBanner(props: HeroBannerProps) {
   const isWideDesktop = useIsWideDesktop();
   /**
-   * 2026-11-04：overview 归一化。
-   * 上游首页传的是 `TMDBVideoItem[]`（简介字段叫 `description`），而 HeroItem /
-   * HeroBiliItem 读的是 `overview` → 直接透传会让 banner 简介恒空
-   * （用户报「首页 banner 左下文案缺失简介」）。
-   * 在入口统一补 `overview`，Classic 与 HeroBili 两条路径都受益。
-   */
+ * ：overview 归一化。
+ * 上游首页传的是 `TMDBVideoItem[]`（简介字段叫 `description`），而 HeroItem /
+ * HeroBiliItem 读的是 `overview` → 直接透传会让 banner 简介恒空
+ * （首页 banner 左下文案缺失简介）。
+ * 在入口统一补 `overview`，Classic 与 HeroBili 两条路径都受益。
+ */
   const items = useMemo(
     () =>
       props.items.map((it) => {

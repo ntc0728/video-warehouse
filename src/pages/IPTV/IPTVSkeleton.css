@@ -1,9 +1,9 @@
 /* IPTV 频道页专属骨架 — 几何尽量继承 IPTV.css 的真实类
-   （.iptv-rail-layout / .iptv-rail / .iptv-rail__item / .iptv-rail__title /
-     .iptv-rail__sep / .iptv-rail__box / .iptv-grid-card / .iptv-content /
-     .iptv-content-bar / .iptv-sec / .iptv-sec__head / .iptv-sec__line /
-     .iptv-top-card / .iptv-source-filter / .iptv-actions-row）。
-   本文件只写：① 骨架私有容器的排布；② 灰块尺寸；③ 交互态静默。 */
+ （.iptv-rail-layout / .iptv-rail / .iptv-rail__item / .iptv-rail__title /
+ .iptv-rail__sep / .iptv-rail__box / .iptv-grid-card / .iptv-content /
+ .iptv-content-bar / .iptv-sec / .iptv-sec__head / .iptv-sec__line /
+ .iptv-top-card / .iptv-source-filter / .iptv-actions-row）。
+ 本文件只写：① 骨架私有容器的排布；② 灰块尺寸；③ 交互态静默。 */
 
 /* ── 骨架层静默：真实 .iptv-rail__item 有 hover / cursor:pointer ── */
 .iptv-skeleton,
@@ -39,7 +39,7 @@
 }
 
 /* ── 内容条灰块（对齐真实 .iptv-content-bar__count / .last-refresh /
-      .iptv-src-select / .iptv-content-bar__note / .refresh-btn 的行盒） ── */
+ .iptv-src-select / .iptv-content-bar__note / .refresh-btn 的行盒） ── */
 .iptv-skeleton__bar-count {
   width: 7em;
   height: 1.5em;
@@ -90,7 +90,7 @@
 }
 
 /* 列数与真实网格同源。真实网格是 `.iptv-page .iptv-channel-grid` → --iptv-page-cols
-   （IPTV 页专用，左栏吃宽故比全局 --iptv-cols 降一档）。 */
+ （IPTV 页专用，左栏吃宽故比全局 --iptv-cols 降一档）。 */
 .iptv-skeleton__channel-grid {
   display: grid;
   grid-template-columns: repeat(var(--iptv-page-cols, 2), minmax(0, 1fr));

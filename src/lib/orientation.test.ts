@@ -1,5 +1,5 @@
 /**
- * orientation 屏幕方向控制单测（9.1）
+ * orientation 屏幕方向控制单测
  *
  * 覆盖：
  * - web 端（无 Capacitor）：lock/unlock 为 no-op，不调用插件

@@ -1,29 +1,29 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Settings — 设置页
-   桌面（≥768px）：整体大卡片（TabBar + 内容区同卡），section 去卡片化、用分割线分隔
-   移动（≤767px）：MenuList → SubPage 两级导航
-   所有编辑操作以 Modal 弹窗完成
-   ═══════════════════════════════════════════════════════════════════════════ */
+ Settings — 设置页
+ 桌面（≥768px）：整体大卡片（TabBar + 内容区同卡），section 去卡片化、用分割线分隔
+ 移动（≤767px）：MenuList → SubPage 两级导航
+ 所有编辑操作以 Modal 弹窗完成
+ ═══════════════════════════════════════════════════════════════════════════ */
 .settings-page {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
   /* overflow-x 用 clip 不用 hidden：hidden 会把 overflow-y 计算成 auto，
-     使 .settings-page 成为滚动容器 → 左栏 .settings-sidenav 的 position:sticky
-     相对这个永不滚动的容器吸附而失效；clip 不产生滚动容器，sticky 正常
-     相对 .app-shell__scroll 生效。 */
+ 使 .settings-page 成为滚动容器 → 左栏 .settings-sidenav 的 position:sticky
+ 相对这个永不滚动的容器吸附而失效；clip 不产生滚动容器，sticky 正常
+ 相对 .app-shell__scroll 生效。 */
   overflow-x: clip;
   /* 进入动画由 AppLayout 的 .page-transition[data-variant="soft"] 统一提供，
-     本页不再自挂过渡类（2026-08-30）。二次进入时动画压到 140ms 线性，
-     不再完全取消 —— 避免「首次有动画 / 二次无动画」的不一致闪烁。 */
+ 本页不再自挂过渡类。二次进入时动画压到 140ms 线性，
+ 不再完全取消 —— 避免「首次有动画 / 二次无动画」的不一致闪烁。 */
 }
 
 /* 设置项出场动画已移除：各 .list-item / .settings-row / .settings-card__title /
-   .settings-profile-card 等不再错峰 fadeInUp，进入设置页时随根容器 .page-transition-enter
-   整页淡入即可，避免逐项突兀/抖动。
-   Tab 切换过渡由 .settings-content__pane--active (settings-content-in 0.24s opacity 淡入)
-   提供，保留；移动端子页推入/滑出 (.settings-subpage-in/-out) 是导航过渡，保留。 */
+ .settings-profile-card 等不再错峰 fadeInUp，进入设置页时随根容器 .page-transition-enter
+ 整页淡入即可，避免逐项突兀/抖动。
+ Tab 切换过渡由 .settings-content__pane--active (settings-content-in 0.24s opacity 淡入)
+ 提供，保留；移动端子页推入/滑出 (.settings-subpage-in/-out) 是导航过渡，保留。 */
 
 /* 源管理（视频源 / IPTV 源 / EPG 源）独立 section，桌面端不卡片化、上下分割线分隔 */
 .settings-source-section {
@@ -60,7 +60,7 @@
     box-shadow: none;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .settings-page section {
     border: none;
@@ -130,7 +130,7 @@
   border-color: var(--color-primary);
 }
 .skin-btn__swatch {
-  /* 2026-09-28 第二轮：皮肤方块偏大 → 定点 ×0.8（第三轮加码；不动全局 --layout-logo-size/TV logo） */
+  /* 皮肤方块偏大 → 定点 ×0.8（加码；不动全局 --layout-logo-size/TV logo） */
   width: calc(var(--layout-logo-size) * 0.8);
   height: calc(var(--layout-logo-size) * 0.8);
   border-radius: var(--radius-md);
@@ -205,7 +205,7 @@ body.skin-transitioning .skin-btn.active {
 }
 
 .overscan-slider {
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(112px, 30vw, 176px);
 }
 
@@ -396,15 +396,15 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* ════════════════════════════════════════
-   设置页重构组件样式（TabBar / MenuList / SubPage）
-   ════════════════════════════════════════ */
+ 设置页重构组件样式（TabBar / MenuList / SubPage）
+ ════════════════════════════════════════ */
 
 /* 桌面端整体容器：左竖排导航 + 内容区（仅桌面分支渲染）。
-   方案 B（2026-09-06 拍板）：导航移左栏竖排，内容区满宽自适应（不设固定 max-width）。
-   2026-09-08 去卡片化：整卡不再有 border / border-radius / box-shadow / background，
-   左栏与内容区直接铺在页面底色上。
-   ⚠️ 仍不可加 overflow:hidden——会为 sticky 子元素（.settings-sidenav）创建独立
-      滚动上下文，导航将卡在页面顶部不再跟随滚动。 */
+导航移左栏竖排，内容区满宽自适应（不设固定 max-width）。
+ 去卡片化：整卡不再有 border / border-radius / box-shadow / background，
+ 左栏与内容区直接铺在页面底色上。
+ ⚠️ 仍不可加 overflow:hidden——会为 sticky 子元素（.settings-sidenav）创建独立
+ 滚动上下文，导航将卡在页面顶部不再跟随滚动。 */
 .settings-desktop-card {
   display: flex;
   flex: 1;
@@ -413,12 +413,12 @@ body.skin-transitioning .skin-btn.active {
   min-height: 0;
 }
 
-/* 桌面端左侧竖排导航（2026-09-08 三调、2026-09-10 四调：统一左栏视觉语言 = 方案 B）：
-   - 右侧 1px 边框回归（--color-border-light）：与 Browse / IPTV / 收藏·历史 左栏一致，
-     作为「左栏边界」的统一锚点（原「rail 无边框」的决策由用户 2026-09-10 拍板推翻）；
-   - 横向 padding 归零（缩进由条目自身 8px 左右内边距提供，与 rail-item 一致）；
-   - sticky top 与 rail 同为 --space-sm（滚动容器已有 header padding-top，小间距即可）；
-   - 宽度改用共享 token --rail-w（2026-09-10 统一四处左栏宽度曲线）。 */
+/* 桌面端左侧竖排导航（统一左栏视觉语言）：
+ - 右侧 1px 边框回归（--color-border-light）：与 Browse / IPTV / 收藏·历史 左栏一致，
+ 作为「左栏边界」的统一锚点（原「rail 无边框」的决策由推翻）；
+ - 横向 padding 归零（缩进由条目自身 8px 左右内边距提供，与 rail-item 一致）；
+ - sticky top 与 rail 同为 --space-sm（滚动容器已有 header padding-top，小间距即可）；
+ - 宽度改用共享 token --rail-w（统一四处左栏宽度曲线）。 */
 .settings-sidenav {
   position: sticky;
   top: var(--space-sm);
@@ -429,17 +429,17 @@ body.skin-transitioning .skin-btn.active {
   flex-basis: var(--rail-w);
   gap: var(--space-sm);
   align-self: flex-start;
-  /* 2026-11-05 两侧留白对称 + 撑满可视高（与 Browse / 收藏·历史 / IPTV 左栏同批修复）：
-     ① 原 `padding: … 0` 左内距为 0（靠条目自身 padding 撑），文字左缘距栏边 ≈9.7px、
-        右缘 ≈20.4px（条目右内距 + 栏右内距 + 1px 边框）→ 内容整体偏左。改为左右对称 --space-sm；
-     ② 原高度 = 内容自然高（398px @2560），可视高 1357px → 下方空 959px。补 min-height 撑满，
-        写法与 Browse.css 一致（min(视口高, 100%)：短页取 100% 落视口底、长页取 100dvh−header）。 */
+  /* 两侧留白对称 + 撑满可视高（与 Browse / 收藏·历史 / IPTV 左栏同批修复）：
+ ① 原 `padding: … 0` 左内距为 0（靠条目自身 padding 撑），文字左缘距栏边 ≈9.7px、
+ 右缘 ≈20.4px（条目右内距 + 栏右内距 + 1px 边框）→ 内容整体偏左。改为左右对称 --space-sm；
+ ② 原高度 = 内容自然高（398px @2560），可视高 1357px → 下方空 959px。补 min-height 撑满，
+ 写法与 Browse.css 一致（min(视口高, 100%)：短页取 100% 落视口底、长页取 100dvh−header）。 */
   min-height: min(calc(100dvh - var(--header-height) - var(--space-sm)), 100%);
   padding: var(--space-lg) var(--space-sm) var(--space-xl);
   border-right: 1px solid var(--color-border-light);
-  /* 2026-09-08 去卡片化：不再铺 surface 底色。此处透明是安全的——
-     左栏与内容区是并列的 flex 列，右侧内容横向不与左栏重叠，sticky 悬浮时
-     不存在「内容从导航底下透过」的问题（原注释的前提不成立）。 */
+  /* 去卡片化：不再铺 surface 底色。此处透明是安全的——
+ 左栏与内容区是并列的 flex 列，右侧内容横向不与左栏重叠，sticky 悬浮时
+ 不存在「内容从导航底下透过」的问题（原注释的前提不成立）。 */
 }
 
 /* 桌面端内容主列：包住 settings-content，吃掉导航之外的剩余宽度（min-width:0 防撑破） */
@@ -450,9 +450,9 @@ body.skin-transitioning .skin-btn.active {
   min-width: 0;
 }
 
-/* TabBar 竖排化（2026-09-08 rail 化）：仅作用于左栏内（移动端菜单/其他场景不受影响）。
-   分组语义对齐 rail：标题 = 第一组（无线），tab 列表 = 第二组（上方 1px 分割线，
-   照抄 RecordShell.css 分组 ::before 分割线规格）。 */
+/* TabBar 竖排化（rail 化）：仅作用于左栏内（移动端菜单/其他场景不受影响）。
+ 分组语义对齐 rail：标题 = 第一组（无线），tab 列表 = 第二组（上方 1px 分割线，
+ 照抄 RecordShell.css 分组 ::before 分割线规格）。 */
 .settings-sidenav .settings-tabbar {
   flex: 1 1 auto;
   flex-direction: column;
@@ -473,13 +473,13 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* tab 项 = rail-item 外观（严格照抄 RecordShell.css ≥1024 的 .status-tab 规格）：
-   左对齐整行、8px 上下内边距、md 圆角、透明底、--text-sm / 500 / secondary */
+ 左对齐整行、8px 上下内边距、md 圆角、透明底、--text-sm / 500 / secondary */
 .settings-sidenav .settings-tab {
   gap: var(--space-sm);
   justify-content: flex-start;
   width: 100%;
   height: auto;
-  /* 2026-09-28 第三轮（用户拍板「左栏不改」）：内边距回原档 md/sm */
+  /* （左栏不改）：内边距回原档 md/sm */
   padding: var(--space-md) var(--space-sm);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -497,7 +497,7 @@ body.skin-transitioning .skin-btn.active {
   color: var(--color-text);
 }
 
-/* 选中态：rail 同款实心主色 + 反白字 + 600（用户 2026-09-08 拍板，替换原浅底+指示条） */
+/* 选中态：rail 同款实心主色 + 反白字 + 600（替换原浅底+指示条） */
 .settings-sidenav .settings-tab--active,
 .settings-sidenav .settings-tab--active:hover {
   background: var(--color-primary);
@@ -505,10 +505,10 @@ body.skin-transitioning .skin-btn.active {
   font-weight: 600;
 }
 
-/* 2026-11-04：左栏选中 tab 的**图标**也必须反色。
-   下方通用 `.settings-tab--active .settings-tab__icon`（0,2,0）取 text-secondary，
-   在暗色白底上仅 2.61:1（亮色黑底上也偏暗）。仅限 `.settings-sidenav` 左栏，
-   横排 tab（surface 底）不受影响。 */
+/* 左栏选中 tab 的**图标**也必须反色。
+ 下方通用 `.settings-tab--active .settings-tab__icon`（0,2,0）取 text-secondary，
+ 在暗色白底上仅 2.61:1（亮色黑底上也偏暗）。仅限 `.settings-sidenav` 左栏，
+ 横排 tab（surface 底）不受影响。 */
 .settings-sidenav .settings-tab--active .settings-tab__icon,
 .settings-sidenav .settings-tab--active:hover .settings-tab__icon {
   color: var(--color-text-inverse);
@@ -520,18 +520,18 @@ body.skin-transitioning .skin-btn.active {
   display: none;
 }
 
-/* 「设置」标题（方案 B 2026-09-06 起位于左栏顶部，原顶部栏左侧标题沿用同名类）。
-   2026-09-08 rail 化：sidenav 横向 padding 归零后，标题左缘补 --space-sm
-   与下方 tab 文字（rail-item 左内边距）对齐。 */
+/* 「设置」标题（现位于左栏顶部，原顶部栏左侧标题沿用同名类）。
+ rail 化：sidenav 横向 padding 归零后，标题左缘补 --space-sm
+ 与下方 tab 文字（rail-item 左内边距）对齐。 */
 .settings-desktop-title {
   display: inline-flex;
   flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
   margin-right: var(--space-xs);
-  /* 2026-11-05：左栏改为两侧对称 padding 后，标题仍保留自身 --space-sm 左内距 ——
-     栏补了 --space-sm、条目自身也有 --space-sm 左内距，两者叠加后标题图标才与
-     tab 图标同左缘（归零会让标题左移 9.7px，与下方 tab 图标错开）。 */
+  /* 左栏改为两侧对称 padding 后，标题仍保留自身 --space-sm 左内距 ——
+ 栏补了 --space-sm、条目自身也有 --space-sm 左内距，两者叠加后标题图标才与
+ tab 图标同左缘（归零会让标题左移 9.7px，与下方 tab 图标错开）。 */
   padding-left: var(--space-sm);
   color: var(--color-text);
   font-size: var(--text-base);
@@ -543,8 +543,8 @@ body.skin-transitioning .skin-btn.active {
   white-space: nowrap;
 }
 
-/* 方案 B（2026-08-30）：去掉无限脉冲状态点（静止页常闪、纯噪音），
-   改为静态 sliders 图标（来自 index.tsx），弱化二级页平铺感。 */
+/* 去掉无限脉冲状态点（静止页常闪、纯噪音），
+ 改为静态 sliders 图标（来自 index.tsx），弱化二级页平铺感。 */
 .settings-desktop-title__icon {
   display: inline-flex;
   flex-shrink: 0;
@@ -553,7 +553,7 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* Tab 栏容器 — 默认横排（左栏内被 .settings-sidenav 覆盖为竖排；
-   移动端子页等场景如复用仍走横排）。单个 tab 为普通选项按钮（激活态浅底 + 指示条） */
+ 移动端子页等场景如复用仍走横排）。单个 tab 为普通选项按钮（激活态浅底 + 指示条） */
 .settings-tabbar {
   display: inline-flex;
   flex-wrap: nowrap;
@@ -576,19 +576,19 @@ body.skin-transitioning .skin-btn.active {
   flex-shrink: 0;
   gap: var(--space-xs);
   align-items: center;
-  /* 2026-09-28 第三轮（用户拍板「左栏不改、只改右侧」）：横排 tab 内边距回原档 */
+  /* （左栏不改、只改右侧）：横排 tab 内边距回原档 */
   padding: var(--space-xs) var(--space-md);
-  /* 方案 B（2026-08-30）：tab 从「主色实心胶囊」改为「透明按钮 + 激活态浅底
-     （白）+ 底部 2px 主色指示条」，与收藏/历史页 tab 语言一致；圆角改 md（原 full），
-     指示条靠 ::after 在底部中间展开。 */
+  /* tab 从「主色实心胶囊」改为「透明按钮 + 激活态浅底
+ （白）+ 底部 2px 主色指示条」，与收藏/历史页 tab 语言一致；圆角改 md（原 full），
+ 指示条靠 ::after 在底部中间展开。 */
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
-  /* 字重统一 600（2026-08-13）：原 500→600 激活变化导致按钮文字变宽、
-     tab 宽度变化 → flex-wrap TabBar 整行重排（切 tab 抖动根因之一）；
-     激活态仅靠浅底 + 指示条区分。 */
+  /* 字重统一 600：原 500→600 激活变化导致按钮文字变宽、
+ tab 宽度变化 → flex-wrap TabBar 整行重排（切 tab 抖动根因之一）；
+ 激活态仅靠浅底 + 指示条区分。 */
   font-weight: 600;
   white-space: nowrap;
   transition: background var(--dur-sm) ease, color var(--dur-sm) ease;
@@ -657,9 +657,9 @@ body.skin-transitioning .skin-btn.active {
   min-height: 0;
 }
 
-/* tab 切换过渡（2026-08-13 重做）：内容区 pane 常驻挂载（display 切换可见性），
-   激活 pane 播放纯 opacity 淡入——去掉原 translateY(8px) 位移动画（重挂载 + 位移
-   是「切 tab 页面抖动」的根因之一）。内容常驻不卸载、无高度 0 突变。 */
+/* tab 切换过渡（重做）：内容区 pane 常驻挂载（display 切换可见性），
+ 激活 pane 播放纯 opacity 淡入——去掉原 translateY(8px) 位移动画（重挂载 + 位移
+ 是「切 tab 页面抖动」的根因之一）。内容常驻不卸载、无高度 0 突变。 */
 @keyframes settings-content-in {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -668,7 +668,7 @@ body.skin-transitioning .skin-btn.active {
 .settings-content__pane {
   display: flex;
   /* flex-basis auto：短内容（如关于页）撑满内容区，免责声明才能贴底；
-     长内容 tab 保持自然高度不被压缩（flex:1 1 0 会把长内容压进视口导致溢出卡片）。 */
+ 长内容 tab 保持自然高度不被压缩（flex:1 1 0 会把长内容压进视口导致溢出卡片）。 */
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
@@ -678,15 +678,15 @@ body.skin-transitioning .skin-btn.active {
   animation: settings-content-in 0.24s var(--ease-standard) both;
 }
 
-/* ── 进入过渡「方案 1」（2026-08-30）：对齐 IPTV/收藏/历史的「两层节奏」 ──
-   容器层 soft 淡入由 AppLayout 的 .page-transition[data-variant="soft"] 统一提供
-   （见 animations.css）。本段只补「topbar 先落位 + 内容区逐块轻上浮」这一层：
-   - topbar 180ms 先落（Y -4px），与容器 soft 起点错开，形成「头先到、内容后浮」；
-   - 内容区每个直接子（tab 根 section / 分组）按 6px / 320ms / 0.028s 阶梯上浮——
-     幅度是卡片的一半（6 vs 12px）、时长短 20%（320 vs 400ms），同语言、更轻口音；
-     多块 tab（视频/IPTV/个人）享阶梯，单块 tab 自然成一块；切 tab 重放也不闹。
-   前缀 .page-transition[data-variant="soft"] 保证只在进入路由（容器重挂载）时整播，
-（原 prefers-reduced-motion 压缩守卫随全局放开删除，2026-11-08）。 */
+/* ── 进入过渡「方案 1」：对齐 IPTV/收藏/历史的「两层节奏」 ──
+ 容器层 soft 淡入由 AppLayout 的 .page-transition[data-variant="soft"] 统一提供
+ （见 animations.css）。本段只补「topbar 先落位 + 内容区逐块轻上浮」这一层：
+ - topbar 180ms 先落（Y -4px），与容器 soft 起点错开，形成「头先到、内容后浮」；
+ - 内容区每个直接子（tab 根 section / 分组）按 6px / 320ms / 0.028s 阶梯上浮——
+ 幅度是卡片的一半（6 vs 12px）、时长短 20%（320 vs 400ms），同语言、更轻口音；
+ 多块 tab（视频/IPTV/个人）享阶梯，单块 tab 自然成一块；切 tab 重放也不闹。
+ 前缀 .page-transition[data-variant="soft"] 保证只在进入路由（容器重挂载）时整播，
+（原 prefers-reduced-motion 压缩守卫随全局放开删除）。 */
 @keyframes settings-topbar-in {
   from {
     opacity: 0;
@@ -815,13 +815,13 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 移动端子页面：全屏覆盖视口（含全局顶部导航栏区域）——
-   fixed inset:0 + z-index 高于 sticky-header(55)，顶栏固定在视口顶部、
-   与全局导航栏同高（移动端 --header-height-compact），视觉上替代导航栏。
-   body 在顶栏下方独立滚动。
-   过渡动画：进入从右侧推入（iOS 风格，与列表 → 子页的方向一致），
-   退出向右滑出；--leaving 类由组件在返回/右滑时添加，animationend 后卸载。
-   方案1（iOS 对称 push/pop）：进出统一 0.3s + cubic-bezier(.32,.72,0,1)，
-   父列表视差同曲线同时长、子页左缘投影。 */
+ fixed inset:0 + z-index 高于 sticky-header(55)，顶栏固定在视口顶部、
+ 与全局导航栏同高（移动端 --header-height-compact），视觉上替代导航栏。
+ body 在顶栏下方独立滚动。
+ 过渡动画：进入从右侧推入（iOS 风格，与列表 → 子页的方向一致），
+ 退出向右滑出；--leaving 类由组件在返回/右滑时添加，animationend 后卸载。
+ 方案1（iOS 对称 push/pop）：进出统一 0.3s + cubic-bezier(.32,.72,0,1)，
+ 父列表视差同曲线同时长、子页左缘投影。 */
 @keyframes settings-subpage-in {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
@@ -906,21 +906,21 @@ body.skin-transitioning .skin-btn.active {
 .settings-subpage__body {
   flex: 1;
   min-height: 0;
-  /* 9.1：与全局 .page-padding 一致（左右 sm、上 sm、下 0；底部由 app 安全区承担） */
+  /* 与全局 .page-padding 一致（左右 sm、上 sm、下 0；底部由 app 安全区承担） */
   padding: var(--space-sm) var(--space-sm) 0;
   overflow-y: auto;
 }
 
 /* 移动端关于页：让 .about-tab 的 flex:1 生效（body 需为 flex 容器），
-   使免责声明 .about-tab__disclaimer 的 margin-top:auto 可贴到底部 */
+ 使免责声明 .about-tab__disclaimer 的 margin-top:auto 可贴到底部 */
 .settings-subpage__body:has(.about-tab) {
   display: flex;
   flex-direction: column;
 }
 
 /* 移动端子页面内 section：不再卡片化、不再用分割线 —— 由 list-item 双行卡各自成卡，
-   section 之间改用留白间隔（与桌面方案 F 一致的卡片呼吸感）。
-   顶部 padding 为 0（body 已无 padding-top，内容直接顶到子页顶栏下方）。 */
+ section 之间改用留白间隔（与桌面方案 F 一致的卡片呼吸感）。
+ 顶部 padding 为 0（body 已无 padding-top，内容直接顶到子页顶栏下方）。 */
 @media (width <= 767px) {
   .settings-subpage__body > section {
     margin-bottom: 0;
@@ -949,7 +949,7 @@ body.skin-transitioning .skin-btn.active {
     margin-top: 0;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .settings-subpage__body > section {
     margin-bottom: 0;
@@ -1004,8 +1004,8 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* ===== 区块去卡片化（桌面端）=====
-   section 不再各自成卡（卡片样式收归 .settings-desktop-card 整卡），
-   仅保留内边距，section 之间用分割线分隔。 */
+ section 不再各自成卡（卡片样式收归 .settings-desktop-card 整卡），
+ 仅保留内边距，section 之间用分割线分隔。 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .settings-content > section, html:not([data-device="app"]) .settings-subpage__body > section {
     padding: var(--space-lg);
@@ -1018,8 +1018,8 @@ body.skin-transitioning .skin-btn.active {
   }
 
   html:not([data-device="app"]) /* 个人设置 section（settings-personal-section）：仅去掉桌面端上下 padding，
-     让标题（卡片外）与上方/下方元素更紧凑，对齐其他 tab List item 卡间 12px 间距；
-     左右保留 var(--space-lg)（12px）缩进，与其他 tab 的 section 水平对齐 */
+ 让标题（卡片外）与上方/下方元素更紧凑，对齐其他 tab List item 卡间 12px 间距；
+ 左右保留 var(--space-lg)（12px）缩进，与其他 tab 的 section 水平对齐 */
   .settings-content > .settings-personal-section, html:not([data-device="app"]) .settings-subpage__body > .settings-personal-section {
     padding: 0;
   }
@@ -1035,7 +1035,7 @@ body.skin-transitioning .skin-btn.active {
   }
 
   /* 个人资料卡已在基础样式中统一卡片化（border/background/hover）；
-      此处仅处理间距。 */
+ 此处仅处理间距。 */
   /* 个人资料卡与标题：桌面端 8px 间距（与 .settings-card__body + title 的 margin-top 一致） */
   html:not([data-device="app"]) .settings-content > .settings-card__title + .settings-profile-card,
   html:not([data-device="app"]) .settings-subpage__body > .settings-card__title + .settings-profile-card {
@@ -1056,8 +1056,8 @@ body.skin-transitioning .skin-btn.active {
   }
 }
 
-/* ── ≥1024：左右两栏顶部 padding/margin 归零（2026-09-08 用户指令）──
-   两栏内容贴 .settings-desktop-card 顶边；后续 section 之间的间距不受影响。 */
+/* ── ≥1024：左右两栏顶部 padding/margin 归零──
+ 两栏内容贴 .settings-desktop-card 顶边；后续 section 之间的间距不受影响。 */
 @media (width >= 1024px) {
   html:not([data-device="app"]) .settings-sidenav {
     padding-top: 0;
@@ -1074,8 +1074,8 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* ===== 设置弹窗统一卡片样式（修复样式错乱，与详情页一致） =====
-   复用 .modal-content-animate 的 fixed 定位与 max-height，
-   仅补充宽度/内边距/盒模型，使其不再是“无内边距、无宽度”的裸弹窗。 */
+ 复用 .modal-content-animate 的 fixed 定位与 max-height，
+ 仅补充宽度/内边距/盒模型，使其不再是“无内边距、无宽度”的裸弹窗。 */
 .modal-content-animate.settings-modal {
   display: flex;
   flex-direction: column;
@@ -1096,7 +1096,7 @@ body.skin-transitioning .skin-btn.active {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .modal-content-animate.settings-modal {
     width: 100%;
@@ -1113,15 +1113,15 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 复用播放列表弹窗（PlaylistModal，flex:1 1 auto + min-height:0 + overflow-y:auto）的滚动隔离策略，
-   保证弹窗内容可滚动且不溢出裁剪。注：旧类 .source-all-modal 已于 2026-09-30 从 Detail.css 清除 */
+ 保证弹窗内容可滚动且不溢出裁剪。注：旧类 .source-all-modal 已从 Detail.css 清除 */
 .settings-modal > .custom-scrollbar-container {
   flex: 1 1 auto;
   min-height: 0;
 }
 
 /* ===== 个人资料卡（头像 + 用户名，桌面端/移动端共用） =====
-    结构：.settings-profile-card（外层卡片，与 .list-item 同卡片化）包
-          .settings-profile（button 本体，去卡片化，仅保留内容布局与点击交互） */
+ 结构：.settings-profile-card（外层卡片，与 .list-item 同卡片化）包
+ .settings-profile（button 本体，去卡片化，仅保留内容布局与点击交互） */
 .settings-profile-card {
   width: 100%;
   border: 1px solid var(--color-border-light);
@@ -1135,8 +1135,8 @@ body.skin-transitioning .skin-btn.active {
   box-shadow: var(--shadow-card-hover);
 }
 
-/* 2026-09-28 去卡片化：桌面端移除资料卡四件套（上方基础规则即「移动端卡片」样式源，
-   <=767 与 app 恒移动继续沿用；hover 屏蔽基础规则的边框/阴影反馈，不加背景变化）。 */
+/* 去卡片化：桌面端移除资料卡四件套（上方基础规则即「移动端卡片」样式源，
+ <=767 与 app 恒移动继续沿用；hover 屏蔽基础规则的边框/阴影反馈，不加背景变化）。 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .settings-profile-card {
     border: none;
@@ -1266,7 +1266,7 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 弹窗内操作按钮统一胶囊（颜色不变，仅圆角）：
-   个人资料编辑弹窗（上传头像/默认头像/取消/保存） */
+ 个人资料编辑弹窗（上传头像/默认头像/取消/保存） */
 .profile-edit__avatar-actions button,
 .settings-modal__footer button {
   border-radius: var(--radius-full) !important;
@@ -1299,7 +1299,7 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 设置页下拉框触发按钮：内容自适应太窄，限定适中最小宽度（仅作用于设置页，不影响全局 Select）；
-   补充左右内边距，避免文字/箭头贴边 */
+ 补充左右内边距，避免文字/箭头贴边 */
 .settings-page .source-multi-trigger {
   min-width: 9rem;
   padding-right: var(--space-md);
@@ -1307,9 +1307,9 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 设置页内【所有 button】统一拦截整体缩放：覆盖 List clickable / Select trigger / Switch /
-   Button 等任意变体的 <button>，避免命中全局 button:active scale:.92 的整体缩放。
-   按钮框本身绝不缩放，按住时保持静止。用 .settings-page 作用域限定，
-   不影响收藏/历史等其它页面的 List 按压反馈。 */
+ Button 等任意变体的 <button>，避免命中全局 button:active scale:.92 的整体缩放。
+ 按钮框本身绝不缩放，按住时保持静止。用 .settings-page 作用域限定，
+ 不影响收藏/历史等其它页面的 List 按压反馈。 */
 .settings-page button,
 .settings-page button:active,
 .settings-page button:active:not(:disabled) {
@@ -1317,10 +1317,10 @@ body.skin-transitioning .skin-btn.active {
   transform: none !important;
 }
 /* 按压反馈：仅缩放按钮内【文本自身宽度】的标题/副标题，按钮框与整行保持静止。
-   桌面端设置项标题在 flex-column 容器中默认 align-items:stretch 撑满整行，
-   直接缩放会整行变动过大；故让标题/描述收缩到文本自身宽度
-   （align-self:flex-start + width:fit-content），缩放仅作用于文本宽度，变动量大幅减小。
-   不改背景色 / 不变暗 / 不缩放按钮框。 */
+ 桌面端设置项标题在 flex-column 容器中默认 align-items:stretch 撑满整行，
+ 直接缩放会整行变动过大；故让标题/描述收缩到文本自身宽度
+ （align-self:flex-start + width:fit-content），缩放仅作用于文本宽度，变动量大幅减小。
+ 不改背景色 / 不变暗 / 不缩放按钮框。 */
 .settings-page .settings-row__title,
 .settings-page .settings-row__label small,
 .settings-page .list-item__title,
@@ -1338,8 +1338,8 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 关于页（AboutTab）可点击项：移除 hover / focus 背景变色，
-   与设置页整体「不使用背景色作为反馈」的约定一致；仅保留文字缩放按压反馈。
-   用 .about-tab 作用域限定，不影响设置页其它 tab 的 List 项。 */
+ 与设置页整体「不使用背景色作为反馈」的约定一致；仅保留文字缩放按压反馈。
+ 用 .about-tab 作用域限定，不影响设置页其它 tab 的 List 项。 */
 .about-tab .list-item--clickable:hover,
 .about-tab .list-item--clickable:focus,
 .about-tab .list-item--clickable:focus-visible {
@@ -1354,9 +1354,9 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 关于页可点击项标题：解除 List 组件 flex-1 满宽——满宽元素以整行中心为缩放原点，
-   按下 scale 0.96 时靠左文本被拉向中心（实测位移 ~19px = "左右平移"）；
-   flex:none 后宽度回落文本自身宽度（width:fit-content 见上），
-   缩放原点=文本中心 = 原地放大缩小，与个人设置项反馈一致。 */
+ 按下 scale 0.96 时靠左文本被拉向中心（实测位移 ~19px = "左右平移"）；
+ flex:none 后宽度回落文本自身宽度（width:fit-content 见上），
+ 缩放原点=文本中心 = 原地放大缩小，与个人设置项反馈一致。 */
 .about-tab .list-item__row {
   justify-content: space-between;
 }
@@ -1365,8 +1365,8 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 关于页免责声明：靠页面底部（flex 容器内 margin-top:auto 推到底）、
-   上方分割线、占满内容主体整行宽度、以内容主体水平居中（2026-09-08：
-   块满宽 + 标题与正文均居中），一行显示不全自动换行 */
+ 上方分割线、占满内容主体整行宽度、以内容主体水平居中（
+ 块满宽 + 标题与正文均居中），一行显示不全自动换行 */
 .about-tab__disclaimer {
   width: 100%;
   margin-top: auto; /* 贴底 */
@@ -1396,7 +1396,7 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 设置页 tabbar（SettingsTabBar）：内容缩放、框静止，与全站统一 0.96。
-   全局方案已排除 .settings-page，此处单独补充，避免与设置页专属「内容缩放」规则双重缩放。 */
+ 全局方案已排除 .settings-page，此处单独补充，避免与设置页专属「内容缩放」规则双重缩放。 */
 .settings-page .settings-tab__icon,
 .settings-page .settings-tab__label {
   transform-origin: center;
@@ -1408,7 +1408,7 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* ===== 移动端设置页顶部居中资料区 =====
-   button 语义：重置默认样式，可点击进入个人设置 */
+ button 语义：重置默认样式，可点击进入个人设置 */
 .settings-mobile-profile {
   display: flex;
   flex-direction: column;
@@ -1522,19 +1522,19 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 设置项行（.settings-row）：点击时【仅文字】缩放，按钮框（行本体）不缩放。
-   行本体由全局排除名单 + 下方 scale:none !important 双重保证不被全局 button:active scale 命中；
-   文字缩放只作用于内部文本节点（标题 .settings-row__title 与副标题 small），
-   不缩放 .settings-row__label 盒子本身，按钮框与箭头保持不动。 */
+ 行本体由全局排除名单 + 下方 scale:none !important 双重保证不被全局 button:active scale 命中；
+ 文字缩放只作用于内部文本节点（标题 .settings-row__title 与副标题 small），
+ 不缩放 .settings-row__label 盒子本身，按钮框与箭头保持不动。 */
 .settings-row,
 .settings-row:active,
 .settings-row:active:not(:disabled) {
   scale: none !important;
   transform: none !important;
 }
-/* 2026-09-28（用户拍板「个人设置项内容字体比其他设置项大」）：
-   .settings-row__title 原无 font-size → inherit 16px，而其他 tab 的
-   list-item__title 是 tailwind text-base（= var(--text-base)，14×0.93≈13px）
-   → 对齐同值。副标题 small（0.8em）与 desc（text-sm）本就协调，不动。 */
+/* （个人设置项内容字体比其他设置项大）：
+ .settings-row__title 原无 font-size → inherit 16px，而其他 tab 的
+ list-item__title 是 tailwind text-base（= var(--text-base)，14×0.93≈13px）
+ → 对齐同值。副标题 small（0.8em）与 desc（text-sm）本就协调，不动。 */
 .settings-page .settings-row__title {
   font-size: var(--text-base);
 }
@@ -1544,7 +1544,7 @@ body.skin-transitioning .skin-btn.active {
 }
 
 /* 区块标题行：settings-card__title 已移出卡片单独作为区块标题，
-   本行为 desc（左，弹性占满剩余空间）+ 操作按钮（右，不收缩）两端对齐 */
+ 本行为 desc（左，弹性占满剩余空间）+ 操作按钮（右，不收缩）两端对齐 */
 .settings-card__header {
   display: flex;
   gap: var(--space-sm);
@@ -1553,7 +1553,7 @@ body.skin-transitioning .skin-btn.active {
   margin-bottom: var(--space-sm);
 }
 /* desc 与按钮两端对齐：flex 占满剩余空间，单行放不下时溢出隐藏（ellipsis）；
-   hover 时通过 title 原生提示显示全部文本 */
+ hover 时通过 title 原生提示显示全部文本 */
 .settings-card__header .settings-card__desc {
   flex: 1 1 0;
   min-width: 0;
@@ -1566,9 +1566,9 @@ body.skin-transitioning .skin-btn.active {
   flex-shrink: 0;
 }
 /* 一键按钮（标题右侧）：方形 tab 风格，小尺寸避免与普通 button 不协调。
-   2026-09-28：原 min-height --avatar-xs（44.7→52px）方框过大 → 第四轮先改
-   --comp-btn-min-width（40.5，仍偏大）→ 第五轮对齐同页 Select trigger 高度
-   --comp-tab-height（×0.8 ≈29.5px），与设置页下拉/mini 按钮统一。 */
+原 min-height --avatar-xs（44.7→52px）方框过大 → 先改
+ --comp-btn-min-width（40.5，仍偏大）→ 对齐同页 Select trigger 高度
+ --comp-tab-height（×0.8 ≈29.5px），与设置页下拉/mini 按钮统一。 */
 .settings-action-btn--inline {
   width: auto;
   min-height: var(--comp-tab-height);
@@ -1606,7 +1606,7 @@ body.skin-transitioning .skin-btn.active {
     margin-top: var(--space-md);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .settings-card__header {
     flex-wrap: wrap;
@@ -1618,24 +1618,24 @@ body.skin-transitioning .skin-btn.active {
 
 
 /* 移动端：设置页不再整体卡片化 —— 采用 iOS 分组圆角卡，
-   菜单每个分组独立一张 inset 圆角卡（背景浮出），页面本身透明。
-   子页打开时（:has(.settings-subpage)）关掉进场动画残留的 transform
-   （fixed 定位的 containing block 才能回退到视口，覆盖全局导航栏）。
-   注：容器层 data-variant="soft" 已改用 fill-mode: none，动画结束后不再残留
-   transform；这里保留 animation:none 只是防止子页打开瞬间动画仍在播而干扰视差。 */
+ 菜单每个分组独立一张 inset 圆角卡（背景浮出），页面本身透明。
+ 子页打开时（:has(.settings-subpage)）关掉进场动画残留的 transform
+ （fixed 定位的 containing block 才能回退到视口，覆盖全局导航栏）。
+ 注：容器层 data-variant="soft" 已改用 fill-mode: none，动画结束后不再残留
+ transform；这里保留 animation:none 只是防止子页打开瞬间动画仍在播而干扰视差。 */
 @media (width <= 767px) {
   .settings-page {
     gap: var(--space-md);
     padding: var(--space-sm) var(--space-sm) 0;
   }
   /* 子页打开：下方菜单做轻微视差左移 + 缩小，营造「进入下层」的层级深度。
-     注意：子页经 createPortal 挂到 document.body，并非 .settings-page 的后代，
-     原 .settings-page:has(.settings-subpage) 永不命中；改用 body:has 选择。 */
+ 注意：子页经 createPortal 挂到 document.body，并非 .settings-page 的后代，
+ 原 .settings-page:has(.settings-subpage) 永不命中；改用 body:has 选择。 */
   body:has(.settings-subpage) .settings-page {
     transform: translateX(-6%) scale(0.98);
     transform-origin: left center;
     /* 方案1：与子页同曲线同时长（0.3s + iOS push 曲线），父视差与子页滑动同步；
-       轻微压暗强化「进入下层」的层级深度 */
+ 轻微压暗强化「进入下层」的层级深度 */
     transition: transform var(--dur-lg) cubic-bezier(.32, .72, 0, 1),
                 filter 0.3s cubic-bezier(.32, .72, 0, 1);
     filter: brightness(0.96);
@@ -1649,21 +1649,21 @@ body.skin-transitioning .skin-btn.active {
   /* 方案1：无障碍守卫 —— 关闭进出动画与父视差/压暗，直接显隐 */
   
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .settings-page {
     gap: var(--space-md);
     padding: var(--space-sm) var(--space-sm) 0;
   }
   /* app 端同源逻辑已由上方 body:has(.settings-subpage) 覆盖（子页同样在 body 下），
-     此处不再重复（原 .settings-page:has 选择器对 portal 内容无效）。 */
+ 此处不再重复（原 .settings-page:has 选择器对 portal 内容无效）。 */
 
 
 
 /* 移动端分组圆角卡（iOS Settings 风格）：
-   .settings-menu-group 含组标题 + 组卡；组卡 inset（左右留白）+ 整卡圆角 + 分割线分隔行。
-   9.1：页边距统一由 .settings-page padding 提供（与全局 .page-padding 一致），
-   组卡 margin 左右归零避免双层留白。 */
+ .settings-menu-group 含组标题 + 组卡；组卡 inset（左右留白）+ 整卡圆角 + 分割线分隔行。
+页边距统一由 .settings-page padding 提供（与全局 .page-padding 一致），
+ 组卡 margin 左右归零避免双层留白。 */
 .settings-menu-group {
   margin: 0;
 }
@@ -1684,7 +1684,7 @@ body.skin-transitioning .skin-btn.active {
   box-shadow: var(--shadow-sm);
 }
 
-/* 2026-09-28 去卡片化：桌面端菜单组卡四件套移除（移动端入口菜单保留上方卡片）。 */
+/* 去卡片化：桌面端菜单组卡四件套移除（移动端入口菜单保留上方卡片）。 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .settings-menu-group__card {
     border: none;
@@ -1844,11 +1844,11 @@ body.skin-transitioning .skin-btn.active {
   font-size: var(--text-xs);
 }
 
-/* 2026-09-28 设置页字号/图标缩档（用户拍板「各个字体、图标尺寸有点大」）：
-   在 .settings-page 作用域重定义 --text-* 为全站值 ×0.93（响应式公式保持原档形态）；
-   --icon-* 的 calc(var(--text-*) × 系数) 在元素处延迟解析 → 图标随文字连锁缩 ~7%。
-   仅字号/图标，--space-*（间距）与 --card-size 不动；作用域外全站不受影响。
-   html 前缀压过 :root 的桌面档覆盖（特异性 0,1,1 > 0,1,0）。 */
+/* 设置页字号/图标缩档（各个字体、图标尺寸有点大）：
+ 在 .settings-page 作用域重定义 --text-* 为全站值 ×0.93（响应式公式保持原档形态）；
+ --icon-* 的 calc(var(--text-*) × 系数) 在元素处延迟解析 → 图标随文字连锁缩 ~7%。
+ 仅字号/图标，--space-*（间距）与 --card-size 不动；作用域外全站不受影响。
+ html 前缀压过 :root 的桌面档覆盖（特异性 0,1,1 > 0,1,0）。 */
 html .settings-page {
   --text-2xs: calc(11px * var(--ui-scale) * 0.93);
   --text-xs: calc(12px * var(--ui-scale) * 0.93);
@@ -1859,11 +1859,11 @@ html .settings-page {
   --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale) * 0.93);
   --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale) * 0.93);
 
-  /* 2026-09-28 第二轮（用户拍板「按钮、图标、tab、方型按钮尺寸过大」）：
-     控件高度族同乘 0.8（第三轮从 0.93 加码——7% 不可感知）—— theme-btn/back-btn
-     方块（btn-min-height）、counter-btn ±/counter-value（tab-height）、
-     Button min-h（btn-min-width）、settings-input（input-height）、滑块手柄
-     （thumb-size）全部连锁缩。输入框宽度 --comp-input-min-w 不缩。 */
+  /* （按钮、图标、tab、方型按钮尺寸过大）：
+ 控件高度族同乘 0.8（从 0.93 加码——7% 不可感知）—— theme-btn/back-btn
+ 方块（btn-min-height）、counter-btn ±/counter-value（tab-height）、
+ Button min-h（btn-min-width）、settings-input（input-height）、滑块手柄
+ （thumb-size）全部连锁缩。输入框宽度 --comp-input-min-w 不缩。 */
   --comp-btn-min-height: calc(clamp(44px, 36.434px + 1.94vw, 51.333px) * var(--ui-scale) * 0.8);
   --comp-btn-min-width: calc(clamp(40px, 27.277px + 3.393vw, 53.333px) * var(--ui-scale) * 0.8);
   --comp-tab-height: calc(clamp(36px, 18.545px + 4.479vw, 38.667px) * var(--ui-scale) * 0.8);
@@ -1871,9 +1871,9 @@ html .settings-page {
   --comp-thumb-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale) * 0.8);
 }
 
-/* 2026-09-28 第三轮（用户拍板「左栏不改，只改右侧内容区」）：
-   左栏 text 档豁免 0.93 → 回全站原式；--icon-* 的 calc 延迟解析在左栏元素
-   处自动取回原字号 → 图标同步回原值。特异性 0,2,1 > 0,1,1。 */
+/* （左栏不改，只改右侧内容区）：
+ 左栏 text 档豁免 0.93 → 回全站原式；--icon-* 的 calc 延迟解析在左栏元素
+ 处自动取回原字号 → 图标同步回原值。特异性 0,2,1 > 0,1,1。 */
 html .settings-page .settings-sidenav {
   --text-2xs: calc(11px * var(--ui-scale));
   --text-xs: calc(12px * var(--ui-scale));
@@ -1891,7 +1891,7 @@ html .settings-page .settings-sidenav {
     --text-lg: calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale) * 0.93);
     --text-xl: calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale) * 0.93);
     --text-2xl: calc(clamp(22px, 23.4293px - 0.09926vw, 22.667px) * var(--ui-scale) * 0.93);
-    /* 桌面递减档同理（variables.css 段2 :root 覆盖 → 同步 ×0.8，第三轮加码） */
+    /* 桌面递减档同理（variables.css 段2 :root 覆盖 → 同步 ×0.8，加码） */
     --comp-btn-min-height: calc(clamp(48.212px, 54.061px - 0.35521vw, 51.333px) * var(--ui-scale) * 0.8);
     --comp-btn-min-width: calc(clamp(49.136px, 57.27471px - 0.51324vw, 53.333px) * var(--ui-scale) * 0.8);
     --comp-input-height: calc(clamp(40.54px, 50.10557px - 0.62143vw, 45.333px) * var(--ui-scale) * 0.8);
@@ -1899,8 +1899,8 @@ html .settings-page .settings-sidenav {
     --comp-thumb-size: calc(clamp(22.212px, 24.22786px - 0.11652vw, 23.333px) * var(--ui-scale) * 0.8);
   }
 
-  /* 2026-09-28 第三轮：左栏桌面档豁免（回原式，与上方缩档块平级——嵌套会展开成
-     永不匹配的 html…html… 选择器） */
+  /* 左栏桌面档豁免（回原式，与上方缩档块平级——嵌套会展开成
+ 永不匹配的 html…html… 选择器） */
   html .settings-page .settings-sidenav {
     --text-lg: calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale));
     --text-xl: calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale));
@@ -1908,28 +1908,28 @@ html .settings-page .settings-sidenav {
   }
 }
 
-/* 2026-09-28 修「设置子项标题左侧黑点」（全端，含移动端）：
-   List.tsx 的 tailwind `list-item` 类 = display:list-item + UA 默认
-   list-style-type:disc → 标题左侧渲染 disc marker。置 none 即消；
-   display 不动（布局零影响）。 */
+/* 修「设置子项标题左侧黑点」（全端，含移动端）：
+ List.tsx 的 tailwind `list-item` 类 = display:list-item + UA 默认
+ list-style-type:disc → 标题左侧渲染 disc marker。置 none 即消；
+ display 不动（布局零影响）。 */
 .settings-page .list-item,
 .settings-subpage .list-item {
   list-style: none;
 }
 
 /* ============================================================
-   方案 F：设置项「紧凑双行卡」卡片化（桌面端 ≥768px）
-   - 每个 List.Item 变为独立卡片（边框 + 圆角 + hover 阴影）
-   - 第一行：标题 + 控件（控件紧贴标题右侧，无 flex:1 大段空白）
-   - 第二行：描述独立整行，完整展示（不截断、有呼吸空间）
-   - 移动端（≤767px）：入口菜单（.settings-content）保持行式（List.tsx 默认样式）；
-     **子页内（.settings-subpage__body .list-item）卡片化，与桌面端方案 F 一致**
-     （见下方「移动端子页双行卡」覆盖块）
-   ============================================================ */
+ 方案 F：设置项「紧凑双行卡」卡片化（桌面端 ≥768px）
+ - 每个 List.Item 变为独立卡片（边框 + 圆角 + hover 阴影）
+ - 第一行：标题 + 控件（控件紧贴标题右侧，无 flex:1 大段空白）
+ - 第二行：描述独立整行，完整展示（不截断、有呼吸空间）
+ - 移动端（≤767px）：入口菜单（.settings-content）保持行式（List.tsx 默认样式）；
+ **子页内（.settings-subpage__body .list-item）卡片化，与桌面端方案 F 一致**
+ （见下方「移动端子页双行卡」覆盖块）
+ ============================================================ */
 @media (width >= 768px) {
-  /* 2026-09-28 去卡片化：方案 F 的 list-item 边框/圆角/底色整体移除，
-     恢复行式排布；间距较卡片态收紧（项间 16→8、行内上下留白减半），
-     hover 不做任何视觉反馈（2026-09-28 用户拍板）。 */
+  /* 去卡片化：方案 F 的 list-item 边框/圆角/底色整体移除，
+ 恢复行式排布；间距较卡片态收紧（项间 16→8、行内上下留白减半），
+ hover 不做任何视觉反馈。 */
   html:not([data-device="app"]) .settings-content .list-item, html:not([data-device="app"]) .settings-subpage__body .list-item {
     border: none;
     border-radius: 0;
@@ -1946,8 +1946,8 @@ html .settings-page .settings-sidenav {
   }
 
   html:not([data-device="app"]) /* 个人设置（PersonalTab）：settings-card__title 移出卡片作为独立标题，
-     settings-card__body（header 操作按钮 + desc + 行）整体一块内容区。
-     2026-09-28 去卡片化：边框/圆角/底色移除，hover 无反馈。 */
+ settings-card__body（header 操作按钮 + desc + 行）整体一块内容区。
+ 去卡片化：边框/圆角/底色移除，hover 无反馈。 */
   .settings-content .settings-personal-section .settings-card__body, html:not([data-device="app"]) .settings-subpage__body .settings-personal-section .settings-card__body {
     padding: var(--space-md) var(--space-xl);
     border: none;
@@ -1956,15 +1956,15 @@ html .settings-page .settings-sidenav {
   }
 
   html:not([data-device="app"]) /* 第一行：标题行内边距 —— 必须显式设置水平 padding（token），
-     覆盖 .settings-content > section [class~="px-4"] 的 px-4 清零规则：
-     否则卡片内部文字/控件水平贴边，与草图的「内容在卡片内有呼吸感」不符。
-     特异性 (0,3,0) > 清零规则 (0,2,1)，可正常覆盖。 */
+ 覆盖 .settings-content > section [class~="px-4"] 的 px-4 清零规则：
+ 否则卡片内部文字/控件水平贴边，与草图的「内容在卡片内有呼吸感」不符。
+ 特异性 (0,3,0) > 清零规则 (0,2,1)，可正常覆盖。 */
   .settings-content .list-item .list-item__row, html:not([data-device="app"]) .settings-subpage__body .list-item .list-item__row {
     padding: var(--space-sm) var(--space-xl) var(--space-xs);
   }
 
   html:not([data-device="app"]) /* 第二行：描述整行，与标题同行式底（无分割线）。
-     水平 padding 与标题行对齐；垂直留白收紧（去卡后属项间留白，过大显散）。 */
+ 水平 padding 与标题行对齐；垂直留白收紧（去卡后属项间留白，过大显散）。 */
   .settings-content .list-item .list-item__desc, html:not([data-device="app"]) .settings-subpage__body .list-item .list-item__desc {
     padding: var(--space-xs) var(--space-xl) var(--space-sm);
     background: transparent;
@@ -1972,12 +1972,12 @@ html .settings-page .settings-sidenav {
   }
 
   html:not([data-device="app"]) /* ============================================================
-     源管理（视频源 / IPTV 源 / EPG 源）面板
-     2026-09-28 去卡片化（用户拍板：source-manager 不使用卡片式布局）：
-     边框/圆角/底色与面板/条目 hover 反馈一并移除，
-     仅保留折叠 grid-rows 过渡所需的 gap transition。
-     条目与 popover 的桌面去卡见 SourceManager.css 覆盖块。
-     ============================================================ */
+ 源管理（视频源 / IPTV 源 / EPG 源）面板
+ 去卡片化（source-manager 不使用卡片式布局）：
+ 边框/圆角/底色与面板/条目 hover 反馈一并移除，
+ 仅保留折叠 grid-rows 过渡所需的 gap transition。
+ 条目与 popover 的桌面去卡见 SourceManager.css 覆盖块。
+ ============================================================ */
   .settings-content .source-manager, html:not([data-device="app"]) .settings-subpage__body .source-manager {
     border: none;
     border-radius: 0;
@@ -1992,10 +1992,10 @@ html .settings-page .settings-sidenav {
 }
 
 /* 方案 F 承诺：移动端入口菜单（.settings-content 场景）不卡片化、不放大字号
-   （保持行式 + 原 text-sm/text-xs）。List.tsx 的 tailwind 类全局生效，
-   移动端也会被放大一档；此处回写到原档位。
-   注意：此块仅作用于入口菜单场景；子页内（.settings-subpage__body）的
-   list-item / profile-card / source-manager 已另行卡片化（对齐桌面端）。 */
+ （保持行式 + 原 text-sm/text-xs）。List.tsx 的 tailwind 类全局生效，
+ 移动端也会被放大一档；此处回写到原档位。
+ 注意：此块仅作用于入口菜单场景；子页内（.settings-subpage__body）的
+ list-item / profile-card / source-manager 已另行卡片化（对齐桌面端）。 */
 @media (width <= 767px) {
   .settings-page .list-item__title,
   .settings-subpage__body .list-item__title {
@@ -2020,8 +2020,8 @@ html .settings-page .settings-sidenav {
   }
 
   /* 移动端子页面内 List.Item 双行卡：对齐桌面方案 F（子页布局与桌面端一致）。
-     每个设置项独立卡片（边框 + 圆角），第一行标题+控件、第二行描述整行，
-     卡片间距 12px（--space-lg）。仅作用于 .settings-subpage__body（子页场景）。 */
+ 每个设置项独立卡片（边框 + 圆角），第一行标题+控件、第二行描述整行，
+ 卡片间距 12px（--space-lg）。仅作用于 .settings-subpage__body（子页场景）。 */
   .settings-subpage__body .list-item {
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
@@ -2082,7 +2082,7 @@ html .settings-page .settings-sidenav {
     box-shadow: var(--shadow-card-hover);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .settings-page .list-item__title, html[data-device="app"] .settings-subpage__body .list-item__title {
     font-size: var(--text-sm);
@@ -2105,8 +2105,8 @@ html .settings-page .settings-sidenav {
   }
 
   html[data-device="app"] /* 移动端子页面内 List.Item 双行卡：对齐桌面方案 F（子页布局与桌面端一致）。
-     每个设置项独立卡片（边框 + 圆角），第一行标题+控件、第二行描述整行，
-     卡片间距 12px（--space-lg）。仅作用于 .settings-subpage__body（子页场景）。 */
+ 每个设置项独立卡片（边框 + 圆角），第一行标题+控件、第二行描述整行，
+ 卡片间距 12px（--space-lg）。仅作用于 .settings-subpage__body（子页场景）。 */
   .settings-subpage__body .list-item {
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
@@ -2170,10 +2170,10 @@ html .settings-page .settings-sidenav {
 
 
 /* ============================================================
-   设置页状态标签 .settings-status-tag（对应 html 示例 .tag/.tag--ok/.tag--warn + .dot）
-   胶囊形态 + 前置圆点，用于「已配置/未配置/已开启」等状态语义。
-   全局生效（桌面端卡片 + 移动端子页均可使用）。
-   ============================================================ */
+ 设置页状态标签 .settings-status-tag（对应 html 示例 .tag/.tag--ok/.tag--warn + .dot）
+ 胶囊形态 + 前置圆点，用于「已配置/未配置/已开启」等状态语义。
+ 全局生效（桌面端卡片 + 移动端子页均可使用）。
+ ============================================================ */
 .settings-status-tag {
   display: inline-flex;
   flex-shrink: 0;
@@ -2203,12 +2203,12 @@ html .settings-page .settings-sidenav {
   color: var(--color-warning-text);
 }
 
-/* ═══ 错误日志设置组（2026-10-11 新增，个人设置页独立 section）═══
-   组结构：.settings-personal-section > 标题（错误日志）+ card body 内一行；
-   行 = .settings-row--log [主区按钮（点开弹窗，无右箭头）+ 清除按钮]；
-   弹窗复用 .changelog-modal + .changelog-content 时间轴版式（.el-* 为条目修饰）。
-   两按钮带 .no-press：豁免 index.css 全局「内容缩放」按压缩放（子元素 scale 会让
-   提示语位移；其 .settings-page 豁免类实际不存在），非新增视觉行为。 */
+/* ═══ 错误日志设置组（新增，个人设置页独立 section）═══
+ 组结构：.settings-personal-section > 标题（错误日志）+ card body 内一行；
+ 行 = .settings-row--log [主区按钮（点开弹窗，无右箭头）+ 清除按钮]；
+ 弹窗复用 .changelog-modal + .changelog-content 时间轴版式（.el-* 为条目修饰）。
+ 两按钮带 .no-press：豁免 index.css 全局「内容缩放」按压缩放（子元素 scale 会让
+ 提示语位移；其 .settings-page 豁免类实际不存在），非新增视觉行为。 */
 .settings-row--log {
   gap: var(--space-md);
   padding: 0;
@@ -2228,11 +2228,11 @@ html .settings-page .settings-sidenav {
   cursor: pointer;
 }
 
-/* 零位移兜底（2026-10-11 用户反馈「查看日志与提示文本点击时位移距离不一致」）：
-   两行文本同受某个祖先 scale 时，离变换原点（≈容器中心）越远位移越大——正是
-   「不一致」的几何特征。除 .no-press 豁免现有全局按压缩放外，再对本行主体/
-   清除按钮及其子孙结构性压死 scale/transform，覆盖任何未盘点到的现存量或未来
-   新增的按压规则（选择器特异性难逐一比拼，此处显式 !important）。 */
+/* 零位移兜底（查看日志与提示文本点击时位移距离不一致）：
+ 两行文本同受某个祖先 scale 时，离变换原点（≈容器中心）越远位移越大——正是
+ 「不一致」的几何特征。除 .no-press 豁免现有全局按压缩放外，再对本行主体/
+ 清除按钮及其子孙结构性压死 scale/transform，覆盖任何未盘点到的现存量或未来
+ 新增的按压规则（选择器特异性难逐一比拼，此处显式 !important）。 */
 .settings-row--log .settings-row__main,
 .settings-row--log .settings-row__main > *,
 .settings-row--log .settings-row__main:active,
@@ -2242,10 +2242,10 @@ html .settings-page .settings-sidenav {
   transform: none !important;
 }
 
-/* 清除日志按钮：用户要求点击/hover 均不得出现黑色边框——
-   hover 只变底色不变描边色；:focus 去默认 outline，:focus-visible 抑制全局
-   桌面焦点环（--color-primary 浅色=#000 即黑框，同 player-episode-select / SearchBox 先例）；
-   TV/projector 遥控焦点框保留不改写。 */
+/* 清除日志按钮：点击/hover 均不得出现黑色边框——
+ hover 只变底色不变描边色；:focus 去默认 outline，:focus-visible 抑制全局
+ 桌面焦点环（--color-primary 浅色=#000 即黑框，同 player-episode-select / SearchBox 先例）；
+ TV/projector 遥控焦点框保留不改写。 */
 .settings-row__clear {
   flex-shrink: 0;
   padding: var(--space-2xs) var(--space-sm);

@@ -1,5 +1,5 @@
 /**
- * iptvOrgService 单测（2026-09-08 方案 B：cn.m3u 主干 + channels.json 中文名后台增强）
+ * iptvOrgService 单测（cn.m3u 主干 + channels.json 中文名后台增强）
  * 外部依赖全部 mock：database（IndexedDB）、iptvService（代理拼装）、epgService（normalizeName）。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

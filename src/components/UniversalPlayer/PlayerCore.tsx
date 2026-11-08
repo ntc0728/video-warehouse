@@ -23,7 +23,7 @@ interface PlayerCoreProps {
   onOpenChannelList?: () => void;
   /** 重试播放 */
   onRetry?: () => void;
-  /** P1-3 预留：错误态「切换播放源」入口（PlayerPage 接线后启用） */
+  /**-3 预留：错误态「切换播放源」入口（PlayerPage 接线后启用） */
   onSwitchSource?: () => void;
 }
 
@@ -63,7 +63,7 @@ export default function PlayerCore({
   // 外挂字幕渲染管线：subtitleUrl（blob VTT）此前只存 store 无消费方，导入字幕从未显示
   const subtitleUrl = usePlayerStore(s => s.subtitleUrl);
   const subtitleEnabled = usePlayerStore(s => s.subtitleEnabled);
-  // P1-3：错误覆盖层透传具体错误文案（adapter/native error 写入 store）
+  //-3：错误覆盖层透传具体错误文案（adapter/native error 写入 store）
   const errorMessage = usePlayerStore(s => s.errorMessage);
 
   const containerStyle = RATIO_CONTAINER_STYLES[aspectRatio];

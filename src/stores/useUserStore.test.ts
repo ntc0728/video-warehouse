@@ -177,7 +177,7 @@ describe('useUserStore - removeHistoryByVideo', () => {
   });
 });
 
-// ── reload 脏集合合并（2026-09-02，跨页签广播回退保护的纯单测）─────────
+// ── reload 脏集合合并（跨页签广播回退保护的纯单测）─────────
 // reload() 用 DB 快照覆盖内存前，需把节流窗口内未落库的本地历史（historyDirtyRecords）
 // 合并回快照：已有按 id 覆盖为内存值、没有的 append。否则别页签广播触发 reload
 // 会把本页正在更新的进度回退成 DB 旧值。

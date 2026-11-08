@@ -28,8 +28,8 @@ interface MobileMoreSheetProps {
   aspectRatio: 'default' | '4:3' | '16:9' | 'fill';
   onAspectRatioChange: (ratio: 'default' | '4:3' | '16:9' | 'fill') => void;
   /**
-   * Portal 容器（全屏场景必传，否则 body 下的抽屉被全屏盖住）
-   */
+ * Portal 容器（全屏场景必传，否则 body 下的抽屉被全屏盖住）
+ */
   portalContainer?: HTMLElement | null;
 }
 

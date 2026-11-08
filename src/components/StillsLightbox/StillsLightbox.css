@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   StillsLightbox — 全屏剧照灯箱
-   ═══════════════════════════════════════════════════════════════════════ */
+ StillsLightbox — 全屏剧照灯箱
+ ═══════════════════════════════════════════════════════════════════════ */
 
 .stills-lightbox {
   position: fixed;
@@ -8,8 +8,8 @@
   z-index: var(--z-modal-overlay);
   display: flex;
   flex-direction: column;
-  /* 两行流式布局（2026-11-08 zoom 移入当前 slide 内）：主图区（吃掉剩余高度，
-     内部 = 图片 + zoom 成组居中）→ 缩略图条 */
+  /* 两行流式布局（zoom 移入当前 slide 内）：主图区（吃掉剩余高度，
+ 内部 = 图片 + zoom 成组居中）→ 缩略图条 */
   gap: var(--space-sm);
   justify-content: center;
   align-items: center;
@@ -37,9 +37,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(40px, 32px + 1vw, 48px);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   height: clamp(40px, 32px + 1vw, 48px);
   border: none;
   border-radius: 50%;
@@ -81,11 +81,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(44px, 32px + 2vw, 56px);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   height: clamp(44px, 32px + 2vw, 56px);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   margin-top: clamp(-28px, -16px + -1vw, -28px);
   border: none;
   border-radius: 50%;
@@ -120,17 +120,17 @@
   width: 100%;
   min-height: 0;
   /* 底部不再留 clamp 内边距：缩放条与缩略图条已进入文档流，行距由 .stills-lightbox 的 gap 承担。
-     下内边距去掉后主图区变矮、图片随之上移（用户要求「图片稍微上移一点」） */
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+ 下内边距去掉后主图区变矮、图片随之上移（图片稍微上移一点） */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   padding: clamp(64px, 48px + 2vw, 96px) clamp(24px, 16px + 3vw, 64px) 0;
   overflow: hidden;
 }
 
 .stills-lightbox__slide {
   display: flex;
-  /* 纵向布局（2026-11-08 定稿）：主图舞台（flex:1 吃满 zoom 行之外的高度）+ zoom 行。
-     舞台是 overflow:hidden 的定界框——放大/平移的溢出全部裁在框内，
-     图片永不覆盖 zoom 行或其它元素（zoom 100% = 舞台内 contain 适配基准） */
+  /* 纵向布局：主图舞台（flex:1 吃满 zoom 行之外的高度）+ zoom 行。
+ 舞台是 overflow:hidden 的定界框——放大/平移的溢出全部裁在框内，
+ 图片永不覆盖 zoom 行或其它元素（zoom 100% = 舞台内 contain 适配基准） */
   flex: 0 0 auto;
   flex-direction: column;
   gap: var(--space-xs);
@@ -166,8 +166,8 @@
   transition: opacity var(--dur-lg) ease, transform var(--dur-xs) ease;
 }
 
-/* （2026-11-08 曾试过 ≥1920 默认 scale 1.2 放大档，因「居中 vs 贴底」取舍
-   用户改回居中构图，该档已删除；zoom 100% 恢复为 contain 适配基准） */
+/* （曾试过 ≥1920 默认 scale 1.2 放大档，因「居中 vs 贴底」取舍
+ 构图改回居中后该档已删除；zoom 100% 恢复为 contain 适配基准） */
 
 .stills-lightbox__stage img.is-loaded {
   opacity: 1;
@@ -183,11 +183,11 @@
   transition: none;
 }
 
-/* ── 缩放控件（2026-09-10 由 Detail 剧照标题行移入灯箱）─────
-   形态：− 按钮 / 百分比数值（可点击复位）/ + 按钮；每级 5%，范围 50%~200%。 */
+/* ── 缩放控件（由 Detail 剧照标题行移入灯箱）─────
+ 形态：− 按钮 / 百分比数值（可点击复位）/ + 按钮；每级 5%，范围 50%~200%。 */
 .stills-lightbox__zoom {
-  /* zoom 是主图舞台的 flex 兄弟（2026-11-08 移入当前 slide）：位于舞台框正下方，
-     与图片完全无叠压（放大溢出已在舞台边界裁切）；与舞台间距 = slide gap(xs) */
+  /* zoom 是主图舞台的 flex 兄弟（移入当前 slide）：位于舞台框正下方，
+ 与图片完全无叠压（放大溢出已在舞台边界裁切）；与舞台间距 = slide gap(xs) */
   position: relative;
   z-index: 20;
   display: flex;
@@ -244,14 +244,14 @@
 
 .stills-lightbox__thumbs {
   /* 流内第三行（原为贴视口底部的绝对定位浮层；改为流内后与缩放条同属底部区域，
-     也顺手修掉了 <768px 下缩放条与缩略图条底部带重叠的老问题） */
+ 也顺手修掉了 <768px 下缩放条与缩略图条底部带重叠的老问题） */
   position: relative;
   z-index: 20;
   display: flex;
   flex: none;
   gap: var(--space-2xs);
   align-self: center;
-  /* 2026-11-08 随缩略图加大放宽容器（→ min(92vw, 96rem)=1536px，208 档可见 ~8 张） */
+  /* 随缩略图加大放宽容器（→ min(92vw, 96rem)=1536px，208 档可见 ~8 张） */
   width: min(92vw, 96rem);
   padding: var(--space-2xs);
   border-radius: var(--radius-md);
@@ -274,9 +274,9 @@
 
 .stills-lightbox__thumb {
   flex: 0 0 auto;
-  /* 2026-11-08 三档定稿（用户连续反馈过小/过保守）：宽 clamp 顶 144→176
-     （1920 ≈ 159.2 / ≥2733 封顶 208），16:9 aspect 播高（1920 ≈ 159.2×89.6） */
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* 三档：宽 clamp 顶 144→176
+ （1920 ≈ 159.2 / ≥2733 封顶 208），16:9 aspect 播高（1920 ≈ 159.2×89.6） */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(64px, 44px + 6vw, 208px);
   aspect-ratio: 16 / 9;
   padding: 0;
@@ -306,21 +306,21 @@
 /* ── TV 端 ──────────────────────────────────────── */
 
 [data-device="tv"] .stills-lightbox__nav {
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(56px, 40px + 2vw, 64px);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   height: clamp(56px, 40px + 2vw, 64px);
 }
 
 [data-device="tv"] .stills-lightbox__close {
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(48px, 32px + 2vw, 56px);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   height: clamp(48px, 32px + 2vw, 56px);
 }
 
 [data-device="tv"] .stills-lightbox__thumb {
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(96px, 72px + 3vw, 208px);
   /* 高由基类 aspect-ratio 16/9 播出（1080p ≈ 132×74.3） */
 }
@@ -356,7 +356,7 @@
     width: 90vw;
   }
 }
-/* 9.1 app 恒移动：@media (width < 768px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width < 768px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .stills-lightbox__close {
     top: var(--space-sm);

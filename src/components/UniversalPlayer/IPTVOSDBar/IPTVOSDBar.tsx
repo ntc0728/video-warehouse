@@ -34,9 +34,9 @@ interface IPTVOSDBarProps {
   latencyLabel?: string;
   onReturnToLive?: () => void;
   /**
-   * M3U catchup 时移（与 DVR 时移是两个独立概念，见 playerCapabilities.ts 头部「口径区分」）。
-   * catchupEnabled=true 时显示 catchup 专属拖拽进度条；catchupSeekTs 为正在回看的时间戳（null=直播）。
-   */
+ * M3U catchup 时移（与 DVR 时移是两个独立概念，见 playerCapabilities.ts 头部「口径区分」）。
+ * catchupEnabled=true 时显示 catchup 专属拖拽进度条；catchupSeekTs 为正在回看的时间戳（null=直播）。
+ */
   catchupEnabled?: boolean;
   catchupSeekTs?: number | null;
   /** 回看窗口天数（IPTVChannel.catchupDays，缺省兜底 7） */
@@ -298,7 +298,7 @@ export default function IPTVOSDBar({
           </div>
         )}
         {/* M3U catchup 时移：与上方 DVR 时移独立。频道声明 catchup 时显示拖拽进度条，
-            下界由 catchupDays 决定，上界为直播边缘（now）。拖动 → 回看该历史时刻。 */}
+ 下界由 catchupDays 决定，上界为直播边缘（now）。拖动 → 回看该历史时刻。 */}
         {catchupEnabled && (
           <div className="iptv-osd-catchup-row">
             <button
@@ -342,9 +342,9 @@ export default function IPTVOSDBar({
               <MdiSwapHorizontalVariantIcon size="xs" />
               <span>换源</span>
             </button>
-            {/* 音轨恒显示（2026-09-10 用户拍板）：原条件 audioTracks.length > 1 会让控件行
-                在 3/4 个按钮之间跳动、分组宽度不稳定。点击行为仍是「切到下一条音轨」，
-                上游在 tracks.length <= 1 时直接 return（安全空操作）；条数写进 title 便于判断。 */}
+            {/* 音轨恒显示：原条件 audioTracks.length > 1 会让控件行
+ 在 3/4 个按钮之间跳动、分组宽度不稳定。点击行为仍是「切到下一条音轨」，
+ 上游在 tracks.length <= 1 时直接 return（安全空操作）；条数写进 title 便于判断。 */}
             <button
               className="iptv-osd-control-btn no-border"
               onClick={onOpenAudioTrack}

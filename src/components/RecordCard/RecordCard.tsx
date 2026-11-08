@@ -1,9 +1,9 @@
 /**
  * RecordCard — 历史页统一记录卡（视频 / IPTV 同尺寸）
  * 默认竖版（≥480px）：上媒体（16:9 封面宽=卡宽）+ 下 2 行文字：
- *   标题独占一行(溢出无缝跑马灯) / 类型·来源·集数(左成链) + 观看时间(行尾右对齐)
+ * 标题独占一行(溢出无缝跑马灯) / 类型·来源·集数(左成链) + 观看时间(行尾右对齐)
  * 窄屏（<480px，1 列）自动切横版：封面左固定 124px + 右侧信息逐行排布
- *   （标题 / 类型 / 来源 / 集数 各占一行，集数+时间同行两端对齐，见 meta-col）。
+ * （标题 / 类型 / 来源 / 集数 各占一行，集数+时间同行两端对齐，见 meta-col）。
  * 复用全局 .record-card 选中边框 / 批量勾选 / 删除按钮类名，独立实现布局，不依赖 VideoCard/IPTVChannelCard。
  */
 import { memo, useEffect, useRef, useState } from 'react';
@@ -207,8 +207,8 @@ const RecordCard = memo(function RecordCard({
         </div>
 
         {/* 窄屏(<480px) 横版信息列：类型 / 来源 各占一行；集数 + 时间同行两端对齐。
-           与上方 meta-row 二选一显隐（meta-col 默认 none，<480px 时 meta-row 隐藏、col 显示），
-           不重复内容、不依赖 JS 断点。IPTV 无集数 → bottom 行只剩时间、贴右。 */}
+ 与上方 meta-row 二选一显隐（meta-col 默认 none，<480px 时 meta-row 隐藏、col 显示），
+ 不重复内容、不依赖 JS 断点。IPTV 无集数 → bottom 行只剩时间、贴右。 */}
         <div className="record-card__meta-col">
           <span
             className={`record-card__badge-type ${
@@ -233,7 +233,7 @@ const RecordCard = memo(function RecordCard({
 
   // 始终渲染同一根元素（Link），批量模式拦截导航改为切换选中——
   // 避免「非批量 Link / 批量 div」根元素类型切换触发 React 卸载重建所有卡片，
-  // 进而 LazyImage 重载淡入、整页卡片闪烁（2026-08-27 修复）。
+  // 进而 LazyImage 重载淡入、整页卡片闪烁。
   const handleCardClick = (e: React.MouseEvent) => {
     if (batchMode) {
       e.preventDefault();

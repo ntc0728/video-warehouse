@@ -4,11 +4,11 @@
  * 视觉复用项目级 --color-skeleton / --color-skeleton-shine + shimmer 扫光（明暗主题已适配）。
  *
  * ⚠️ 结构必须与真实面板逐层同构（同一套 .player-panel / .player-panel-header /
- *    .player-panel-body 类），外层 .player-sidebar-skeleton 用 display:contents
- *    把这三个面板直接变成 .player-sidebar 的 flex 子项 —— 于是骨架与真实面板：
- *    - 内边距 / 边框 / scrollbar-gutter 完全一致（无横向抖动）；
- *    - 高度由 tv(2:4:4) / movie(3:7) 变体比例分配，骨架阶段就是最终高度（无纵向跳动）。
- *    行数取 2/6/6，密度贴近真实面板。
+ * .player-panel-body 类），外层 .player-sidebar-skeleton 用 display:contents
+ * 把这三个面板直接变成 .player-sidebar 的 flex 子项 —— 于是骨架与真实面板：
+ * - 内边距 / 边框 / scrollbar-gutter 完全一致（无横向抖动）；
+ * - 高度由 tv(2:4:4) / movie(3:7) 变体比例分配，骨架阶段就是最终高度（无纵向跳动）。
+ * 行数取 2/6/6，密度贴近真实面板。
  */
 interface PlayerSidebarSkeletonProps {
   /** 与 PlayerSidebar 同变体："tv"=有选季面板（3 个骨架），"movie"=无选季面板（2 个骨架） */
@@ -17,9 +17,9 @@ interface PlayerSidebarSkeletonProps {
 
 export function PlayerSidebarSkeleton({ variant = 'tv' }: PlayerSidebarSkeletonProps) {
   // 三个面板行数：
-  //   - CMS 源：2 行
-  //   - 选季：6 行
-  //   - 选集：PAGE_SIZE=12，桌面端 2 列 → 6 行
+  // - CMS 源：2 行
+  // - 选季：6 行
+  // - 选集：PAGE_SIZE=12，桌面端 2 列 → 6 行
   const panels = [
     { key: 'cms', mod: 'player-panel--cms', rows: 2 },
     { key: 'season', mod: 'player-panel--season', rows: 6 },

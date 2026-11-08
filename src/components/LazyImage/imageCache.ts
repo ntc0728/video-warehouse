@@ -13,7 +13,7 @@
 
 /** 本会话内已成功 onLoad 的图片 URL 集合 */
 const loadedImageCache = new Set<string>();
-/** 容量上限：长会话（Keep-Alive 常驻 + 大量分类/海报）防无界增长（E 项，LRU 近似 FIFO 淘汰最旧） */
+/** 容量上限：长会话（Keep-Alive 常驻 + 大量分类/海报）防无界增长（LRU 近似 FIFO 淘汰最旧） */
 const MAX_LOADED_URLS = 1000;
 
 /** 查询 URL 是否在本会话内已成功加载 */

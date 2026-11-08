@@ -3,7 +3,7 @@
  *
  * 存储 URL 级成败记忆（跨会话，与「收藏/历史」用户数据隔离，可被 clearAllCaches 安全清除）：
  * ok 的 URL 直接复用、fail 的 URL 不再请求，避免每次刷新后对同一批无效台标重复发起请求。
- * 台标来源已定稿为 iptv-org logos.json 单一来源，旧「在线台标库清单」（logo-library）已下线。
+ * 台标来源已为 iptv-org logos.json 单一来源，旧「在线台标库清单」（logo-library）已下线。
  *
  * 所有读写失败静默降级（返回 null / no-op），不影响台标解析主流程。
  */

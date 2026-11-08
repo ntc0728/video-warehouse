@@ -2,7 +2,7 @@
  * 数据源配置类型定义
  * 定义视频采集站 API 配置、IPTV 播放列表源、EPG 源
  *
- * [2026-08-07 源管理整改]
+ * 
  * - 新增 ManagedSource 系列：统一视频/IPTV/EPG 源的"管理"形态（启用/延迟/添加时间/类型）
  * - builtin 源来自打包 JSON，custom 源由用户在设置页添加
  * - builtin 可停用不可删除；custom 可删除

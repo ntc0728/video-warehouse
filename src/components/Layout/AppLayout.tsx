@@ -27,14 +27,14 @@ import {
 
 // 已访问过的路由集合（模块级，跨导航持久）。用于「二次进入」门控：已访问过的路由
 // 不再重放 opacity:0 进入动画（见 animations.css 的 .page-transition[data-revisit] 规则），
-// 消除方案 B（每次重新挂载）下「先空白再出现数据」的重进闪烁。首页刻意不排除——
+// 消除（每次重新挂载）下「先空白再出现数据」的重进闪烁。首页刻意不排除——
 // 其 .home-page__content 在 CSS 中被 :not() 排除，保持专属过渡。
 const visitedRoutes = new Set<string>();
 
 function LoadingFallback() {
   // 8.3B：chunk fallback 不显示进度条——进度条只由「页面自身 loading」播放一次，
   // 避免 fallback 与页面 loading 两个 AppLoading 实例各播一遍进度条（进度条重放 = 「加载两次」感知）。
-  // 2026-09-22：启动期间本元素会被 #boot-splash 盖住（dropBootSplash 检测到
+  //启动期间本元素会被 #boot-splash 盖住（dropBootSplash 检测到
   // `.page-loading .app-loading` 时不摘骨架）；导航切页时才可见。
   return (
     <div className="page-padding page-loading">
@@ -44,7 +44,7 @@ function LoadingFallback() {
 }
 
 /**
- * 路由渲染器（方案 B：无 Keep-Alive，每次路由切换重新挂载页面组件）
+ * 路由渲染器（无 Keep-Alive，每次路由切换重新挂载页面组件）
  *
  * 路由切换时旧页面卸载、新页面挂载：数据回显依赖各页面的 store 缓存
  * （useTMDBStore TTL / sourceManager 幂等 bootstrap / IndexedDB 读取），
@@ -66,7 +66,7 @@ export default function AppLayout() {
   const isTVLike = useIsTVLike();
   const isMobileWeb = !isNative && !isTVLike && isRealMobile;
   // 移动端布局判断（app 端恒真 / 真实手机恒真 / <768px 窄屏）。
-  // 9.1：不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面端。
+  //不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面端。
   const isCompactViewport = useIsMobileLayout();
   useVirtualKeyboardInset();
   const theme = useSettingsStore((s) => s.theme);
@@ -91,7 +91,7 @@ export default function AppLayout() {
 
   // 空闲（首屏渲染后）立即预加载所有路由 chunk：切换到未访问页面时不再出现
   // 「Suspense chunk 加载 → 页面自身 loading」的双重 AppLoading 闪烁。
-  //
+  
   // dev 模式跳过：dev 下 import() 触发逐模块 transform，12 路由 248 模块编译
   // 阻塞主线程 ~5s 白屏。dev 首屏后预加载其他路由反而拖慢后续交互。
   // production 保留：chunk 已预构建，import() 仅 fetch+eval，无编译开销。
@@ -105,12 +105,12 @@ export default function AppLayout() {
 
   useEffect(() => {
     // 设备标识注入（CSS 消费方全走 html[data-device] 属性选择器）：
-    //  - tv：UA 命中或设置项强制 → TV 焦点交互 + TV 2× 几何覆盖块；
-    //  - projector：设置项手动指定（投影仪 UA 无可靠自动检测特征）→
-    //    焦点交互视同 tv（CSS 侧 [data-device="projector"] 与 tv 分支成对追加），
-    //    布局几何走桌面档（html:not([data-device="tv"]) 分档自动命中，不命中
-    //    [data-device="tv"] 几何覆盖块）；
-    //  - app / mobile-web / ''：原生、手机 web、桌面，维持原语义。
+    // - tv：UA 命中或设置项强制 → TV 焦点交互 + TV 2× 几何覆盖块；
+    // - projector：设置项手动指定（投影仪 UA 无可靠自动检测特征）→
+    // 焦点交互视同 tv（CSS 侧 [data-device="projector"] 与 tv 分支成对追加），
+    // 布局几何走桌面档（html:not([data-device="tv"]) 分档自动命中，不命中
+    // [data-device="tv"] 几何覆盖块）；
+    // - app / mobile-web / ''：原生、手机 web、桌面，维持原语义。
     const device = isTVLike ? (isProjector ? 'projector' : 'tv') : isNative ? 'app' : isMobileWeb ? 'mobile-web' : '';
     document.documentElement.setAttribute('data-device', device);
     // 移动端布局全局标记（useIsMobileLayout：App 恒真 / 真实手机 UA 恒真 / 视口 <768px）：
@@ -138,7 +138,7 @@ export default function AppLayout() {
     root.style.setProperty('--safe-area-y', `${v}vh`);
   }, [tvOverscan]);
 
-  // 界面缩放手动档（阶段 C）：>0 写 <html> 内联 --ui-scale（内联优先于 @media 自动档）；
+  // 界面缩放手动档：>0 写 <html> 内联 --ui-scale（内联优先于 @media 自动档）；
   // 0 = 自动 → 移除内联，交回 @media（width≥1920 且 dpr<1.5）判定。
   useEffect(() => {
     const root = document.documentElement;
@@ -208,7 +208,7 @@ export default function AppLayout() {
 
     // 用固定时长而不是 animationend：动画被 reduced-motion 关掉、或元素提前卸载时
     // animationend 不会触发，导航就被永久卡死。多等一帧的代价远小于卡死。
-    // 2026-11-08 全局放开：离开过渡恒播（不再随系统 prefers-reduced-motion 瞬时放行）
+    // 全局放开：离开过渡恒播（不再随系统 prefers-reduced-motion 瞬时放行）
     const timer = window.setTimeout(() => blocker.proceed(), PT_DUR.leave);
     return () => {
       window.clearTimeout(timer);
@@ -240,7 +240,7 @@ export default function AppLayout() {
   }, [activeRouteKey, activePath]);
 
   // ── 全局滚动兜底：进入「无保存滚动位置」的页面时回顶 ──
-  // 方案 B（无 Keep-Alive）：每次路由切换旧页面卸载、新页面挂载。若目标页没有
+  //（无 Keep-Alive）：每次路由切换旧页面卸载、新页面挂载。若目标页没有
   // 保存过的滚动位置（首次进入 / Settings / Person / Play 等未接入 useScrollRestore
   // 的页面），容器 scrollTop 会残留上一页的深度 → 「进入页面滚动条不在初始位置」。
   // 兜底规则：目标页有保存位置 → 交由页面 useScrollRestore 恢复（不干预，避免破坏
@@ -258,7 +258,7 @@ export default function AppLayout() {
     }
   }, [activeRouteKey, activePath]);
 
-  // ── 美术资源皮肤：应用 data-skin 到 <html>（支持 ?skin= 覆盖，便于截图验收） ──
+  // ── 美术资源皮肤：应用 data-skin 到 <html>（支持 ?skin= 覆盖，便于测试） ──
   const prevSkinRef = useRef(skin);
   useEffect(() => {
     const urlSkin = new URLSearchParams(location.search).get('skin');
@@ -288,12 +288,12 @@ export default function AppLayout() {
     (route) => activePath === route || activePath.startsWith(route),
   );
 
-  // 方案 B：只渲染当前激活路由（无 Keep-Alive 容器）。
+  //只渲染当前激活路由（无 Keep-Alive 容器）。
   // 路由切换 = 卸载旧页 + 挂载新页；chunk 已由 preloadAllRoutes 预加载
   // （lazyWithRetry 缓存 Promise），Suspense 同步解析，不闪 fallback。
   const Component = activeRouteKey ? routeComponentMap[activeRouteKey] : null;
 
-  // ── FAB「刷新」软刷新（2026-09-11 用户拍板：只刷新页面内容，主体结构不重载）──
+  // ── FAB「刷新」软刷新（只刷新页面内容，主体结构不重载）──
   // BackToTopButton 派发 kino:content-refresh → 给 RouteRenderer 换 key：
   // 当前页面组件整体重挂载（图片重新走 LazyImage IO、文本数据随组件重新请求/revalidate），
   // Layout 壳（侧栏/顶栏/滚动容器/page-transition 容器）不卸载，进场动画也不重放。

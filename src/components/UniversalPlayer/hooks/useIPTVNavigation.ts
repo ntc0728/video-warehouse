@@ -71,7 +71,7 @@ export function useIPTVNavigation({
         setCurrentChannelId(nextChannel.id);
         setCurrentChannelName(nextChannel.name);
         onChannelChange?.(nextChannel);
-        // 切线路提示（右上角）：C1 自动切换传入专用文案；手动切换默认「已切换到线路 X/Y」
+        // 切线路提示（右上角）： 自动切换传入专用文案；手动切换默认「已切换到线路 X/Y」
         playerToast(toastOpts?.content ?? `已切换到线路 ${targetIndex + 1}/${sameNameChannels.length}`, 3000, toastOpts?.type);
       }
       return;

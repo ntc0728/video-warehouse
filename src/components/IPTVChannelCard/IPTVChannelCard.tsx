@@ -33,7 +33,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   // 收藏按钮不依赖台标加载结果。此前是 (imageLoaded || !channel.logo)：台标 404、
   // 被网络/广告拦截，或命中失败记忆（resolveChannelLogoCandidates 返回空数组）时
   // onLoad 永不触发、imageLoaded 恒 false → 整颗红心不渲染。
-  // 实测 IPTV 页 60 张卡只有 3 颗红心，正是这条门控造成的（用户反馈「收藏图标被覆盖」）。
+  // 实测 IPTV 页 60 张卡只有 3 颗红心，正是这条门控造成的（收藏图标被覆盖）。
   const showFavorite = !batchMode && !hideFavorite;
 
   const sourceName = channel.sourceId && sourceNames
@@ -78,7 +78,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
     toggleFavorite(channel.id);
   }, [toggleFavorite, channel.id]);
 
-  // [2026-08-13] 入场动画统一由网格容器 stagger 控制（.iptv-channel-grid > *:nth-child(n)，
+  // 入场动画统一由网格容器 stagger 控制（.iptv-channel-grid > *:nth-child(n)，
   // 与收藏页/浏览页 .video-card-grid 的阶梯入场完全一致），卡片自身不再写死 delay。
   const titleRef = useRef<HTMLDivElement>(null);
   const [isTitleOverflow, setIsTitleOverflow] = useState(false);
@@ -149,11 +149,11 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
             )}
           </span>
         </div>
-        {/* P2 增强层：iptv-org 英文名（与中文台名不同时才展示，避免重复） */}
+        {/* 增强层：iptv-org 英文名（与中文台名不同时才展示，避免重复） */}
         {channel.name_en && channel.name_en !== channel.name && (
           <div className="iptv-card-subtitle">{channel.name_en}</div>
         )}
-        {/* P2 增强层：iptv-org 分类（group-title），可能为空，做好条件渲染 */}
+        {/* 增强层：iptv-org 分类（group-title），可能为空，做好条件渲染 */}
         {channel.categories && channel.categories.length > 0 && (
           <div className="iptv-card-categories">{channel.categories.join(' / ')}</div>
         )}

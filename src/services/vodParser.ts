@@ -14,7 +14,7 @@ export function pickTitle(parts: string[], fallback: string): string {
 // - 流媒体协议：m3u8(HLS) / mpd(DASH)
 // - 浏览器原生可播：mp4 / m4v / mov / webm / ogg / ogv
 // - 其余常见封装（mkv / flv / avi / wmv / rmvb / rm / ts / m2ts / 3gp / asf / f4v / m4s / aac），
-//   无转码能力下只能交由原生 <video> 尝试解码（见 detectSourceType）
+// 无转码能力下只能交由原生 <video> 尝试解码（见 detectSourceType）
 const VALID_VIDEO_EXTENSIONS = /\.(m3u8|mp4|m4v|mpd|webm|ogg|ogv|flv|ts|m2ts|mkv|avi|wmv|rmvb|rm|3gp|mov|m4s|aac|asf|f4v)(\?.*)?$/i;
 
 // URL 任意位置（路径中段或 query 参数值内）出现的视频扩展名特征，如 /proxy?url=xx.mkv&t=1
@@ -46,13 +46,13 @@ export function isValidVideoUrl(url: string): boolean {
 export function detectSourceType(url: string): 'm3u8' | 'dash' | 'mp4' | 'flv' {
   if (/m3u8/i.test(url)) return 'm3u8';
   if (/\.mpd([?&#/;]|$)/i.test(url)) return 'dash';
-  // FLV / TS / M2TS 直链 → mpegts.js（点播 FLV/TS 支持此前缺口，见 docs/player-iptv-frontend-refactor.md 整改2）
+  // FLV / TS / M2TS 直链 → mpegts.js（补点播 FLV/TS 支持缺口）
   if (/\.(flv|ts|m2ts)([?&#/;]|$)/i.test(url)) return 'flv';
   return 'mp4';
 }
 
 /**
- * 从分集标题解析集号（2026-11-08）。
+ * 从分集标题解析集号。
  * 此前 episodes.number 一律用过滤后的插入序号（index+1）：中间集 URL 无效被
  * isValidVideoUrl 过滤后，后续集编号整体前移，与 CMS 标题「第05集」错位，
  * 播放进度记录与跨源换集（findEpisodeByNumber 按 number 匹配）都会错集。

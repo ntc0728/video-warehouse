@@ -1,10 +1,10 @@
 /**
  * 首页 — HeroBanner + 继续观看 + 7 行横滚数据
- * （分类快捷入口 CategoryQuickAccess 已于 2026-11-08 按用户要求整体删除，
- *   分类跳转统一由各行「查看全部」承担）
+ * （分类快捷入口 CategoryQuickAccess 已整体删除，
+ * 分类跳转统一由各行「查看全部」承担）
  *
  * 所有筛选相关逻辑已迁出至 /browse 独立路由页：
- *   点击分类 → navigate('/browse?category=xxx&...')
+ * 点击分类 → navigate('/browse?category=xxx&...')
  */
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -30,10 +30,10 @@ import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 import './Home.css';
 import { Icon } from "@/components/ui/Icon";
 
-// I1（2026-08-04）：首页兜底拉取的「失败区块会话级冷却」——任一区块持续失败时，
+// I1：首页兜底拉取的「失败区块会话级冷却」——任一区块持续失败时，
 // 只要其它区块数据变化（如 SearchBox 拉回 trending）就会重跑兜底 effect 并重新拉取
 // 全部空区块，导致失败区块在单次会话内被反复无意义重试（Token 失效/整网不可达时尤其明显）。
-// 方案：模块级 Map 记录各区块「上次失败时间」，冷却期（10min）内该区块不再被自动拉取；
+// 模块级 Map 记录各区块「上次失败时间」，冷却期（10min）内该区块不再被自动拉取；
 // 区块恢复有数据后清除冷却（手动重试入口不受影响）。
 const HOME_BLOCKS = [
   'trending', 'nowPlaying', 'popularMovies', 'topRatedMovies',
@@ -43,7 +43,7 @@ const HOME_RETRY_COOLDOWN_MS = 10 * 60 * 1000;
 const homeRetryCooldown = new Map<string, number>();
 
 /**
- * 7 个推荐行 → Browse 分类的映射（行标题「查看全部」入口用，demo 建议 2）。
+ * 7 个推荐行 → Browse 分类的映射（行标题「查看全部」入口用， 建议 2）。
  * Browse 侧只有 movie / tv / variety / anime / documentary / top / all 七个分类
  * （Browse/constants.ts CATEGORY_CONFIG），nowPlaying / upcoming / topRated /
  * airingToday 等行没有一一对应的专属分类，统一归入其媒体类型大分类
@@ -59,7 +59,7 @@ const HOME_ROW_BROWSE_CATEGORY = {
   airingTodayTv: 'tv',
 } as const;
 
-// ── 视口懒加载（2026-09-16）─────────────────────────────────────────
+// ── 视口懒加载─────────────────────────────────────────
 // 首屏档：Hero 用的 trending + 第一排「正在热映」(nowPlaying) —— 进页面即取，保证首屏不闪骨架。
 // 视口档：其余 6 排等滚动接近才取（见 <LazyBlock>），进入视口前连接口都不发。
 const HOME_FIRST_SCREEN_BLOCKS = ['trending', 'nowPlaying'] as const satisfies readonly HomeBlockKey[];
@@ -91,7 +91,7 @@ export default function HomePage() {
   // 移动端布局（App / 真机 / <768 窄窗）——「查看全部」入口的排除档之一
   const isMobileLayout = useIsMobileLayout();
   // 行标题「查看全部」渲染档位：桌面 ≥1024 非 TV（hover 行时显现）+ TV（恒显、
-  // 焦点可达）；移动端（≤1023 视口 / App）完全不渲染（demo 建议 2 的端上口径）。
+  // 焦点可达）；移动端（≤1023 视口 / App）完全不渲染。
   const showRowViewAll = isTVLike || (!isMobile && !isMobileLayout);
 
   useScrollRestore('home');
@@ -103,7 +103,7 @@ export default function HomePage() {
   usePullToRefresh(
     async () => {
       await useTMDBStore.getState().fetchAllHomeData({ force: true });
-      // 2026-09-16：fetchAllHomeData 把各区块失败写进 errors 后**正常 resolve**（不 reject），
+      //fetchAllHomeData 把各区块失败写进 errors 后**正常 resolve**（不 reject），
       // 且 TMDBMovieRow 只在 items 为空时才渲染错误行（TMDBMovieRow/index.tsx:437-448）——
       // 于是「已有旧数据 + 刷新整批失败」时用户完全看不到失败（浮层照样回弹「刷新成功」）。
       // 这里把「8 个区块全部失败」（典型场景：断网 / Token 失效）翻译成 reject，交由浮层统一 toast。
@@ -115,7 +115,7 @@ export default function HomePage() {
     { toastOnError: '刷新失败，请检查网络后重试' },
   );
 
-  // 浏览器 Tab 切回时检查首页缓存是否过期，过期则重新加载（覆盖「停留 60min」之外的切 Tab 场景）  // 2026-09-16 视口懒加载：只对「已加载（有数据）」的区块做 TTL 刷新（ensureHomeBlock 内部
+  // 浏览器 Tab 切回时检查首页缓存是否过期，过期则重新加载（覆盖「停留 60min」之外的切 Tab 场景） // 视口懒加载：只对「已加载（有数据）」的区块做 TTL 刷新（ensureHomeBlock 内部
   // 按区块 TTL 判定），未滚入视口的区块保持空白、由 <LazyBlock> 触发 —— 否则整批刷新会把
   // 懒加载省下的请求立刻补回来。
   useEffect(() => {
@@ -179,12 +179,12 @@ export default function HomePage() {
   const continueItems = useMemo(() => buildContinueItems(history), [history]);
   // 「继续观看」行存在条件（单真源，骨架与真实页共用）：骨架此前无条件预告该行，
   // 无观看历史的用户 DB 读完后真实页无此行 → 骨架→真实切换时整行消失、下方内容
-  // 上移约一行高（2026-09-22 用户确认的同构缺口）。镜像同一条件后：有历史恒在；
+  // 上移约一行高（的同构缺口）。镜像同一条件后：有历史恒在；
   // 无历史在骨架期提前收行，切换时几何与真实页逐像素一致，零位移。
   const showContinueRow = userDataLoading || continueItems.length > 0;
 
   // HeroBili 右栏卡张数 = 列数 × 行数（useHeroSideCols / useHeroSideRows 为该区唯一真源）。
-  // 横滚行骨架不再自己算张数：2026-09-18 起骨架直接渲染真实 <TMDBMovieRow>，
+  // 横滚行骨架不再自己算张数： 起骨架直接渲染真实 <TMDBMovieRow>，
   // 其内部 SkeletonCards 已按 --row-cols / --continue-cols 派生张数。
   const heroSideCols = useHeroSideCols();
   const heroSideRows = useHeroSideRows();
@@ -227,22 +227,22 @@ export default function HomePage() {
     topRatedMovies.length > 0 || upcomingMovies.length > 0 ||
     popularTv.length > 0 || topRatedTv.length > 0 || airingTodayTv.length > 0;
 
-  // ⚠️ 2026-09-22 用户报「banner 骨架异常超大纯黑块占满视口剩余高」的根因：
-  //   hero 主体是 trending，旧条件只看 !hasAnyData——nowPlaying 先到就提前切主树，
-  //   此时 trending 仍空 → HeroBanner 宽屏「空数据回落 Classic」渲染**全宽 16:9 纯黑块**
-  //   （@1440 高 ≈742 / @1920 ≈967），trending 到达后切回 HeroBili（≈255）瞬间回缩。
-  //   修正：trending 未落地前维持整屏骨架（hero 槽同构小尺寸），切主树时 HeroBanner
-  //   必有数据；后台刷新（trending 已有数据重拉）不受影响。
-  //
-  // ⚠️ 2026-09-22 用户报「首页骨架显示之后会立即消失然后显示真实页面结构，闪烁」的根因：
-  //   旧条件 (loading.trending || loading.nowPlaying) && ... 依赖 loading 标志，但 React
-  //   首帧 useEffect 还没跑，loading.trending/nowPlaying 都是 false（store 初始态）→
-  //   首帧 isInitialLoading=false 走主树空态（HeroBannerClassic「暂无推荐」）→ useEffect
-  //   触发 fetch 后 loading=true 切骨架 → 数据到达切主树，造成「boot-splash 骨架 →
-  //   主树空态（一帧）→ homeSkeleton → 主树真实」的闪烁。
-  //   修正：不依赖 loading 标志，改为「trending 空 且 未失败」即骨架，首帧即进骨架分支，
-  //   与 boot-splash 同构骨架无缝衔接。例外：有其他区块数据且首屏档不在加载（trending
-  //   请求成功但返回空数组的极罕见情况）→ 主树，避免卡骨架。
+  // ⚠️ 「banner 骨架异常超大纯黑块占满视口剩余高」的根因：
+  // hero 主体是 trending，旧条件只看 !hasAnyData——nowPlaying 先到就提前切主树，
+  // 此时 trending 仍空 → HeroBanner 宽屏「空数据回落 Classic」渲染**全宽 16:9 纯黑块**
+  // （@1440 高 ≈742 / @1920 ≈967），trending 到达后切回 HeroBili（≈255）瞬间回缩。
+  // 修正：trending 未落地前维持整屏骨架（hero 槽同构小尺寸），切主树时 HeroBanner
+  // 必有数据；后台刷新（trending 已有数据重拉）不受影响。
+  
+  // ⚠️ 「首页骨架显示之后会立即消失然后显示真实页面结构，闪烁」的根因：
+  // 旧条件 (loading.trending || loading.nowPlaying) && ... 依赖 loading 标志，但 React
+  // 首帧 useEffect 还没跑，loading.trending/nowPlaying 都是 false（store 初始态）→
+  // 首帧 isInitialLoading=false 走主树空态（HeroBannerClassic「暂无推荐」）→ useEffect
+  // 触发 fetch 后 loading=true 切骨架 → 数据到达切主树，造成「boot-splash 骨架 →
+  // 主树空态（一帧）→ homeSkeleton → 主树真实」的闪烁。
+  // 修正：不依赖 loading 标志，改为「trending 空 且 未失败」即骨架，首帧即进骨架分支，
+  // 与 boot-splash 同构骨架无缝衔接。例外：有其他区块数据且首屏档不在加载（trending
+  // 请求成功但返回空数组的极罕见情况）→ 主树，避免卡骨架。
   const anyLoading =
     loading.trending || loading.nowPlaying || loading.popularMovies ||
     loading.topRatedMovies || loading.upcomingMovies ||
@@ -255,9 +255,9 @@ export default function HomePage() {
   // 按需兜底拉取（**仅首屏档**）：trending / nowPlaying 为空时补齐，保证进页面必有 Hero + 第一排。
   // 注意：不能用 hasAnyData（含 trending）作为门槛——SearchBox 会独立拉取 trending 并使其先加载，
   // 若据此跳过则第一排永远拿不到数据（banner 在、行不在）。
-  // I1（2026-08-04）：「失败冷却」——刚失败的区块 10min 内不再重拉，避免其它区块数据变化时
+  // I1：「失败冷却」——刚失败的区块 10min 内不再重拉，避免其它区块数据变化时
   // 把失败区块反复重试（见模块顶部 HOME_RETRY_COOLDOWN_MS）。
-  // 2026-09-16 视口懒加载：**范围收窄到首屏档**。原来「任一区块为空就 fetchAllHomeData」会让
+  // 视口懒加载：**范围收窄到首屏档**。原来「任一区块为空就 fetchAllHomeData」会让
   // 尚未滚入视口的 6 排被立即整批拉取，懒加载收益归零；这些行改由 <LazyBlock> 进入视口时
   // 各自 ensureHomeBlock。TTL 刷新也不再走这里（见下方定时器 / visibility 处理）。
   useEffect(() => {
@@ -280,7 +280,7 @@ export default function HomePage() {
 
   // I2：TTL 过期定时检查——若用户停留在首页超过 60min，
   // 用定时器兜底触发过期刷新（visibilitychange 只在切 Tab 时生效）。
-  // 2026-09-16 视口懒加载：只遍历「已加载（有数据）」区块，TTL 判定在 ensureHomeBlock 内
+  // 视口懒加载：只遍历「已加载（有数据）」区块，TTL 判定在 ensureHomeBlock 内
   // 按区块时间戳进行；不再整批 fetchAllHomeData（那会把未进视口的懒加载区块一并请求掉）。
   useEffect(() => {
     if (!hasToken) return;
@@ -312,7 +312,7 @@ export default function HomePage() {
     return msgs.length > 0 ? [...new Set(msgs)][0] : null;
   })();
 
-  // ── 首页整页 plain loading 已删除（2026-09-22 用户反馈「plain 骨架覆盖」）────
+  // ── 首页整页 plain loading 已删除（plain 骨架覆盖）────
   // 旧机制：首进无数据时固定显示 500ms AppLoading（纯文字+进度条）再进骨架，
   // 初衷是防「数据秒回时骨架一闪而过」；现启动骨架 #boot-splash（home 同构）→
   // homeSkeleton / enterPhase 骨架覆盖已无缝衔接，plain 插在中间反而把同构骨架
@@ -323,16 +323,16 @@ export default function HomePage() {
   // 相：show 200ms（骨架完整显示）→ fade 600ms（覆盖层淡出，同时内容/hero 以
   // 200ms 延迟同步淡入——交叉淡化，无空白窗口）→ done（覆盖层卸载，内容自由渲染）。
   // ⚠️ 冷启动（先渲染过 isInitialLoading 整屏骨架）不适用本覆盖层：数据到达时内容位置
-  //   已被骨架预告，再叠一层 = 标题/继续观看行渲染两遍、入场动画播两遍（用户 2026-09-22
-  //   报「显示两次 → 抖动」根因）。coldSkeletonShownRef 命中时：不渲染覆盖层、
-  //   hero 不再延迟淡入、根容器加 --from-skeleton 禁用层动画（见 Home.css）。
+  // 已被骨架预告，再叠一层 = 标题/继续观看行渲染两遍、入场动画播两遍（用户 
+  // 报「显示两次 → 抖动」根因）。coldSkeletonShownRef 命中时：不渲染覆盖层、
+  // hero 不再延迟淡入、根容器加 --from-skeleton 禁用层动画（见 Home.css）。
   const [enterPhase, setEnterPhase] = useState<'skeleton' | 'fading' | 'done'>(
     () => (hasAnyData ? 'done' : 'skeleton'),
   );
   // 冷启动是否渲染过整屏骨架（isInitialLoading 分支）——命中则禁用 enterPhase 覆盖层与层入场动画
   const coldSkeletonShownRef = useRef(false);
   useEffect(() => {
-    // 方案 B 二次进入（已访问路由，AppLayout data-revisit）：初始即 done，
+    // 二次进入（已访问路由，AppLayout data-revisit）：初始即 done，
     // 跳过 800ms 骨架覆盖层，内容立即呈现；t1 因函数式守卫直接 no-op。
     const SHOW_MS = 200;
     const FADE_MS = 600;
@@ -368,7 +368,7 @@ export default function HomePage() {
           </div>
         </div>
         {/* 免责声明：位于 token 提示区下方，靠页面底部
-            （token 区 flex:1 撑满后本元素自然贴底） */}
+ （token 区 flex:1 撑满后本元素自然贴底） */}
         <p className="home-disclaimer">
           免责声明：本项目为开源学习项目，仅用于技术交流。影视资源与播放地址来自网络公开渠道（CMS 采集站 / IPTV 直播源），版权归原权利人所有；TMDB 数据版权归 TMDB 所有。请勿用于商业用途，下载后请在 24 小时内删除。
         </p>
@@ -378,7 +378,7 @@ export default function HomePage() {
   }
 
   // ── 首页内容行定义（顺序 = 真实渲染顺序）─────────────────────────────
-  // 骨架与真实行**共用这一份定义**（2026-09-18）：骨架取 title 渲染真实的
+  // 骨架与真实行**共用这一份定义**：骨架取 title 渲染真实的
   // <TMDBMovieRow isLoading>，真实分支取 items / isLoading / error。
   // 七行标题与顺序从此只有一处真源，不再出现「骨架写死 7 行、真实改了行数」的漂移。
   const homeRows = [
@@ -392,22 +392,22 @@ export default function HomePage() {
   ];
 
   // 首屏骨架（仅 home 初始加载/整页无数据时使用，与分类切换无关）
-  // 2026-09-11（用户请求 6「不同视口显示相应的 UI 骨架」）：骨架按视口分两套——
-  //   · <1024 / TV：与 HeroBannerClassic 同构 —— 卡片内 16:9 单图 banner + 7 行卡片
-  //     （缩略图列已删除，骨架不再有缩略图槽）。
-  //   · ≥1024 非 TV：与真实大屏布局同构 —— 顶部过渡带 + HeroBili「banner + 右卡网格
-  //     + 换一换」+ 7 行卡片（2026-09-29 左栏删除，改单列纵向流）。
-  //
-  // ⚠️ 2026-09-18（用户「骨架必须与页面正常显示的元素结构一致」）—— 三条收敛：
-  //  ① 7 行**直接渲染真实组件** <TMDBMovieRow isLoading>：卡片模块外壳（padding /
-  //     border / radius / surface / shadow / margin-bottom）、标题行、横滚容器的
-  //     gap + padding、卡片 flex 宽度公式全部由 TMDBMovieRow.css / Home.css 唯一决定。
-  //     旧实现把这整套手抄成 .home-skeleton-row / -card 系列（Home.css 里甚至写着
-  //     「缺这层外壳会矮 26.6px」这类补偿注释）—— 第二套几何真源，改了真实行就漂移。
-  //  ② 合集推荐行已删除（2026-11-04 用户要求），骨架不再渲染该行。
-  //  ③ 补上「继续观看」行（此前骨架完全没有）：真实页在
-  //     (userDataLoading || continueItems.length > 0) 时渲染，首屏必然存在，
-  //     原骨架漏掉它 → 数据到达时凭空多出一整行。
+  // （不同视口显示相应的 UI 骨架）：骨架按视口分两套——
+  // · <1024 / TV：与 HeroBannerClassic 同构 —— 卡片内 16:9 单图 banner + 7 行卡片
+  // （缩略图列已删除，骨架不再有缩略图槽）。
+  // · ≥1024 非 TV：与真实大屏布局同构 —— 顶部过渡带 + HeroBili「banner + 右卡网格
+  // + 换一换」+ 7 行卡片（左栏删除，改单列纵向流）。
+  
+  // ⚠️ （骨架必须与页面正常显示的元素结构一致）—— 三条收敛：
+  // ① 7 行**直接渲染真实组件** <TMDBMovieRow isLoading>：卡片模块外壳（padding /
+  // border / radius / surface / shadow / margin-bottom）、标题行、横滚容器的
+  // gap + padding、卡片 flex 宽度公式全部由 TMDBMovieRow.css / Home.css 唯一决定。
+  // 旧实现把这整套手抄成 .home-skeleton-row / -card 系列（Home.css 里甚至写着
+  // 「缺这层外壳会矮 26.6px」这类补偿注释）—— 第二套几何真源，改了真实行就漂移。
+  // ② 合集推荐行已删除，骨架不再渲染该行。
+  // ③ 补上「继续观看」行（此前骨架完全没有）：真实页在
+  // (userDataLoading || continueItems.length > 0) 时渲染，首屏必然存在，
+  // 原骨架漏掉它 → 数据到达时凭空多出一整行。
   const homeSkeletonRows = (
     <div className="home-skeleton-rows">
       {homeRows.map((row) => (
@@ -428,7 +428,7 @@ export default function HomePage() {
       <div className="home-skeleton-hero__desc home-skeleton-hero__desc--short" />
     </div>
   );
-  // 「继续观看」行骨架（2026-09-18 补）：真实结构 = .home-continue-row >
+  // 「继续观看」行骨架（补）：真实结构 = .home-continue-row >
   // .tmdb-movierow--continue > header + wrapper > scroll > 横版骨架卡。
   // 不能直接复用 <TMDBMovieRow>：它在 continueMode 且列表为空时会 return null
   // （组件内 early return），而首屏正是「列表为空 + 正在读本地库」。故按同结构手搭外壳，
@@ -456,7 +456,7 @@ export default function HomePage() {
         <span className="home-skeleton-topstrip__item home-skeleton-topstrip__item--sm" />
       </div>
       {/* HeroBili 骨架（banner 槽 + 右卡网格 + 换一换占位）；直接子节点身份
-          命中 .home-page > .hero-bili 的 2200 封顶居中规则（与真实分支同构） */}
+ 命中 .home-page > .hero-bili 的 2200 封顶居中规则（与真实分支同构） */}
       <section className="hero-bili">
         <div className="hero-bili__grid">
           <div className="hero-bili__banner home-skeleton-bili__banner">
@@ -465,12 +465,12 @@ export default function HomePage() {
           <div className="hero-bili__right">
             <div className="hero-bili__cards">
               {/* 张数 = useHeroSideCols() × useHeroSideRows()，与真实 HeroBili 右栏同源。
-                  2026-11-04：≥1024 全档 2 列 × 3 行 = 6 张（双 16:9 精确解）。
-                  卡结构同步「封面出血」：底部左标题条 + 右下竖排 meta
-                  （2026-11-08 方案B 二次定稿：meta 复用真实类
-                  .hero-side-card__meta/__corner + 真实内容（剧集/2024），
-                  与真实元素像素级一致；皮肤层只换底色/透明内容），
-                  卡高 = 纯封面 16:9（标题/meta 均为浮层，不占布局流）。 */}
+≥1024 全档 2 列 × 3 行 = 6 张（双 16:9 精确解）。
+ 卡结构同步「封面出血」：底部左标题条 + 右下竖排 meta
+ （meta 复用真实类
+ .hero-side-card__meta/__corner + 真实内容（剧集/2024），
+ 与真实元素像素级一致；皮肤层只换底色/透明内容），
+ 卡高 = 纯封面 16:9（标题/meta 均为浮层，不占布局流）。 */}
               {Array.from({ length: heroSideCols * heroSideRows }).map((_, i) => (
                 <div key={i} className="hero-side-card">
                   <span className="hero-side-card__cover hero-side-card__cover--skeleton thumbnail-skeleton-bg">
@@ -483,11 +483,11 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-            {/* 换一换骨架（2026-10-10 镜像修复）：挂真实 .hero-bili__shuffle 基类，
-                盒模型（absolute 浮层定位/padding/border/flex-column/gap）全部继承，
-                内部补 icon 条 + 竖排文本条两根灰条 —— 上一版是 width:--space-xl 的
-                空 span（display:block 拍掉基类 flex、无内容无高）→ 塌成小圆点，
-                与真实按钮（icon+竖排「换一换」）相差甚远（用户截图质询）。 */}
+            {/* 换一换骨架（镜像修复）：挂真实 .hero-bili__shuffle 基类，
+ 盒模型（absolute 浮层定位/padding/border/flex-column/gap）全部继承，
+ 内部补 icon 条 + 竖排文本条两根灰条 —— 上一版是 width:--space-xl 的
+ 空 span（display:block 拍掉基类 flex、无内容无高）→ 塌成小圆点，
+ 与真实按钮（icon+竖排「换一换」）相差甚远。 */}
             <span className="hero-bili__shuffle home-skeleton-bili__shuffle" aria-hidden="true">
               <span className="home-skeleton-bili__shuffle-icon" />
               <span className="home-skeleton-bili__shuffle-text" />
@@ -551,7 +551,7 @@ export default function HomePage() {
   // 才解锁 —— 未解锁时传「空 items + isLoading」，由 TMDBMovieRow 渲染**等高**的
   // SkeletonCards（骨架卡与真卡同一 class，高度一致），避免滚动恢复时高度塌陷错位。
   // TV 端例外：方向键焦点可能直接跳到未加载行（骨架不可聚焦 → 焦点丢失），
-  // 故按「焦点行 ±1 行」预加载（2026-09-16 拍板）。
+  // 故按「焦点行 ±1 行」预加载。
   const renderHomeRows = () => (
     <div className="home-rows">
       {homeRows.map((row, i) => (
@@ -568,9 +568,9 @@ export default function HomePage() {
               items={entered ? row.items : []}
               isLoading={entered ? row.isLoading : hasToken}
               error={entered ? row.error : null}
-              /* 行卡逐个弹入与逐块到达叠加 = 首页行骨架「严重抖动」主因（2026-09-22
-                 用户反馈）；首页已有整层 page-transition-enter 淡入，行级入场动画
-                 冗余，恒 skip（分类切回等场景同样由层动画承担进入感）。 */
+              /* 行卡逐个弹入与逐块到达叠加 = 首页行骨架「严重抖动」主因（
+ ）；首页已有整层 page-transition-enter 淡入，行级入场动画
+ 冗余，恒 skip（分类切回等场景同样由层动画承担进入感）。 */
               skipAnimations
               scrollResetToken="home"
               crossfadeOnChange
@@ -585,9 +585,9 @@ export default function HomePage() {
   return (
     <>
       {/* 进入过渡覆盖层：缓存数据场景下，首页从其他页切回时显示骨架覆盖 → 淡出 → 内容。
-          仅在 enterPhase !== 'done' 且非冷启动骨架接替时渲染（冷启动已由整屏骨架
-          预告位置，再叠层 = 双渲染双动画，2026-09-22 用户反馈）。
-          position: fixed 以覆盖整个视口，不受 home-page relative 约束。 */}
+ 仅在 enterPhase !== 'done' 且非冷启动骨架接替时渲染（冷启动已由整屏骨架
+ 预告位置，再叠层 = 双渲染双动画）。
+ position: fixed 以覆盖整个视口，不受 home-page relative 约束。 */}
       {enterPhase !== 'done' && !coldSkeletonShownRef.current && (
         <div className={`home-enter-skeleton${enterPhase === 'fading' ? ' home-enter-skeleton--fading' : ''}`}>
           <div className="page-padding home-page home-skeleton skeleton-scope">{homeSkeletonBody}</div>
@@ -596,11 +596,11 @@ export default function HomePage() {
       <div ref={pageRef} className={`page-padding home-page${isMobile ? ' home-page--mobile' : ''}${isTV ? ' home-page--tv' : ''}${coldSkeletonShownRef.current ? ' home-page--from-skeleton' : ''}`}>
         {isWide ? (
           /* ── 大屏单列纵向流：Hero → 继续观看 → 推荐行。
-             原「方案 C 两栏 + 左栏今日趋势」与「CQA 合集行」均已删除
-             （合集行于 2026-11-04 按用户要求移除）。
-             ⚠️ HeroBanner 的祖先绝不能带 transform 动画（其缩略图/背景是 GPU 合成层，
-             祖先 transform 会触发重绘闪烁，见 docs/agents/patterns.md「页面进入过渡统一约定」）。
-             因此 `.home-page__content` 的进入动画只包内容行，Hero 与其平级放在外层。 */
+ 原「两栏 + 左栏今日趋势」与「CQA 合集行」均已删除
+ （合集行于 移除）。
+ ⚠️ HeroBanner 的祖先绝不能带 transform 动画（其缩略图/背景是 GPU 合成层，
+ 祖先 transform 会触发重绘闪烁）。
+ 因此 `.home-page__content` 的进入动画只包内容行，Hero 与其平级放在外层。 */
           <>
           <HomeTopStrip
             continueCount={continueItems.length}
@@ -616,7 +616,7 @@ export default function HomePage() {
             initialEnterDelay={enterPhase !== 'done' && !coldSkeletonShownRef.current ? 200 : 0}
           />
           <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
-            {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型，行业范式同向 */}
+            {/* 调换：个人内容（继续观看）贴顶优先于探索型，行业范式同向 */}
             {showContinueRow && (
               <div className="home-continue-row">
                 <TMDBMovieRow
@@ -644,7 +644,7 @@ export default function HomePage() {
               initialEnterDelay={enterPhase !== 'done' && !coldSkeletonShownRef.current ? 200 : 0}
             />
             <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
-              {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型，行业范式同向 */}
+              {/* 调换：个人内容（继续观看）贴顶优先于探索型，行业范式同向 */}
               {showContinueRow && (
                 <div className="home-continue-row">
                   <TMDBMovieRow

@@ -112,12 +112,12 @@ export async function clearIPTVChannelCache(): Promise<void> {
  *
  * 升级被旧连接阻塞时（多页签场景），openDB 请求会挂起直到旧连接关闭。
  * 设计要点：
- *  - 超时 reject 后调用方放弃，但不尝试取消请求（无法取消）——迟到的成功连接
- *    会在此处立即关闭（孤儿连接回收），避免无主连接永久占住 DB 版本，
- *    导致后续版本升级再次被「孤儿」blocked（自我延续的坑）。
- *  - blocking() 回调 = 本页是「旧连接」（另一页签正以更高版本升级同一 DB，
- *    即 versionchange 事件）。此时自动关闭本连接放行升级；后续 DB 操作
- *    会以新版本自动重连。提示打在真正该处理的旧页签，而非新页签。
+ * - 超时 reject 后调用方放弃，但不尝试取消请求（无法取消）——迟到的成功连接
+ * 会在此处立即关闭（孤儿连接回收），避免无主连接永久占住 DB 版本，
+ * 导致后续版本升级再次被「孤儿」blocked（自我延续的坑）。
+ * - blocking() 回调 = 本页是「旧连接」（另一页签正以更高版本升级同一 DB，
+ * 即 versionchange 事件）。此时自动关闭本连接放行升级；后续 DB 操作
+ * 会以新版本自动重连。提示打在真正该处理的旧页签，而非新页签。
  */
 async function openWithTimeout(): Promise<IDBPDatabase<VideoWarehouseDB>> {
   const openPromise = openDB<VideoWarehouseDB>(DB_NAME, DB_VERSION, {
@@ -317,9 +317,9 @@ export async function setCachedIPTVChannels(data: IPTVCacheData): Promise<void> 
 // ── iptv-org 主干原始缓存 ──────────────────────────────────
 /**
  * iptv-org API（channels/streams/logos 三 JSON，合计 ~17MB）代价高昂，
- * 且接口超时上限定为 6s（2026-09-08 用户定稿），6s 拉不完即判失败。
+ * 且接口超时上限定为 6s，6s 拉不完即判失败。
  * 因此把组装结果落盘：首屏/弱网先用缓存秒出，再后台刷新，
- * 避免「接口一超时就整体回退本地 M3U 源」（用户反馈的“用 iptv 源兜底”现象）。
+ * 避免「接口一超时就整体回退本地 M3U 源」（的“用 iptv 源兜底”现象）。
  */
 const IPTV_ORG_CACHE_KEY = 'iptv-org-channels';
 const IPTV_ORG_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 天
@@ -368,7 +368,7 @@ export async function setCachedIptvOrgChannels(data: IptvOrgCacheData): Promise<
   } catch { /* 缓存写入失败不影响主流程 */ }
 }
 
-// ── iptv-org 中文名缓存（方案 B：channels.json 7.5MB 解析 7 天只做一次）──
+// ── iptv-org 中文名缓存（channels.json 7.5MB 解析 7 天只做一次）──
 
 const IPTV_ORG_CN_NAMES_KEY = 'iptv-org-cn-names';
 
@@ -412,10 +412,10 @@ export async function setCachedIptvOrgCnNames(data: IptvOrgCnNamesData): Promise
 // ── 收藏操作 ──────────────────────────────────────────────
 
 /** 收藏主键收敛：同一 videoId 全局唯一一条，id 统一为 `col-{videoId}`。
- *  旧实现 id 为 `col-{timestamp}-{random}`（随机主键），跨页签并发收藏时
- *  两页签内存各自判定「未收藏」→ IndexedDB 出现两条同 videoId 记录。
- *  改为确定性主键后，db.put 天然幂等覆盖（含跨页签），DB 层不可能再出现双记录。
- *  页面层语义（每 videoId 一条，Collections/index.tsx 以 videoId 作 key）与此一致。 */
+ * 旧实现 id 为 `col-{timestamp}-{random}`（随机主键），跨页签并发收藏时
+ * 两页签内存各自判定「未收藏」→ IndexedDB 出现两条同 videoId 记录。
+ * 改为确定性主键后，db.put 天然幂等覆盖（含跨页签），DB 层不可能再出现双记录。
+ * 页面层语义（每 videoId 一条，Collections/index.tsx 以 videoId 作 key）与此一致。 */
 function collectionCanonicalId(videoId: string): string {
   return `col-${videoId}`;
 }

@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   AppLoading — 品牌定制 Loading
+ AppLoading — 品牌定制 Loading
 
-   设计：
-   - 品牌文字"抠图"效果：background-clip: text + 渐变 + drop-shadow
-   - 进度条：颜色 = --color-text-tertiary（与滚动条悬停色一致）
-   - 动画：slide + stripes 复用 ProgressBar 风格
-   - 适配：Mobile (max-width: 767px) / Desktop / TV (data-device="tv")
-   ═══════════════════════════════════════════════════════════════════════ */
+ 设计：
+ - 品牌文字"抠图"效果：background-clip: text + 渐变 + drop-shadow
+ - 进度条：颜色 = --color-text-tertiary（与滚动条悬停色一致）
+ - 动画：slide + stripes 复用 ProgressBar 风格
+ - 适配：Mobile (max-width: 767px) / Desktop / TV (data-device="tv")
+ ═══════════════════════════════════════════════════════════════════════ */
 
 .app-loading {
   display: flex;
@@ -18,11 +18,11 @@
 }
 
 /* ── Inline 模式：嵌入到父容器（flex-1 占满可用空间） ─────────────
-   卡片视觉（圆角+背景+边框+阴影）在所有视口生效，与桌面端一致，
-   移动端不再裸奔（参考桌面端卡片模块风格）。
-   注意：flex-basis 使用 1px 而非 0，避免初始渲染时高度瞬间为 0 的闪烁。
-   若父容器已提供卡片（如 Browse 的结果卡 .browse-card--results），
-   由对应页面 CSS 剥去外壳即可，避免卡片套卡片。 */
+ 卡片视觉（圆角+背景+边框+阴影）在所有视口生效，与桌面端一致，
+ 移动端不再裸奔（参考桌面端卡片模块风格）。
+ 注意：flex-basis 使用 1px 而非 0，避免初始渲染时高度瞬间为 0 的闪烁。
+ 若父容器已提供卡片（如 Browse 的结果卡 .browse-card--results），
+ 由对应页面 CSS 剥去外壳即可，避免卡片套卡片。 */
 .app-loading--inline {
   display: flex;
   flex: 1 1 1px;
@@ -66,7 +66,7 @@
     var(--color-text-tertiary) 100%
   );
   color: var(--color-text);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   font-size: clamp(var(--text-2xl), 8.4px + 1.083vw, var(--text-3xl));
   font-weight: var(--fw-bold);
   letter-spacing: -0.03em;
@@ -91,7 +91,7 @@
 /* ── 进度条：颜色与全局滚动条悬停色一致 ──────────────────────── */
 .app-loading__progress {
   position: relative;
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(var(--layout-channel-num-w), 14.272px + 8.077vw, var(--layout-popover-wide-min-w));
   height: var(--space-2xs);
   border-radius: var(--radius-full);
@@ -120,7 +120,7 @@
   background-size: var(--loading-stripe-size) var(--loading-stripe-size);
   transform-origin: left;
   /* 进度由组件内 JS 模拟（scaleX 内联），此处仅保留条纹流动示意进行中；
-     不再使用 app-loading-fill 固定时长动画（与真实加载时长无关，见组件注释） */
+ 不再使用 app-loading-fill 固定时长动画（与真实加载时长无关，见组件注释） */
   animation: app-loading-stripes 0.75s linear infinite;
 }
 
@@ -134,8 +134,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   动画
-   ═══════════════════════════════════════════════════════════════════ */
+ 动画
+ ═══════════════════════════════════════════════════════════════════ */
 
 @keyframes app-loading-stripes {
   0%   { background-position: 0 0; }
@@ -154,8 +154,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   响应式断点
-   ═══════════════════════════════════════════════════════════════════ */
+ 响应式断点
+ ═══════════════════════════════════════════════════════════════════ */
 
 /* ── Mobile：紧凑模式 ────────────────────────────────────────── */
 @media (width <= 767px) {
@@ -180,7 +180,7 @@
   font-size: var(--text-xs);
 }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .app-loading {
   gap: var(--space-md);
@@ -208,8 +208,8 @@
 /* ── Desktop & Large：放大品牌字 ─────────────────────────────── */
 @media (width >= 1024px) {
   /* Inline 模式在桌面端不再套卡片外壳（边框/圆角/阴影/底色）：父容器已提供
-     卡片或页面底色，套壳会出现「卡中卡」。移动端保留（外壳是唯一视觉容器）。
-     TV 端（data-device="tv"）保持原状，避免大屏下 loading 失去边界感。 */
+ 卡片或页面底色，套壳会出现「卡中卡」。移动端保留（外壳是唯一视觉容器）。
+ TV 端（data-device="tv"）保持原状，避免大屏下 loading 失去边界感。 */
   html:not([data-device="app"]):not([data-device="tv"]) .app-loading--inline {
     border: none;
     border-radius: 0;
@@ -222,7 +222,7 @@
 }
 
   html:not([data-device="app"]) .app-loading__brand-name {
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   font-size: clamp(var(--text-3xl), 32px + 1.667vw, var(--text-3xl));
 }
 
@@ -265,8 +265,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Dark Theme —— 文字渐变 + 投影微调，保持抠图质感
-   ═══════════════════════════════════════════════════════════════════ */
+ Dark Theme —— 文字渐变 + 投影微调，保持抠图质感
+ ═══════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] .app-loading__brand-name {
   background: var(--brand-gradient-dark);
   background-clip: text;
@@ -285,8 +285,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-    主题过渡
-    ═══════════════════════════════════════════════════════════════════ */
+ 主题过渡
+ ═══════════════════════════════════════════════════════════════════ */
 html.theme-transitioning .app-loading,
 html.theme-transitioning .app-loading *:not(svg):not(path) {
   transition: background-color 0.22s var(--ease-out-expo),
@@ -294,6 +294,6 @@ html.theme-transitioning .app-loading *:not(svg):not(path) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   可访问性：减少动画
-   ═══════════════════════════════════════════════════════════════════ */
+ 可访问性：减少动画
+ ═══════════════════════════════════════════════════════════════════ */
 

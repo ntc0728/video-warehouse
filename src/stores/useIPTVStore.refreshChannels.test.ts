@@ -2,7 +2,7 @@
  * refreshChannels 静默刷新契约 / 单飞锁 / 失败语义单测。
  *
  * 静默刷新契约（useIPTVStore.ts:256-259 `isLoading: !hasChannels`）是 IPTV 页的核心观感约定
- * （慢源拖尾期间不得出现全屏 loading，见 docs/agents/patterns.md），此前零覆盖；
+ * （慢源拖尾期间不得出现全屏 loading，见 ），此前零覆盖；
  * 它本质是**状态序列**而非 DOM 现象，故只在 store 层用单测钉死（浏览器侧无法证明「全程未出现」）。
  *
  * 三个外部依赖模块全部 mock：database（IndexedDB 在 jsdom 不存在）、iptvOrgService（网络）、

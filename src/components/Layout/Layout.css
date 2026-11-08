@@ -16,14 +16,14 @@
 }
 
 /* ── App Shell (垂直布局) ──────────────────────────────────
-   桌面：StickyHeader (auto) + scroll-wrapper (flex: 1)
-   移动：StickyHeader (auto) + scroll-wrapper (flex: 1) + TabBar (auto)
+ 桌面：StickyHeader (auto) + scroll-wrapper (flex: 1)
+ 移动：StickyHeader (auto) + scroll-wrapper (flex: 1) + TabBar (auto)
 
-   - StickyHeader 作为第一行常驻视口顶部（不参与滚动）
-   - scroll-wrapper 包含 CustomScrollbar + OverlayScrollbar，
-     OverlayScrollbar 作为兄弟节点不参与滚动容器的溢出计算
-   - 沉浸式页面（首页/详情页）下，StickyHeader 改用 position: fixed，
-     scroll-wrapper 从视口顶部开始铺满，hero 图从导航栏下方延展到屏幕顶
+ - StickyHeader 作为第一行常驻视口顶部（不参与滚动）
+ - scroll-wrapper 包含 CustomScrollbar + OverlayScrollbar，
+ OverlayScrollbar 作为兄弟节点不参与滚动容器的溢出计算
+ - 沉浸式页面（首页/详情页）下，StickyHeader 改用 position: fixed，
+ scroll-wrapper 从视口顶部开始铺满，hero 图从导航栏下方延展到屏幕顶
 */
 .app-shell {
   display: flex;
@@ -43,10 +43,10 @@
 }
 
 /* E. TV overscan 对称化：安全区下沉为内容主列的四边 inset，使所有页面内容
-   （.page-padding 等）与固定顶栏对齐获得安全边距。原设计只在 .sticky-header--tv
-   设左右 safe-area-x，内容区域未处理，且 --safe-area-y 从未使用。
-   固定顶栏脱离 main 文档流，其安全边距仍由 .sticky-header--tv 自身 padding 承担，
-   二者用同一组 --safe-area-* 变量，四边对称。 */
+ （.page-padding 等）与固定顶栏对齐获得安全边距。原设计只在 .sticky-header--tv
+ 设左右 safe-area-x，内容区域未处理，且 --safe-area-y 从未使用。
+ 固定顶栏脱离 main 文档流，其安全边距仍由 .sticky-header--tv 自身 padding 承担，
+ 二者用同一组 --safe-area-* 变量，四边对称。 */
 [data-device="tv"] .app-shell__main {
   padding: var(--safe-area-y) var(--safe-area-x);
 }
@@ -67,16 +67,16 @@
   flex-direction: column;
   min-height: 0;
   /* 局部隔离折叠/展开时 grid 列宽变化引发的逐帧重排（poster 网格等重内容），
-     避免重排逃逸到全页，降低卡顿。 */
+ 避免重排逃逸到全页，降低卡顿。 */
   contain: layout;
   overflow: hidden auto;
   overflow-anchor: none;
   /* 禁用浏览器原生下拉刷新 / 滚动到边界的橡皮筋回弹（移动端 web 与 app 统一生效） */
   overscroll-behavior: none;
   /* 允许焦点方框（outline）向外溢出最多 8px 仍被绘制，避免聚焦元素贴边时
-     方框被 overflow 裁切（表现为「方框被裁 / 只剩一个小圆点」，
-     在非 TV 模式无过扫描安全区缓冲时尤为明显、方框贴顶显得「位置偏高」）。
-     用 --space-xs-plus（桌面冻结 8px / TV 16px）替代写死 8px，遵循零像素硬编码约定。 */
+ 方框被 overflow 裁切（表现为「方框被裁 / 只剩一个小圆点」，
+ 在非 TV 模式无过扫描安全区缓冲时尤为明显、方框贴顶显得「位置偏高」）。
+ 用 --space-xs-plus（桌面冻结 8px / TV 16px）替代写死 8px，遵循零像素硬编码约定。 */
   overflow-clip-margin: var(--space-xs-plus);
   /* 隐藏原生滚动条，使用自定义 OverlayScrollbar */
   scrollbar-width: none;
@@ -86,17 +86,17 @@
   display: none;
 }
 
-/* ── 右下 FAB 让位规则：已删除（2026-09-30 用户拍板）────────────────
-   原规则：≥1024 非 TV 给 .app-shell__scroll 加
-   padding-right: calc(var(--space-3xl) + var(--space-md) * 2) 为 fab-stack 让位。
-   用户验收拍板整块移除：FAB 直接浮在内容右缘之上（与页内浮层同一形态），
-   滚动容器不再内缩。墓碑注释防回归：勿再为 FAB 恢复滚动容器 padding-right。 */
+/* ── 右下 FAB 让位规则：已删除────────────────
+ 原规则：≥1024 非 TV 给 .app-shell__scroll 加
+ padding-right: calc(var(--space-3xl) + var(--space-md) * 2) 为 fab-stack 让位。
+ 整块移除：FAB 直接浮在内容右缘之上（与页内浮层同一形态），
+ 滚动容器不再内缩。墓碑注释防回归：勿再为 FAB 恢复滚动容器 padding-right。 */
 
 /* ── 页面统一左右内边距 ─────────────────────────────────
-   所有页面通过 .page-padding 继承 var(--space-sm) 水平 padding，
-   Player / IPTVPlayer 因 position:fixed 或 height:100%
-   脱离文档流，不受此规则约束。StickyHeader 在 .app-shell__scroll
-   外部，不受此规则约束。 */
+ 所有页面通过 .page-padding 继承 var(--space-sm) 水平 padding，
+ Player / IPTVPlayer 因 position:fixed 或 height:100%
+ 脱离文档流，不受此规则约束。StickyHeader 在 .app-shell__scroll
+ 外部，不受此规则约束。 */
 .page-transition {
   display: flex;
   flex: 1 1 0;
@@ -206,8 +206,8 @@
   width: var(--space-2xs);
   height: 60%;
   border-radius: 0 var(--space-2xs) var(--space-2xs) 0;
-  /* 2026-11-04：父项 active 底 = --color-primary，指示条原先也用 primary → 恒 1:1 不可见。
-     改反色后亮/暗均清晰（21:1 / 18.4:1）。 */
+  /* 父项 active 底 = --color-primary，指示条原先也用 primary → 恒 1:1 不可见。
+ 改反色后亮/暗均清晰（21:1 / 18.4:1）。 */
   background-color: var(--color-text-inverse);
   transform: translateY(-50%);
   animation: indicatorSlideIn var(--dur-lg) ease-out both;
@@ -303,15 +303,15 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   侧边栏 + 顶部导航栏 连接式布局（作用于所有「非沉浸式」页面）
-   顶部导航栏与左侧侧边栏在视觉上连接，形成统一的导航区域。
-   仅桌面端/平板端（>=768px）应用；移动端（<768px）保持原始布局，不受影响。
-   沉浸式全屏播放页（/play、/player，带 app-shell--immersive）不应用，
-   以保持视频铺满、顶栏叠加 hero 的原始布局。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 侧边栏 + 顶部导航栏 连接式布局（作用于所有「非沉浸式」页面）
+ 顶部导航栏与左侧侧边栏在视觉上连接，形成统一的导航区域。
+ 仅桌面端/平板端（>=768px）应用；移动端（<768px）保持原始布局，不受影响。
+ 沉浸式全屏播放页（/play、/player，带 app-shell--immersive）不应用，
+ 以保持视频铺满、顶栏叠加 hero 的原始布局。
+ ═══════════════════════════════════════════════════════════════════════ */
 
 /* 桌面端/平板端（>=768px）侧边栏 + 顶栏 连接式布局
-   移动端（<768px）不应用这些规则，保持原始布局不变。 */
+ 移动端（<768px）不应用这些规则，保持原始布局不变。 */
 @media (width >= 768px) {
   html:not([data-device="app"]) /* 顶部导航栏 → 固定在视口顶部，全宽显示 */
   .app-shell .sticky-header:not(.sticky-header--immersive) {
@@ -332,12 +332,12 @@
     padding-top: var(--header-height);
   }
 
-  /* overlay 滚动条 track 起点与滚动区顶边对齐（2026-08-24 修复）：
-     wrapper 有 padding-top 时，absolute 定位的 .overlay-scrollbar 若 top:0，
-     其包含块是 wrapper 的 padding box 顶（= 视口顶）→ track/thumb 起点跑到
-     导航栏区域内（thumb 穿过顶栏、与滚动区 y 轴错位 --header-height）。
-     与上方 padding-top 对称声明 top，移动 web(<768)/app 下 wrapper 无
-     padding-top（header 为 static 占据布局流），overlay 保持默认 top:0 不受影响。 */
+  /* overlay 滚动条 track 起点与滚动区顶边对齐：
+ wrapper 有 padding-top 时，absolute 定位的 .overlay-scrollbar 若 top:0，
+ 其包含块是 wrapper 的 padding box 顶（= 视口顶）→ track/thumb 起点跑到
+ 导航栏区域内（thumb 穿过顶栏、与滚动区 y 轴错位 --header-height）。
+ 与上方 padding-top 对称声明 top，移动 web(<768)/app 下 wrapper 无
+ padding-top（header 为 static 占据布局流），overlay 保持默认 top:0 不受影响。 */
   html:not([data-device="app"]) .app-shell__scroll-wrapper .overlay-scrollbar {
     top: var(--header-height);
   }

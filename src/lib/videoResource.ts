@@ -4,7 +4,7 @@
  * 用于 PerformanceObserver / PerformanceResourceTiming 过滤：
  * 1. 支持识别直链视频资源（.ts/.m3u8/.m3u/.mp4/.m4s/.m4v/.mpd）
  * 2. 支持识别经过 Cloudflare Worker 代理的 URL（/m3u8-proxy?url=...、/ts-proxy?url=...）
- *    代理 URL 的真实资源地址在 query 参数 url 中，需解码后再匹配扩展名
+ * 代理 URL 的真实资源地址在 query 参数 url 中，需解码后再匹配扩展名
  */
 
 /** 匹配视频资源扩展名（结尾或后跟查询参数，但不允许后跟路径） */

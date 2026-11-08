@@ -1,8 +1,8 @@
 /**
- * 收藏页面（重构）
+ * 收藏页面
  * 融合 Tab（综合/视频/IPTV）+「更多筛选」面板（状态 chips + 排序）+ 批量管理
- * 综合 = 「影视」竖版海报墙分区 + 「直播」历史页同款 RecordCard 分区（2026-10-10
- *       用户拍板 B：卡片+网格全对齐历史页，网格消费 --history-cols）。
+ * 综合 = 「影视」竖版海报墙分区 + 「直播」历史页同款 RecordCard 分区（
+ * B：卡片+网格全对齐历史页，网格消费 --history-cols）。
  * 状态筛选（未观看/正在看/已看完）仅作用于影视分区；直播分区恒全量。
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
@@ -42,9 +42,9 @@ type VideoStatus = 'all' | 'unwatched' | 'watching' | 'watched';
 type ConcreteVideoStatus = Exclude<VideoStatus, 'all'>;
 type SortKey = 'recent' | 'oldest' | 'title-asc' | 'title-desc' | 'rating-desc' | 'rating-asc';
 
-/* 频道卡时间格式化（2026-10-10 对齐历史页 RecordCard）：口径镜像 History 的
-   formatPlayTime（今天→HH:mm / 昨天→昨天 HH:mm / 本周→周X HH:mm / 本月→M月D日 /
-   更早→YYYY年M月D日），但收藏频道无日期分组 → 按时间戳自行分档。 */
+/* 频道卡时间格式化（对齐历史页 RecordCard）：口径镜像 History 的
+ formatPlayTime（今天→HH:mm / 昨天→昨天 HH:mm / 本周→周X HH:mm / 本月→M月D日 /
+ 更早→YYYY年M月D日），但收藏频道无日期分组 → 按时间戳自行分档。 */
 const favFullTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
 });
@@ -89,8 +89,8 @@ interface CollectionVideoItem extends Video {
 type ConfirmType = 'single' | 'batch' | 'clearAll';
 
 /** 状态配置：label（面板 chips 文案）+ color（圆点色；全部=黑，不传走默认）
-    2026-09-15：原为 Tailwind 硬编码色（#3b82f6 / #d97706 / #22c55e），
-    改为语义 token —— 圆点属「图标」角色，用 *-text 档（浅底上 ≥4.5:1）。 */
+原为 Tailwind 硬编码色（#3b82f6 / #d97706 / #22c55e），
+ 改为语义 token —— 圆点属「图标」角色，用 *-text 档（浅底上 ≥4.5:1）。 */
 const STATUS_CONFIG: Record<VideoStatus, { label: string; color?: string }> = {
   all: { label: '全部' },
   unwatched: { label: '未观看', color: 'var(--color-info-text)' },
@@ -108,7 +108,7 @@ const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: st
 export default function CollectionsPage() {
   const { collections, history, removeCollection, _loading: userLoading, loadError } = useUserStore();
   const { channels: iptvChannels, toggleFavorite, clearFavorites } = useIPTVStore();
-  // 2026-10-10 收藏页 IPTV 卡片对齐历史页 RecordCard：直链代理参数与历史页 buildIptvNav 同源
+  // 收藏页 IPTV 卡片对齐历史页 RecordCard：直链代理参数与历史页 buildIptvNav 同源
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
   const { getState, saveState } = useNavStore();
@@ -217,8 +217,8 @@ export default function CollectionsPage() {
   [videoStatusMap]);
 
   /** 视频收藏基底：应用搜索（综合用 all 关键词、视频 tab 用 video 关键词），
-   *  不含状态筛选与排序。2026-10-09 拆出：状态 chip 分面计数需要「状态筛选前」口径，
-   *  base（搜索）与 filtered（+状态筛选+排序）分两段 memo，避免同一逻辑双写漂移。 */
+ * 不含状态筛选与排序。 拆出：状态 chip 分面计数需要「状态筛选前」口径，
+ * base（搜索）与 filtered（+状态筛选+排序）分两段 memo，避免同一逻辑双写漂移。 */
   const collectedVideosBase = useMemo<CollectionVideoItem[]>(() => {
     let list: CollectionVideoItem[] = collections
       .filter((c: CollectionRecord) => c.type !== 'iptv')
@@ -249,8 +249,8 @@ export default function CollectionsPage() {
   }, [collections, searchByTab, mainTab, getVideoStatus]);
 
   /** 状态 chip 分面计数：基底（搜索后、状态筛选前）按状态计数 ——
-   *  每个 chip 显示「点它会得到多少条」（分面筛选标准口径：计数不随当前选中状态变化，
-   *  否则未选中的 chip 会被当前筛选清零成误导性 0）。仅影视项 —— IPTV 频道无观看状态概念。 */
+ * 每个 chip 显示「点它会得到多少条」（分面筛选标准口径：计数不随当前选中状态变化，
+ * 否则未选中的 chip 会被当前筛选清零成误导性 0）。仅影视项 —— IPTV 频道无观看状态概念。 */
   const statusCounts = useMemo<Record<VideoStatus, number>>(() => {
     const counts: Record<VideoStatus, number> = { all: collectedVideosBase.length, unwatched: 0, watching: 0, watched: 0 };
     for (const v of collectedVideosBase) counts[v._status ?? 'unwatched']++;
@@ -258,8 +258,8 @@ export default function CollectionsPage() {
   }, [collectedVideosBase]);
 
   /** 视频收藏：基底 + 状态筛选 + 排序。
-   *  状态筛选仅作用于影视项；直播分区恒全量。
-   *  排序：默认最近收藏；名称按中文拼音序；评分缺失按 0 处理，同值时按收藏时间倒序兜底 */
+ * 状态筛选仅作用于影视项；直播分区恒全量。
+ * 排序：默认最近收藏；名称按中文拼音序；评分缺失按 0 处理，同值时按收藏时间倒序兜底 */
   const collectedVideos = useMemo<CollectionVideoItem[]>(() => {
     let list = [...collectedVideosBase];
     if (statusFilter !== 'all') { list = list.filter((v) => v._status === statusFilter); }
@@ -297,7 +297,7 @@ export default function CollectionsPage() {
     return list;
   }, [iptvChannels, searchByTab, mainTab]);
 
-  // 2026-09-08 用户指令：综合 tab 下切「已观看/未观看」时不再混入 IPTV——
+  //综合 tab 下切「已观看/未观看」时不再混入 IPTV——
   // IPTV 频道无观看进度概念，参与状态筛选只会产出误导性的直播分区。
   // IPTV tab 本身恒显示频道（状态筛选不作用于直播，且 statusFilter 跨 tab 持久化，
   // 若也受 statusFilter 约束，综合页切过状态后再进 IPTV tab 会整区分区消失）。
@@ -389,9 +389,9 @@ export default function CollectionsPage() {
     setConfirmOpen(true);
   }, []);
 
-  /** 收藏频道 → 历史页同款 RecordCard 数据（2026-10-10 用户拍板 B：卡片+网格全对齐）。
-   *  台标候选链 / 直链代理跳转与 History.buildIptvNav 同口径；时间位显示最后播放时间
-   *  （无播放记录显示 —），来源位显示频道分组 —— 对齐 RecordCard 的 IPTV 信息排布。 */
+  /** 收藏频道 → 历史页同款 RecordCard 数据（卡片+网格全对齐）。
+ * 台标候选链 / 直链代理跳转与 History.buildIptvNav 同口径；时间位显示最后播放时间
+ * （无播放记录显示 —），来源位显示频道分组 —— 对齐 RecordCard 的 IPTV 信息排布。 */
   const buildChannelCardItem = useCallback((ch: (typeof iptvChannels)[number]): RecordCardItem => {
     const candidates = resolveChannelLogoCandidates(ch);
     const playUrl = buildChannelPlayUrl(ch, proxyUrl, proxyPattern);
@@ -441,8 +441,8 @@ export default function CollectionsPage() {
         <Icon icon={SlidersHorizontal} size="sm" />
         <span className="action-btn__label">更多筛选</span>
       </button>
-      {/* 2026-11-08：空列表时清空/批量管理置灰不可点（无数据可操作）；
-          批量管理在批量模式下保持可点（「退出管理」出口不能锁死） */}
+      {/* 空列表时清空/批量管理置灰不可点（无数据可操作）；
+ 批量管理在批量模式下保持可点（「退出管理」出口不能锁死） */}
       <button type="button" className="action-btn action-btn--clear" disabled={allIds.length === 0} onClick={handleClearAll}>
         <Icon icon={Trash2} size="sm" />
         <span className="action-btn__label">清空收藏</span>
@@ -501,17 +501,17 @@ export default function CollectionsPage() {
         />
       )}
       {/* key=mainTab：仅「综合↔视频↔IPTV」切换时整体重挂载，触发卡片 stagger 出场动画重放；
-         搜索/筛选/排序不重挂载、不误触发动画。综合 tab 下两分区各用原生网格，动画各自保留。 */}
+ 搜索/筛选/排序不重挂载、不误触发动画。综合 tab 下两分区各用原生网格，动画各自保留。 */}
       {userLoading ? (
         // 收藏页专属骨架：结构对齐真实「分区头 + 网格」（不再用全站统一 AppLoading）。
         // 分区数与真实内容同判定：影视区 = mainTab !== 'iptv'，直播区 = showChannels
-        // （2026-09-18：此前骨架恒渲染 2 个分区，切到「视频」tab 时交接会凭空少一块）
+        // （此前骨架恒渲染 2 个分区，切到「视频」tab 时交接会凭空少一块）
         <CollectionsSkeleton
           showVideo={mainTab !== 'iptv'}
           showChannels={showChannels}
         />
       ) : loadError && allIds.length === 0 ? (
-        // 读库失败且无可展示数据（2026-09-16）：必须与「真的没有收藏」区分开，
+        // 读库失败且无可展示数据：必须与「真的没有收藏」区分开，
         // 否则用户会以为收藏丢了，而且没有任何重试入口。
         // 有数据时读失败不切错误态（保留旧数据），失败反馈由下拉刷新 toast 承担。
         <Empty
@@ -581,7 +581,7 @@ export default function CollectionsPage() {
 
       {allIds.length > 0 && <div ref={sentinelRef} aria-hidden="true" />}
 
-      {/* 2026-11-08：无数据时不渲染——批量栏 sticky 追加在空态之后，会把页面撑出滚动条 */}
+      {/* 无数据时不渲染——批量栏 sticky 追加在空态之后，会把页面撑出滚动条 */}
       {allIds.length > 0 && (batchMode || batchIsExiting) && (
         <div className={`batch-action-bar${batchIsExiting ? ' batch-action-bar--exiting' : ''}`}>
           <div className="batch-action-bar__inner">

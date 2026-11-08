@@ -2,8 +2,8 @@
  * 筛选页视频网格
  *
  * 支持两种数据源：
- *  - TMDBVideoItem[]（智能检索）
- *  - CMSResultItem[]（直链搜索，带 cmsSourceName）
+ * - TMDBVideoItem[]（智能检索）
+ * - CMSResultItem[]（直链搜索，带 cmsSourceName）
  *
  * 网格使用 CSS Grid + auto-fill，自适应 2 → 7 列。
  */

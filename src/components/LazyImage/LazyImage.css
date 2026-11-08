@@ -26,15 +26,15 @@
   background: transparent;
 }
 
-/* 加载占位 = 骨架 shimmer（2026-08-19）：
-   卡片封面加载不再显示转圈（原 .image-spinner），统一为项目级骨架占位图。
-   背景与卡片网格级骨架（SkeletonCard / 行级 SkeletonCards / 缩略图骨架）共用
-   --color-placeholder-shimmer-* 渐变 + shimmer 扫光动画，视觉同源不漂移。
-   2026-11-08（用户拍板）：与 .thumbnail-skeleton-bg（index.css）同构，加
-   25% 黑垫底 + overlay 压暗层 —— 纯渐变对 #fff 页底过近，压暗后与 hero
-   侧卡骨架同档；暗档对照实验实测略加深仍清晰可辨。
-   黑垫底层同时兼任 solid 底色兜底（原 background-color 职责由 rgba 层
-   承担，shorthand 两层写法下不再单声明 background-color）。 */
+/* 加载占位 = 骨架 shimmer：
+ 卡片封面加载不再显示转圈（原 .image-spinner），统一为项目级骨架占位图。
+ 背景与卡片网格级骨架（SkeletonCard / 行级 SkeletonCards / 缩略图骨架）共用
+ --color-placeholder-shimmer-* 渐变 + shimmer 扫光动画，视觉同源不漂移。
+与 .thumbnail-skeleton-bg（index.css）同构，加
+ 25% 黑垫底 + overlay 压暗层 —— 纯渐变对 #fff 页底过近，压暗后与 hero
+ 侧卡骨架同档；暗档对照实验实测略加深仍清晰可辨。
+ 黑垫底层同时兼任 solid 底色兜底（原 background-color 职责由 rgba 层
+ 承担，shorthand 两层写法下不再单声明 background-color）。 */
 .lazy-image-skeleton {
   position: absolute;
   inset: 0;
@@ -66,10 +66,10 @@
 }
 
 /* 揭示态（挂载后下一帧）：图片从 opacity:0 淡入；
-   命中缓存仅淡入（无 blur/scale 抖动），未命中走 blur-up。
-   排除交叉淡入层（base/pending）：两层的 opacity 由各自规则独立控制，
-   否则 loaded.revealed 的 opacity:1 会以更高特异性（0,4,0/0,5,0）压过
-   --pending 的 opacity:0（0,1,0），使新图首帧即全不透明、淡入形同虚设。 */
+ 命中缓存仅淡入（无 blur/scale 抖动），未命中走 blur-up。
+ 排除交叉淡入层（base/pending）：两层的 opacity 由各自规则独立控制，
+ 否则 loaded.revealed 的 opacity:1 会以更高特异性（0,4,0/0,5,0）压过
+ --pending 的 opacity:0（0,1,0），使新图首帧即全不透明、淡入形同虚设。 */
 .lazy-image-container.loaded.revealed .lazy-image:not(.lazy-image--base):not(.lazy-image--pending) {
   opacity: 1;
   filter: blur(0);
@@ -87,9 +87,9 @@
 }
 
 /* 交叉淡入层（crossfadeOnChange）：旧图作底(base)、新图淡入覆盖(pending)，
-   与 HeroBanner stale crossfade 同源，保证卡片封面切换平滑（不硬切）。
-   base 恒为最终态（opacity:1，无 blur/scale）；pending 由 opacity 0→1 过渡，
-   加载完成加 .is-loaded 后显现，过渡结束由 JS 提交为新底图。 */
+ 与 HeroBanner stale crossfade 同源，保证卡片封面切换平滑（不硬切）。
+ base 恒为最终态（opacity:1，无 blur/scale）；pending 由 opacity 0→1 过渡，
+ 加载完成加 .is-loaded 后显现，过渡结束由 JS 提交为新底图。 */
 .lazy-image--base {
   z-index: 1;
   opacity: 1;
@@ -108,7 +108,7 @@
 }
 
 /* loaded 时 placeholder 同步消失（transition: none），与图片 fade-in 同时发生，
-   避免 shimmer 先淡出、图片仍在 blur-up 中（opacity 0）的时间窗口露白。 */
+ 避免 shimmer 先淡出、图片仍在 blur-up 中（opacity 0）的时间窗口露白。 */
 .lazy-image-container.loaded .lazy-image-placeholder {
   opacity: 0;
   transition: none;
@@ -125,10 +125,10 @@
 }
 
 /* 品牌兜底（lucide 图标 + kinoTV 品牌字，视频 MonitorPlay / IPTV Tv）：
-   纯 CSS 渲染，不再使用手绘 SVG 文件。
-   背景 = 主题自适应中性灰渐变（亮/暗各一套 shimmer 色），无蓝相；
-   图标 + 品牌字用 --color-text-tertiary，与全站文字层级一致，
-   flex 纵向居中 + 图标随 --icon-* token 自适应（TV 端自动放大）。 */
+ 纯 CSS 渲染，不再使用手绘 SVG 文件。
+ 背景 = 主题自适应中性灰渐变（亮/暗各一套 shimmer 色），无蓝相；
+ 图标 + 品牌字用 --color-text-tertiary，与全站文字层级一致，
+ flex 纵向居中 + 图标随 --icon-* token 自适应（TV 端自动放大）。 */
 .lazy-image-fallback--brand {
   inset: 0;
   display: flex;
@@ -141,9 +141,9 @@
     var(--color-placeholder-shimmer-a),
     var(--color-placeholder-shimmer-b)
   );
-  /* 2026-09-28 三态区分：失败 = 静止 + 1px 内描边；加载中 = 无边界 + 水平扫光动画。
-     2026-10-11 描边改用 --color-placeholder-border（浅 #dde2ea / 暗 #363636，
-     暗档观感与旧 var(--color-border) 一致；浅色与新占位底同族微冷相）。 */
+  /* 三态区分：失败 = 静止 + 1px 内描边；加载中 = 无边界 + 水平扫光动画。
+ 描边改用 --color-placeholder-border（浅 #dde2ea / 暗 #363636，
+ 暗档观感与旧 var(--color-border) 一致；浅色与新占位底同族微冷相）。 */
   box-shadow: inset 0 0 0 1px var(--color-placeholder-border);
   opacity: 1;
   filter: none;
@@ -197,7 +197,7 @@
                 transform var(--dur-fast) var(--ease-out-expo);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .lazy-image-container {
     min-height: 0;

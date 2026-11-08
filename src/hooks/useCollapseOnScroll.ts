@@ -2,7 +2,7 @@
  * useCollapseOnScroll — 滚动折叠状态
  *
  * 监听指定滚动容器的 scrollTop，超过阈值返回 collapsed=true。
- * 用于移动端 M6 方案：页顶完整态 → 向下滚动收缩成吸顶精简栏。
+ * 用于移动端 M6 页顶完整态 → 向下滚动收缩成吸顶精简栏。
  *
  * - 使用 requestAnimationFrame 节流，避免 scroll 高频触发 setState
  * - 带滞后区间（hysteresis）防止在阈值附近抖动反复切换

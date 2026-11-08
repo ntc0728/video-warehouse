@@ -1,10 +1,10 @@
 /** HeroBili 右栏卡片列数。 */
 export type HeroSideCols = 2;
-/** HeroBili 右栏卡片行数（2026-11-04：全档 3 行）。 */
+/** HeroBili 右栏卡片行数（全档 3 行）。 */
 export type HeroSideRows = 3;
 
 /**
- * HeroBili 右栏行数 —— 与列数同源、全档恒定（2026-11-04 用户定稿）。
+ * HeroBili 右栏行数 —— 与列数同源、全档恒定。
  *
  * 左右视觉 6:4 + banner/单卡双 16:9 + 下沿齐平 ⇒ 行列满足 `R = 1.5 × C`，
  * 最小整数解为 C=2 / R=3（6 张）。比例与视口宽度无关，故 ≥1024 全档统一，
@@ -17,7 +17,7 @@ export function useHeroSideRows(): HeroSideRows {
 }
 
 /**
- * HeroBili 右栏横版卡列数（2026-11-04 用户定稿）。
+ * HeroBili 右栏横版卡列数。
  *
  * 旧分档（<2560 = 2×2 / ≥2560 = 3×3）已废：3×3 会把 banner 拉成 2.03:1，
  * 与「banner 尽量保持 16:9」冲突。现 ≥1024 全档 2 列 × 3 行 = 6 张，

@@ -2,8 +2,8 @@
  * Select — 通用下拉选择器（单选 / 多选）
  *
  * 基于 @radix-ui/react-dropdown-menu 封装：
- *   - 单选：RadioItem（选中即收起）
- *   - 多选：CheckboxItem（选中保持展开，可连续勾选）
+ * - 单选：RadioItem（选中即收起）
+ * - 多选：CheckboxItem（选中保持展开，可连续勾选）
  * 自带 Portal + 视口翻转 + 碰撞检测，无需手写定位逻辑。
  * 样式使用 Tailwind arbitrary value + 项目 CSS 变量，组件自包含、可复用。
  */
@@ -46,11 +46,11 @@ const triggerBase =
   'group inline-flex items-center gap-1 min-h-[var(--comp-tab-height)] min-w-[var(--layout-select-w)] px-[var(--space-md)] py-1 border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] text-[var(--color-text)] text-sm whitespace-nowrap cursor-pointer outline-none transition-colors hover:bg-[var(--color-surface-hover)] data-[state=open]:border-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed source-multi-trigger';
 
 /* 层级体系（见 variables.css --z-*）：
-   固定导航 sticky header 55 / sidebar-overlay 90 / sidebar 100
-   局部浮层 --z-popover (200)  ← 本下拉归此档：高于固定导航（不再被侧边栏遮挡），
-                                  低于 Modal(1000/1001)（弹窗打开时浮层被正常压住，不冲突）
-   —— 下拉经 Radix Portal 挂 body，z-index 必须高于固定层才会显示，但绝不可抬到与弹窗同档。
-   注意：portal-dropdown / source-multi-* 是 E2E 选择器钩子（collections.spec.ts / settings.spec.ts），勿删。 */
+ 固定导航 sticky header 55 / sidebar-overlay 90 / sidebar 100
+ 局部浮层 --z-popover (200) ← 本下拉归此档：高于固定导航（不再被侧边栏遮挡），
+ 低于 Modal(1000/1001)（弹窗打开时浮层被正常压住，不冲突）
+ —— 下拉经 Radix Portal 挂 body，z-index 必须高于固定层才会显示，但绝不可抬到与弹窗同档。
+ 注意：portal-dropdown / source-multi-* 是 E2E 选择器钩子（collections.spec.ts / settings.spec.ts），勿删。 */
 const contentBase =
    'z-[var(--z-popover)] mt-1 p-1 min-w-[var(--layout-select-w)] max-h-[var(--layout-dropdown-max-h)] overflow-y-auto bg-[var(--color-surface)] portal-dropdown select-dropdown-content';
 

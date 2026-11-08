@@ -53,7 +53,7 @@ interface UseCMSSourceManagerOptions {
   routePlayUrl?: string;
   /** 详情页「全部」弹窗直达：目标季号（优先对齐初始季，避免首播季号竞态） */
   routeSeasonNumber?: number;
-  /** 详情页「全部」弹窗直达：目标集号（URL 精确匹配落空时按（季,集号）兜底，2026-10-11） */
+  /** 详情页「全部」弹窗直达：目标集号（URL 精确匹配落空时按（季,集号）兜底） */
   routeEpisodeNumber?: number;
 }
 
@@ -89,7 +89,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
   const seasonMapsRef = useRef<Map<number, Map<number, Video>>>(new Map());
   const cmsSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchInitiatedRef = useRef(false);
-  // 聚合探测进行中标记（2026-10-11 用户定稿）：播放器能否正常播放的判定（源死亡
+  // 聚合探测进行中标记：播放器能否正常播放的判定（源死亡
   // failover / 空态）必须等**所有 CMS 源响应结束**后再做——用首批不完整结果过早
   // 标记/跳过会误报「播放失败/无数据」。消费方：Player index 的 handlePlayerError
   // 挂起 + probeSettledSeq 重放。
@@ -101,11 +101,11 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
   // ── fetchCMSSources ──────────────────────────────
   /**
-   * @param targetSourceIndex 目标源下标
-   * @param manualSwitch 缺省 true = 用户在面板手动切源（先清屏 + cmsSwitching 遮罩）；
-   *   初始进入传 false（即使携带 routeSourceIndex 指定源）——只有手动切换才走清屏语义，
-   *   初始进入走「聚合探测 → 面板过滤 → 选择」主链（2026-10-11 用户定稿）。
-   */
+ * @param targetSourceIndex 目标源下标
+ * @param manualSwitch 缺省 true = 用户在面板手动切源（先清屏 + cmsSwitching 遮罩）；
+ * 初始进入传 false（即使携带 routeSourceIndex 指定源）——只有手动切换才走清屏语义，
+ * 初始进入走「聚合探测 → 面板过滤 → 选择」主链。
+ */
   const fetchCMSSources = useCallback(async (targetSourceIndex?: number, manualSwitch = true) => {
     if (!id) return;
     cmsAbortRef.current?.abort();
@@ -173,7 +173,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     }
 
     // 1) 路由传入的 sourceIndex 最优先：用户在详情页点了具体源的「立即播放」，
-    //    必须播放用户点的那个源，绝不能被历史记录的源覆盖。
+    // 必须播放用户点的那个源，绝不能被历史记录的源覆盖。
     if (sourceIdx === undefined && routeSourceIndex !== undefined) {
       sourceIdx = routeSourceIndex;
     }
@@ -212,7 +212,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
     // 选集恢复：弹窗直达的 routePlayUrl 精确匹配 > route 集号兜底 > 历史集号 > 默认第一集。
     // routePlayUrl 优先保证「全部」弹窗点的集在首帧就位，杜绝先播其它集导致的
-    // 首播季号/集号竞态写入；集号兜底（2026-10-11）应对 CMS 轮转导致 url 对不上。
+    // 首播季号/集号竞态写入；集号兜底应对 CMS 轮转导致 url 对不上。
     const pickInitialEpisode = (eps?: Episode[]): Episode | undefined => {
       if (!eps?.length) return undefined;
       const sorted = [...eps].sort((a, b) => a.number - b.number);
@@ -232,7 +232,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     };
 
     // 线路恢复：弹窗直达的 routePlayUrl 精确命中 > 历史 episodeUrl 命中 > 保持默认首线。
-    // 2026-10-11：旧版只认历史 url，弹窗点「线路」时首帧总落在 sources[0]（用户报
+    //旧版只认历史 url，弹窗点「线路」时首帧总落在 sources[0]（
     // 「有概率播第一个线路」的直接来源），routePlayUrl 提到最前。
     const restoreLineIfNeeded = (ep: Episode | undefined) => {
       if (!ep?.sources.length) return;
@@ -274,7 +274,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     }
 
     // ── 进入播放页即聚合全部启用源：面板只显示「CMS 接口有返回当前视频数据」的源 ──
-    // （2026-10-11 用户定稿，替代同日「单源+后台探测+继续观看豁免」过渡版）：
+    // （替代原「单源+后台探测+继续观看豁免」过渡版）：
     // 本面板职责 = 纯数据源展示，**无条件适用于所有进入方式**（含继续观看）；
     // 选中/季集线路回显等逻辑一律排在本聚合之后执行。
     // 竞速窗口策略：首个命中即上屏并开 1.5s 收尾窗吸收在飞结果，迟到的命中后续
@@ -298,12 +298,12 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       const firstHit = new Promise<void>(r => { firstHitResolve = r; });
       const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
       /**
-       * 单源探测（2026-10-11 稳定性修复，用户报「同一数据时有时无」）：
-       *  ① 错峰发起（每源 +120ms）——全部启用源同打一个 CORS 代理域，瞬发并发易触发
-       *    限流/连接排队，失败被静默当作「无数据」→ 面板缺源；
-       *  ② 非「业务未找到」的失败（网络/超时/限流/异常）重试一次（800ms 后），
-       *    业务确认无数据的源不白白发第二枪（api-abuse 约束）。
-       */
+ * 单源探测（稳定性修复，「同一数据时有时无」）：
+ * ① 错峰发起（每源 +120ms）——全部启用源同打一个 CORS 代理域，瞬发并发易触发
+ * 限流/连接排队，失败被静默当作「无数据」→ 面板缺源；
+ * ② 非「业务未找到」的失败（网络/超时/限流/异常）重试一次（800ms 后），
+ * 业务确认无数据的源不白白发第二枪（api-abuse 约束）。
+ */
       const probeOne = async (idx: number, slot: number) => {
         await sleep(slot * 120);
         for (let attempt = 0; attempt < 2; attempt++) {
@@ -371,8 +371,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       if (selected === undefined) {
         // 全部启用源都无当前视频数据：空态（面板「无数据源」文案，cmsLoading 已落）。
         // ⚠️ cmsResults 必须写入每池源的落定记录（video:null）而非清空：Player 空态
-        //   门控（index.tsx :949-950）把「tmdb id + cmsResults 空 + 无季数据」当作
-        //   「仍在聚合」→ 置空会永不落空态（PLAYER-095 回归拖住 loading）。
+        // 门控（index.tsx :949-950）把「tmdb id + cmsResults 空 + 无季数据」当作
+        // 「仍在聚合」→ 置空会永不落空态（PLAYER-095 回归拖住 loading）。
         finishLoading();
         setVideo(null);
         setSources([]);
@@ -390,7 +390,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         return;
       }
       if (histIdx !== undefined && !hits.has(histIdx) && !skipHistory) {
-        // 提示不再走全局 toast（用户报「未居中/与续播卡叠加」）——写入播放器内续播卡顶部行：
+        // 提示不再走全局 toast（未居中/与续播卡叠加）——写入播放器内续播卡顶部行：
         // 先显示换源提示、续播完成后其下才出现「已从上次位置继续播放」，同源同卡不叠加。
         usePlayerStore.getState().setSourceNotice(`上次使用的源「${allSrc[histIdx]?.name ?? '未知'}」已无本片数据，已改用「${allSrc[selected]?.name ?? '其它源'}」并按最近进度续播`);
       }
@@ -402,13 +402,13 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
     // ── 快速恢复路径：有 vodId 时直接调 CMS 详情接口 ──────────
     /**
-     * 快速恢复路径：有 vodId 时直接调 CMS 详情接口
-     * 场景：用户从历史记录恢复播放，已有 vodId，可直接获取视频详情。
-     * 注意：routeSourceIndex 指定了具体源时不可走此路径——历史 vodId 属于
-     * 历史记录的那个源，跨源 vodId 不通用，会在用户点的源上拉错视频。
-     */
-    // ⚠️ sourceIdx === histIdx 守卫（2026-10-11）：聚合选择可能已改选非历史源（历史源无数据），
-    //   vod_id 跨源不通用，绝不能拿历史 vodId 去快取其它源。
+ * 快速恢复路径：有 vodId 时直接调 CMS 详情接口
+ * 场景：用户从历史记录恢复播放，已有 vodId，可直接获取视频详情。
+ * 注意：routeSourceIndex 指定了具体源时不可走此路径——历史 vodId 属于
+ * 历史记录的那个源，跨源 vodId 不通用，会在用户点的源上拉错视频。
+ */
+    // ⚠️ sourceIdx === histIdx 守卫：聚合选择可能已改选非历史源（历史源无数据），
+    // vod_id 跨源不通用，绝不能拿历史 vodId 去快取其它源。
     if (!isSwitching && routeSourceIndex === undefined && sourceIdx === histIdx && histRecord?.vodId) {
       try {
         const svc = await import('@/services/videoService');
@@ -417,7 +417,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         if (!isLatest()) return;
 
         if (detailVideo && (detailVideo.sources.length > 0 || (detailVideo.episodes?.length ?? 0) > 0)) {
-          // 2026-10-11：detail 命中但无任何可播线/集视同未命中（继续走下方按标题重搜 +
+          //detail 命中但无任何可播线/集视同未命中（继续走下方按标题重搜 +
           // 跨源兜底），避免「有壳无料」停在暂无数据。
           // 设置 CMS 源信息
           cmsSourceIdRef.current = allSrc[sourceIdx]?.id;
@@ -455,7 +455,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           }
           if (detailVideo.sources.length > 0) {
             setSources(detailVideo.sources);
-            // 2026-10-11：线路首帧选择 routePlayUrl > 历史 url > 首线（旧版忽略弹窗指定线路）
+            //线路首帧选择 routePlayUrl > 历史 url > 首线（旧版忽略弹窗指定线路）
             const firstSrc = (routePlayUrl && detailVideo.sources.find(s => s.url === routePlayUrl))
               || (histRecord?.episodeUrl && detailVideo.sources.find(s => s.url === histRecord!.episodeUrl))
               || detailVideo.sources[0];
@@ -470,9 +470,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     }
 
     /**
-     * TV 剧集按季搜索
-     * 场景：TMDB 剧集类型，需要按季分组搜索 CMS 源
-     */
+ * TV 剧集按季搜索
+ * 场景：TMDB 剧集类型，需要按季分组搜索 CMS 源
+ */
     if (id.startsWith('tmdb-') && tmdbMediaType === 'tv') {
       try {
         /** 当前源的季映射（缓存，避免重复搜索） */
@@ -481,7 +481,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         if (!seasonMap) {
           /** 按季搜索 CMS 源（传递 signal 支持取消） */
           let seasonResult = await searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
-          // 2026-10-11「继续观看→cms 源无数据」跨源兜底：历史/指定源按标题找不到该剧
+          // 「继续观看→cms 源无数据」跨源兜底：历史/指定源按标题找不到该剧
           // （资源轮转/下架）时不再停死在空态——顺延其它源最多 4 次，首个命中即采用。
           if (seasonResult.seasons.size === 0 && !isSwitching) {
             for (let i = 0, tried = 0; i < allSrc.length && tried < 4; i++) {
@@ -576,20 +576,20 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     }
 
     /**
-     * 电影 / 单季剧集
-     * 场景：非 TV 类型或单季剧集，直接搜索或获取详情
-     */
+ * 电影 / 单季剧集
+ * 场景：非 TV 类型或单季剧集，直接搜索或获取详情
+ */
     try {
       let result: VideoDetailResult;
       if (!id?.startsWith('tmdb-')) {
         // ── CMS 源视频（id 即某源的 vod_id）──────────────────────────
         // ⚠️ vod_id 是**源内主键，跨源不通用**（见本文件 :249-255 注释）。切源时若仍拿
         // 旧源的 vod_id 去请求新源详情，新源要么返回空、要么返回**同 id 的另一部片子**
-        // → 播放器播错片 / 黑屏（2026-09-16 评审 P0-4）。
+        // → 播放器播错片 / 黑屏。
         // 放行条件（任一成立即可）：
-        //   ① 非「显式指定源」（isSwitching=false）——首次进入，id 天然来自本次导航的目标源；
-        //   ② 本会话缓存证明该 id 就在目标源取过详情（Collections/History 二次进入最常见）；
-        //   ③ 历史记录证明该 vod_id 属于目标源（含「切回原源」= 合法快路径）。
+        // ① 非「显式指定源」（isSwitching=false）——首次进入，id 天然来自本次导航的目标源；
+        // ② 本会话缓存证明该 id 就在目标源取过详情（Collections/History 二次进入最常见）；
+        // ③ 历史记录证明该 vod_id 属于目标源（含「切回原源」= 合法快路径）。
         // 反例（必须走标题重搜）：跨源切换时 id 属于旧源；用户从详情页「立即播放」传的
         // sourceIndex 是**匹配结果所属源**，未必等于 id 的来源。
         const cachedEntry = id ? videoCache.get(id) : undefined;
@@ -619,7 +619,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         result = probeHits?.get(sourceIdx) ?? await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
       }
 
-      // 2026-10-11 电影跨源兜底（同 TV 分支）：指定/历史源搜不到本片时顺延其它源最多 4 次，
+      // 电影跨源兜底（同 TV 分支）：指定/历史源搜不到本片时顺延其它源最多 4 次，
       // 首个命中即采用并同步面板选中源，杜绝「继续观看→cms 源无数据」死端。
       if (!result.video && !isSwitching && videoTitle) {
         for (let i = 0, tried = 0; i < allSrc.length && tried < 4; i++) {
@@ -671,7 +671,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
           if (result.video.sources.length > 0) {
             setSources(result.video.sources);
-            // 2026-10-11：同上，routePlayUrl > 历史 url > 首线
+            //同上，routePlayUrl > 历史 url > 首线
             const firstSrc = (routePlayUrl && result.video.sources.find(s => s.url === routePlayUrl))
               || (histRecord?.episodeUrl && result.video.sources.find(s => s.url === histRecord!.episodeUrl))
               || result.video.sources[0];
@@ -748,7 +748,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           ? findEpisodeByNumber(cachedVideo.episodes, currentEpNumber)
           : undefined;
         // 当前集号在新源该季不存在时回退首集；无论是否命中集号都写 video——
-        // 切源语义下禁止保留上一个源的数据（「失败不回退」）
+        // 切源语义下禁止保留上一个源的数据（失败不回退）
         const targetEp = matchedEp?.sources.length
           ? matchedEp
           : [...cachedVideo.episodes].sort((a, b) => a.number - b.number)[0];
@@ -813,7 +813,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           currentSourceNameRef.current = undefined;
         }
       } catch {
-        // 重建失败：切源语义下不回退上一个源的数据（用户定稿 2026-09-09），
+        // 重建失败：切源语义下不回退上一个源的数据，
         // 清空播放状态落到「暂无数据」空态，由用户改选其他源。
         if (isLatest()) {
           setVideo(null);
@@ -968,7 +968,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       mod.getVideoSources().then(sources => {
         setSourceNameMap(new Map(sources.map(s => [s.id, s.name])));
         if (id?.startsWith('tmdb-')) {
-          // 2026-10-11 用户定稿：TMDB id 的面板（selectedSourceIds）**完全交给** fetchCMSSources
+          //TMDB id 的面板（selectedSourceIds）**完全交给** fetchCMSSources
           // 聚合主链——只展示「接口有返回当前视频数据」的源，探测期间由 loading 文案占位。
           // 本 effect 绝不能再铺设置页勾选源（旧行为会覆盖聚合过滤结果，且带 lazy-fetch 错觉）。
         } else if (routeSourceIndex !== undefined && sources[routeSourceIndex]) {
@@ -992,7 +992,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     if (cmsResults.length === 0 && !fetchInitiatedRef.current) {
       fetchInitiatedRef.current = true;
       // 初始进入（含详情「立即播放」指定源）：manualSwitch=false 走聚合主链，
-      // 不走手动切源的清屏分支（2026-10-11 用户定稿）
+      // 不走手动切源的清屏分支
       fetchCMSSources(routeSourceIndex, false);
     }
   }, [id, tmdbDetail, cmsLoading, cmsResults.length, fetchCMSSources, routeSourceIndex]);

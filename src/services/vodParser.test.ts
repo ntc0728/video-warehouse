@@ -159,7 +159,7 @@ describe('detectSourceType', () => {
   });
 
   it('无转码能力的封装 → 仍归 mp4（交由浏览器尝试解码）', () => {
-    // flv/ts/m2ts 自 2026-09 起识别为 flv（mpegts.js 播放，见 docs/player-iptv-frontend-refactor.md 整改2），
+    // flv/ts/m2ts 自 2026-09 起识别为 flv（mpegts.js 播放），
     // 不再归入 mp4
     for (const ext of ['mkv', 'avi', 'wmv', 'rmvb', 'rm', '3gp', 'asf', 'f4v']) {
       expect(detectSourceType(`http://a.com/v.${ext}`)).toBe('mp4');
@@ -268,7 +268,7 @@ describe('parsePlaySources', () => {
     });
 
     it('中间集 URL 无效被过滤后，集号仍按标题解析不前移', () => {
-      // 2026-11-08 回归：此前 number=过滤后插入序号，第03集会错标成 2
+      // 回归：此前 number=过滤后插入序号，第03集会错标成 2
       const result = parsePlaySources(
         '第01集$http://a.com/v1.m3u8#第02集$http://example.com/noext#第03集$http://a.com/v3.m3u8'
       );

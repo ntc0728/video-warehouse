@@ -7,16 +7,16 @@
  * 3. 未找到 → 异步调用 TMDB 详情 API 获取，成功后回写
  * 4. 去重 + 防重复请求，批量限制并发数
  *
- * [2026-08-13] 批量提交：原先每条成功都调一次 useUserStore.setState（全量 map history
+ * 批量提交：原先每条成功都调一次 useUserStore.setState（全量 map history
  * + 写 IndexedDB），20 条陆续返回 = 最多 20 次连锁重渲染（历史页所有卡片重渲染）→
  * 进入历史页明显卡顿。改为收集 pending，全部完成后一次性 setState + 批量写库。
  *
- * [2026-09-16] 消除 N+1 与重复重试（评审 P1「History 背景图 N+1」）：
+ * 消除 N+1 与重复重试：
  * 1. **按 videoId 去重后再取前 20 个名额**——同一影片会有多条记录（多集/多线路），
- *    原实现未去重，一部 10 集的剧能吃掉 10 个名额，实际只补到几部片子。
+ * 原实现未去重，一部 10 集的剧能吃掉 10 个名额，实际只补到几部片子。
  * 2. **新增跨挂载结果缓存**（`backdropCache`，含「查过但没有」的负结果）——
- *    原 `processedRef` 是 per-mount 的，每次回到历史页都会对同一批影片重发请求；
- *    负结果还会因 `processedRef.delete` 被无限重试。缓存后同一次会话内零重复请求。
+ * 原 `processedRef` 是 per-mount 的，每次回到历史页都会对同一批影片重发请求；
+ * 负结果还会因 `processedRef.delete` 被无限重试。缓存后同一次会话内零重复请求。
  */
 import { useEffect, useRef, useCallback } from 'react';
 import { useUserStore } from '@/stores';
@@ -27,10 +27,10 @@ import type { HistoryRecord } from '@/types/store';
 /**
  * backdrop 查询结果缓存：`videoId → url | null`。
  * - `url` 为 null 表示「已查过、TMDB 确实没有 backdrop」——负结果同样要缓存，
- *   否则每次进入历史页都会对这批无图影片重发一轮请求（原实现的真实行为）。
+ * 否则每次进入历史页都会对这批无图影片重发一轮请求（原实现的真实行为）。
  * - TTL 6h：TMDB 的图不会频繁变，但保留过期重查的口子。
  * - 与 `processedRef` 的分工：processedRef 管「本次挂载内不重复排队」，
- *   本缓存管「跨挂载不重复请求」。
+ * 本缓存管「跨挂载不重复请求」。
  */
 const BACKDROP_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const backdropCache = new Map<string, { url: string | null; at: number }>();
@@ -119,7 +119,7 @@ export function useBackdropLoader(
   enabled: boolean,
 ): void {
   const processedRef = useRef(new Set<string>());
-  /** [2026-08-13] 本次补全收集到的 { videoId, backdrop }（避免逐条 setState） */
+  /** 本次补全收集到的 { videoId, backdrop }（避免逐条 setState） */
   const pendingRef = useRef<{ videoId: string; backdrop: string }[]>([]);
 
   const backfillBackdrop = useCallback(async (record: HistoryRecord) => {
@@ -168,9 +168,9 @@ export function useBackdropLoader(
     }
   }, []);
 
-  /** [2026-08-13] 批量提交：pending 全部就绪后一次性 setState + 批量写库。
-   * 同一 videoId 可能有多条记录（电影多线路 / 剧集多集），历史页展示的是
-   * updatedAt 最新的那条，补全目标必须是「最新」记录而非数组第一条。 */
+  /** 批量提交：pending 全部就绪后一次性 setState + 批量写库。
+ * 同一 videoId 可能有多条记录（电影多线路 / 剧集多集），历史页展示的是
+ * updatedAt 最新的那条，补全目标必须是「最新」记录而非数组第一条。 */
   const commitPending = useCallback(async () => {
     const pending = pendingRef.current;
     pendingRef.current = [];
@@ -218,7 +218,7 @@ export function useBackdropLoader(
     // 筛选需要补全的记录。
     // ⚠️ 必须**按 videoId 去重**后再取前 20：同一部影片会存在多条记录
     // （剧集每集一条、电影每条线路一条），不去重的话一部 10 集的剧就吃掉 10 个名额，
-    // 20 个名额可能只覆盖 2~3 部片子（2026-09-16 评审 P1）。
+    // 20 个名额可能只覆盖 2~3 部片子。
     const seenVideoIds = new Set<string>();
     const needsBackdrop = historyRecords.filter((r) => {
       if (!r.videoId.startsWith('tmdb-')) return false;

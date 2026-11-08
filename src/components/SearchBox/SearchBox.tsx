@@ -2,17 +2,17 @@
  * SearchBox — 公共搜索框组件
  *
  * 使用场景：
- *  - 顶部导航栏（StickyHeader 中央）：variant="header"，全局可见
- *  - Browse 页 Header 中间：variant="browse"，居中显示
+ * - 顶部导航栏（StickyHeader 中央）：variant="header"，全局可见
+ * - Browse 页 Header 中间：variant="browse"，居中显示
  *
  * 行为：
- *  - 受控 input，value 由内部 state 维护
- *  - URL 已带 ?q= 时（useSearchParams）自动同步 input 值
- *  - 回车 / 点击搜索按钮 → 触发 onSearch(query)
- *  - 未传 onSearch → 默认 navigate('/browse?q=...')
- *  - ESC / 点击清除按钮 → 清空 input 并 focus
- *  - 移动端 submit 按钮隐藏文字仅留图标
- *  - focus 时显示搜索历史 + 热门搜索 dropdown
+ * - 受控 input，value 由内部 state 维护
+ * - URL 已带 ?q= 时（useSearchParams）自动同步 input 值
+ * - 回车 / 点击搜索按钮 → 触发 onSearch(query)
+ * - 未传 onSearch → 默认 navigate('/browse?q=...')
+ * - ESC / 点击清除按钮 → 清空 input 并 focus
+ * - 移动端 submit 按钮隐藏文字仅留图标
+ * - focus 时显示搜索历史 + 热门搜索 dropdown
  */
 import {
   useCallback,
@@ -49,23 +49,23 @@ export interface SearchBoxProps {
   /** 是否显示热门搜索 */
   showHotSearch?: boolean;
   /**
-   * 是否允许「实时联网搜索建议」（输入时防抖调 /search/multi）。
-   * 收藏 / 历史 / 设置 / 源检测 / 代理配置等纯本地页应传 false——
-   * 这些页顶部搜索框只做页内本地筛选，输入时不该打 TMDB 网络请求。
-   * 默认 true（首页 / 浏览 / 详情等联网页）。
-   */
+ * 是否允许「实时联网搜索建议」（输入时防抖调 /search/multi）。
+ * 收藏 / 历史 / 设置 / 源检测 / 代理配置等纯本地页应传 false——
+ * 这些页顶部搜索框只做页内本地筛选，输入时不该打 TMDB 网络请求。
+ * 默认 true（首页 / 浏览 / 详情等联网页）。
+ */
   allowLiveSearch?: boolean;
   /**
-   * 搜索回调。不传则默认跳转到 /browse?q=<query>。
-   * 已 trim 空白的 query 作为参数。
-   */
+ * 搜索回调。不传则默认跳转到 /browse?q=<query>。
+ * 已 trim 空白的 query 作为参数。
+ */
   onSearch?: (query: string) => void;
   /** 输入值变化回调（含 trim 前的原始值） */
   onValueChange?: (value: string) => void;
   /**
-   * 搜索历史作用域：不同页面的顶部搜索框历史互不影响
-   * （如 'global' / 'iptv' / 'settings' / 'browse' / 'collections' / 'history'）
-   */
+ * 搜索历史作用域：不同页面的顶部搜索框历史互不影响
+ * （如 'global' / 'iptv' / 'settings' / 'browse' / 'collections' / 'history'）
+ */
   scope?: string;
 }
 
@@ -222,14 +222,14 @@ export default function SearchBox({
     if (!onSearch && q === lastSearchedRef.current) return;
     lastSearchedRef.current = q;
     // 历史项带元数据（类型/年份，来自实时建议点击）——年份只做历史展示，
-    // 不传给 Browse（2026-11-08 用户拍板）
+    // 不传给 Browse
     addHistory({ query: q, mediaType: opts?.mediaType, year: opts?.year });
     setIsDropdownOpen(false);
     if (onSearch) {
       onSearch(q);
     } else {
       // 点击实时建议进入时携带类型。⚠️ 只走 location.state、不写 URL 参数
-      // （用户拍板：进 Browse 后还要继续筛选/换词，入口不该污染路由）；
+      // （进 Browse 后还要继续筛选/换词，入口不该污染路由）；
       // Browse 侧 PUSH-only 消费（与 state.q 同一先例），经 updateFilter 标准链路应用。
       navigate('/browse', { state: { q, mediaType: opts?.mediaType } });
     }
@@ -310,7 +310,7 @@ export default function SearchBox({
 
   const handleBlur = useCallback(() => {
     blurTimerRef.current = setTimeout(() => {
-      // 2026-10-10 抙动修复：选中历史/建议项或回车搜索会先 setIsDropdownOpen(false)
+      // 抙动修复：选中历史/建议项或回车搜索会先 setIsDropdownOpen(false)
       // （dropdown 立即卸载）再手动 blur；200ms 后本回调若照旧 setDropdownIsExiting(true)，
       // 渲染条件 (showDropdown || dropdownIsExiting) 会让已收起的 dropdown 以退出动画
       // 状态重新挂载→再卸载，用户看到「收起后又快速展开收起」的抙动。

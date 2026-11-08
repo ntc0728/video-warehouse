@@ -6,7 +6,7 @@
  * fetchAndParsePlaylist(:571) 消费；二者的网络出口只有 httpClient.getText(:11,45) 一处，
  * mock 该模块即可从外部精确观测「1500ms 收尾窗口 / 8000ms 兜底 / 放弃等待 ≠ 真实失败 /
  * 多代理逐个兜底顺序」——**无需为可测性给 src 加 export**（加 export 属 src 改动，按
- * docs/agents/testing.md:199 的分级门禁会触发全量 E2E，纯测试补充不值这个代价）。
+ * 的分级门禁会触发全量 E2E，纯测试补充不值这个代价）。
  *
  * 刻意不写的用例：窗口关闭后的 late-fulfill/late-reject「不覆写」由 :525/:534 的 done 守卫实现，
  * 但它发生在上层已消费完返回数组之后 → 对外不可观测，写了也只能是恒过用例（假绿）。

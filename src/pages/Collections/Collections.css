@@ -1,15 +1,15 @@
 /* Collections — 收藏页 */
 /* 页面级 padding 已去除(让 .video-card-grid 水平边距 100% 自管),
-   改由 filter-bar / title-row / status-tabs 等子元素自管水平 padding。 */
+ 改由 filter-bar / title-row / status-tabs 等子元素自管水平 padding。 */
 
 /* 布局外壳（左侧筛选栏 + 右侧卡片区）由 RecordShell 组件提供，
-   .record-search / .category-segmented / .record-shell 等样式见 RecordShell.css。 */
+ .record-search / .category-segmented / .record-shell 等样式见 RecordShell.css。 */
 
 .collection-content {
-  /* 2026-11-08：对齐历史页 .history-content 的 flex: 1 1 0 —— 内容少时撑满剩余高度，
-     把批量操作浮动栏（sticky bottom）推到滚动区底部，而不是悬在卡片正下方。 */
+  /* 对齐历史页 .history-content 的 flex: 1 1 0 —— 内容少时撑满剩余高度，
+ 把批量操作浮动栏（sticky bottom）推到滚动区底部，而不是悬在卡片正下方。 */
   flex: 1 1 0;
-  /* 阶段 C：列表型页面接入内容区 2200 硬上限，超宽居中 */
+  /* 列表型页面接入内容区 2200 硬上限，超宽居中 */
   width: 100%;
   max-width: var(--layout-content-max-width);
   min-height: auto;
@@ -35,7 +35,7 @@
 }
 
 .collection-section-head__count {
-  /* 2026-10-09 用户要求：计数右对齐（「共 N 条 / 共 N 个频道」贴分区行右缘） */
+  /* 计数右对齐（「共 N 条 / 共 N 个频道」贴分区行右缘） */
   margin-left: auto;
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
@@ -43,8 +43,8 @@
 }
 
 /* ── 加载态：player-loading-wrap 在 Player 页为 absolute 叠加层，
-    收藏/历史页复用该类名但需要作为 flex 子项参与文档流 ────────
-    2026-09-08：RecordShell 在 {children} 外包了 .record-content 层，路径需补。 */
+ 收藏/历史页复用该类名但需要作为 flex 子项参与文档流 ────────
+RecordShell 在 {children} 外包了 .record-content 层，路径需补。 */
 .collection-page .record-main > .record-content > .player-loading-wrap {
   position: static;
   display: flex;
@@ -56,7 +56,7 @@
 }
 
 /* ── 空状态居中（整条父级链必须都支持 flex 拉伸） ───────────────────────────
-   2026-09-08：RecordShell 在 {children} 外包了 .record-content 层，路径需补。 */
+RecordShell 在 {children} 外包了 .record-content 层，路径需补。 */
 .collection-page > .empty-state-wrapper,
 .collection-page .record-main > .record-content > .empty-state-wrapper {
   display: flex;
@@ -64,33 +64,33 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* 2026-09-14 修复：原为 min-height:0，会反向覆盖全局 .empty-state-wrapper 的
-     min-height: var(--layout-loading-min-height)（≥1024 实算 480px），
-     令空状态在 rail 断点连安全垫都失去。改为显式继承同一变量。 */
+  /* 修复：原为 min-height:0，会反向覆盖全局 .empty-state-wrapper 的
+ min-height: var(--layout-loading-min-height)（≥1024 实算 480px），
+ 令空状态在 rail 断点连安全垫都失去。改为显式继承同一变量。 */
   min-height: var(--layout-loading-min-height);
 }
 
 /* Video Card Grid 和 IPTV Channel Grid 使用全局默认列数（与 Browse / IPTV 页一致） */
 
-/* 封面圆角（2026-10-09 用户要求）：对齐首页 2026-09-29 口径 —— 2026-09-28 去卡片化
-   把卡容器 radius 削掉后（VideoCard.css:98），封面在此恢复 --radius-md；
-   仅补桌面非 app/tv 档（≤767 / app 卡容器自带 radius-md + overflow 裁切，无需补）。 */
+/* 封面圆角：对齐首页 口径 —— 去卡片化
+ 把卡容器 radius 削掉后（VideoCard.css:98），封面在此恢复 --radius-md；
+ 仅补桌面非 app/tv 档（≤767 / app 卡容器自带 radius-md + overflow 裁切，无需补）。 */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .collection-page .video-card-cover {
     border-radius: var(--radius-md);
   }
 }
 
-/* ── 「直播」分区网格（2026-10-10 用户拍板 B：卡片+网格全对齐历史页）──
-   卡片已换历史页同款 RecordCard，网格列数随之从 --iptv-cols（2→3→4→5）
-   改消费 --history-cols（横版记录卡独立分档 1→2→3→4→5→6，TV 恒 5）——
-   两页频道卡尺寸曲线完全一致。特异性 (0,2,0) 压过 index.css:934 基础规则。 */
+/* ── 「直播」分区网格（卡片+网格全对齐历史页）──
+ 卡片已换历史页同款 RecordCard，网格列数随之从 --iptv-cols（2→3→4→5）
+ 改消费 --history-cols（横版记录卡独立分档 1→2→3→4→5→6，TV 恒 5）——
+ 两页频道卡尺寸曲线完全一致。特异性 (0,2,0) 压过 index.css:934 基础规则。 */
 .collection-page .iptv-channel-grid {
   grid-template-columns: repeat(var(--history-cols, 1), minmax(0, 1fr));
 }
 
 /* gap 对齐 .history-grid 的 --space-lg：需压过 index.css:1267 的
-   (0,3,1) 非tv gap 覆盖 → 用 (0,4,1) 同门控更强规则 */
+ (0,3,1) 非tv gap 覆盖 → 用 (0,4,1) 同门控更强规则 */
 html:not([data-device="app"]):not([data-device="tv"]) .collection-page .iptv-channel-grid {
   gap: var(--space-lg);
 }
@@ -109,7 +109,7 @@ html:not([data-device="app"]):not([data-device="tv"]) .collection-page .iptv-cha
     opacity: 1;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .record-card__delete {
     opacity: 1;

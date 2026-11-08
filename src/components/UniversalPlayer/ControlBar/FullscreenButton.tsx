@@ -18,7 +18,7 @@ export default function FullscreenButton({ containerRef, hasError = false }: Ful
   // CSS 伪全屏」三种来源，iOS 系统全屏与伪全屏都能驱动 isFullscreen。
   useEffect(() => subscribeFullscreen((active) => setFullscreen(active)), [setFullscreen]);
 
-  // C4/R2：与 F 键 / 双击共用 lib/fullscreen 的 toggleFullscreen
+  // C4/：与 F 键 / 双击共用 lib/fullscreen 的 toggleFullscreen
   const toggleFullscreenButton = useCallback(async () => {
     const container = containerRef.current;
     if (!container) return;

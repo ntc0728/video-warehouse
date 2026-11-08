@@ -1,15 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   美术资源皮肤系统（主题换肤）
-   - 已落地：cartoon（卡通 · 手绘）、mechanical（机械）、retro（复古）
-   - 换肤方式：覆盖设计 token（--color-* / --radius-* / --shadow-*）整体重着色，
-     叠加纹理背景 + 特色字体，作用在真实组件上，不遮挡内容、不用孤立贴纸。
-   - 应用机制：AppLayout 将 data-skin 挂到 <html>（设置页切换，支持 ?skin= 覆盖便于验收）。
-   - 纹理素材：public/art-skins/<skin>/*.png（真实可平铺纹理，非纯 CSS 绘制）。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 美术资源皮肤系统（主题换肤）
+ - 已落地：cartoon（卡通 · 手绘）、mechanical（机械）、retro（复古）
+ - 换肤方式：覆盖设计 token（--color-* / --radius-* / --shadow-*）整体重着色，
+ 叠加纹理背景 + 特色字体，作用在真实组件上，不遮挡内容、不用孤立贴纸。
+ - 应用机制：AppLayout 将 data-skin 挂到 <html>（设置页切换，支持 ?skin= 覆盖便于验收）。
+ - 纹理素材：public/art-skins/<skin>/*.png（真实可平铺纹理，非纯 CSS 绘制）。
+ ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── 皮肤字体：自托管（public/fonts/，来源 fontsource npm 包，latin 子集）。
-   原 Google fonts.gstatic.com 在国内网络不可达 → 字体下载失败 → 皮肤只换色不换字。
-   font-display: swap + 条件选择器按需加载（仅对应皮肤激活时声明 font-family）。 */
+ 原 Google fonts.gstatic.com 在国内网络不可达 → 字体下载失败 → 皮肤只换色不换字。
+ font-display: swap + 条件选择器按需加载（仅对应皮肤激活时声明 font-family）。 */
 @font-face {
   font-family: 'Fredoka';
   font-weight: 400;
@@ -77,23 +77,23 @@
 /* 字体加载优化：仅在对应皮肤激活时声明 font-family，浏览器会在匹配时才下载 */
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   卡通 · 手绘（cartoon）
-   暖色纸纹 + 珊瑚红/松石绿 + 大圆角 + 柔和暖色阴影 + 圆体字。无黑色描边。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 卡通 · 手绘（cartoon）
+ 暖色纸纹 + 珊瑚红/松石绿 + 大圆角 + 柔和暖色阴影 + 圆体字。无黑色描边。
+ ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── token 覆盖 ── */
 html[data-skin="cartoon"] {
   --color-primary: #ff6b6b;
   --color-primary-hover: #ff5252;
-  /* 2026-11-04：反色字必须随 skin primary 一起定义（原缺省 #fff 在珊瑚红上仅 2.78:1）。
-     取页面最深字色 #2d2a32，对 #ff6b6b = 4.7:1（≥4.5 正文门槛）。 */
+  /* 反色字必须随 skin primary 一起定义（原缺省 #fff 在珊瑚红上仅 2.78:1）。
+ 取页面最深字色 #2d2a32，对 #ff6b6b = 4.7:1（≥4.5 正文门槛）。 */
   --color-text-inverse: #2d2a32;
   --color-background: #fbe7ce;
   --color-surface: #fffdfa;
   --color-surface-hover: rgba(255, 107, 107, 0.08);
   --color-text: #2d2a32;
   --color-text-secondary: #6a6570;
-  /* 2026-09-15 提档：#9a94a0（surface 2.91:1）→ #6c6672（5.47:1 / 页面底 4.61:1） */
+  /* 提档：#9a94a0（surface 2.91:1）→ #6c6672（5.47:1 / 页面底 4.61:1） */
   --color-text-tertiary: #6c6672;
   --color-text-disabled: #bfbfbf;
   --color-border: #ecd9bf;
@@ -166,22 +166,22 @@ html[data-skin="cartoon"] .skin-decorations {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   机械（mechanical）
-   深色金属 + 青光描边 + 等宽科技字（Orbitron），碳纤/拉丝纹理。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 机械（mechanical）
+ 深色金属 + 青光描边 + 等宽科技字（Orbitron），碳纤/拉丝纹理。
+ ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── token 覆盖 ── */
 html[data-skin="mechanical"] {
   --color-primary: #00e5ff;
   --color-primary-hover: #00b8d4;
-  /* 2026-11-04：青色 primary 上白字 1.5:1 完全不可读；取最深底 #0f1923 = 12:1 */
+  /* 青色 primary 上白字 1.5:1 完全不可读；取最深底 #0f1923 = 12:1 */
   --color-text-inverse: #0f1923;
   --color-background: #0a0e14;
   --color-surface: #121820;
   --color-surface-hover: rgba(0, 229, 255, 0.08);
   --color-text: #e0e6ed;
   --color-text-secondary: #8892a0;
-  /* 2026-09-15 提档：#5a6370（surface 2.93:1）→ #7b8593（4.77:1 / 页面底 5.17:1） */
+  /* 提档：#5a6370（surface 2.93:1）→ #7b8593（4.77:1 / 页面底 5.17:1） */
   --color-text-tertiary: #7b8593;
   --color-text-disabled: #5a5a5a;
   /* 暗底皮肤：语义色必须用「亮档」，否则会继承 :root 的浅色深档（≈3:1 不可读） */
@@ -304,15 +304,15 @@ html[data-skin="mechanical"] .skin-decorations {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   复古（retro）
-   暗底霓虹（品红/青） + 像素点阵纹理 + 像素字（Press Start 2P）。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 复古（retro）
+ 暗底霓虹（品红/青） + 像素点阵纹理 + 像素字（Press Start 2P）。
+ ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── token 覆盖 ── */
 html[data-skin="retro"] {
   --color-primary: #f0f;
   --color-primary-hover: #c0c;
-  /* 2026-11-04：品红 primary 上白字 3.4:1 不足；取最深底 #0d0221 = 4.6:1 */
+  /* 品红 primary 上白字 3.4:1 不足；取最深底 #0d0221 = 4.6:1 */
   --color-text-inverse: #0d0221;
   --color-background: #0d0221;
   --color-surface: #150533;
@@ -447,8 +447,8 @@ html[data-skin="retro"] .skin-decorations {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   公共：尊重减弱动效偏好
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 公共：尊重减弱动效偏好
+ ═══════════════════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   /* 复古霓虹效果：减少阴影层数，降低性能开销 */
   html[data-skin="retro"] .brand-name,
@@ -475,26 +475,26 @@ html[data-skin="retro"] .skin-decorations {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   皮肤切换过渡动画
-   切换皮肤时添加 skin-transitioning 类，500ms 内所有颜色/阴影属性平滑过渡
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 皮肤切换过渡动画
+ 切换皮肤时添加 skin-transitioning 类，500ms 内所有颜色/阴影属性平滑过渡
+ ═══════════════════════════════════════════════════════════════════════════ */
 /* ═══════════════════════════════════════════════════════════════
-   主题感知变体（方案 A）
-   每个皮肤默认块（html[data-skin="x"]）写死了一套固定明暗的 token，会盖过
-   data-theme 的主题变量，导致「暗色模式下选则皮肤被拉回亮色 / 亮色模式下暗色皮肤锁死暗色」。
-   此处为各皮肤补 [data-theme] 变体：双属性选择器特异性 (0,2,1) 高于单皮肤 (0,1,1)
-   与单主题 (0,1,0)，稳赢不打架。切换主题时走 theme-transitioning 平滑过渡，无需额外动画。
-   - cartoon 默认是亮色皮肤 → 补 [data-theme="dark"] 深色变体
-   - mechanical / retro 默认是暗色皮肤 → 补 [data-theme="light"] 亮色变体
-   其余不随主题变化的选择器（字体 / 圆角 / 卡片边框风格 / sticky-header 规则等）均引用
-   上述 token 的 var()，自动跟随本块变体，无需重复声明。
-   ═══════════════════════════════════════════════════════════════ */
+ 主题感知变体
+ 每个皮肤默认块（html[data-skin="x"]）写死了一套固定明暗的 token，会盖过
+ data-theme 的主题变量，导致「暗色模式下选则皮肤被拉回亮色 / 亮色模式下暗色皮肤锁死暗色」。
+ 此处为各皮肤补 [data-theme] 变体：双属性选择器特异性 (0,2,1) 高于单皮肤 (0,1,1)
+ 与单主题 (0,1,0)，稳赢不打架。切换主题时走 theme-transitioning 平滑过渡，无需额外动画。
+ - cartoon 默认是亮色皮肤 → 补 [data-theme="dark"] 深色变体
+ - mechanical / retro 默认是暗色皮肤 → 补 [data-theme="light"] 亮色变体
+ 其余不随主题变化的选择器（字体 / 圆角 / 卡片边框风格 / sticky-header 规则等）均引用
+ 上述 token 的 var()，自动跟随本块变体，无需重复声明。
+ ═══════════════════════════════════════════════════════════════ */
 
 /* ── cartoon · 暗色变体：深可可纸纹 + 奶油浅字，珊瑚红主色略提亮 ── */
 html[data-skin="cartoon"][data-theme="dark"] {
   --color-primary: #ff8a8a;
   --color-primary-hover: #ff6f6f;
-  /* 2026-11-04：亮珊瑚红上深字 = 7.5:1 */
+  /* 亮珊瑚红上深字 = 7.5:1 */
   --color-text-inverse: #241c16;
   --color-background: #241c16;
   --color-surface: #2e241c;
@@ -530,7 +530,7 @@ html[data-skin="cartoon"][data-theme="dark"] body {
 html[data-skin="mechanical"][data-theme="light"] {
   --color-primary: #0091a7;
   --color-primary-hover: #007688;
-  /* 2026-11-04：亮底青 primary 上白字仅 3.5:1，取深字 #0f1923 = 4.9:1 */
+  /* 亮底青 primary 上白字仅 3.5:1，取深字 #0f1923 = 4.9:1 */
   --color-text-inverse: #0f1923;
   --color-background: #e8edf1;
   --color-surface: #fff;
@@ -571,14 +571,14 @@ html[data-skin="mechanical"][data-theme="light"] select {
 html[data-skin="retro"][data-theme="light"] {
   --color-primary: #c000c0;
   --color-primary-hover: #a000a0;
-  /* 2026-11-04：亮底品红上白字 4.0:1 不足；纯黑 = 4.6:1 */
+  /* 亮底品红上白字 4.0:1 不足；纯黑 = 4.6:1 */
   --color-text-inverse: #000;
   --color-background: #f3e9ff;
   --color-surface: #fff;
   --color-surface-hover: rgba(192, 0, 192, 0.1);
   --color-text: #2a0033;
   --color-text-secondary: #6a1b8a;
-  /* 2026-09-15 提档：#9b4dca（页面底 4.16:1）→ #8b3fbb（surface 5.96:1 / 页面底 5.08:1） */
+  /* 提档：#9b4dca（页面底 4.16:1）→ #8b3fbb（surface 5.96:1 / 页面底 5.08:1） */
   --color-text-tertiary: #8b3fbb;
   --color-text-disabled: #bfbfbf;
   --color-border: #e0c0f0;
@@ -608,8 +608,8 @@ html[data-skin="retro"][data-theme="light"] select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23c000c0' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
 }
 
-/* 皮肤切换（2026-08-04 终修）：与主题一致，完全瞬切（transition:none）。
-   全量 `*` 颜色过渡即使 3 属性也因 Keep-Alive 常驻多页 DOM 数百元素逐帧动画而卡顿。 */
+/* 皮肤切换：与主题一致，完全瞬切（transition:none）。
+ 全量 `*` 颜色过渡即使 3 属性也因 Keep-Alive 常驻多页 DOM 数百元素逐帧动画而卡顿。 */
 html.skin-transitioning,
 html.skin-transitioning *,
 html.skin-transitioning *::before,

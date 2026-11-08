@@ -1,11 +1,11 @@
 /**
  * useSourceManagerStore — 设置页源管理 store
  *
- * [2026-08-07 源管理整改]
+ * 
  * - 统一管理视频源 / IPTV 源 / EPG 源（builtin 内置 + custom 自建）
  * - 明文 localStorage 持久化（key `managed-sources`）
  * - 启用状态同步：builtin+custom 合并成「消费数组」→ 通过 sourceService.setAttachedSources
- *   注入（getVideoSources 返回内置+附加，下标覆盖 custom），并把启用的源回写为消费 indices。
+ * 注入（getVideoSources 返回内置+附加，下标覆盖 custom），并把启用的源回写为消费 indices。
  * - 沿用上限：视频源最多启用 6 个；IPTV/EPG 最多 3 个
  * - custom 源可删除；builtin 可停用不可删除
  * - 每个源可配 timeout(ms) / retries（应用层：videoService 请求时读取）
@@ -485,18 +485,18 @@ export const useSourceManagerStore = create<SourceManagerState>()(
       partialize: (s) => ({ video: s.video, iptv: s.iptv, epg: s.epg }) as SourceManagerState,
 
       /**
-       * 持久化版本号（2026-11-03 新增）
-       * 本 store 是四个 persist store 中**唯一没有字段级迁移兜底**的一个：
-       * useSettingsStore / usePlayerStore / useIPTVStore 各有自定义 merge 处理旧结构，
-       * 这里此前只有 partialize —— 一旦 ManagedSource* 的形状演进（加必填字段、
-       * 改 status 嵌套、改 kind 取值），老用户 localStorage 里的旧条目会带着
-       * undefined 直接进入渲染，表现为「源列表空白 / 排序 NaN / 开关点不动」，
-       * 且因为 persist 会立刻把坏数据写回，用户很难自愈。
-       *
-       * 迁移策略：**逐条字段补齐**（不整包丢弃，避免用户自建源丢失）。
-       * bump 规则：改 ManagedSourceBase 必填字段 / 改 status 结构 / 改 kind 取值时
-       * version + 1，并在下面加一层对应迁移分支。
-       */
+ * 持久化版本号
+ * 本 store 是四个 persist store 中**唯一没有字段级迁移兜底**的一个：
+ * useSettingsStore / usePlayerStore / useIPTVStore 各有自定义 merge 处理旧结构，
+ * 这里此前只有 partialize —— 一旦 ManagedSource* 的形状演进（加必填字段、
+ * 改 status 嵌套、改 kind 取值），老用户 localStorage 里的旧条目会带着
+ * undefined 直接进入渲染，表现为「源列表空白 / 排序 NaN / 开关点不动」，
+ * 且因为 persist 会立刻把坏数据写回，用户很难自愈。
+ *
+ * 迁移策略：**逐条字段补齐**（不整包丢弃，避免用户自建源丢失）。
+ * bump 规则：改 ManagedSourceBase 必填字段 / 改 status 结构 / 改 kind 取值时
+ * version + 1，并在下面加一层对应迁移分支。
+ */
       version: 1,
 
       migrate: (persisted, fromVersion) => {
@@ -505,9 +505,9 @@ export const useSourceManagerStore = create<SourceManagerState>()(
         >;
 
         /**
-         * 单条源形状修复：补齐 ManagedSourceBase 的必填字段。
-         * 幂等（对已合法的条目零改动），故可安全地在每次水合时全量跑一遍。
-         */
+ * 单条源形状修复：补齐 ManagedSourceBase 的必填字段。
+ * 幂等（对已合法的条目零改动），故可安全地在每次水合时全量跑一遍。
+ */
         const repair = <T extends ManagedSourceBase>(item: unknown, index: number, scene: Scene): T | null => {
           if (!item || typeof item !== 'object') return null;
           const it = item as Partial<ManagedSourceBase> & Record<string, unknown>;

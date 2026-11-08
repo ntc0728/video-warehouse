@@ -54,7 +54,7 @@ export default function GroupPicker({
   // 检测 hot-tags 是否超过 2 行，超过则需要折叠。
   // ★用 getBoundingClientRect 相对容器自身的偏移计算行位置，避免 offsetTop 依赖 offsetParent
   // （.grouppicker__hot-tags 未设 position，offsetParent 可能是外层定位元素或 body，offsetTop 会
-  //  混入容器在页面中的绝对位置，导致 twoRowHeight 被算成巨大值、折叠失效露出第 3 行+）。
+  // 混入容器在页面中的绝对位置，导致 twoRowHeight 被算成巨大值、折叠失效露出第 3 行+）。
   useLayoutEffect(() => {
     const el = tagsRef.current
     if (!el || el.children.length === 0) {

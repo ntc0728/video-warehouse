@@ -1,10 +1,10 @@
 /**
- * 结果区分页器（2026-09-12 用户拍板：右栏由无限滚动改为分页切换）
+ * 结果区分页器（右栏由无限滚动改为分页切换）
  *
  * 两种形态由数据侧能力决定，不是样式偏好：
  * - `numbered`：数字页码条。仅 TMDB 可用 —— store 暴露 totalPages，可任意跳页。
  * - `simple`：上一页 / 下一页 + 「第 N 页」。用于 CMS —— MacCMS 返回体只有 `total`
- *   没有 `limit`/`pagecount`，算不出总页数，页码条无从渲染。
+ * 没有 `limit`/`pagecount`，算不出总页数，页码条无从渲染。
  *
  * CMS 做不出数字页码这点别试图绕过：探测式翻页会把最后一页渲染成空态，体验更差。
  */
@@ -58,8 +58,8 @@ export default function BrowsePagination({
 }: BrowsePaginationProps) {
   const items = variant === 'numbered' ? buildPageItems(page, totalPages) : [];
 
-  // ── 手动跳页（2026-09-12 用户需求）：数字页码形态下提供「页码输入 + 跳转」，
-  //    输入钳制到 [1, totalPages]，非法/越界输入不动；Enter 与按钮均可提交。 ──
+  // ── 手动跳页：数字页码形态下提供「页码输入 + 跳转」，
+  // 输入钳制到 [1, totalPages]，非法/越界输入不动；Enter 与按钮均可提交。 ──
   const [jumpValue, setJumpValue] = useState('');
   const commitJump = () => {
     const n = parseInt(jumpValue.trim(), 10);

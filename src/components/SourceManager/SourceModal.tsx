@@ -1,12 +1,12 @@
 /**
  * SourceModal — 源添加/编辑弹窗（受控组件）
  *
- * [2026-08-07 源管理整改]
+ * 
  * - 视频源：名称 / 视频源 URL（api）/ 详情 URL（detail，可选，留空使用 api）/ 启用
  * - IPTV 源：名称 / URL / 启用
  * - EPG 源：名称 / URL / 启用
  * - 高级选项（超时/重试/视频源 ID 随机）目前保留 UI 占位（与图 1 一致），但 httpClient
- *   暂未提供按源级超时/重试配置，保存时忽略；视频源 ID 由 store 自动生成（避免与 builtin id 冲突）
+ * 暂未提供按源级超时/重试配置，保存时忽略；视频源 ID 由 store 自动生成（避免与 builtin id 冲突）
  */
 import { useEffect } from 'react';
 import { Shuffle } from 'lucide-react';

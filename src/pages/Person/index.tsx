@@ -46,7 +46,7 @@ function toVideo(item: TMDBMovie | TMDBTVShow, mediaType: 'movie' | 'tv') {
 }
 
 /**
- * 会话级人物数据缓存（2026-09-16）。
+ * 会话级人物数据缓存。
  *
  * 背景：原实现每次进入人物页都发 3 个 TMDB 请求（detail + movie credits + tv credits），
  * 「人物页 → 作品详情 → 返回」也要重打一遍，且返回时先闪一帧骨架。
@@ -189,12 +189,12 @@ export default function PersonPage() {
     }
   }, [person?.biography]);
 
-  // ── 人物数据加载（2026-09-16 重构：抽成可复用 callback + 缓存）──────
+  // ── 人物数据加载（重构：抽成可复用 callback + 缓存）──────
   // 抽出来的三个动机：
-  //   1. 缓存命中时**不发请求**，直接同步回显（零骨架、零请求）；
-  //   2. 下拉刷新可以拿到真 Promise（旧实现只 bump nonce，浮层立即判成功，
-  //      失败对用户不可见，也不等真实结束）；
-  //   3. 竞态守卫：快速切换人物时旧响应不得覆盖新数据（reqSeq + AbortController 双保险）。
+  // 1. 缓存命中时**不发请求**，直接同步回显（零骨架、零请求）；
+  // 2. 下拉刷新可以拿到真 Promise（旧实现只 bump nonce，浮层立即判成功，
+  // 失败对用户不可见，也不等真实结束）；
+  // 3. 竞态守卫：快速切换人物时旧响应不得覆盖新数据（reqSeq + AbortController 双保险）。
   const personAbortRef = useRef<AbortController | null>(null);
   const personReqSeqRef = useRef(0);
   const hasToken = useHasTmdbToken();
@@ -252,7 +252,7 @@ export default function PersonPage() {
       if (!isLatest() || ctrl.signal.aborted) return;
       setError(err instanceof Error ? err.message : '加载失败');
       // 失败必须向上抛：否则下拉刷新/手动重试的调用方拿不到「失败」信号，
-      // 浮层照样回弹「刷新成功」（2026-09-16 刷新反馈闭环）
+      // 浮层照样回弹「刷新成功」（刷新反馈闭环）
       throw err;
     } finally {
       if (isLatest() && !ctrl.signal.aborted) setLoading(false);
@@ -327,10 +327,10 @@ export default function PersonPage() {
         <div className="person-hero-content">
           {avatarUrl && (
             <div className="person-avatar">
-              {/* 2026-09-14：裸 <img> → LazyImage。
-                  头像是 hero 首屏元素（必然在视口内），懒加载收益为零，
-                  换来的是原先缺失的两项能力：加载期骨架占位（原白块）、
-                  失败时品牌兜底（原裂图 + alt 文本）。 */}
+              {/* 裸 <img> → LazyImage。
+ 头像是 hero 首屏元素（必然在视口内），懒加载收益为零，
+ 换来的是原先缺失的两项能力：加载期骨架占位（原白块）、
+ 失败时品牌兜底（原裂图 + alt 文本）。 */}
               <LazyImage
                 src={avatarUrl}
                 alt={person.name}

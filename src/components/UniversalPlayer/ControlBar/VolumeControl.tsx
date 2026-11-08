@@ -7,7 +7,7 @@ interface VolumeControlProps {
   onChange: (volume: number) => void;
   /** C2：统一静音入口（记忆原音量），与键盘 M 共用 toggleMute */
   onToggleMute?: () => void;
-  /** G2：音量变化时弹出 3s 音量条 */
+  /** 音量变化时弹出 3s 音量条 */
   onVolumePopup?: () => void;
   activePopover: string | null;
   onPopoverChange: (id: string | null) => void;

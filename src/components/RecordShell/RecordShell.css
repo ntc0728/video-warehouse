@@ -1,14 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   RecordShell — 收藏页 / 历史页共用外壳
-   桌面（≥768px）：顶部横向卡片筛选栏 + 下方卡片主区
-   移动（≤767px）：方案 M6 — 顶部吸顶精简栏，滚动折叠状态芯片行
-   状态标签页始终保留 DOM 占位（visibility:hidden），防止 tab 切换时 edit-row 飘移
-   依赖已有全局类：.category-segmented / .status-tabs / .toolbar-btn / .toolbar-actions
-   ═══════════════════════════════════════════════════════════════════════════ */
+ RecordShell — 收藏页 / 历史页共用外壳
+ 桌面（≥768px）：顶部横向卡片筛选栏 + 下方卡片主区
+ 移动（≤767px）：顶部吸顶精简栏，滚动折叠状态芯片行
+ 状态标签页始终保留 DOM 占位（visibility:hidden），防止 tab 切换时 edit-row 飘移
+ 依赖已有全局类：.category-segmented / .status-tabs / .toolbar-btn / .toolbar-actions
+ ═══════════════════════════════════════════════════════════════════════════ */
 
 /* 提供 .category-segmented 基础样式，保证组件自持（Vite 会对重复 import 去重） */
 @import '@/components/StatusTabs/FilterBar.css';
-/* 方案 C：内嵌筛选条复用 .record-filter-chip*（同 FilterBar.css 先例，重复 import 去重） */
+/* 内嵌筛选条复用 .record-filter-chip*（同 FilterBar.css 先例，重复 import 去重） */
 @import '@/components/RecordFilterPanel/RecordFilterPanel.css';
 
 .record-page {
@@ -165,11 +165,11 @@
   min-width: 0;
 }
 
-/* ── 内容容器（2026-09-08 桌面端左栏 rail 改造新增）──
-   包住 {children}，使 .record-main 在 ≥1280 的 grid 中只有「aside / content」两 cell。
-   设为 flex 列是为了延续历史/收藏页既有的「父链 flex 拉伸」约定
-   （.empty-state-wrapper / .player-loading-wrap 依赖该链做整页垂直居中），
-   否则插入该层会打断拉伸链，导致空状态/加载态不再居中。 */
+/* ── 内容容器──
+ 包住 {children}，使 .record-main 在 ≥1280 的 grid 中只有「aside / content」两 cell。
+ 设为 flex 列是为了延续历史/收藏页既有的「父链 flex 拉伸」约定
+ （.empty-state-wrapper / .player-loading-wrap 依赖该链做整页垂直居中），
+ 否则插入该层会打断拉伸链，导致空状态/加载态不再居中。 */
 .record-content {
   display: flex;
   flex: 1 1 0;
@@ -178,15 +178,15 @@
   min-height: 0;
 }
 
-/* 内容区标题（demo content__head 同款）：默认不显示，
-   仅 ≥1280 桌面 rail 布局展示——移动/app/TV 视觉保持原状不动 */
+/* 内容区标题（content__head 同款）：默认不显示，
+ 仅 ≥1280 桌面 rail 布局展示——移动/app/TV 视觉保持原状不动 */
 .record-content-head {
   display: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   移动端 M6 — 吸顶精简栏 + 滚动折叠
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 移动端 M6 — 吸顶精简栏 + 滚动折叠
+ ═══════════════════════════════════════════════════════════════════════════ */
 @media (width <= 767px) {
   .record-shell {
     flex-direction: column;
@@ -195,7 +195,7 @@
   }
 
   /* 侧栏 → 横向精简栏（参考桌面端：.record-aside 不使用卡片式包裹，仅作布局条；
-     gap 与桌面端一致用 space-md，保证 .record-edit-row 与上方元素间距对齐） */
+ gap 与桌面端一致用 space-md，保证 .record-edit-row 与上方元素间距对齐） */
   .record-aside {
     z-index: 5;
     display: flex;
@@ -259,19 +259,19 @@
     justify-content: flex-end;
   }
 
-  /* 移动端布局（2026-09-08 用户指令）：面板样式迁到 .record-content——
-     .record-aside 是 .record-main 的子元素（RecordShell.tsx:176），面板在 .record-main 上会
-     同时包住 rail + card，视觉拥挤。改为面板只包 card（.record-content），rail 裸露在外，
-     距离页面边由外层 .page-padding 提供。 */
+  /* 移动端布局：面板样式迁到 .record-content——
+ .record-aside 是 .record-main 的子元素（RecordShell.tsx:176），面板在 .record-main 上会
+ 同时包住 rail + card，视觉拥挤。改为面板只包 card（.record-content），rail 裸露在外，
+ 距离页面边由外层 .page-padding 提供。 */
   .record-main {
     gap: var(--space-sm);
     padding: 0;
   }
   .record-content {
     /* ⚠️ 必须 min-height:auto 覆盖基础定义 min-height:0——面板所在层若允许收缩
-       （min:0 + flex:1 1 0 = 只占剩余空间），card 会溢出面板底部「脱标」、
-       且不撑开 .record-main 高度。flex item 的 min:auto = min-content，内容超高
-       时被撑开；内容少时 flex-grow 仍填满剩余空间，空状态垂直居中链不受影响。 */
+ （min:0 + flex:1 1 0 = 只占剩余空间），card 会溢出面板底部「脱标」、
+ 且不撑开 .record-main 高度。flex item 的 min:auto = min-content，内容超高
+ 时被撑开；内容少时 flex-grow 仍填满剩余空间，空状态垂直居中链不受影响。 */
     min-height: auto;
     padding: 0 var(--space-sm);
     border: 1px solid var(--color-border-light);
@@ -280,7 +280,7 @@
     box-shadow: var(--shadow-sm);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .record-shell {
     flex-direction: column;
@@ -289,7 +289,7 @@
   }
 
   html[data-device="app"] /* 侧栏 → 横向精简栏（参考桌面端：.record-aside 不使用卡片式包裹，仅作布局条；
-     gap 与桌面端一致用 space-md，保证 .record-edit-row 与上方元素间距对齐） */
+ gap 与桌面端一致用 space-md，保证 .record-edit-row 与上方元素间距对齐） */
   .record-aside {
     z-index: 5;
     display: flex;
@@ -369,11 +369,11 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   桌面端（>=768px）内部筛选栏：改为「横向卡片栏」
-   覆盖上方默认（竖向）布局，移动端（<=767px）保持原吸顶折叠，未改动。
-   第 1 行：标题 + 影视/IPTV 分段 + 搜索 + 工具栏（靠右）
-   第 2 行：状态筛选芯片（横向、可换行，独占整行）
-   ═══════════════════════════════════════════════════════════════════════ */
+ 桌面端（>=768px）内部筛选栏：改为「横向卡片栏」
+ 覆盖上方默认（竖向）布局，移动端（<=767px）保持原吸顶折叠，未改动。
+ 第 1 行：标题 + 影视/IPTV 分段 + 搜索 + 工具栏（靠右）
+ 第 2 行：状态筛选芯片（横向、可换行，独占整行）
+ ═══════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
   html:not([data-device="app"]) .record-shell {
     flex-direction: column;
@@ -400,8 +400,8 @@
   }
 
   /* 右侧 card 区 → 面板模块（滚动条在外层主页面，不在卡片内）。
-     2026-09-08 用户指令：面板只包 card（.record-content），不包 rail（.record-aside 裸露）。
-     与移动端同款改造——.record-main 仅布局，面板样式迁到 .record-content。 */
+面板只包 card（.record-content），不包 rail（.record-aside 裸露）。
+ 与移动端同款改造——.record-main 仅布局，面板样式迁到 .record-content。 */
   html:not([data-device="app"]) .record-main {
     gap: var(--space-sm);
     padding: 0;
@@ -409,8 +409,8 @@
   html:not([data-device="app"]) .record-content {
     min-height: auto;
     padding: 0 var(--space-md) var(--space-md);
-    /* 2026-09-28 去卡片化：桌面端面板四件套移除，内容区直接铺页面底色；
-       <=767 / app 恒移动（上方与 data-device=app 副本）保留卡片外观。 */
+    /* 去卡片化：桌面端面板四件套移除，内容区直接铺页面底色；
+ <=767 / app 恒移动（上方与 data-device=app 副本）保留卡片外观。 */
     border: none;
     border-radius: 0;
     background-color: transparent;
@@ -456,9 +456,9 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   RecordShell 通用能力（自 History.css 迁入，去 .history-page 前缀）
-   收藏页/历史页共用：融合 Tab（胶囊式 StatusTabs）+ 操作按钮组（图标+文本）
-   ═══════════════════════════════════════════════════════════════════════════ */
+ RecordShell 通用能力（自 History.css 迁入，去 .history-page 前缀）
+ 收藏页/历史页共用：融合 Tab（胶囊式 StatusTabs）+ 操作按钮组（图标+文本）
+ ═══════════════════════════════════════════════════════════════════════════ */
 .record-status--fused {
   gap: var(--space-xs);
   padding: var(--space-xs);
@@ -493,7 +493,7 @@
 }
 
 /* ── 操作按钮组（更多筛选 / 清空 / 批量管理） ──
-   图标 + 文本胶囊；窄屏（≤640px）降级为仅图标圆钮（C 方案） */
+ 图标 + 文本胶囊；窄屏（≤640px）降级为仅图标圆钮 */
 .record-actions {
   display: inline-flex;
   flex-shrink: 0;
@@ -526,7 +526,7 @@
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
-/* 2026-11-08：空列表时清空/批量管理置灰（pointer-events:none 同时压掉 hover 变色） */
+/* 空列表时清空/批量管理置灰（pointer-events:none 同时压掉 hover 变色） */
 .action-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -544,7 +544,7 @@
     display: none;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 640px) 的仅图标降级副本 */
+/* app 恒移动：@media (width <= 640px) 的仅图标降级副本 */
 html[data-device="app"] .action-btn {
   padding: var(--space-sm);
 }
@@ -553,12 +553,12 @@ html[data-device="app"] .action-btn__label {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   方案 C（2026-09-06）：桌面内嵌筛选条 + 排序弹层 + 清空按钮响应式降级
-   收藏页/历史页共用。移动端（≤767 / app 恒移动）不渲染，
-   移动端仍走「更多筛选」按钮 + RecordFilterPanel 折叠面板。
-   清空按钮断点（用户拍板 2026-09-06）：>1280 空间充足直接显示「清空」；
-   768–1280 空间不足 → 清空收进「⋯」溢出菜单（record-overflow-wrap）。
-   ═══════════════════════════════════════════════════════════════════════════ */
+桌面内嵌筛选条 + 排序弹层 + 清空按钮响应式降级
+ 收藏页/历史页共用。移动端（≤767 / app 恒移动）不渲染，
+ 移动端仍走「更多筛选」按钮 + RecordFilterPanel 折叠面板。
+ 清空按钮断点：>1280 空间充足直接显示「清空」；
+ 768–1280 空间不足 → 清空收进「⋯」溢出菜单（record-overflow-wrap）。
+ ═══════════════════════════════════════════════════════════════════════════ */
 
 /* 内嵌筛选条：默认（移动/app）隐藏 */
 .record-inline-filter {
@@ -576,8 +576,8 @@ html[data-device="app"] .action-btn__label {
 }
 
 /* 桌面（≥768 非 app）：显示内嵌筛选条，隐藏移动专用的
-   「更多筛选」按钮与折叠面板；此段（768–1280）宽度不足 →
-   清空按钮收进「⋯」溢出菜单 */
+ 「更多筛选」按钮与折叠面板；此段（768–1280）宽度不足 →
+ 清空按钮收进「⋯」溢出菜单 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .record-inline-filter {
     display: inline-flex;
@@ -594,10 +594,10 @@ html[data-device="app"] .action-btn__label {
   }
 }
 
-/* ≥1280（2026-09-08 调整，原 >1440）：桌面 rail 布局起点对齐——
-   rail 里不放「⋯」溢出菜单（用户指令：删除 record-overflow-wrap 元素），
-   清空按钮在 rail 竖排中直接显示；768–1023 横排布局空间不足的
-   降级逻辑保持不变（清空仍收进「⋯」）。 */
+/* ≥1280（原 >1440）：桌面 rail 布局起点对齐——
+ rail 里不放「⋯」溢出菜单（删除 record-overflow-wrap 元素），
+ 清空按钮在 rail 竖排中直接显示；768–1023 横排布局空间不足的
+ 降级逻辑保持不变（清空仍收进「⋯」）。 */
 @media (width >= 1024px) {
   html:not([data-device="app"]) .record-overflow-wrap {
     display: none;
@@ -616,7 +616,7 @@ html[data-device="app"] .action-btn__label {
   background: var(--color-border);
 }
 
-/* 排序弹层（方案 C）：胶囊按钮 + 列表弹层 */
+/* 排序弹层：胶囊按钮 + 列表弹层 */
 .record-sort-wrap {
   position: relative;
   display: inline-flex;
@@ -703,37 +703,37 @@ html[data-device="app"] .action-btn__label {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   桌面端左栏 rail 布局（方案 A，2026-09-08）
-   断点严格 ≥1280px（用户拍板，不使用 1024/1440）。
-   把控制区从「卡片上方横向一行」改为页面左侧竖排 rail（200px）；
-   rail 不卡片化（不加 border / border-radius / background / box-shadow 四件套）。
-   历史页算珠时间轴保持在内容区左缘不动（rail + 时间轴 + 内容 三栏），
-   时间轴 CSS / JS（rAF 算珠）一律未改。
-   红线：新增 @media 尺寸规则必须加 html:not([data-device="tv"]) 前缀，
-   app 端恒保持现状横向一行（app 端逻辑未动）。
-   参考先例：Browse.css @media (width >= 1024px) 的流体左栏 grid 骨架
-   （clamp(124px, 8.61vw, 224px)，2026-09-08 与设置页左栏同曲线）。
-   （2026-09-08 由 1440 下移到 1024，与 browse 新 UI 起点一致）。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 桌面端左栏 rail 布局
+ 断点严格 ≥1280px（不使用 1024/1440）。
+ 把控制区从「卡片上方横向一行」改为页面左侧竖排 rail（200px）；
+ rail 不卡片化（不加 border / border-radius / background / box-shadow 四件套）。
+ 历史页算珠时间轴保持在内容区左缘不动（rail + 时间轴 + 内容 三栏），
+ 时间轴 CSS / JS（rAF 算珠）一律未改。
+ 红线：新增 @media 尺寸规则必须加 html:not([data-device="tv"]) 前缀，
+ app 端恒保持现状横向一行（app 端逻辑未动）。
+ 参考先例：Browse.css @media (width >= 1024px) 的流体左栏 grid 骨架
+ （clamp(124px, 8.61vw, 224px)， 与设置页左栏同曲线）。
+ （由 1440 下移到 1024，与 browse 新 UI 起点一致）。
+ ═══════════════════════════════════════════════════════════════════════════ */
 @media (width >= 1024px) {
   /* 仅作用于非 app / 非 tv 的桌面端；前缀保证不影响 TV 与 app 恒移动布局 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-main {
-    /* 方案 A（demo-record-left-rail 2026-09-08）：外层 flex。
-       断点 2026-09-08 二改：≥1024 即启用（原 ≥1280）。
-       gap 2026-09-08 用户指令：--space-xl → --space-lg。 */
+    /* 外层 flex。
+ 断点 二改：≥1024 即启用（原 ≥1280）。
+ gap ：--space-xl → --space-lg。 */
     display: flex;
     flex-flow: row nowrap;
     gap: var(--space-lg);
-    /* 2026-09-14 修复：原为 flex-start —— 交叉轴（纵向）不拉伸，
-       导致 .record-content 高度退化为内容自然高（153px），空状态/加载态在
-       收藏、历史页贴顶不居中（800px 以下为 column 主轴故正常）。
-       改 stretch 后纵向拉伸链恢复；rail 不受影响：.record-aside 在下文已显式
-       声明 align-self:flex-start + width:var(--rail-w)，两轴尺寸均自锁，
-       不依赖父级 align-items。 */
+    /* 修复：原为 flex-start —— 交叉轴（纵向）不拉伸，
+ 导致 .record-content 高度退化为内容自然高（153px），空状态/加载态在
+ 收藏、历史页贴顶不居中（800px 以下为 column 主轴故正常）。
+ 改 stretch 后纵向拉伸链恢复；rail 不受影响：.record-aside 在下文已显式
+ 声明 align-self:flex-start + width:var(--rail-w)，两轴尺寸均自锁，
+ 不依赖父级 align-items。 */
     align-items: stretch;
     /* 覆盖 ≥768 块给 .record-main 加的卡片化外观：rail 不卡片化，
-       故整条主区也去卡片 chrome（border/radius/background/shadow），
-       否则 200px 左列会被整块卡片边框包住，等同把 rail 卡片化。 */
+ 故整条主区也去卡片 chrome（border/radius/background/shadow），
+ 否则 200px 左列会被整块卡片边框包住，等同把 rail 卡片化。 */
     margin: 0;
     padding: 0;
     border: none;
@@ -743,8 +743,8 @@ html[data-device="app"] .action-btn__label {
   }
 
   /* 内容区：拉伸占满剩余宽度（.record-content wrapper 不得删，
-     依赖 Collections.css / History.css 的 .record-main > .record-content > ... 路径）。
-     ≥1024 rail 布局下去卡片 chrome——面板只留给 <1024 与移动端（用户指令）。 */
+ 依赖 Collections.css / History.css 的 .record-main > .record-content > ... 路径）。
+ ≥1024 rail 布局下去卡片 chrome——面板只留给 <1024 与移动端。 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-content {
     flex: 1;
     min-width: 0;
@@ -755,7 +755,7 @@ html[data-device="app"] .action-btn__label {
     box-shadow: none;
   }
 
-  /* 内容区标题（demo-record-left-rail 2026-09-08 content__head 同款规格） */
+  /* 内容区标题（content__head 同款规格） */
   html:not([data-device="app"]):not([data-device="tv"]) .record-content-head {
     display: flex;
     justify-content: space-between;
@@ -776,43 +776,43 @@ html[data-device="app"] .action-btn__label {
   html:not([data-device="app"]):not([data-device="tv"]) .record-aside {
     position: sticky;
     /* ⚠️ sticky top 的参照系是滚动容器（.app-shell__scroll）的 scrollport，
-       而该 scroller 本身已在固定 header 下方（Layout.css:324 的
-       padding-top: --header-height 挂在 .app-shell__scroll-wrapper 上）。
-       此前误写 --header-height + --space-md（≈92px）> rail 自然位置
-       （页面 padding-top --space-sm ≈12px）→ sticky 在 scroll=0 就把
-       rail 整体下推 ~80px（用户截图确认）。正确范式同 .history-timeline
-       （History.css:167 top:0）：小间距即可，滚动态也不会钻进 header。 */
+ 而该 scroller 本身已在固定 header 下方（Layout.css:324 的
+ padding-top: --header-height 挂在 .app-shell__scroll-wrapper 上）。
+ 此前误写 --header-height + --space-md（≈92px）> rail 自然位置
+ （页面 padding-top --space-sm ≈12px）→ sticky 在 scroll=0 就把
+ rail 整体下推 ~80px。正确范式同 .history-timeline
+ （History.css:167 top:0）：小间距即可，滚动态也不会钻进 header。 */
     top: var(--space-sm);
     display: flex;
     flex-flow: column nowrap;
     flex-shrink: 0;
-    gap: var(--space-sm);         /* 分组间距：保持 --space-sm（用户确认不动） */
+    gap: var(--space-sm);         /* 分组间距：保持 --space-sm（不动） */
     align-items: stretch;
     align-self: flex-start;
-    /* 2026-09-10 用户拍板：宽度改用共享 token --rail-w（clamp(148px, 10vw, 200px)，2026-11-07 上限收窄），
-       替换原 max-content + min-width:124px —— 四处左栏统一宽度曲线后，
-       rail 不再随 tab 切换在 89~124px 之间抖动，也与 Browse / 设置 / IPTV 左栏对齐。
-       2026-10-09 用户要求：min-width 收回 max-content —— 选中「评分从高到低」等
-       长排序文案时 rail 自动加宽保证单行显示（--rail-w 仍是基准宽度，短文案时不撑宽，
-       不破坏四处左栏统一曲线）。 */
+    /* 宽度改用共享 token --rail-w（clamp(148px, 10vw, 200px)， 上限收窄），
+ 替换原 max-content + min-width:124px —— 四处左栏统一宽度曲线后，
+ rail 不再随 tab 切换在 89~124px 之间抖动，也与 Browse / 设置 / IPTV 左栏对齐。
+min-width 收回 max-content —— 选中「评分从高到低」等
+ 长排序文案时 rail 自动加宽保证单行显示（--rail-w 仍是基准宽度，短文案时不撑宽，
+ 不破坏四处左栏统一曲线）。 */
     width: var(--rail-w);
     min-width: max-content;
-    /* 2026-11-05 两侧留白对称 + 撑满可视高（四处左栏同批修复，与 Browse / 设置 / IPTV 一致）：
-       ① 原 `0 var(--space-sm) 0 0` 左内距为 0，文字左缘距栏边 ≈9.7px、右缘 ≈20.4px → 内容偏左；
-          改为左右对称 --space-sm；
-       ② 原高度 = 内容自然高（587px @2560），可视高 1357px → 下方空 771px；补 min-height 撑满
-          （min(视口高, 100%)：短页取 100% 落视口底、长页取 100dvh−header，与 Browse.css 同写法）。 */
+    /* 两侧留白对称 + 撑满可视高（四处左栏同批修复，与 Browse / 设置 / IPTV 一致）：
+ ① 原 `0 var(--space-sm) 0 0` 左内距为 0，文字左缘距栏边 ≈9.7px、右缘 ≈20.4px → 内容偏左；
+ 改为左右对称 --space-sm；
+ ② 原高度 = 内容自然高（587px @2560），可视高 1357px → 下方空 771px；补 min-height 撑满
+ （min(视口高, 100%)：短页取 100% 落视口底、长页取 100dvh−header，与 Browse.css 同写法）。 */
     min-height: min(calc(100dvh - var(--header-height) - var(--space-sm)), 100%);
     margin-top: 0;
     padding: 0 var(--space-sm);
     /* ⚠️ 不能用 overflow:auto：SortMenu / OverflowMenu 的 .record-pop 是内联渲染
-       无 portal，overflow 会把下拉弹层裁切掉。rail 内容恒短（3 tab + 4 状态 +
-       排序 + 3 按钮 < 500px），不会超视口，故保持 visible。
-       若日后 rail 内容增长到会溢出，应先把 .record-pop 改成 portal 再恢复 auto。 */
+ 无 portal，overflow 会把下拉弹层裁切掉。rail 内容恒短（3 tab + 4 状态 +
+ 排序 + 3 按钮 < 500px），不会超视口，故保持 visible。
+ 若日后 rail 内容增长到会溢出，应先把 .record-pop 改成 portal 再恢复 auto。 */
     overflow: visible;
-    /* 2026-09-10 用户拍板「左栏视觉语言统一 = 方案 B」：右侧 1px 边框。
-       原「rail 自身不加背景/圆角/阴影/四边边框（不卡片化）」的决策保留 ——
-       只加一条右边框作为边界锚点，不铺底色、不加圆角/阴影。 */
+    /* 「左栏视觉语言统一」：右侧 1px 边框。
+ 原「rail 自身不加背景/圆角/阴影/四边边框（不卡片化）」的决策保留 ——
+ 只加一条右边框作为边界锚点，不铺底色、不加圆角/阴影。 */
     border-right: 1px solid var(--color-border-light);
   }
 
@@ -826,8 +826,8 @@ html[data-device="app"] .action-btn__label {
   }
 
   /* 顺序重置：≥768 块给 .record-segmented / .record-status-group / .record-actions
-     设了 order / margin-left:auto（横向栏右对齐用），竖排 rail 需按 DOM 顺序堆叠，
-     否则非融合页（收藏页）操作按钮会被 order 推到状态组之前。 */
+ 设了 order / margin-left:auto（横向栏右对齐用），竖排 rail 需按 DOM 顺序堆叠，
+ 否则非融合页（收藏页）操作按钮会被 order 推到状态组之前。 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-segmented,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status-group,
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter,
@@ -836,7 +836,7 @@ html[data-device="app"] .action-btn__label {
     margin-left: 0;
   }
 
-  /* ── 分隔线（方案 A 位置：分类↔状态、排序↔管理）── */
+  /* ── 分隔线（位置：分类↔状态、排序↔管理）── */
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter::before,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status-group::before,
   html:not([data-device="app"]):not([data-device="tv"]) .record-actions::before {
@@ -847,7 +847,7 @@ html[data-device="app"] .action-btn__label {
     background: var(--color-border-light);
   }
 
-  /* ── 分类 / 状态 / 排序 / 管理：统一成 demo 的 .rail-item 外观 ── */
+  /* ── 分类 / 状态 / 排序 / 管理：统一成 的 .rail-item 外观 ── */
   /* 竖排堆叠 + 去胶囊背景（rail 不卡片化；融合胶囊组本身也去背景） */
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status {
@@ -888,7 +888,7 @@ html[data-device="app"] .action-btn__label {
   }
 
   /* 通用 rail-item 外观：覆盖状态 tab / 分段项 / 状态 chip / 排序 / 操作按钮
-     （严格照抄 demo .rail-item 视觉规格） */
+ （严格照抄 .rail-item 视觉规格） */
   html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab,
   html:not([data-device="app"]):not([data-device="tv"]) .category-segmented__item,
@@ -913,16 +913,16 @@ html[data-device="app"] .action-btn__label {
   }
 
   /* ⚠️ rail 布局下「更多筛选」按钮必须保持隐藏（桌面端改用内嵌筛选条 .record-inline-filter）。
-     上方 rail-item 通用规则（含 .record-actions .action-btn）特异性 (0,2,1) 与 ≥768 块
-     的隐藏规则相同但定义在后 → 同特异性后者胜，会把 display:none 覆盖成 flex。
-     此处以更高特异性 (0,3,1) 显式重申隐藏（COL-031 回归）。 */
+ 上方 rail-item 通用规则（含 .record-actions .action-btn）特异性 (0,2,1) 与 ≥768 块
+ 的隐藏规则相同但定义在后 → 同特异性后者胜，会把 display:none 覆盖成 flex。
+ 此处以更高特异性 (0,3,1) 显式重申隐藏（COL-031 回归）。 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-actions .action-btn--filter {
     display: none;
   }
 
-  /* 排序按钮文本不换行（2026-10-09 用户要求）：「排序：评分从高到低」等长文案
-     配合 .record-aside 的 min-width:max-content 保证 rail 加宽到单行宽度，
-     文本永不折行。 */
+  /* 排序按钮文本不换行：「排序：评分从高到低」等长文案
+ 配合 .record-aside 的 min-width:max-content 保证 rail 加宽到单行宽度，
+ 文本永不折行。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .record-inline-filter .record-sort-btn {
     white-space: nowrap;
@@ -939,9 +939,9 @@ html[data-device="app"] .action-btn__label {
     color: var(--color-text);
   }
 
-  /* 选中态：实心底 + 反色字 600（恢复 demo 原设计，改掉「左侧高亮条」改法）。
-     2026-09-10 修复：字色由硬编码 #fff 改为 --color-text-inverse ——
-     暗色主题下 --color-primary 是 #fff，硬编码白字会变成「白底白字」不可读。 */
+  /* 选中态：实心底 + 反色字 600（恢复 原设计，改掉「左侧高亮条」改法）。
+ 修复：字色由硬编码 #fff 改为 --color-text-inverse ——
+ 暗色主题下 --color-primary 是 #fff，硬编码白字会变成「白底白字」不可读。 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab--active,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab--active,
   html:not([data-device="app"]):not([data-device="tv"]) .category-segmented__item.active,
@@ -975,8 +975,8 @@ html[data-device="app"] .action-btn__label {
   }
   /* 选中态圆点反色规则见文件末尾（顶层，覆盖 768–1023 横向内嵌条 + ≥1024 rail）。 */
   /* chip label：flex:1 撑满中段（镜像 .record-status--fused 的 status-tab
-     「> span:not(dot):not(count)」规则）→ 计数徽章被推到按钮右缘，
-     与 fused status-tabs 的「label 左 / count 右」布局完全一致。 */
+ 「> span:not(dot):not(count)」规则）→ 计数徽章被推到按钮右缘，
+ 与 fused status-tabs 的「label 左 / count 右」布局完全一致。 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip__label {
     flex: 1 1 auto;
     min-width: 0;
@@ -985,18 +985,18 @@ html[data-device="app"] .action-btn__label {
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  /* 状态 chip 分面计数（2026-10-09 用户要求：样式与 .status-tabs--fused 的
-     .status-tab__count 徽章一致）：min-width/padding/radius/底色/字号逐项对齐；
-     选中态徽章底色 = 该 chip 状态色（--chip-dot-color，对齐 status-tab 的
-     --status-tab-color 逻辑）。跟在标签后（同 flex gap），不右对齐、不做弱化。 */
+  /* 状态 chip 分面计数（样式与 .status-tabs--fused 的
+ .status-tab__count 徽章一致）：min-width/padding/radius/底色/字号逐项对齐；
+ 选中态徽章底色 = 该 chip 状态色（--chip-dot-color，对齐 status-tab 的
+ --status-tab-color 逻辑）。跟在标签后（同 flex gap），不右对齐、不做弱化。 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-inline-filter .record-filter-chip__count {
     flex-shrink: 0;
     min-width: var(--badge-size);
     padding: var(--space-3xs) var(--space-2xs);
     border-radius: var(--radius-full);
-    /* 2026-11-04：底色由 --color-hover-bg 改 --color-surface。
-       前者（8% 白叠暗底）与文字 tertiary 在暗色下仅 4.44:1，差 0.06 不达标；
-       surface 底（#1f1f1f）→ 4.90:1 达标，且不动文字层级语义。 */
+    /* 底色由 --color-hover-bg 改 --color-surface。
+ 前者（8% 白叠暗底）与文字 tertiary 在暗色下仅 4.44:1，差 0.06 不达标；
+ surface 底（#1f1f1f）→ 4.90:1 达标，且不动文字层级语义。 */
     background: var(--color-surface);
     color: var(--color-text-tertiary);
     font-size: var(--text-xs);
@@ -1032,7 +1032,7 @@ html[data-device="app"] .action-btn__label {
     height: var(--icon-sm);
   }
 
-  /* 计数徽标：照抄 demo .rail-item__cnt（右贴，选中态半透明白底白字） */
+  /* 计数徽标：照抄 .rail-item__cnt（右贴，选中态半透明白底白字） */
   html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab__count,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab__count {
     flex-shrink: 0;
@@ -1047,20 +1047,20 @@ html[data-device="app"] .action-btn__label {
     text-align: center;
   }
   /* 选中态计数徽标：底色跟随选中字色（浅色主题=白 / 暗色主题=黑），
-     避免暗色下「白底 + 白色半透明徽标 + 白字」三重不可见（2026-09-10 修复） */
+ 避免暗色下「白底 + 白色半透明徽标 + 白字」三重不可见 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-status .status-tab--active .status-tab__count,
   html:not([data-device="app"]):not([data-device="tv"]) .record-status--fused .status-tab--active .status-tab__count {
     background: color-mix(in srgb, var(--color-text-inverse) 22%, transparent);
     color: var(--color-text-inverse);
   }
 
-  /* 排序下拉面板（2026-09-08 用户指令）：宽度不超过左栏（rail）宽度。
-     .record-sort-wrap 在竖排 rail 里被 stretch 成 rail 全宽，pop 以它为定位锚
-     → width:100% 严格锚定 rail 全宽，不再依赖 max-width 收敛；超长项省略号。 */
+  /* 排序下拉面板：宽度不超过左栏（rail）宽度。
+ .record-sort-wrap 在竖排 rail 里被 stretch 成 rail 全宽，pop 以它为定位锚
+ → width:100% 严格锚定 rail 全宽，不再依赖 max-width 收敛；超长项省略号。 */
   html:not([data-device="app"]):not([data-device="tv"]) .record-sort-wrap .record-pop {
     /* ⚠️ 必须同时归零 min-width：基础规则 .record-pop 的 min-width:160px
-       在 min>max 时压过 max-width:100%（rail 常 <160px），面板仍会溢出
-       到右侧内容区。width:100% 直接锚定 rail 全宽，不再依赖 max 收敛。 */
+ 在 min>max 时压过 max-width:100%（rail 常 <160px），面板仍会溢出
+ 到右侧内容区。width:100% 直接锚定 rail 全宽，不再依赖 max 收敛。 */
     width: 100%;
     min-width: 0;
     max-width: 100%;
@@ -1073,15 +1073,15 @@ html[data-device="app"] .action-btn__label {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   选中态状态圆点反色（2026-11-04 用户反馈「选中 chip 左侧圆点看不清」）
-   ───────────────────────────────────────────────────────────────────────
-   选中底 = --color-primary（亮 #000 / 暗 #fff），状态色圆点在其上对比不足
-   （暗色下 success 1.92:1 / warning 2.53:1）。反色后亮→白点 21:1、暗→深点 18.4:1。
-   ⚠️ 必须放在**顶层**（不能留在 ≥1024 块内）：768–1023 走横向内嵌筛选条，
-   选中底由 RecordFilterPanel.css 的 .record-filter-chip.is-active 提供，
-   反色规则若被媒体查询关住，该断点暗色下仍不可辨。
-   未选中态保持状态色语义（--chip-dot-color / --status-tab-color）。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 选中态状态圆点反色（选中 chip 左侧圆点看不清）
+ ───────────────────────────────────────────────────────────────────────
+ 选中底 = --color-primary（亮 #000 / 暗 #fff），状态色圆点在其上对比不足
+ （暗色下 success 1.92:1 / warning 2.53:1）。反色后亮→白点 21:1、暗→深点 18.4:1。
+ ⚠️ 必须放在**顶层**（不能留在 ≥1024 块内）：768–1023 走横向内嵌筛选条，
+ 选中底由 RecordFilterPanel.css 的 .record-filter-chip.is-active 提供，
+ 反色规则若被媒体查询关住，该断点暗色下仍不可辨。
+ 未选中态保持状态色语义（--chip-dot-color / --status-tab-color）。
+ ═══════════════════════════════════════════════════════════════════════ */
 html:not([data-device="app"]):not([data-device="tv"])
   .record-inline-filter .record-filter-chip--status.is-active .record-filter-chip__dot,
 html:not([data-device="app"]):not([data-device="tv"])

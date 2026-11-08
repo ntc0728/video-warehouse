@@ -2,9 +2,9 @@
  * SettingsPage — 设置页
  *
  * 响应式布局：
- *   桌面（≥768px）：TabBar 切换 6 个 tab，内容区 inline 直接渲染对应 tab 组件
- *   移动（≤767px）：MenuList 首层菜单 → 选中的 tab 以 SubPage 形式滑动进入
- *   所有编辑操作通过 Modal 弹窗完成
+ * 桌面（≥768px）：TabBar 切换 6 个 tab，内容区 inline 直接渲染对应 tab 组件
+ * 移动（≤767px）：MenuList 首层菜单 → 选中的 tab 以 SubPage 形式滑动进入
+ * 所有编辑操作通过 Modal 弹窗完成
  */
 import { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
@@ -47,7 +47,7 @@ function getDeepLinkTab(): SettingsTabKey | null {
 
 export default function SettingsPage() {
   useDocumentTitle();
-  // 9.1：桌面端判定取反 useIsMobileLayout（app 端恒移动，横屏不误判桌面）
+  //桌面端判定取反 useIsMobileLayout（app 端恒移动，横屏不误判桌面）
   const isDesktop = !useIsMobileLayout();
   // 下拉刷新（设置页专用变体：页面中间位移出现的圆形刷新按钮）：重新校验并注入源配置
   usePullToRefresh(() => useSourceManagerStore.getState().bootstrap(), { variant: 'settings' });
@@ -56,12 +56,12 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTabKey>(() => getDeepLinkTab() ?? 'appearance');
   const [mobileSubPage, setMobileSubPage] = useState<SettingsTabKey | null>(() => (isDesktop ? null : getDeepLinkTab()));
   const pageRef = useRef<HTMLDivElement>(null);
-  // [2026-08-13] 惰性全量 bootstrap：设置页源管理需要 video/iptv/epg 三类源。
+  // 惰性全量 bootstrap：设置页源管理需要 video/iptv/epg 三类源。
   // 不再由 main.tsx 全局拉取，改为设置页挂载时幂等触发（各场景 guard 每会话仅一次）。
   useEffect(() => {
     void useSourceManagerStore.getState().bootstrap();
   }, []);
-  // 桌面端 tab 常驻（2026-08-13）：访问过的 tab 保持挂载、仅 display 切换可见性。
+  // 桌面端 tab 常驻：访问过的 tab 保持挂载、仅 display 切换可见性。
   // 替代原 key={activeTab} 重挂载方案——重挂载触发「高度 0 突变 / scrollTop 钳位 /
   // 重挂载动画」抖动链（切 tab 页面抖动的根因之一）；副作用幂等（各 tab 的
   // bootstrap 均有模块级 guard），未访问过的 tab 不挂载、不提前执行副作用。
@@ -190,10 +190,10 @@ export default function SettingsPage() {
       {isDesktop ? (
         <>
         <div className="settings-desktop-card">
-          {/* 桌面端左侧竖排导航（方案 B，2026-09-06 拍板）：标题 + 竖排 TabBar 常驻左栏
-              （sticky 跟随滚动），内容区在右、满宽自适应（不加固定 max-width）。
-              复用 SettingsTabBar（.settings-tab 类名不变，E2E 选择器兼容），
-              竖排样式由 .settings-sidenav 作用域 CSS 覆盖。 */}
+          {/* 桌面端左侧竖排导航：标题 + 竖排 TabBar 常驻左栏
+ （sticky 跟随滚动），内容区在右、满宽自适应（不加固定 max-width）。
+ 复用 SettingsTabBar（.settings-tab 类名不变，E2E 选择器兼容），
+ 竖排样式由 .settings-sidenav 作用域 CSS 覆盖。 */}
           <aside className="settings-sidenav">
             <div className="settings-desktop-title">
               <Icon icon={SlidersHorizontal} size="sm" className="settings-desktop-title__icon" />
@@ -203,7 +203,7 @@ export default function SettingsPage() {
           </aside>
           <div className="settings-desktop-main">
           {/* 内容区：访问过的 tab 常驻挂载、display 切换可见性（不再 key 重挂载）。
-              激活 pane 播放纯 opacity 淡入（.settings-content__pane--active 类触发）。 */}
+ 激活 pane 播放纯 opacity 淡入（.settings-content__pane--active 类触发）。 */}
           <div className="settings-content">
             {SETTINGS_TABS.map((tab) => {
               if (!visitedTabs.has(tab.key)) return null;
@@ -227,16 +227,16 @@ export default function SettingsPage() {
           </div>
         </div>
         {/* 桌面端内容下滑 >280px 显示「返回顶部」（复用 Browse/History/Chart 同款玻璃感按钮，
-            Portal 挂 body、监听 AppLayout 共享滚动容器）。仅桌面分支渲染：
-            移动端子页是 fixed inset:0 全屏覆盖层（z-index 60），若按钮常驻会在子页上方悬浮。 */}
+ Portal 挂 body、监听 AppLayout 共享滚动容器）。仅桌面分支渲染：
+ 移动端子页是 fixed inset:0 全屏覆盖层（z-index 60），若按钮常驻会在子页上方悬浮。 */}
         <BackToTopButton />
         </>
       ) : (
         <>
           {/* 移动端菜单常驻挂载：子页（全屏 portal 覆盖层）叠加其上而非替换。
-              原三元渲染在子页打开时卸载菜单 → 返回滑出动画揭示的是空白背景、
-              动画结束后菜单才重新挂载弹入（用户反馈「返回明显延迟/卡顿」的根因），
-              且 Settings.css 的父页视差（body:has(.settings-subpage)）因菜单不在 DOM 而全程空转。 */}
+ 原三元渲染在子页打开时卸载菜单 → 返回滑出动画揭示的是空白背景、
+ 动画结束后菜单才重新挂载弹入（「返回明显延迟/卡顿」的根因），
+ 且 Settings.css 的父页视差（body:has(.settings-subpage)）因菜单不在 DOM 而全程空转。 */}
           <SettingsMobileProfile onProfileClick={() => handleSelectMenu('personal')} />
           <SettingsMenuList onSelect={handleSelectMenu} query={searchQuery} />
           {mobileSubPage && (

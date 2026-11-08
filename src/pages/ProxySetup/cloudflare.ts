@@ -1,7 +1,7 @@
 /**
  * cloudflare — 一键部署 Cloudflare Worker
  *
- * [2026-08-07 一键配置代理]
+ * 
  * - 从 public/proxy-scripts/*.js fetch 脚本源码（由 worker/*.js 复制而来）
  * - 用 Cloudflare Workers API 上传脚本：PUT /client/v4/accounts/{acct}/workers/scripts/{name}
  * - 返回 Worker 默认 URL：https://{name}.{subdomain}.workers.dev

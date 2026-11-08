@@ -1,8 +1,8 @@
 /* ============================================================
-   Home — 首页样式 v2
-   单页布局：Hero + Categories + 7 行横滚数据
-   筛选相关样式已迁出至 /browse 独立页面（src/pages/Browse/Browse.css）
-   ============================================================ */
+ Home — 首页样式 v2
+ 单页布局：Hero + Categories + 7 行横滚数据
+ 筛选相关样式已迁出至 /browse 独立页面（src/pages/Browse/Browse.css）
+ ============================================================ */
 
 .home-page {
   position: relative;
@@ -15,25 +15,25 @@
 }
 
 /* 旧 .home-page--loading（首进 500ms 整页 AppLoading 容器）已随 plain loading
-   一并删除（2026-09-22：启动骨架 → 页级骨架直接衔接，不再插 plain）。 */
+ 一并删除（启动骨架 → 页级骨架直接衔接，不再插 plain）。 */
 
 /* 仅包裹「非 Hero 内容」的进入动画层（见 index.tsx）：
-   HeroBanner 作为本层兄弟节点，祖先不再带 transform 动画，规避其 GPU 合成层闪烁。
-   flex:1 撑满 .home-page 剩余高度——无 token / allFailed 分支的「主提示居中 + 免责声明贴底」
-   依赖 .home-page > .home-page__content > .home-token-required 每层都撑满（高度链）。 */
+ HeroBanner 作为本层兄弟节点，祖先不再带 transform 动画，规避其 GPU 合成层闪烁。
+ flex:1 撑满 .home-page 剩余高度——无 token / allFailed 分支的「主提示居中 + 免责声明贴底」
+ 依赖 .home-page > .home-page__content > .home-token-required 每层都撑满（高度链）。 */
 .home-page__content {
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
   width: 100%;
   min-width: 0;
-  /* 阶段 C：列表型页面接入内容区 2200 硬上限，超宽居中 */
+  /* 列表型页面接入内容区 2200 硬上限，超宽居中 */
   max-width: var(--layout-content-max-width);
   margin-inline: auto;
-  /* 分类切换 SWR 渲染层（2026-08-20）：内容常驻不透明，旧内容保留至新数据就绪后
-     原位替换，不再做亮度凹陷（消除整片闪一下）。
-     animation-fill-mode: none：解除 page-transition-enter 动画（both fill）在结束后
-     对 opacity 的锁定，避免祖先动画状态残留影响本层。 */
+  /* 分类切换 SWR 渲染层：内容常驻不透明，旧内容保留至新数据就绪后
+ 原位替换，不再做亮度凹陷（消除整片闪一下）。
+ animation-fill-mode: none：解除 page-transition-enter 动画（both fill）在结束后
+ 对 opacity 的锁定，避免祖先动画状态残留影响本层。 */
   animation-fill-mode: none;
 }
 
@@ -47,17 +47,17 @@
   padding-bottom: 0;
 }
 
-/* ── 首页卡封面统一圆角（2026-09-29 用户要求）──────────────
-   口径：首页范围内所有卡的封面图统一带圆角，取项目卡封面通用档 --radius-md
-   （同 cqa-board__cover / cqa-catcard__poster / cqa-hotcard__poster 现值）。
-   仅补缺失处：
-   · .video-card-cover（推荐行 / 继续观看横版卡）：2026-09-28 去卡片化随卡容器
-     削掉了圆角（VideoCard.css:98），移动端 (<768 / app) 卡容器仍有 radius-md
-     且 overflow:hidden 裁切、封面已有圆角 → 仅补去卡片化桌面档；
-   · .hero-side-card__cover（HeroBili 右卡）：圆角随 .hero-bili 卡一并被削
-     （HeroBili.css:266 注释），HeroBili 仅 ≥1024 非 TV 渲染，直接补回。
-   · .cqa-board__cover（今日最热面板卡）已有 --radius-md，不重复声明。
-   TV 分支保持现状不动（:not(tv) 隔离）。 */
+/* ── 首页卡封面统一圆角──────────────
+ 口径：首页范围内所有卡的封面图统一带圆角，取项目卡封面通用档 --radius-md
+ （同 cqa-board__cover / cqa-catcard__poster / cqa-hotcard__poster 现值）。
+ 仅补缺失处：
+ · .video-card-cover（推荐行 / 继续观看横版卡）： 去卡片化随卡容器
+ 削掉了圆角（VideoCard.css:98），移动端 (<768 / app) 卡容器仍有 radius-md
+ 且 overflow:hidden 裁切、封面已有圆角 → 仅补去卡片化桌面档；
+ · .hero-side-card__cover（HeroBili 右卡）：圆角随 .hero-bili 卡一并被削
+ （HeroBili.css:266 注释），HeroBili 仅 ≥1024 非 TV 渲染，直接补回。
+ · .cqa-board__cover（今日最热面板卡）已有 --radius-md，不重复声明。
+ TV 分支保持现状不动（:not(tv) 隔离）。 */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .home-page .video-card-cover {
     border-radius: var(--radius-md);
@@ -68,11 +68,11 @@ html:not([data-device="tv"]) .home-page .hero-side-card__cover {
   border-radius: var(--radius-md);
 }
 
-/* ── 首页模块卡片化 → 2026-09-28 去卡片化（桌面端；移动端保持卡片） ─────
-   原「全端四件套：surface 背景 + 1px border(--color-border-light) + radius-lg
-   + shadow-sm」现仅在 <=767 / app 恒移动生效；>=768 桌面端删除四件套，
-   模块直接铺 --color-background，改用留白间隔（--space-sm）区分模块。
-   仅作用于首页（.home-page 作用域），不影响其它页面的同名组件。 */
+/* ── 首页模块卡片化 → 去卡片化（桌面端；移动端保持卡片） ─────
+ 原「全端四件套：surface 背景 + 1px border(--color-border-light) + radius-lg
+ + shadow-sm」现仅在 <=767 / app 恒移动生效；>=768 桌面端删除四件套，
+ 模块直接铺 --color-background，改用留白间隔（--space-sm）区分模块。
+ 仅作用于首页（.home-page 作用域），不影响其它页面的同名组件。 */
 
 .home-page .hero-banner {
   /* 卡片样式已由外层 .hero-banner__card 提供，此处仅覆盖布局属性 */
@@ -84,35 +84,35 @@ html:not([data-device="tv"]) .home-page .hero-side-card__cover {
   margin-bottom: var(--space-sm);
 }
 
-/* 超宽视口：hero 与下方内容同宽（2026-09-07 拍板）
-   HeroBanner 挂在 .home-page__content 之外（规避祖先 transform 动画层导致
-   的 GPU 合成闪烁），因此不受该层的 2200 硬上限约束 —— ≥2200 视口下 hero
-   会比「继续观看 / 分类热度榜 / 7 行」宽 2×pad 的一半（2560 下 2280 vs 2200，
-   左右各错位 40px）。此处补上同一封顶，全页统一 2200 居中对齐。
-   >1280 宽屏桌面 HeroBanner 内部委托 HeroBili（根类 .hero-bili），两分支
-   根元素均为 .home-page 直接子节点，一并封顶。TV 走 .home-page--tv 全宽
-   布局、无 2200 契约，红线上 :not(tv) 前缀隔离。
-   <768 视口 --layout-content-max-width = 100%，本规则无副作用。 */
+/* 超宽视口：hero 与下方内容同宽
+ HeroBanner 挂在 .home-page__content 之外（规避祖先 transform 动画层导致
+ 的 GPU 合成闪烁），因此不受该层的 2200 硬上限约束 —— ≥2200 视口下 hero
+ 会比「继续观看 / 分类热度榜 / 7 行」宽 2×pad 的一半（2560 下 2280 vs 2200，
+ 左右各错位 40px）。此处补上同一封顶，全页统一 2200 居中对齐。
+ >1280 宽屏桌面 HeroBanner 内部委托 HeroBili（根类 .hero-bili），两分支
+ 根元素均为 .home-page 直接子节点，一并封顶。TV 走 .home-page--tv 全宽
+ 布局、无 2200 契约，红线上 :not(tv) 前缀隔离。
+ <768 视口 --layout-content-max-width = 100%，本规则无副作用。 */
 html:not([data-device="tv"]) .home-page > .hero-banner__card,
 html:not([data-device="tv"]) .home-page > .hero-bili {
   /* width:100% 必须显式声明：.home-page 是 flex column，flex 子项若只写
-     margin-inline:auto + max-width 而 width:auto，会按 fit-content 收缩
-     （2560 下实测被压到 ~1117px）。width:100% 先撑满内容盒再被 max-width
-     封顶，margin auto 吸收封顶差值完成居中——与 .home-page__content 同构。 */
+ margin-inline:auto + max-width 而 width:auto，会按 fit-content 收缩
+ （2560 下实测被压到 ~1117px）。width:100% 先撑满内容盒再被 max-width
+ 封顶，margin auto 吸收封顶差值完成居中——与 .home-page__content 同构。 */
   width: 100%;
   max-width: var(--layout-content-max-width);
   margin-inline: auto;
 }
 
-/* 骨架镜像（2026-09-07）：骨架行与最终布局同宽收口，避免超宽屏进入动画
-   期间骨架条比真实内容宽 2×pad 的一半（与上方 hero 封顶同一动机）。 */
+/* 骨架镜像：骨架行与最终布局同宽收口，避免超宽屏进入动画
+ 期间骨架条比真实内容宽 2×pad 的一半（与上方 hero 封顶同一动机）。 */
 html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
   width: 100%;
   max-width: var(--layout-content-max-width);
   margin-inline: auto;
 }
 
-/* 分类快捷入口卡片规则已随组件删除（2026-11-08） */
+/* 分类快捷入口卡片规则已随组件删除 */
 
 /* 每个 TMDB 行 → 卡片模块，行与行之间间距 var(--space-sm) */
 .home-page .tmdb-movierow {
@@ -123,19 +123,19 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
   background-color: var(--color-surface);
   box-shadow: var(--shadow-sm);
   /* 离屏行跳过布局与绘制：侧边栏折叠/展开时 .app-shell__main 每帧 reflow，
-     LazyImage 命中后 <img> 常驻 DOM（首页约 7 行 × 十余张 ≈ 近百张），
-     若全部参与重排会卡顿。content-visibility:auto 让不在视口内的整行
-     直接跳过 layout+paint，仅可见的 2~3 行参与重排；auto 关键字记住上次
-     真实高度，避免滚动条跳动。行内横滚不受影响（行在视口内时正常渲染）。 */
+ LazyImage 命中后 <img> 常驻 DOM（首页约 7 行 × 十余张 ≈ 近百张），
+ 若全部参与重排会卡顿。content-visibility:auto 让不在视口内的整行
+ 直接跳过 layout+paint，仅可见的 2~3 行参与重排；auto 关键字记住上次
+ 真实高度，避免滚动条跳动。行内横滚不受影响（行在视口内时正常渲染）。 */
   content-visibility: auto;
   contain-intrinsic-size: auto 360px;
 }
 
-/* ── 桌面去卡片化（2026-09-28）──────────────────────────────────────
-   上方规则是「移动端保持卡片」的样式源（原全端生效，现由本块在桌面覆盖移除）。
-   覆盖四件套 → 透明容器；padding/margin 留白节奏不变，模块几何零跳动。
-   <=767 与 html[data-device=app]（恒移动）不吃本块 → 卡片原样保留；
-   TV 走独立布局，按 TV 红线 :not(tv) 隔离。 */
+/* ── 桌面去卡片化──────────────────────────────────────
+ 上方规则是「移动端保持卡片」的样式源（原全端生效，现由本块在桌面覆盖移除）。
+ 覆盖四件套 → 透明容器；padding/margin 留白节奏不变，模块几何零跳动。
+ <=767 与 html[data-device=app]（恒移动）不吃本块 → 卡片原样保留；
+ TV 走独立布局，按 TV 红线 :not(tv) 隔离。 */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .home-page .tmdb-movierow,
   html:not([data-device="app"]):not([data-device="tv"]) .home-page .hero-banner__card,
@@ -148,10 +148,10 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
   }
 }
 
-/* 首页推荐行上下间距收紧（2026-10-10 用户反馈偏大）：桌面去卡片化后行内 padding
-   不再服务卡片留白，纵向从 --space-sm 收到 --space-2xs、行间距 margin 收到 --space-xs
-   （行间隔由 ≈3×space-sm 降到 ≈space-xs+2×space-2xs）；横向 padding 维持 --space-sm
-   保证与页面内容左右对齐。移动端（≤767 / app）保留原卡片节奏。 */
+/* 首页推荐行上下间距收紧（偏大）：桌面去卡片化后行内 padding
+ 不再服务卡片留白，纵向从 --space-sm 收到 --space-2xs、行间距 margin 收到 --space-xs
+ （行间隔由 ≈3×space-sm 降到 ≈space-xs+2×space-2xs）；横向 padding 维持 --space-sm
+ 保证与页面内容左右对齐。移动端（≤767 / app）保留原卡片节奏。 */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .home-page .tmdb-movierow {
     margin-bottom: var(--space-xs);
@@ -184,8 +184,8 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
 
 /* ── Token Required ──────────────────────────────────── */
 /* 高度链：.home-page (flex:1) > .home-page__content (flex:1) > .home-token-required (flex:1)，
-   每层都撑满容器剩余高度，主提示经 justify-content:center 真居中；
-   免责声明（本容器兄弟节点）位于其下方自然贴底。 */
+ 每层都撑满容器剩余高度，主提示经 justify-content:center 真居中；
+ 免责声明（本容器兄弟节点）位于其下方自然贴底。 */
 .home-token-required {
   display: flex;
   flex: 1 1 0;
@@ -235,13 +235,13 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
 }
 
 /* 免责声明：位于 .home-token-required 之后（.home-page__content 兄弟节点），
-   token 区 flex:1 撑满后本元素自然贴容器底部；
-   占满整行宽（不设 max-width 限宽），左对齐小字次级色，不抢主提示视觉。
-   左对齐（非居中）：免责文本为多行，末行常仅余几个字，居中会让短行悬在中间显突兀；
-   左对齐后每行（含末行）统一靠左，视觉更稳。
-   9.1：贴底处理——web 端 padding-bottom 小留白贴视口底；
-   app 端 .page-transition 已有 padding-bottom: tabbar-height（全局安全区），
-   声明 padding-bottom 归零以紧贴 TabBar 上沿（无法越过 TabBar 贴物理屏幕底）。 */
+ token 区 flex:1 撑满后本元素自然贴容器底部；
+ 占满整行宽（不设 max-width 限宽），左对齐小字次级色，不抢主提示视觉。
+ 左对齐（非居中）：免责文本为多行，末行常仅余几个字，居中会让短行悬在中间显突兀；
+ 左对齐后每行（含末行）统一靠左，视觉更稳。
+贴底处理——web 端 padding-bottom 小留白贴视口底；
+ app 端 .page-transition 已有 padding-bottom: tabbar-height（全局安全区），
+ 声明 padding-bottom 归零以紧贴 TabBar 上沿（无法越过 TabBar 贴物理屏幕底）。 */
 .home-disclaimer {
   width: 100%;
   padding: 0 0 var(--space-xs);
@@ -251,7 +251,7 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
   text-align: left;
 }
 
-/* 9.1 app 端：声明紧贴 TabBar 上沿（距屏幕底 = tabbar 安全区高度） */
+/* app 端：声明紧贴 TabBar 上沿（距屏幕底 = tabbar 安全区高度） */
 html[data-device="app"] .home-disclaimer {
   padding-bottom: 0;
 }
@@ -263,8 +263,8 @@ html[data-device="app"] .home-disclaimer {
 }
 
 /* 与 .hero-banner 完全同高、同外包盒的占位（消除骨架→真实 banner 的高度/外框跳动）：
-   2026-09-11 缩略图列删除后，真实 .hero-banner 已是「卡片内 16:9 单图」，
-   骨架只保留一条 16:9 主图槽，比例与真实一致（不再有 --hero-thumb-count / 20:9 档）。 */
+ 缩略图列删除后，真实 .hero-banner 已是「卡片内 16:9 单图」，
+ 骨架只保留一条 16:9 主图槽，比例与真实一致（不再有 --hero-thumb-count / 20:9 档）。 */
 .home-skeleton-hero {
   position: relative;
   display: flex;
@@ -284,7 +284,7 @@ html[data-device="app"] .home-disclaimer {
   min-width: 0;
   height: 100%;
   /* 不设 aspect-ratio，与真实主图区一致（flex 子项上 aspect-ratio 会导致循环矛盾）。
-     2026-11-08 统一压暗层（25% 黑垫底 + overlay），见 LazyImage.css 同日注释 */
+ 统一压暗层（25% 黑垫底 + overlay），见 LazyImage.css 同文件注释 */
   background: linear-gradient(
     90deg,
     var(--color-placeholder-shimmer-a) 25%,
@@ -298,8 +298,8 @@ html[data-device="app"] .home-disclaimer {
 }
 
 /* Hero 内容占位 — 严格镜像 .hero-banner__content / .hero-banner__text：
-   左对齐 + 底部对齐（align-items:flex-end 等效 justify-content:flex-end 的 column 排列）、
-   padding 对齐 space-xl（移动端 space-md），让骨架文字占位与真实 banner 文字区位置一致 */
+ 左对齐 + 底部对齐（align-items:flex-end 等效 justify-content:flex-end 的 column 排列）、
+ padding 对齐 space-xl（移动端 space-md），让骨架文字占位与真实 banner 文字区位置一致 */
 .home-skeleton-hero__content {
   position: absolute;
   inset: 0;
@@ -316,7 +316,7 @@ html[data-device="app"] .home-disclaimer {
 
 .home-skeleton-hero__title {
   width: 70%;
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   height: clamp(24px, 2.5vw, 40px);
   border-radius: var(--radius-sm);
   background: var(--color-skeleton, rgba(255, 255, 255, 0.2));
@@ -352,7 +352,7 @@ html[data-device="app"] .home-disclaimer {
 }
 
 /* 移动端 hero 内容占位隐藏简介，仅保留标题（对齐真实 .hero-banner__desc 的 !isMobile 条件）；
-   padding 对齐真实 .hero-banner__content 的移动端 space-md */
+ padding 对齐真实 .hero-banner__content 的移动端 space-md */
 @media (width <= 767px) {
   .home-skeleton-hero__desc {
     display: none;
@@ -362,7 +362,7 @@ html[data-device="app"] .home-disclaimer {
     padding: var(--space-md);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .home-skeleton-hero__desc {
     display: none;
@@ -375,10 +375,10 @@ html[data-device="app"] .home-disclaimer {
 
 
 /* 骨架行列表容器：只负责「行与行之间的纵向节奏」。
-   2026-09-18：骨架行已改为直接渲染真实 <TMDBMovieRow>（见 Home/index.tsx），
-   行距由真实行自身的 margin-bottom(--space-sm) 提供 —— 本容器 gap 恒 0，
-   不再复制真实行的任何盒模型（原 .home-skeleton-row / -card 系列已删除，
-   那套手抄几何曾累积到 150 行补偿注释）。 */
+骨架行已改为直接渲染真实 <TMDBMovieRow>（见 Home/index.tsx），
+ 行距由真实行自身的 margin-bottom(--space-sm) 提供 —— 本容器 gap 恒 0，
+ 不再复制真实行的任何盒模型（原 .home-skeleton-row / -card 系列已删除，
+ 那套手抄几何曾累积到 150 行补偿注释）。 */
 .home-skeleton-rows {
   display: flex;
   flex-direction: column;
@@ -386,14 +386,14 @@ html[data-device="app"] .home-disclaimer {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   大屏骨架（≥1024，2026-09-11 用户要求「不同视口显示相应的 UI 骨架」）
-   与真实大屏布局同构：顶部过渡带 + HeroBili + 7 行卡片。
-   （2026-09-29 左栏「今日趋势 TOP 20」删除，两栏改单列纵向流，
-   .home-two-col 系列样式随之移除。）
-   ⚠️ 骨架**直接复用真实布局的类名**（.hero-bili /
-   .hero-side-card），几何全部由既有 token 派生 —— 这里只补「真实元素没有的
-   骨架填充块」，避免出现第二套几何模型（历史上骨架/真实两套尺寸漂移过）。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 大屏骨架（≥1024， 「不同视口显示相应的 UI 骨架」）
+ 与真实大屏布局同构：顶部过渡带 + HeroBili + 7 行卡片。
+ （左栏「今日趋势 TOP 20」删除，两栏改单列纵向流，
+ .home-two-col 系列样式随之移除。）
+ ⚠️ 骨架**直接复用真实布局的类名**（.hero-bili /
+ .hero-side-card），几何全部由既有 token 派生 —— 这里只补「真实元素没有的
+ 骨架填充块」，避免出现第二套几何模型（历史上骨架/真实两套尺寸漂移过）。
+ ═══════════════════════════════════════════════════════════════════════ */
 
 @media (width >= 1024px) {
   /* 顶部过渡带骨架：盒模型逐条镜像 .home-topstrip（surface + border + radius-lg + 同 padding） */
@@ -413,8 +413,8 @@ html[data-device="app"] .home-disclaimer {
   .home-skeleton-topstrip__item {
     width: 7rem;
     /* 高度镜像真实最高子元素（pill：text-xs × 正文行高 + 上下 space-3xs 内边距）；
-       旧用 var(--text-xs) 纯字号高 → 骨架带比真实带矮 ≈10px，骨架→内容纵向抖动
-       （2026-09-22 三态实测审计，lh-base 1.5 与真实行高同档） */
+ 旧用 var(--text-xs) 纯字号高 → 骨架带比真实带矮 ≈10px，骨架→内容纵向抖动
+ （三态实测，lh-base 1.5 与真实行高同档） */
     height: calc(var(--text-xs) * var(--lh-base) + 2 * var(--space-3xs));
     border-radius: var(--radius-sm);
     background: linear-gradient(
@@ -433,7 +433,7 @@ html[data-device="app"] .home-disclaimer {
   }
 
   /* 右列 banner 槽：容器仍是真实 .hero-bili__banner（高度由 --hero-banner-h 派生、
-     圆角随 --hero-card-radius），只把底色换成 shimmer（2026-11-08 统一压暗层）。 */
+ 圆角随 --hero-card-radius），只把底色换成 shimmer（统一压暗层）。 */
   .home-skeleton-bili__banner {
     background: linear-gradient(
       90deg,
@@ -465,11 +465,11 @@ html[data-device="app"] .home-disclaimer {
     opacity: 0.72;
   }
 
-  /* 右下 meta 占位（2026-11-08 方案B 二次定稿）：复用真实类
-     .hero-side-card__meta/__corner + 真实内容（剧集/2024）→ 像素级一致；
-     容器只补绝对定位（真实 meta 在 .hero-side-card__bottom flex 内，
-     骨架无 __bottom，故按真实视觉位置 right/bottom = space-xs 锚定）；
-     皮肤层换底色为骨架灰、文字透明、去毛玻璃。 */
+  /* 右下 meta 占位：复用真实类
+ .hero-side-card__meta/__corner + 真实内容（剧集/2024）→ 像素级一致；
+ 容器只补绝对定位（真实 meta 在 .hero-side-card__bottom flex 内，
+ 骨架无 __bottom，故按真实视觉位置 right/bottom = space-xs 锚定）；
+ 皮肤层换底色为骨架灰、文字透明、去毛玻璃。 */
   .home-skeleton .hero-side-card__meta-skeleton {
     position: absolute;
     right: var(--space-xs);
@@ -484,13 +484,13 @@ html[data-device="app"] .home-disclaimer {
     opacity: 0.72;
   }
 
-  /* 换一换占位（2026-10-10 二次镜像修复）：骨架 span 挂真实 .hero-bili__shuffle
-     基类 → 脱标浮层定位（top 与第一行卡顶对齐、right = space-md − page-pad-x）、
-     padding/border/radius/flex-column/gap 全部继承真实，本处**只补内容条**：
-       · icon 条 = --icon-sm（≈17px，真实 Icon size="sm" 同源）；
-       · 文本条 = 竖排「换一换」3 字（--text-2xs 11px × 3 字 + 0.15em 字距
-         ≈ 14×37），换算口径与 boot-splash .bs-shuffle 完全一致（两套骨架同款）。
-     上一版 display:block + width:--space-xl 空 span 塌成小圆点（用户截图质询）。 */
+  /* 换一换占位（镜像修复）：骨架 span 挂真实 .hero-bili__shuffle
+ 基类 → 脱标浮层定位（top 与第一行卡顶对齐、right = space-md − page-pad-x）、
+ padding/border/radius/flex-column/gap 全部继承真实，本处**只补内容条**：
+ · icon 条 = --icon-sm（≈17px，真实 Icon size="sm" 同源）；
+ · 文本条 = 竖排「换一换」3 字（--text-2xs 11px × 3 字 + 0.15em 字距
+ ≈ 14×37），换算口径与 boot-splash .bs-shuffle 完全一致（两套骨架同款）。
+ 上一版 display:block + width:--space-xl 空 span 塌成小圆点。 */
   .home-skeleton .home-skeleton-bili__shuffle-icon {
     display: block;
     width: var(--icon-sm);
@@ -513,10 +513,10 @@ html[data-device="app"] .home-disclaimer {
     pointer-events: none;
   }
 
-  /* 2026-11-04：全档 2 列 × 3 行 = 6 张，无 2560 分档。
-     JS 侧已按 heroSideCols × heroSideRows 渲染正确张数，此处 nth-child 仅为双保险：
-     多渲染的卡（若有）隐藏，避免出现真实布局没有的第 4 行。
-     ⚠️ 嵌套 @media 必须置于本块末位：order/order 要求 rules 先于 at-rules。 */
+  /* 全档 2 列 × 3 行 = 6 张，无 2560 分档。
+ JS 侧已按 heroSideCols × heroSideRows 渲染正确张数，此处 nth-child 仅为双保险：
+ 多渲染的卡（若有）隐藏，避免出现真实布局没有的第 4 行。
+ ⚠️ 嵌套 @media 必须置于本块末位：order/order 要求 rules 先于 at-rules。 */
   .home-skeleton .hero-bili__cards > .hero-side-card:nth-child(n + 7) {
     display: none;
   }
@@ -524,10 +524,10 @@ html[data-device="app"] .home-disclaimer {
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   顶部过渡带（2026-09-10 大屏整改「补强之二」，仅 >1280 渲染）
-   header 与 Hero 之间的一条信息带，内容宽度与 .home-page__content 同为
-   2200 封顶居中（与「顶栏对齐」补强同一契约）；卡片模块规范（surface + border）。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 顶部过渡带（仅 >1280 渲染）
+ header 与 Hero 之间的一条信息带，内容宽度与 .home-page__content 同为
+ 2200 封顶居中（与「顶栏对齐」补强同一契约）；卡片模块规范（surface + border）。
+ ═══════════════════════════════════════════════════════════════════════ */
 
 .home-topstrip {
   display: flex;
@@ -535,10 +535,10 @@ html[data-device="app"] .home-disclaimer {
   width: 100%;
   max-width: var(--layout-content-max-width);
   margin-inline: auto;
-  /* 2026-10-10 用户要求：下方间距与上方一致。上方 = .home-page padding-top（--space-sm），
-     下方原本 = margin-bottom(--space-sm) + HeroBili 网格 padding-top(--space-sm) = 2×space-sm（偏大）。
-     去掉本行 margin-bottom → 下方视觉间距 = 网格 padding-top = --space-sm，与上方齐平。
-     （topstrip 仅宽屏渲染，此时 HeroBili 必在，网格 padding-top 恒存在。） */
+  /* 下方间距与上方一致。上方 = .home-page padding-top（--space-sm），
+ 下方原本 = margin-bottom(--space-sm) + HeroBili 网格 padding-top(--space-sm) = 2×space-sm（偏大）。
+ 去掉本行 margin-bottom → 下方视觉间距 = 网格 padding-top = --space-sm，与上方齐平。
+ （topstrip 仅宽屏渲染，此时 HeroBili 必在，网格 padding-top 恒存在。） */
   margin-bottom: 0;
   padding: var(--space-xs) var(--space-md);
   border: 1px solid var(--color-border-light);
@@ -557,8 +557,8 @@ html[data-device="app"] .home-disclaimer {
   min-width: 0;
 }
 
-/* 今日热度趋势「整体」卡片（2026-10-11 用户澄清：卡片作用于标题+轮播整组）：
-   surface-elevated 底 + 发丝边框 + radius-md；右侧个人 pill 在卡外。 */
+/* 今日热度趋势「整体」卡片（卡片作用于标题+轮播整组）：
+ surface-elevated 底 + 发丝边框 + radius-md；右侧个人 pill 在卡外。 */
 .home-topstrip__trend {
   display: flex;
   flex: 1 1 auto;
@@ -572,20 +572,20 @@ html[data-device="app"] .home-disclaimer {
   box-shadow: var(--shadow-sm);
 }
 
-/* 标题锁定不压缩（2026-10-11 修 bug：rotator flex:1 抢曾宽把 crumb 挤扁） */
+/* 标题锁定不压缩（修 bug：rotator flex:1 抢曾宽把 crumb 挤扁） */
 .home-topstrip__crumb {
   flex-shrink: 0;
   color: var(--color-text-tertiary);
   white-space: nowrap;
 }
 
-/* ── 热度 Top20 轮播（2026-10-09 用户需求）──────────────────
-   公告位单条显示，5s 自动切换，纵向上下滑动（translateY 按单条高步进）。
-   rotator 占趋势卡内 crumb 之后的剩余宽度（flex:1 1 auto），track/item 铺满 100%。 */
+/* ── 热度 Top20 轮播──────────────────
+ 公告位单条显示，5s 自动切换，纵向上下滑动（translateY 按单条高步进）。
+ rotator 占趋势卡内 crumb 之后的剩余宽度（flex:1 1 auto），track/item 铺满 100%。 */
 .home-topstrip__rotator {
-  /* 单条高度收敛为本变量（2026-10-10）：轮播位移 = 条数 × 单条高，
-     track（20 条堆叠）与 item 必须共读它 —— 曾用 translateY(-100%)，
-     百分比相对 track 自身总高（20 条）→ 一步跳 20 行滚出可视区（漂移空白）。 */
+  /* 单条高度收敛为本变量：轮播位移 = 条数 × 单条高，
+ track（20 条堆叠）与 item 必须共读它 —— 曾用 translateY(-100%)，
+ 百分比相对 track 自身总高（20 条）→ 一步跳 20 行滚出可视区（漂移空白）。 */
   --rotator-h: 1.6em;
   flex: 1 1 auto;
   min-width: 0;
@@ -608,8 +608,8 @@ html[data-device="app"] .home-disclaimer {
   width: 100%;
   min-width: 0;
   height: var(--rotator-h);
-  /* 轮播项本身素净（卡片化在 .home-topstrip__trend 整体层）；hover 不变背景（2026-10-11 用户要求），
-     仅标题变色反馈。padding-inline + margin-inline 负值保持文字位置。 */
+  /* 轮播项本身素净（卡片化在 .home-topstrip__trend 整体层）；hover 不变背景，
+ 仅标题变色反馈。padding-inline + margin-inline 负值保持文字位置。 */
   margin-inline: calc(-1 * var(--space-2xs));
   padding-inline: var(--space-2xs);
   border-radius: var(--radius-sm);
@@ -624,9 +624,9 @@ html[data-device="app"] .home-disclaimer {
   color: var(--color-primary);
 }
 
-/* 热度（2026-10-10 用户指定参考 chart 页 card = Chart.css .chart-row__heat .n）：
-   暖橙 + 加粗 + tabular-nums + Flame 图标；图标压到 --text-xs（chart 为 12px，
-   条内单行空间紧，走 token 不硬编码） */
+/* 热度（参考 chart 页 card = Chart.css .chart-row__heat .n）：
+ 暖橙 + 加粗 + tabular-nums + Flame 图标；图标压到 --text-xs（chart 为 12px，
+ 条内单行空间紧，走 token 不硬编码） */
 .home-topstrip__heat {
   display: inline-flex;
   flex-shrink: 0;
@@ -643,8 +643,8 @@ html[data-device="app"] .home-disclaimer {
   height: var(--text-xs);
 }
 
-/* 年份/类型胶囊（2026-10-10 用户指定）：镜像 chart-row__badge
-   （tag-bg 底 + radius-sm + text-xs × lh-base），条内单行高恰好容纳 */
+/* 年份/类型胶囊：镜像 chart-row__badge
+ （tag-bg 底 + radius-sm + text-xs × lh-base），条内单行高恰好容纳 */
 .home-topstrip__meta {
   flex-shrink: 0;
   padding: 0 var(--space-xs);
@@ -673,16 +673,16 @@ html[data-device="app"] .home-disclaimer {
 }
 
 .home-topstrip__heat-title {
-  /* 标题（电影/剧集名）不截断（2026-10-11 用户要求）：flex-shrink:0 保全整名，
-     空间不足时由简介（__desc）单独收缩 ellipsis。 */
+  /* 标题（电影/剧集名）不截断：flex-shrink:0 保全整名，
+ 空间不足时由简介（__desc）单独收缩 ellipsis。 */
   flex: 0 0 auto;
   color: var(--color-text);
   font-weight: 500;
   white-space: nowrap;
 }
 
-/* 简介（2026-10-11 用户需求）：评分后新增，取 TMDB overview。占剩余宽度（flex:1 1 auto），
-   空间不足时溢出隐藏（min-width:0 + ellipsis）；次级色、字重弱于标题。 */
+/* 简介：评分后新增，取 TMDB overview。占剩余宽度（flex:1 1 auto），
+ 空间不足时溢出隐藏（min-width:0 + ellipsis）；次级色、字重弱于标题。 */
 .home-topstrip__desc {
   flex: 1 1 auto;
   min-width: 0;
@@ -693,8 +693,8 @@ html[data-device="app"] .home-disclaimer {
   text-overflow: ellipsis;
 }
 
-/* 2026-10-09（B 方案纯公告条）：__sep / __stat / __flame / __more 随
-   「今日趋势 / 最热分类 / 完整热度榜」元素删除 —— topstrip 只剩 crumb + 右侧 pill。 */
+/* （纯公告条）：__sep / __stat / __flame / __more 随
+ 「今日趋势 / 最热分类 / 完整热度榜」元素删除 —— topstrip 只剩 crumb + 右侧 pill。 */
 
 .home-topstrip__right {
   display: flex;
@@ -706,11 +706,11 @@ html[data-device="app"] .home-disclaimer {
 .home-topstrip__pill {
   padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-full);
-  /* 2026-09-28 去卡后 topstrip 透出页面底 --color-background，
-     pill 底色同值会隐形 → 改 surface（白）保持胶囊可辨 */
+  /* 去卡后 topstrip 透出页面底 --color-background，
+ pill 底色同值会隐形 → 改 surface（白）保持胶囊可辨 */
   background: var(--color-surface);
   color: var(--color-text-secondary);
-  /* 2026-10-10 用户要求：继续观看/收藏 pill 可点击跳对应页（<Link>） */
+  /* 继续观看/收藏 pill 可点击跳对应页（<Link>） */
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
@@ -723,22 +723,22 @@ html[data-device="app"] .home-disclaimer {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   大屏布局：单列纵向流 Hero → 继续观看 → 推荐行。
-   原「方案 C 两栏」（.home-two-col 左栏「今日趋势 TOP 20」sticky + 右列）已删除；
-   原「CQA 合集行」（CategoryInlineBoard）已于 2026-11-04 按用户要求删除。
-   宽度收口全部由既有规则承担：HeroBili 走 `.home-page > .hero-bili` 2200 封顶居中，
-   过渡带 / .home-page__content 各自已有 max-width 封顶，此处无需新增规则。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 大屏布局：单列纵向流 Hero → 继续观看 → 推荐行。
+ 原「两栏」（.home-two-col 左栏「今日趋势 TOP 20」sticky + 右列）已删除；
+ 原「CQA 合集行」（CategoryInlineBoard）已删除。
+ 宽度收口全部由既有规则承担：HeroBili 走 `.home-page > .hero-bili` 2200 封顶居中，
+ 过渡带 / .home-page__content 各自已有 max-width 封顶，此处无需新增规则。
+ ═══════════════════════════════════════════════════════════════════════ */
 
 /* ≥2560 档的 --hero-side-w(0.66) / --hero-banner-h(0.277) 已移至 layout-tokens.css
-   （2026-09-22 单真源收敛；齐平契约推导注释见该文件）。 */
+ （单真源收敛；齐平契约推导注释见该文件）。 */
 
 /* ── Mobile ──────────────────────────────────────────── */
 
-/* 9.1：取消移动端 token 区 50vh 固定高度的旧设计（让声明悬在中部），
-   恢复 token flex:1 撑满整页 + justify-content:center 主提示居中 +
-   免责声明自然贴底（贴可视区底/安全区上沿）。无 token 页面在移动/app
-   端也能让免责声明真正贴底。 */
+/* 取消移动端 token 区 50vh 固定高度的旧设计（让声明悬在中部），
+ 恢复 token flex:1 撑满整页 + justify-content:center 主提示居中 +
+ 免责声明自然贴底（贴可视区底/安全区上沿）。无 token 页面在移动/app
+ 端也能让免责声明真正贴底。 */
 
 
 
@@ -779,30 +779,30 @@ html[data-device="app"] .home-disclaimer {
     transform: translateY(0);
   }
 }
-/* 2026-08-24 交叉淡化修复：原 delay 800ms 等骨架覆盖层完全透明后才淡入内容，
-   导致「骨架淡出 → 页面空白（仅背景色）→ 内容才出现」的空白窗口（用户反馈
-   「从其他页进入首页闪一下」）。现 delay 200ms 与覆盖层 fading（200ms 起
-   0.6s 淡出）同步开始——骨架淡出的同时内容淡入，无缝过渡，无空白帧。 */
+/* 交叉淡化修复：原 delay 800ms 等骨架覆盖层完全透明后才淡入内容，
+ 导致「骨架淡出 → 页面空白（仅背景色）→ 内容才出现」的空白窗口（
+ 「从其他页进入首页闪一下」）。现 delay 200ms 与覆盖层 fading（200ms 起
+ 0.6s 淡出）同步开始——骨架淡出的同时内容淡入，无缝过渡，无空白帧。 */
 .home-page__content--delayed-enter {
   opacity: 0;
   animation: page-transition-enter-fade 0.4s var(--ease-out-expo) forwards;
   animation-delay: 200ms;
 }
-/* ── 「继续观看」行进入动画（2026-08-26） ──
-   分类切回首页时该行全新挂载（isCat 翻转），挂载即触发淡入上移，
-   消除「从分类切回首页突然闪现」；行内卡片靠 skipAnimations 禁用
-   animate-card-enter（避免卡片闪烁），故仅在行容器层做整体进入过渡。
-   reduced-motion 由 animations.css 全局规则覆盖。 */
+/* ── 「继续观看」行进入动画 ──
+ 分类切回首页时该行全新挂载（isCat 翻转），挂载即触发淡入上移，
+ 消除「从分类切回首页突然闪现」；行内卡片靠 skipAnimations 禁用
+ animate-card-enter（避免卡片闪烁），故仅在行容器层做整体进入过渡。
+ reduced-motion 由 animations.css 全局规则覆盖。 */
 .home-continue-row {
   opacity: 0;
   animation: page-transition-enter-fade 0.4s var(--ease-out-expo) forwards;
 }
 
-/* ── 冷启动骨架接替（2026-09-22 用户报「标题/继续观看显示两次、动画触发两次」）──
-   整屏骨架（isInitialLoading 分支）已经把标题/行位置预告过一遍，数据到达后
-   page-transition-enter / 延迟档 / 继续观看行的淡入若再播 = 同位置第二次入场 → 抖动。
-   骨架→内容的替换处直接硬现（位置本来就对齐，无闪跳）。类由 Home/index.tsx
-   coldSkeletonShownRef 挂。 */
+/* ── 冷启动骨架接替（标题/继续观看显示两次、动画触发两次）──
+ 整屏骨架（isInitialLoading 分支）已经把标题/行位置预告过一遍，数据到达后
+ page-transition-enter / 延迟档 / 继续观看行的淡入若再播 = 同位置第二次入场 → 抖动。
+ 骨架→内容的替换处直接硬现（位置本来就对齐，无闪跳）。类由 Home/index.tsx
+ coldSkeletonShownRef 挂。 */
 .home-page--from-skeleton .home-page__content,
 .home-page--from-skeleton .home-continue-row {
   opacity: 1;

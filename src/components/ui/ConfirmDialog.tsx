@@ -28,7 +28,7 @@ export default function ConfirmDialog({
   onCancel,
   className,
 }: ConfirmDialogProps) {
-  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
+  //布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
   const isMobile = useIsMobileLayout();
 
   const handleCancel = useCallback(() => {
@@ -66,8 +66,8 @@ export default function ConfirmDialog({
           )}
           <div className="flex justify-center gap-[var(--space-sm)]">
             <AlertDialog.Cancel asChild>
-              {/* 2026-11-08：压掉 Button 基类的 min-h[--comp-btn-min-width]（移动端 ≈40px）
-                  与 px-lg，避免取消/删除按钮过「肥」 */}
+              {/* 压掉 Button 基类的 min-h[--comp-btn-min-width]（移动端 ≈40px）
+ 与 px-lg，避免取消/删除按钮过「肥」 */}
               <Button size="sm" variant="outline" className="rounded-full px-[var(--space-md)] min-h-[32px]" onClick={handleCancel}>
                 {cancelText}
               </Button>

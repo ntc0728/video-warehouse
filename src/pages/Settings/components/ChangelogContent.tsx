@@ -34,8 +34,8 @@ const formatInline = (text: string): string =>
     );
 
 /** 将 release-please 生成的 CHANGELOG.md 渲染为「左时间轴 + 右内容」双栏布局：
- *  左侧：垂直时间轴，每个轴点显示版本号；
- *  右侧：对应版本的日志内容（分组 + 条目）。 */
+ * 左侧：垂直时间轴，每个轴点显示版本号；
+ * 右侧：对应版本的日志内容（分组 + 条目）。 */
 export default function ChangelogContent({ raw }: ChangelogContentProps) {
   const lines = raw.replace(/\r\n/g, '\n').split('\n');
 

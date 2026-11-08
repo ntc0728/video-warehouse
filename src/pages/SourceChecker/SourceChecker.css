@@ -1,5 +1,5 @@
-/* 源检测页面样式（2026-10-10 落地「己 · 三栏 + 健康带」：健康环+延迟条形+五域磁贴 + 左导航/中列表/右详情坞条件分栏）
-   仅用 Design Token（无裸 hex / 无 transition:all），亮/暗主题自适应。 */
+/* 源检测页面样式（「三栏 + 健康带」：健康环+延迟条形+五域磁贴 + 左导航/中列表/右详情坞条件分栏）
+ 仅用 Design Token（无裸 hex / 无 transition:all），亮/暗主题自适应。 */
 .page-padding.source-checker-page {
   display: flex;
   flex: 1 1 0;
@@ -344,7 +344,7 @@
   margin-top: var(--space-sm);
 }
 /* 分段项（.tab-btn 为 spec 锚点，首个 .active）：对齐收藏/历史桌面左栏 rail-item（RecordShell.css ≥1024）——
-   未选中：无框无底；选中：--color-primary 实心底 + 反白 + 600 + 圆角 --radius-md（非下划线、非左竖条） */
+ 未选中：无框无底；选中：--color-primary 实心底 + 反白 + 600 + 圆角 --radius-md（非下划线、非左竖条） */
 .source-checker-seg {
   display: flex;
   flex-direction: column;
@@ -787,7 +787,7 @@
   }
 }
 
-/* 9.1 app 恒移动语义：小屏布局在 app 端恒生效（横屏不误判桌面） */
+/* app 恒移动语义：小屏布局在 app 端恒生效（横屏不误判桌面） */
 html[data-device="app"] .source-checker-cols {
   grid-template-columns: minmax(0, 1fr);
 }

@@ -1,39 +1,39 @@
 .up-universal-player {
-  /* ── 播放器强调色：作用域内覆写 primary 家族（2026-09-10）────────────────────
-     播放器 chrome 恒为深色底（视频 + rgba(0,0,0,.6) 半透明面板），而 --color-primary
-     在**浅色主题**是 #000 → 所有「用 primary 做强调」的规则在这里退化成黑色、压在黑面板上。
+  /* ── 播放器强调色：作用域内覆写 primary 家族────────────────────
+ 播放器 chrome 恒为深色底（视频 + rgba(0,0,0,.6) 半透明面板），而 --color-primary
+ 在**浅色主题**是 #000 → 所有「用 primary 做强调」的规则在这里退化成黑色、压在黑面板上。
 
-     修前实测（浅色主题）不可见清单：
-     · 频道列表一级活跃左竖条  .up-channel-group-active::before   → rgb(0,0,0)
-     · 频道列表二级活跃左边框  .up-channel-item-active            → 3px rgb(0,0,0)
-     · 二级活跃序号           .up-channel-item-active …-num      → color(srgb 0 0 0/.65)
-     · 一级活跃计数药丸        color-mix(in srgb, primary 12%)    → 比未选中的白 6% **更暗**
-     · TV 焦点描边（3 处）与电视端焦点底色 color-mix(primary 15~20%)
-     · 进度条/时移滑块 accent-color、时移按钮描边与文字
-       （另列的手势指示条填充随 .up-gesture-indicator 于 2026-09-30 移除，已不在此列）
-     另有一类「primary 作填充 + color:#fff」的消费点在**暗色主题**同样坏（primary = #fff
-     → 白底白字）：错误态主按钮 `.up-error-actions-btn-primary`、音效预设
-     `.up-settings-preset.is-active`、移动端抽屉 chip `.up-fs-drawer .up-ms-chip--on`、
-     投屏核心圆 `.up-cast-core`。
+ 修前实测（浅色主题）不可见清单：
+ · 频道列表一级活跃左竖条 .up-channel-group-active::before → rgb(0,0,0)
+ · 频道列表二级活跃左边框 .up-channel-item-active → 3px rgb(0,0,0)
+ · 二级活跃序号 .up-channel-item-active …-num → color(srgb 0 0 0/.65)
+ · 一级活跃计数药丸 color-mix(in srgb, primary 12%) → 比未选中的白 6% **更暗**
+ · TV 焦点描边（3 处）与电视端焦点底色 color-mix(primary 15~20%)
+ · 进度条/时移滑块 accent-color、时移按钮描边与文字
+ （另列的手势指示条填充随 .up-gesture-indicator 于 移除，已不在此列）
+ 另有一类「primary 作填充 + color:#fff」的消费点在**暗色主题**同样坏（primary = #fff
+ → 白底白字）：错误态主按钮 `.up-error-actions-btn-primary`、音效预设
+ `.up-settings-preset.is-active`、移动端抽屉 chip `.up-fs-drawer .up-ms-chip--on`、
+ 投屏核心圆 `.up-cast-core`。
 
-     故把 primary 家族整体切到亮色强调蓝 #3b82f6。选它的依据是仓里已有的三处线索：
-     ① `.up-fs-drawer .up-ms-chip--on { background: var(--color-primary) }` 的**兜底就是
-        #3b82f6** —— 作者本来期望这里是蓝的，只是 token 被定义成 #000/#fff 让兜底永不生效；
-     ② 手势指示条填充 `.up-gesture-indicator__fill { background: var(--color-primary) }` 同款
-        写法（该指示器已于 2026-09-30 移除，此处仅留作当初选色的历史依据）；
-     ③ `.video-card-status.status--unwatched` 已用 rgba(59,130,246,.85)。
+ 故把 primary 家族整体切到亮色强调蓝 #3b82f6。选它的依据是仓里已有的三处线索：
+ ① `.up-fs-drawer .up-ms-chip--on { background: var(--color-primary) }` 的**兜底就是
+ #3b82f6** —— 作者本来期望这里是蓝的，只是 token 被定义成 #000/#fff 让兜底永不生效；
+ ② 手势指示条填充 `.up-gesture-indicator__fill { background: var(--color-primary) }` 同款
+ 写法（该指示器已移除，此处仅留作当初选色的历史依据）；
+ ③ `.video-card-status.status--unwatched` 已用 rgba(59,130,246,.85)。
 
-     同时补 --color-primary-rgb：IPTVOSDBar 的时移按钮写作
-     `rgba(var(--color-primary-rgb, 22, 119, 255), .15/.25)`，而该 token **全仓从未定义** →
-     一直在走 #1677ff 兜底；补齐后与 primary 同源（视觉几乎无变化，但不再是「碰巧像」）。
+ 同时补 --color-primary-rgb：IPTVOSDBar 的时移按钮写作
+ `rgba(var(--color-primary-rgb, 22, 119, 255), .15/.25)`，而该 token **全仓从未定义** →
+ 一直在走 #1677ff 兜底；补齐后与 primary 同源（视觉几乎无变化，但不再是「碰巧像」）。
 
-     ⚠️ 刻意**不按主题分叉**（不写 html:not([data-theme="dark"])）：播放器底恒深色，
-     强调色也应恒定；分叉会让暗色主题下「填充 + #fff 文字」那四类继续白底白字。
-     由此产生的唯一行为变化：暗色主题下播放器的强调色由白转蓝（见同日 changelog）。
-     ⚠️ 作用域选 .up-universal-player 而非 body:has(…) —— 后者的变量会漏到 AppLayout
-     外壳（/play/:id 的播放器是覆盖在应用之上的一层），页面里其它 body 级元素也会被染蓝。
-     已核对：播放器内所有 live 的 primary 消费点都在本子树内（两个 portaled 菜单
-     MoreMenu/ContextMenu 不消费 primary；.up-popover-item-check 全仓无 tsx 引用，是死规则）。 */
+ ⚠️ 刻意**不按主题分叉**（不写 html:not([data-theme="dark"])）：播放器底恒深色，
+ 强调色也应恒定；分叉会让暗色主题下「填充 + #fff 文字」那四类继续白底白字。
+ 由此产生的唯一行为变化：暗色主题下播放器的强调色由白转蓝。
+ ⚠️ 作用域选 .up-universal-player 而非 body:has(…) —— 后者的变量会漏到 AppLayout
+ 外壳（/play/:id 的播放器是覆盖在应用之上的一层），页面里其它 body 级元素也会被染蓝。
+ 已核对：播放器内所有 live 的 primary 消费点都在本子树内（两个 portaled 菜单
+ MoreMenu/ContextMenu 不消费 primary；.up-popover-item-check 全仓无 tsx 引用，是死规则）。 */
   --color-primary: var(--player-primary);
   --color-primary-hover: var(--player-primary-hover);
   --color-primary-rgb: 59, 130, 246;
@@ -245,7 +245,7 @@
   left: 0;
   z-index: 20;
   padding: var(--space-sm) var(--space-md) var(--space-md);
-  /* 0.88：P2-3 控制栏对比度增强（原 0.8 白字压 0.8 黑渐变，亮画面下对比不足）。D7 合并自文件尾部覆写块 */
+  /* 0.88：-3 控制栏对比度增强（原 0.8 白字压 0.8 黑渐变，亮画面下对比不足）。D7 合并自文件尾部覆写块 */
   background: linear-gradient(to top, rgba(0, 0, 0, 0.88), transparent);
   transition: opacity var(--dur-lg) ease, transform var(--dur-lg) ease;
 }
@@ -262,7 +262,7 @@
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  /* 0.92：P2-3 文字对比度增强（原 0.8；D7 合并自文件尾部覆写块） */
+  /* 0.92：-3 文字对比度增强（原 0.8；D7 合并自文件尾部覆写块） */
   color: rgba(255, 255, 255, 0.92);
   font-size: var(--text-base);
   font-weight: 600;
@@ -335,8 +335,8 @@
 }
 
 /* ── 双图标 hover（DuoIcon） ────────────────────────────
-   原实现：hover 时主图标淡出上移、副图标淡入归位（交叉淡化 + translateY「跳动」）。
-   去 scale（不做放大缩小），保留原 translateY 跳动：主图标上跳 4px 淡出，副图标从下方归位淡入。 */
+ 原实现：hover 时主图标淡出上移、副图标淡入归位（交叉淡化 + translateY「跳动」）。
+ 去 scale（不做放大缩小），保留原 translateY 跳动：主图标上跳 4px 淡出，副图标从下方归位淡入。 */
 .up-icon-duo {
   position: relative;
   display: inline-flex;
@@ -440,7 +440,7 @@
   height: var(--space-xs-plus);
 }
 
-/* P0-2：键盘聚焦进度条的可见焦点环（role=slider 可达性配套） */
+/* -2：键盘聚焦进度条的可见焦点环（role=slider 可达性配套） */
 .up-progress-bar:focus-visible {
   outline: 2px solid var(--player-accent, currentColor);
   outline-offset: 4px;
@@ -654,7 +654,7 @@
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  /* 0.92：P2-3 文字对比度增强（原 0.8；D7 合并自文件尾部覆写块） */
+  /* 0.92：-3 文字对比度增强（原 0.8；D7 合并自文件尾部覆写块） */
   color: rgba(255, 255, 255, 0.92);
   font-size: var(--text-base);
   text-align: left;
@@ -689,7 +689,7 @@
 
 .up-more-popover {
   z-index: 95;
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   min-width: clamp(120px, 10vw, 144px);
   padding: var(--space-sm);
   transform: none;
@@ -826,11 +826,11 @@
 }
 
 /* 分组面板 - 完全隐藏滚动条但保留滚动能力
-   ⚠️ 宽度不再与二级栏 50/50（2026-09-10 用户拍板方案 A）：
-   一级是 10 条写死的固定分类，长度有确定上限（实测需要 118.6–129.1px，与视口无强相关），
-   二级是自由频道名、宽度需求无上限 → 一级按内容定宽，省下的全给二级。
-   原 width/max-width 均为 50%，1440 实测一级空转 97px（44%）、二级名称仅剩 122.2px
-   导致最长名截断 34.9px。 */
+ ⚠️ 宽度不再与二级栏 50/50：
+ 一级是 10 条写死的固定分类，长度有确定上限（实测需要 118.6–129.1px，与视口无强相关），
+ 二级是自由频道名、宽度需求无上限 → 一级按内容定宽，省下的全给二级。
+ 原 width/max-width 均为 50%，1440 实测一级空转 97px（44%）、二级名称仅剩 122.2px
+ 导致最长名截断 34.9px。 */
 .up-channel-groups {
   flex: 0 0 auto;
   width: var(--layout-channel-group-w);
@@ -931,8 +931,8 @@
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
-/* 频道面板 - 完全隐藏滚动条；吃一级栏之外的剩余宽度（2026-09-10 方案 A）
-   min-width: 0 必需：否则内部 marquee 的 max-content 会把本栏撑开、挤回一级栏。 */
+/* 频道面板 - 完全隐藏滚动条；吃一级栏之外的剩余宽度
+ min-width: 0 必需：否则内部 marquee 的 max-content 会把本栏撑开、挤回一级栏。 */
 .up-channel-channels {
   flex: 1 1 auto;
   min-width: 0;
@@ -1107,12 +1107,12 @@
   animation-play-state: running;
 }
 
-/* ── 频道列表窄屏档（≤479，2026-09-10 用户拍板）─────────────────────────
-   一级栏宽度已由 --layout-channel-group-w 收到 116px（见 variables.css），
-   这里同步把组项「内容侧」也收一档（字号 --text-sm、行内边距 --space-sm），
-   否则 14px 字号下最长分类名「央视 CCTV」需要 ~118px、仍会截断。
-   再把质量徽章（1080P / 720P）隐藏，把宽度让给频道名 ——
-   375 实测二级名称可用宽度 54.5 → 128px（+135%），且频道名的信息价值高于画质标签。 */
+/* ── 频道列表窄屏档（≤479）─────────────────────────
+ 一级栏宽度已由 --layout-channel-group-w 收到 116px（见 variables.css），
+ 这里同步把组项「内容侧」也收一档（字号 --text-sm、行内边距 --space-sm），
+ 否则 14px 字号下最长分类名「央视 CCTV」需要 ~118px、仍会截断。
+ 再把质量徽章（1080P / 720P）隐藏，把宽度让给频道名 ——
+ 375 实测二级名称可用宽度 54.5 → 128px（+135%），且频道名的信息价值高于画质标签。 */
 @media (width <= 479px) {
   .up-channel-group-item {
     padding-right: var(--space-sm);
@@ -1124,7 +1124,7 @@
     display: none;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 479px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 479px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .up-channel-group-item {
     padding-right: var(--space-sm);
@@ -1173,10 +1173,10 @@
   width: var(--layout-episode-panel-w-alt);
 }
 
-/* 一级栏占面板比例（2026-09-15 B5）：TV 组项字号对齐 10-foot 基线后用 --text-lg（1080p=22px），
-   --layout-channel-group-w 由 162 → 208（4K 416），占 TV 面板基宽 440/880 的 47.3% ——
-   超过通用规则 .up-channel-groups 的 max-width:44%（1080p 下会钳到 193.6px、仍截断）。
-   此处放开到 52%：一级栏 208、二级仍剩 232px（4K 416 / 463px），足够容纳频道名。 */
+/* 一级栏占面板比例：TV 组项字号对齐 10-foot 基线后用 --text-lg（1080p=22px），
+ --layout-channel-group-w 由 162 → 208（4K 416），占 TV 面板基宽 440/880 的 47.3% ——
+ 超过通用规则 .up-channel-groups 的 max-width:44%（1080p 下会钳到 193.6px、仍截断）。
+ 此处放开到 52%：一级栏 208、二级仍剩 232px（4K 416 / 463px），足够容纳频道名。 */
 .up-platform-tv .up-channel-groups {
   max-width: 52%;
 }
@@ -1214,7 +1214,7 @@
 
 /* ===== Platform: Mobile ===== */
 .up-platform-mobile .up-control-bar button {
-  /* P2-4 触摸目标：--icon-xl ≈32px（border-box）不足 WCAG 44px，移动平台提到 --tap-target（原 --icon-sm；D7 合并自文件尾部覆写块） */
+  /* -4 触摸目标：--icon-xl ≈32px（border-box）不足 WCAG 44px，移动平台提到 --tap-target（原 --icon-sm；D7 合并自文件尾部覆写块） */
   min-width: var(--tap-target);
   min-height: var(--tap-target);
   padding: var(--space-2xs);
@@ -1271,7 +1271,7 @@
     border-radius: 0;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .up-universal-player {
     border-radius: 0;
@@ -1425,9 +1425,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(48px, 48px + 1.5vw, 96px);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   height: clamp(48px, 48px + 1.5vw, 96px);
   border: none;
   border-radius: 50%;
@@ -1526,7 +1526,7 @@
 }
 
 /* ===== Responsive: 超宽档由 variables.css 统一提供（≥2200 内容区封顶档；
-   2026-09-07 已清理 2560 / 3840 独立列数档——封顶后与 2200 档逐像素同值） ===== */
+ 已清理 2560 / 3840 独立列数档——封顶后与 2200 档逐像素同值） ===== */
 
 /* ===== Fullscreen ===== */
 :fullscreen .up-universal-player {
@@ -1587,7 +1587,7 @@
   to { opacity: 1; }
 }
 
-/* ===== P0-1：移动端横向滑动 seek 的居中时间气泡 ===== */
+/* =====-1：移动端横向滑动 seek 的居中时间气泡 ===== */
 /* 视觉语言与 .up-seek-indicator 一致（黑透明胶囊 + 玩家文字色），居中显示、跟随手势 */
 .up-seek-hud {
   position: absolute;
@@ -1616,7 +1616,7 @@
   color: var(--player-text);
 }
 
-/* ===== P1-5：快捷键面板（Shift+? 调出） ===== */
+/* =====-5：快捷键面板（Shift+? 调出） ===== */
 .up-shortcut-help {
   position: absolute;
   inset: 0;
@@ -1777,8 +1777,8 @@
 /* ===== Reduced motion: 在低端设备/用户偏好减少动画时降级 backdrop-filter ===== */
 
 /* ── Player Toast（播放器内部操作提示，独立于全局 sonner） ──────────────
-   位置：播放器内部右上角（距顶/右各 space-lg，避开顶部控制栏左侧区域）；
-   样式：黑色透明背景（亮/暗主题统一）+ 圆角 + 文本撑开（不固定宽高，仅 padding 约束） */
+ 位置：播放器内部右上角（距顶/右各 space-lg，避开顶部控制栏左侧区域）；
+ 样式：黑色透明背景（亮/暗主题统一）+ 圆角 + 文本撑开（不固定宽高，仅 padding 约束） */
 .up-player-toast {
   position: absolute;
   top: var(--space-lg);
@@ -1817,20 +1817,20 @@
 }
 
 /* 操作类提示锚点：当头部右侧真正有操作控件时（html[data-player-header-controls] 由
-   UniversalPlayer JS 实测写入），下移到控件下方（--player-header-height + space-sm）避免重叠；
-   无控件则紧贴右上角（top: space-lg，由 .up-player-toast 基础规则保证）。
-   mobileCenter 仅对真实移动设备（App / 真实手机 UA）生效，CSS 不依赖 data-mobile-layout——
-   移动端走 center-toast（.up-player-toast 不渲染），本规则自然不命中；桌面窄窗有 3 图标，
-   本规则使 toast 锚定在图标下方而非叠加。 */
+ UniversalPlayer JS 实测写入），下移到控件下方（--player-header-height + space-sm）避免重叠；
+ 无控件则紧贴右上角（top: space-lg，由 .up-player-toast 基础规则保证）。
+ mobileCenter 仅对真实移动设备（App / 真实手机 UA）生效，CSS 不依赖 data-mobile-layout——
+ 移动端走 center-toast（.up-player-toast 不渲染），本规则自然不命中；桌面窄窗有 3 图标，
+ 本规则使 toast 锚定在图标下方而非叠加。 */
 html[data-player-header-controls="true"] .up-player-toast {
   top: calc(var(--player-header-height, 0px) + var(--space-sm));
 }
 
 /* 播放器内居中提示（截图成功/失败 + 移动端操作类 + 更多设置操作类）。
-   位置由 PlayerToast.tsx 的 measureCenterPos() 动态计算并写入 inline style：
-   水平 = 播放器容器水平居中；垂直 = 播放器高度约 30% 处（居中靠上，不遮挡视频主体）；
-   移动端（mobileCenter）额外避让 up-player-header，确保在其下方。
-   CSS 的 top:50%/left:50% 仅为 JS 未就绪时的兜底，transform:translate(-50%,-50%) 使元素以 top/left 为中心。 */
+ 位置由 PlayerToast.tsx 的 measureCenterPos() 动态计算并写入 inline style：
+ 水平 = 播放器容器水平居中；垂直 = 播放器高度约 30% 处（居中靠上，不遮挡视频主体）；
+ 移动端（mobileCenter）额外避让 up-player-header，确保在其下方。
+ CSS 的 top:50%/left:50% 仅为 JS 未就绪时的兜底，transform:translate(-50%,-50%) 使元素以 top/left 为中心。 */
 .up-player-center-toast {
   position: fixed;
   top: 50%;
@@ -1918,7 +1918,7 @@ html[data-player-header-controls="true"] .up-player-toast {
   }
 }
 
-/* ══════════ 移动端/App 端点播页整改 ══════════ */
+/* ══════════ 移动端/App 端点播页适配 ══════════ */
 
 /* ---- 右上角操作组（画中画 · 投屏 · 更多设置） ---- */
 .up-header-actions {
@@ -1953,7 +1953,7 @@ html[data-player-header-controls="true"] .up-player-toast {
   color: var(--color-primary) !important;
 }
 
-/* ---- 更多设置 / 投屏底部弹窗（卡片布局，与 demo 视觉对齐） ---- */
+/* ---- 更多设置 / 投屏底部弹窗（卡片布局，与 视觉对齐） ---- */
 .up-ms-sheet,
 .up-cast-sheet {
   --switch-track-width: 2.875rem;
@@ -1963,8 +1963,8 @@ html[data-player-header-controls="true"] .up-player-toast {
   display: flex;
   flex-direction: column;
   /* 修复「横屏 / 平板竖屏某些设备 modal 没占满设备宽度」：
-     原 max-width: 40rem 在横屏（宽 ≥1024px 不命中 data-mobile-layout）时被压成 640px 居中。
-     移动端更多设置弹窗本就是全宽底部弹窗，直接吃满视口宽度。 */
+ 原 max-width: 40rem 在横屏（宽 ≥1024px 不命中 data-mobile-layout）时被压成 640px 居中。
+ 移动端更多设置弹窗本就是全宽底部弹窗，直接吃满视口宽度。 */
   width: 100dvw;
   max-width: 100dvw;
   max-height: min(88dvh, 52rem);
@@ -1975,8 +1975,8 @@ html[data-player-header-controls="true"] .up-player-toast {
 }
 
 /* 移动端布局（App / 真实手机 UA / 视口 <768px，由 AppLayout 写入 html[data-mobile-layout]）：
-   更多设置/投屏弹窗占满整个页面宽度。max-width: 40rem 会让「桌面窄窗 / 平板竖屏」
-   视口 640-767px 的弹窗收窄居中，不占满全宽。 */
+ 更多设置/投屏弹窗占满整个页面宽度。max-width: 40rem 会让「桌面窄窗 / 平板竖屏」
+ 视口 640-767px 的弹窗收窄居中，不占满全宽。 */
 html[data-mobile-layout="true"] .up-ms-sheet,
 html[data-mobile-layout="true"] .up-cast-sheet {
   max-width: none;
@@ -2397,8 +2397,8 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 
 
-/* 手势亮度/音量柱状指示器 .up-gesture-indicator* 已于 2026-09-30 随组件一并移除
-   （组件：MobileUI/BrightnessVolumeIndicator.tsx）；手势逻辑仍生效，仅无视觉反馈。 */
+/* 手势亮度/音量柱状指示器 .up-gesture-indicator* 已随组件一并移除
+ （组件：MobileUI/BrightnessVolumeIndicator.tsx）；手势逻辑仍生效，仅无视觉反馈。 */
 
 .up-progress-tooltip .up-thumbnail-preview__fallback {
   font-size: var(--text-xs);
@@ -2416,7 +2416,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 
 /* ============ 外挂字幕轨（<track kind="subtitles">）默认渲染样式 ============ */
-/* 字幕文本由浏览器 ::cue 渲染，此处提供与播放器黑场匹配的基线样式（P1-9 批次4） */
+/* 字幕文本由浏览器 ::cue 渲染，此处提供与播放器黑场匹配的基线样式（-9 批次4） */
 .up-player-core video::cue {
   background: rgba(0, 0, 0, 0.65);
   color: var(--color-on-image);
@@ -2425,12 +2425,12 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-/* ============ P1-4 续播卡片（已从上次位置继续 + 从头播放） ============ */
+/* ============-4 续播卡片（已从上次位置继续 + 从头播放） ============ */
 .up-resume-card {
   position: absolute;
   /* 避让 up-player-header（z-index 20、absolute 覆盖视频顶部）：卡片恒定落在
-     header 之下（--player-header-height 由 UniversalPlayer JS 实测写入 root），
-     header 隐藏态（opacity:0）也保持该偏移，避免与 header 任何时刻重叠 */
+ header 之下（--player-header-height 由 UniversalPlayer JS 实测写入 root），
+ header 隐藏态（opacity:0）也保持该偏移，避免与 header 任何时刻重叠 */
   top: calc(var(--player-header-height, 0px) + var(--space-sm));
   left: 50%;
   z-index: 30;
@@ -2446,8 +2446,8 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   pointer-events: auto;
 }
 
-/* 源切换提示态（2026-10-11 用户定稿）：提示占整行居上，续播行（文本+按钮）在其下——
-   先显示换源提示再显示「已从上次位置继续播放」，同卡串行不叠加 */
+/* 源切换提示态：提示占整行居上，续播行（文本+按钮）在其下——
+ 先显示换源提示再显示「已从上次位置继续播放」，同卡串行不叠加 */
 .up-resume-card--notice {
   justify-content: center;
   padding: var(--space-xs) var(--space-md);
@@ -2504,7 +2504,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   background: rgba(255, 255, 255, 0.12);
 }
 
-/* ============ P1-6 桌面右键菜单（portal 到 body，fixed 定位） ============ */
+/* ============-6 桌面右键菜单（portal 到 body，fixed 定位） ============ */
 .up-context-menu {
   position: fixed;
   z-index: var(--z-float);
@@ -2694,12 +2694,12 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 /* ════════════ 全屏 / 横屏 UI（需求④⑤）════════════ */
 
 /* CSS 网页伪全屏：容器 fixed 铺满视口，自定义 UI 完整保留（iOS iPhone 默认档）。
-   与 :fullscreen 伪类不同，这是 JS 加的类，用于「无元素级 fullscreen 能力」的环境。 */
+ 与 :fullscreen 伪类不同，这是 JS 加的类，用于「无元素级 fullscreen 能力」的环境。 */
 .up-universal-player.up-fs-css-pseudo {
   position: fixed;
   inset: 0;
   z-index: var(--z-player-fs);
-  /* 2026-09-15：width 由 100vw 改 100%（fixed 元素的包含块即视口，等价且不含滚动条宽度） */
+  /* width 由 100vw 改 100%（fixed 元素的包含块即视口，等价且不含滚动条宽度） */
   width: 100%;
   height: 100dvh;
   border-radius: 0;
@@ -2707,7 +2707,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 
 /* 全屏常驻右上角操作组（画中画·投屏·更多设置）：与控制栏自动隐藏解耦，
-   控制栏隐藏后仍在。复用 .up-header-actions / .up-header-action-btn 既有样式。 */
+ 控制栏隐藏后仍在。复用 .up-header-actions / .up-header-action-btn 既有样式。 */
 .up-fs-corner {
   position: absolute;
   top: calc(var(--space-sm) + env(safe-area-inset-top));
@@ -2720,7 +2720,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 
 /* 全屏控制栏：桌面风格栏贴底，增强底部渐变对比（控制栏自身 z-index:20，
-   这里在 hover 态之上再抬一级避免被视频遮挡） */
+ 这里在 hover 态之上再抬一级避免被视频遮挡） */
 .up-control-bar--fullscreen {
   z-index: 60;
   padding: var(--space-md) var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom));
@@ -2728,7 +2728,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 
 /* 右侧「更多设置」抽屉（需求⑤）：内容 = 原移动端竖版更多设置全部项 + 全屏专属解码/快捷键。
-   深色半透明，保证在视频上也清晰；选中不关闭以支持连续调节。 */
+ 深色半透明，保证在视频上也清晰；选中不关闭以支持连续调节。 */
 .up-fs-drawer {
   position: absolute;
   top: 0;

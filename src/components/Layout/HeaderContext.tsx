@@ -3,9 +3,9 @@
  *
  * 拆分为两个 Context 以减少不必要的重渲染蔓延：
  * - HeaderActionsContext：稳定（所有成员均为 useCallback）,Subscriber
- *   几乎不会因为 Provider 状态变化而重渲染。
+ * 几乎不会因为 Provider 状态变化而重渲染。
  * - HeaderStateContext：仅当 immersive / centerContent / filter 等展示态
- *   变化时才变化,Subscriber 按需订阅。
+ * 变化时才变化,Subscriber 按需订阅。
  *
  * 兼容层 `useHeaderContent(config?)` 保留在独立文件 useHeaderContent.ts
  * （满足 react-refresh/only-export-components 约束）。

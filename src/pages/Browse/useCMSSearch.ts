@@ -2,15 +2,15 @@
  * CMS 直链搜索 Hook
  * 管理多源并行搜索、源状态追踪、**替换式分页**
  *
- * 分页模型（2026-09-12 用户拍板：右栏由无限滚动改为分页切换）：
+ * 分页模型（右栏由无限滚动改为分页切换）：
  * - 旧实现是「追加式」：loadMore 让每个源各自 page+1 后 push 进 results，
- *   于是第 N 页显示的是 1~N 页的累积 —— 语义上是无限滚动不是分页，且无法回退。
+ * 于是第 N 页显示的是 1~N 页的累积 —— 语义上是无限滚动不是分页，且无法回退。
  * - 现改为「替换式」：goToPage(query, n) 并发拉所有源的 pg=n，聚合后整体替换
- *   results。MacCMS 的 `?ac=videolist&wd=..&pg=n` 天然支持任意页码，所以「上一页」
- *   不需要快照栈，直接重新拉即可（代价是回退要重新请求，可接受）。
+ * results。MacCMS 的 `?ac=videolist&wd=..&pg=n` 天然支持任意页码，所以「上一页」
+ * 不需要快照栈，直接重新拉即可（代价是回退要重新请求，可接受）。
  * - 总页数不可知：接口返回体只有 `total`（该源该关键词总条数），没有 `limit` /
- *   `pagecount`，无法换算 totalPages → 只能做「上一页 / 下一页 + 第 N 页」，
- *   做不出数字页码条。hasMore 退化为「本页有内容，故下一页可能还有」。
+ * `pagecount`，无法换算 totalPages → 只能做「上一页 / 下一页 + 第 N 页」，
+ * 做不出数字页码条。hasMore 退化为「本页有内容，故下一页可能还有」。
  */
 import { useState, useCallback, useRef } from 'react';
 import { searchAllFromCMSSource } from '@/services/videoService';
@@ -64,9 +64,9 @@ export function useCMSSearch() {
   }, []);
 
   /**
-   * 跳到第 page 页（替换式）：清空当前结果 → 并发拉所有源 pg=page → 整体替换。
-   * 首个源响应即收起 loading（保留原有的渐进反馈），其余源在后台继续追加到本页。
-   */
+ * 跳到第 page 页（替换式）：清空当前结果 → 并发拉所有源 pg=page → 整体替换。
+ * 首个源响应即收起 loading（保留原有的渐进反馈），其余源在后台继续追加到本页。
+ */
   const goToPage = useCallback(
     async (query: string, page: number) => {
       if (!query.trim()) {
@@ -166,11 +166,11 @@ export function useCMSSearch() {
   );
 
   /**
-   * 加载下一页并**追加**（2026-09-12 用户拍板：直链搜索不做分页，恢复滚动追加）。
-   * 与 goToPage 的区别：不清空已有结果、计数从零重计；本页 slots 落位结果
-   * 拼在进入本页前的结果快照（base）之后，flush 幂等可重复。
-   * hasMore 沿用探测式：本页有内容 → 下一页可能还有。
-   */
+ * 加载下一页并**追加**（直链搜索不做分页，恢复滚动追加）。
+ * 与 goToPage 的区别：不清空已有结果、计数从零重计；本页 slots 落位结果
+ * 拼在进入本页前的结果快照（base）之后，flush 幂等可重复。
+ * hasMore 沿用探测式：本页有内容 → 下一页可能还有。
+ */
   const loadMore = useCallback(
     async (query: string) => {
       if (state.loading || !state.hasMore || !query.trim()) return;

@@ -1,8 +1,8 @@
 /* ── TokenRequired ───────────────────────────────────
-   复刻 Home 页 .home-token-required 的视觉（图标 + 文案 + 跳转按钮），
-   供 detail / play 页在未配置 TMDB Access Token 时整页展示（其余内容隐藏）。
-   布局：flex:1 撑满宿主容器剩余高度（宿主需为 flex 容器或给 min-height），
-   主提示经 justify-content:center 垂直居中。 */
+ 复刻 Home 页 .home-token-required 的视觉（图标 + 文案 + 跳转按钮），
+ 供 detail / play 页在未配置 TMDB Access Token 时整页展示（其余内容隐藏）。
+ 布局：flex:1 撑满宿主容器剩余高度（宿主需为 flex 容器或给 min-height），
+ 主提示经 justify-content:center 垂直居中。 */
 .token-required {
   display: flex;
   flex: 1 1 0;
@@ -58,7 +58,7 @@
     min-height: 50vh;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .token-required {
     flex: none;

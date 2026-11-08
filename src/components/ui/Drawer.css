@@ -1,8 +1,8 @@
 /* Drawer — 右滑全屏面板（移动端筛选使用） */
 
 /* 层级走全局 token（1000/1001）。此前硬编码 60/61 低于「返回顶部」玻璃圆钮的
-   z-index: 90 —— 全屏筛选面板打开时那个圆钮会画在面板之上，正好压住底部「完成」按钮
-   并抢走点击（用户反馈「重置与完成按钮没有真正固定」的可见症状之一）。 */
+ z-index: 90 —— 全屏筛选面板打开时那个圆钮会画在面板之上，正好压住底部「完成」按钮
+ 并抢走点击（「重置与完成按钮没有真正固定」的可见症状之一）。 */
 .drawer-overlay {
   position: fixed;
   inset: 0;
@@ -27,8 +27,8 @@
   max-width: 100%;
   background: var(--color-surface);
   animation: drawer-slide-in 0.26s var(--ease-out-expo, ease);
-  /* 2026-09-12 方案B：非模态（modal={false}）后无 react-remove-scroll 的 document 级锁，
-     面板层滚动链隔离自理——body 已 contain，这里兜横滑/边缘橡皮筋。 */
+  /* 非模态（modal={false}）后无 react-remove-scroll 的 document 级锁，
+ 面板层滚动链隔离自理——body 已 contain，这里兜横滑/边缘橡皮筋。 */
   overscroll-behavior: contain;
   box-shadow: -8px 0 32px rgba(0, 0, 0, 0.18);
 }
@@ -69,7 +69,7 @@
 .drawer-body {
   flex: 1;
   /* min-height:0 必须显式给：flex 项默认 min-height:auto 会被内容撑开，
-     滚动容器就不是「剩余高度」而是内容高度，footer 会被挤出视口外 */
+ 滚动容器就不是「剩余高度」而是内容高度，footer 会被挤出视口外 */
   min-height: 0;
   padding: var(--space-md);
   overflow-y: auto;
@@ -86,9 +86,9 @@
 }
 
 /* 面板打开期间隐藏「返回顶部」玻璃圆钮：
-   它是 position:fixed + backdrop-filter: blur(8px)，固定在视口右下、不随面板滚动，
-   于是每帧都要对背后变化的内容重新做模糊采样（移动端 GPU 上最贵的常见项之一），
-   而它此刻完全被不透明面板盖住、用户看不到也点不到。 */
+ 它是 position:fixed + backdrop-filter: blur(8px)，固定在视口右下、不随面板滚动，
+ 于是每帧都要对背后变化的内容重新做模糊采样（移动端 GPU 上最贵的常见项之一），
+ 而它此刻完全被不透明面板盖住、用户看不到也点不到。 */
 body:has(.drawer-content) .back-to-top-button {
   display: none;
 }
@@ -131,9 +131,9 @@ body:has(.drawer-content) .back-to-top-button {
 
 
 /* ── fullscreen 变体：全屏覆盖整个视口（含顶部导航栏） ──
-   顶栏与全局导航栏同高（移动端紧凑高度），三栏布局：
-   左「‹ 返回」+ 中标题居中 + 右「重置」（与 S3 示例一致）。
-   进入动画：translateX(28px) + opacity 淡入（与 S3 示例 pgIn 一致）。 */
+ 顶栏与全局导航栏同高（移动端紧凑高度），三栏布局：
+ 左「‹ 返回」+ 中标题居中 + 右「重置」（与 S3 示例一致）。
+ 进入动画：translateX(28px) + opacity 淡入（与 S3 示例 pgIn 一致）。 */
 .drawer-content--fullscreen {
   inset: 0;
   width: 100%;
@@ -225,13 +225,13 @@ body:has(.drawer-content) .back-to-top-button {
 
 .drawer-content--fullscreen .drawer-body {
   /* 底部不再垫 --space-2xl：「重置/完成」已移到 .drawer-footer（滚动容器之外），
-     原先那 24px 是为了给 sticky 按钮留位，现在只会变成内容底部的死空白 */
+ 原先那 24px 是为了给 sticky 按钮留位，现在只会变成内容底部的死空白 */
   padding: 0 0 var(--space-md);
 }
 
 /* 全屏面板内 FilterBar：对齐 S3 示例分组卡样式
-   每个维度 = 独立分组：cap（图标+标题）独占一行 + chips wrap 在下（gap 8px）。
-   chip 32px 高、padding 0 14px、字号 13px、圆角胶囊（示例 .s3-gchip 一致）。 */
+ 每个维度 = 独立分组：cap（图标+标题）独占一行 + chips wrap 在下（gap 8px）。
+ chip 32px 高、padding 0 14px、字号 13px、圆角胶囊（示例 .s3-gchip 一致）。 */
 .drawer-content--fullscreen .drawer-body .filter-bar {
   gap: var(--space-lg);
   padding: var(--space-md) var(--space-lg);

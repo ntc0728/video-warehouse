@@ -7,9 +7,9 @@
  * 列数真源仍是 CSS token，断点调整只改 CSS 一处，骨架自动跟随。
  *
  * 约定：
- *  - token 必须登记在 html（:root）或其媒体查询覆盖上，本 hook 读 documentElement 计算值；
- *  - 视口跨越断点由 ResizeObserver 捕获；设备档切换（html[data-device]）由 MutationObserver 捕获；
- *  - 读取用 useLayoutEffect（paint 前完成修正），避免首帧按 fallback 张数闪一下。
+ * - token 必须登记在 html（:root）或其媒体查询覆盖上，本 hook 读 documentElement 计算值；
+ * - 视口跨越断点由 ResizeObserver 捕获；设备档切换（html[data-device]）由 MutationObserver 捕获；
+ * - 读取用 useLayoutEffect（paint 前完成修正），避免首帧按 fallback 张数闪一下。
  */
 import { useLayoutEffect, useState } from 'react';
 

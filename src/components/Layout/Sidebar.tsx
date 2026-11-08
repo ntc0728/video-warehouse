@@ -141,7 +141,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
             })}
           </div>
           {/* 底部设置项：与主列表保持间距（上边框 + 内边距）；
-              版本号与设置入口同一元素（hover 背景覆盖整个元素） */}
+ 版本号与设置入口同一元素（hover 背景覆盖整个元素） */}
           <div className="sidebar-footer">
             <Link
               to={settingsTab.key}

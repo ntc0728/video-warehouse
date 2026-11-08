@@ -2,26 +2,26 @@
  * IPTV 频道页专属骨架 — 与真实页面逐层同构（两套分支同构）。
  *
  * rail 模式（桌面，isDesktopRail）：
- *   .iptv-rail-layout
- *     aside.iptv-rail          两段标题 + 分类列表（IPTV_CATEGORIES）+ .iptv-rail__sep
- *                              + 「更多台」列表（每项带 .iptv-rail__box 勾选框）
- *     .iptv-rail-content > .iptv-grid-card > .iptv-content
- *         .iptv-content-bar    计数 + 2 个源刷新时刻 + spacer + 源下拉 + note + 刷新按钮
- *         section.iptv-sec     .iptv-sec__head（h3 + n + line，sticky）+ .iptv-channel-grid
+ * .iptv-rail-layout
+ * aside.iptv-rail 两段标题 + 分类列表（IPTV_CATEGORIES）+ .iptv-rail__sep
+ * + 「更多台」列表（每项带 .iptv-rail__box 勾选框）
+ * .iptv-rail-content > .iptv-grid-card > .iptv-content
+ * .iptv-content-bar 计数 + 2 个源刷新时刻 + spacer + 源下拉 + note + 刷新按钮
+ * section.iptv-sec .iptv-sec__head（h3 + n + line，sticky）+ .iptv-channel-grid
  * 移动/App/TV 模式：.iptv-top-card（源过滤 tags + 操作行）+ .iptv-grid-card > .iptv-content
  *
- * 「已知常量不当未知」（2026-09-18 用户要求）：
- *  - 左栏分类行数 = IPTV_CATEGORIES.length（含「我的收藏」，常量真源），由页面传入；
- *  - 「更多台」行数 = 已启用 IPTV 源数（store 的 aggregatorUrls.length，页面传入），
- *    不再写死 9 行；
- *  - 内容条是否出现「源下拉」= aggregatorUrls.length > 1（页面传入）。
+ * 「已知常量不当未知」：
+ * - 左栏分类行数 = IPTV_CATEGORIES.length（含「我的收藏」，常量真源），由页面传入；
+ * - 「更多台」行数 = 已启用 IPTV 源数（store 的 aggregatorUrls.length，页面传入），
+ * 不再写死 9 行；
+ * - 内容条是否出现「源下拉」= aggregatorUrls.length > 1（页面传入）。
  * 左栏骨架此前固定 9 行、且没有 __sep / 第二段标题 / __box，与真实 rail 差得很远。
  *
  * 行数（非固定）：频道网格由 useFillRows 按滚动容器可视高度推导 —— 首节在首屏
  * 自然填满，其后各节落在视口外（avail ≤ 0）自动停在 minRows，不会虚构长度。
  *
  * 视口差异化：网格列数消费与真实网格同源的 --iptv-page-cols（.iptv-page
- * .iptv-channel-grid，2026-09-08 起 IPTV 页专用；此前骨架误用全局 --iptv-cols，
+ * .iptv-channel-grid， 起 IPTV 页专用；此前骨架误用全局 --iptv-cols，
  * 桌面档多一列），随视口自动分档。
  */
 import { useRef } from 'react';
@@ -120,7 +120,7 @@ export default function IPTVSkeleton({
         </div>
 
         {/* 第二段「更多台」：真实为 .iptv-rail__sep + 标题 + 带勾选框的列表，
-            仅在已启用 IPTV 源（extraSourceCount > 0）时出现 */}
+ 仅在已启用 IPTV 源（extraSourceCount > 0）时出现 */}
         {extraSourceCount > 0 && (
           <>
             <div className="iptv-rail__sep" />

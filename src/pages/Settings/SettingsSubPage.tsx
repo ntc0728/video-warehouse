@@ -2,13 +2,13 @@
  * SettingsSubPage — 设置页移动端子页面
  *
  * 全屏覆盖视口（含全局顶部导航栏区域）：
- *   - 通过 createPortal 挂到 document.body，脱离滚动容器 `.app-shell__scroll`
- *     （其 `contain: layout` 会作为 fixed 后代的包含块，导致 fixed 相对滚动容器
- *     定位、无法覆盖导航栏）；子页容器 position: fixed; inset: 0，
- *     z-index 高于 sticky-header，顶栏（返回 + 标题）固定在视口顶部、
- *     与全局导航栏同高 —— 视觉上替代导航栏；
- *   - body 在顶栏下方独立滚动；
- *   - 支持触摸右滑（>80px）返回上一级。
+ * - 通过 createPortal 挂到 document.body，脱离滚动容器 `.app-shell__scroll`
+ * （其 `contain: layout` 会作为 fixed 后代的包含块，导致 fixed 相对滚动容器
+ * 定位、无法覆盖导航栏）；子页容器 position: fixed; inset: 0，
+ * z-index 高于 sticky-header，顶栏（返回 + 标题）固定在视口顶部、
+ * 与全局导航栏同高 —— 视觉上替代导航栏；
+ * - body 在顶栏下方独立滚动；
+ * - 支持触摸右滑（>80px）返回上一级。
  * 仅在移动端（≤767px）使用（桌面端不渲染 SubPage，直接内联 tab 内容）。
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';

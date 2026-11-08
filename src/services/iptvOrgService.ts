@@ -1,13 +1,13 @@
 /**
- * iptv-org 数据层（2026-09-08 方案 B 定稿：17MB 三 JSON 瘦身）
+ * iptv-org 数据层（17MB 三 JSON 瘦身）
  *
  * 主干 = iptv/countries/cn.m3u（单文件 ~28KB / 144 条，毫秒级）：
- *  - 每条自带 tvg-id（= iptv-org channel id）、tvg-logo（台标，与 logos.json 同源同值）、
- *    group-title（英文分类）、显示名（英文，可能带 "(720p)" 画质后缀）、url（播放流）。
- *  - streams.json / logos.json 彻底退役（原 9.1MB raw 不再拉取）。
+ * - 每条自带 tvg-id（= iptv-org channel id）、tvg-logo（台标，与 logos.json 同源同值）、
+ * group-title（英文分类）、显示名（英文，可能带 "(720p)" 画质后缀）、url（播放流）。
+ * - streams.json / logos.json 彻底退役（原 MB raw 不再拉取）。
  * 中文名 = api/channels.json 的 alt_names（CN 有流频道 99/149 有中文名）：
- *  - 后台拉取 + IndexedDB 落盘 7 天；拉到前主干显示英文名，拉到后由 store 替换 name。
- * 恒直连（GitHub Pages 原生 CORS）；失败经 IPTV 代理重试一次（6s 超时，用户定稿）。
+ * - 后台拉取 + IndexedDB 落盘 7 天；拉到前主干显示英文名，拉到后由 store 替换 name。
+ * 恒直连（GitHub Pages 原生 CORS）；失败经 IPTV 代理重试一次（6s 超时）。
  *
  * 定位：本模块是「可拆附件」——任何异常都降级（返回空 / 抛给调用方由调用方兜底），
  * 本地 M3U 聚合源永远可以作为独立主干运行（见 useIPTVStore.refreshChannels 合并策略）。
@@ -28,7 +28,7 @@ import {
 const M3U_URL = 'https://iptv-org.github.io/iptv/countries/cn.m3u';
 const API_BASE = 'https://iptv-org.github.io/api';
 /**
- * 单个接口超时上限（2026-09-08 用户定稿）：IPTV 所有接口超时不得超过 6s，超过即判失败。
+ * 单个接口超时上限：IPTV 所有接口超时不得超过 6s，超过即判失败。
  * cn.m3u 仅 28KB 毫秒级；channels.json（gzip 0.98MB）仅中文名增强时后台拉取。
  */
 const FETCH_TIMEOUT_MS = 6000;
@@ -77,7 +77,7 @@ export interface OrgChinaChannel {
   group: string;
 }
 
-/** 分类英文 → 中文映射（demo categoryNames 扩充版）；未映射分类取英文原文 */
+/** 分类英文 → 中文映射（categoryNames 扩充版）；未映射分类取英文原文 */
 const CATEGORY_ZH: Record<string, string> = {
   general: '综合',
   news: '新闻',
@@ -294,7 +294,7 @@ export async function fetchIptvOrgChinaChannels(proxyUrl?: string): Promise<OrgC
   if (memoryCache) return memoryCache;
 
   // ① 磁盘缓存兜底：首屏/弱网先用缓存秒出（6s 超时下直接拉 API 很可能失败，
-  //    此前无磁盘缓存 → 一超时就整体回退本地 M3U 源，即「用 iptv 源兜底」现象）
+  // 此前无磁盘缓存 → 一超时就整体回退本地 M3U 源，即「用 iptv 源兜底」现象）
   try {
     const cached = await getCachedIptvOrgChannels();
     if (cached && cached.channels.length > 0) {
@@ -346,12 +346,12 @@ function applyNamesToChannels(
 }
 
 /**
- * 中文名增强（方案 B 后台层）：channels.json（gzip 0.98MB / raw 7.5MB）仅取
+ * 中文名增强（后台层）：channels.json（gzip 0.98MB / raw 7.5MB）仅取
  * CN 频道的 alt_names 中文名，IndexedDB 落盘 7 天只拉一次。
  * 同时把中文名键补进台标名称索引（更多台匹配率提升）并回写主干磁盘缓存。
  *
  * @returns names = org channel id → 中文名（可能为空对象）；channels = 内存主干
- *          （name 已替换为中文名）。store 用 channels 重放本地流合并后 set。
+ * （name 已替换为中文名）。store 用 channels 重放本地流合并后 set。
  */
 export async function fetchCnDisplayNames(proxyUrl?: string): Promise<{
   names: Record<string, string>;

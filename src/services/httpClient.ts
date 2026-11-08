@@ -120,7 +120,7 @@ httpClient.interceptors.response.use(
     // 重试逻辑（网络错误 / 超时 / 5xx）
     const cfg = config as RequestOptions;
     const retriesLeft = cfg.retries ?? 0;
-    // 429 限流纳入重试（2026-10-11 CMS 聚合并发易触发，重试比直接失败稳定）
+    // 429 限流纳入重试（CMS 聚合并发易触发，重试比直接失败稳定）
     const shouldRetry =
       retriesLeft > 0 &&
       (!error.response || error.response.status >= 500 || error.response.status === 429);
@@ -132,7 +132,7 @@ httpClient.interceptors.response.use(
       return httpClient.request(config);
     }
 
-    // 2026-10-11 错误日志：重试耗尽后上报一次（设置→个人设置→错误日志弹窗可查）。
+    // 错误日志：重试耗尽后上报一次（设置→个人设置→错误日志弹窗可查）。
     // 主动取消（切页/超时 signal abort）不是异常，排除；上报失败不影响原 reject 行为。
     if (error.code !== 'ERR_CANCELED' && config?.url) {
       reportApiError(
@@ -178,8 +178,8 @@ function withTimeout(signal?: AbortSignal, ms = 10000): AbortSignal {
  *
  * 超时口径：axios 侧 timeout 与下方 AbortSignal 双保险。
  * ⚠️ withTimeout 必须跟随调用方传入的 timeout（opts.timeout），否则它会用默认 10s
- *    抢先中止请求，把 videoService 的 15s 等业务超时配置变成摆设。
- *    （getText 不做 signal 注入，其超时完全由 axios timeout 控制。）
+ * 抢先中止请求，把 videoService 的 15s 等业务超时配置变成摆设。
+ * （getText 不做 signal 注入，其超时完全由 axios timeout 控制。）
  */
 export async function getJSON<T = unknown>(url: string, options?: RequestOptions): Promise<T> {
   const opts = (options ?? {}) as AxiosRequestConfig;

@@ -9,7 +9,7 @@
 .person-skeleton__hero {
   position: relative;
   /* 桌面档：真实 hero 高度随「有无头像」变化（有图 ≈224，无图 ≈119），
-     17rem 是主流有图档的合理近似，不动（2026-09-22 审计曾误改 9rem，已回滚） */
+ 17rem 是主流有图档的合理近似，不动（曾被误改为 9rem，已回滚） */
   min-height: 17rem;
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -33,7 +33,7 @@
   margin-top: var(--space-3xl);
   padding: var(--space-xl);
   /* 右侧让位给绝对定位头像（与 .person-hero-content 同款曲线） */
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   padding-right: clamp(160px, 14vw + 48px, 224px);
 }
 
@@ -48,7 +48,7 @@
   position: absolute;
   top: var(--space-xl);
   right: var(--space-xl);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B)：与 .person-avatar 同款流体曲线 */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·)：与 .person-avatar 同款流体曲线 */
   width: clamp(144px, 12vw + 48px, 176px);
   aspect-ratio: 2 / 3;
   border-radius: var(--radius-lg);
@@ -94,7 +94,7 @@
 }
 
 /* 作品网格：列数与真实 .person-work-grid 同源（--person-work-cols 等分；
-   该 token 已含 768–1023 锁 5 列的例外档，见 index.css） */
+ 该 token 已含 768–1023 锁 5 列的例外档，见 index.css） */
 .person-skeleton__work-grid {
   display: grid;
   grid-template-columns: repeat(var(--person-work-cols, 7), minmax(0, 1fr));
@@ -147,7 +147,7 @@
   }
 }
 
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 html[data-device="app"] .person-skeleton__hero {
   min-height: 21.2rem;
 }

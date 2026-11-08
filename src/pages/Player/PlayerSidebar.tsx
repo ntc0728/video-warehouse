@@ -1,6 +1,6 @@
 interface PlayerSidebarProps {
   children: React.ReactNode;
-  /** 桌面端（≥1024px，ADR-023 rail 类布局起点）面板布局变体："tv"=有选季面板，"movie"=无选季面板 */
+  /** 桌面端（≥1024px， rail 类布局起点）面板布局变体："tv"=有选季面板，"movie"=无选季面板 */
   variant?: 'tv' | 'movie';
   /** 各面板展开状态（桌面 ≥1024 用）：驱动 grid 行模板，展开=1fr 折叠=auto */
   expanded?: Record<string, boolean>;

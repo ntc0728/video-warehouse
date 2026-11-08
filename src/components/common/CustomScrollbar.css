@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   CustomScrollbar — 原生滚动容器薄包装
+ CustomScrollbar — 原生滚动容器薄包装
 
-   关键设计：
-   - 容器 overflow 由 CSS 类控制（不在 inline style 中，避免覆盖 scrollbar-width）
-   - overscroll-behavior: contain 阻断 macOS/iOS 橡皮筋
-   - 完全隐藏原生滚动条，不占据页面宽度
-   ═══════════════════════════════════════════════════════════════════════ */
+ 关键设计：
+ - 容器 overflow 由 CSS 类控制（不在 inline style 中，避免覆盖 scrollbar-width）
+ - overscroll-behavior: contain 阻断 macOS/iOS 橡皮筋
+ - 完全隐藏原生滚动条，不占据页面宽度
+ ═══════════════════════════════════════════════════════════════════════ */
 
 .custom-scrollbar-container {
   position: relative;
@@ -17,7 +17,7 @@
   /* 完全隐藏滚动条 */
   scrollbar-width: none;
   /* 对称补齐：flex item 默认 min-width: auto 会按内容撑开,
-     显式声明 0 防止内部宽内容把外层滚动容器推到溢出(详见 spec/2026-06-11)。 */
+ 显式声明 0 防止内部宽内容把外层滚动容器推到溢出(详见 )。 */
   min-width: 0;
 }
 

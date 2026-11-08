@@ -37,7 +37,7 @@ export function SourceDetectPill({
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
-  // 结果浮层仅 hover 展开（2026-10-10 用户要求：去掉点击钉住）
+  // 结果浮层仅 hover 展开（去掉点击钉住）
   const open = status === 'done' && hovered;
 
   const recompute = () => {
@@ -104,7 +104,7 @@ export function SourceDetectPill({
             {status === 'running' ? (runningText || statusLabel.running) : statusLabel[status]}
           </span>
           {status === 'running' ? (
-            /* running：小转圈 + 轮播文本 + 计数，去掉进度条（2026-10-10） */
+            /* running：小转圈 + 轮播文本 + 计数，去掉进度条 */
             total > 0 && (
               <span className="sdp-count">
                 {done}/{total}

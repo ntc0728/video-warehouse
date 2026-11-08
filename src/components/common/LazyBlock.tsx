@@ -7,7 +7,7 @@
  * 契约：
  * - `enabled=false`（首屏档区块）→ 不创建 observer，直接以 `entered=true` 渲染，不调 `onEnter`。
  * - 触发一次即**永久保持**（`entered` 只由 false→true），不回退、不再收起 —— 避免
- *   「滚回去又变回骨架」的闪动，也避免滚动恢复（`useScrollRestore`）时高度反复变化。
+ * 「滚回去又变回骨架」的闪动，也避免滚动恢复（`useScrollRestore`）时高度反复变化。
  * - `onEnter` 必须**幂等**：数据已在 / 正在请求时自行跳过（见 `useTMDBStore.ensureHomeBlock`）。
  * - `preload`（如 TV 端「焦点行 ±1 行」）不依赖视口直接触发。
  *

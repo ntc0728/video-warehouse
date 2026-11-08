@@ -4,7 +4,7 @@ import { useSearchHistory, type SearchHistoryItem } from './useSearchHistory';
 
 const KEY = 'search-history-test-scope';
 
-describe('useSearchHistory（2026-11-08 历史项带类型/年份元数据）', () => {
+describe('useSearchHistory（历史项带类型/年份元数据）', () => {
   beforeEach(() => {
     localStorage.removeItem(KEY);
   });

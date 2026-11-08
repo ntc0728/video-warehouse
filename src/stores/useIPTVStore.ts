@@ -3,22 +3,22 @@
  * 管理直播频道列表、分组、收藏、播放历史等核心功能
  * 支持从远程 M3U 播放列表加载频道（多源聚合去重），以及「更多台」按源追加额外频道
  *
- * [2026-09-08] 可用性检测已整体移除（检测会真实拉流、产生大量无效请求），
+ * 可用性检测已整体移除（检测会真实拉流、产生大量无效请求），
  * 相关字段/action 全部删除，卡片不再有「无法观看」标灰态。
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { IPTVChannel, IPTVGroup, IPTVFilter, IPTVSettings, IPTVPlayRecord } from '@/types/iptv';
 import { fetchAndParsePlaylist, fetchSingleSourceChannels } from '@/services/iptvService';
-// iptv-org API 主干层（channels.json + streams.json + logos.json，2026-09-08 用户定稿）
+// iptv-org API 主干层（channels.json + streams.json + logos.json）
 import { fetchIptvOrgChinaChannels, fetchCnDisplayNames, channelMatchKeys, matchLogoForChannel } from '@/services/iptvOrgService';
 import { PlaylistSourceType } from '@/types/iptv';
 import { getCachedIPTVChannels, setCachedIPTVChannels } from '@/services/database';
 
 /**
- * 本地源频道（「更多台」）台标补全：
+ * 本地源频道（更多台）台标补全：
  * 一级 = logos.json 按名匹配（matchLogoForChannel）；匹配不到 → 二级 = iptv 源自带
- * tvg-logo 兜底（2026-09-08 用户定稿）。无任一来源时 logo 为 undefined → 卡片字母占位。
+ * tvg-logo 兜底。无任一来源时 logo 为 undefined → 卡片字母占位。
  */
 function withSourceLogo(list: IPTVChannel[]): IPTVChannel[] {
   return list.map((ch) => ({ ...ch, logo: matchLogoForChannel(ch) ?? ch.logo }));
@@ -35,7 +35,7 @@ function withSourceLogoBySource(bySource: Record<string, IPTVChannel[]>): Record
 type LocalPlaylistResult = Awaited<ReturnType<typeof fetchAndParsePlaylist>>;
 
 /**
- * iptv-org 主干 × 本地源合并（2026-09-08 方案 B）：
+ * iptv-org 主干 × 本地源合并：
  * 本地流命中同名 org 频道（normalizeName 双侧键匹配）→ 改用本地流（本地源优先）；
  * 本地独有频道不进主干（只通过「更多台」按源展示）。
  * 独立成纯函数：中文名后台增强（fetchCnDisplayNames）到达后用新 orgChannels 重放合并。
@@ -121,18 +121,18 @@ interface IPTVState {
   settings: IPTVSettings;
   isLoading: boolean;
   /**
-   * 刷新进行中（真正的「请求在飞」语义）。
-   * ⚠️ 与 isLoading 不同：isLoading 仅在「无频道」时置位（用于整页骨架），
-   * 有数据时恒为 false，不能拿来禁用刷新按钮 —— 否则有数据时按钮永不禁用，可连点并发刷新。
-   */
+ * 刷新进行中（真正的「请求在飞」语义）。
+ * ⚠️ 与 isLoading 不同：isLoading 仅在「无频道」时置位（用于整页骨架），
+ * 有数据时恒为 false，不能拿来禁用刷新按钮 —— 否则有数据时按钮永不禁用，可连点并发刷新。
+ */
   isRefreshing: boolean;
   error: string | null;
   lastRefresh: number | null;
   loadedUrl: string | null;
   /**
-   * 每个已启用源自身的频道（未跨源去重）：key = `source-${index}`。
-   * 供 IPTV 页「更多台」勾选源后按源追加额外频道（同名台 = 备用线路）。
-   */
+ * 每个已启用源自身的频道（未跨源去重）：key = `source-${index}`。
+ * 供 IPTV 页「更多台」勾选源后按源追加额外频道（同名台 = 备用线路）。
+ */
   sourceChannels: Record<string, IPTVChannel[]>;
   /** 「更多台」已勾选的源 id 集合（设置页最多启用 3 个 IPTV 源，故上限 3） */
   extraSourceIds: string[];
@@ -162,9 +162,9 @@ interface IPTVState {
   /** 勾选/取消「更多台」的额外频道源（最多 3 个，超出忽略） */
   toggleExtraSource: (sourceId: string) => void;
   /**
-   * 确保某源的频道数据就位：无数据（缓存无 bySource / 刷新时竞速被放弃 / 源失败）
-   * 时按需拉取该源单源 M3U 并写入 sourceChannels。已有数据（含空数组=已尝试过）不重复拉。
-   */
+ * 确保某源的频道数据就位：无数据（缓存无 bySource / 刷新时竞速被放弃 / 源失败）
+ * 时按需拉取该源单源 M3U 并写入 sourceChannels。已有数据（含空数组=已尝试过）不重复拉。
+ */
   ensureSourceChannels: (sourceId: string) => Promise<void>;
 }
 
@@ -173,7 +173,7 @@ const defaultSettings: IPTVSettings = {
   aggregatorUrls: [],
   proxyUrl: '',
   // 默认直连白名单：命中这些域名特征的 URL 不走代理（浏览器原生放行 CORS），
-  // 可显著降低 worker 代理请求量（见 docs/IPTV-PLAYBACK-FIX-PLAN）。
+  // 可显著降低 worker 代理请求量。
   // 常见可直连直播 CDN：咪咕/移动 liveplay、腾讯云 myqcloud、阿里 livecdn/OSS、
   // 七牛/又拍/百度 CDN、GitHub 静态托管（raw/github.io/jsdelivr）及常见免费源。
   // 用户可在设置页「代理规则」中自定义覆盖；留空则全部走代理。
@@ -205,8 +205,8 @@ export const useIPTVStore = create<IPTVState>()(
       favoriteChannelIds: [],
 
       /**
-       * 设置频道列表，同时同步收藏状态
-       */
+ * 设置频道列表，同时同步收藏状态
+ */
       setChannels: (channels) => {
         const { favoriteChannelIds } = get();
         const channelsWithFavorites = channels.map(ch => ({
@@ -235,17 +235,17 @@ export const useIPTVStore = create<IPTVState>()(
       setError: (error) => set({ error }),
 
       /**
-       * 从远程源刷新频道列表（2026-09-08 架构定稿）：
-       * 主干 = iptv-org API（channels/streams/logos 三 JSON 组装，台标精确匹配）；
-       * 本地 M3U 聚合源 = 补充：
-       *  - 本地名命中 iptv-org 频道 → 播放流改用本地流（本地优先）；不写任何兜底流字段；
-       *  - 本地频道【不进主干】：全部频道 = iptv-org 主干（~149 条），
-       *    本地独有频道只在「更多台」勾选对应源后出现（2026-09-08 用户定稿：不再混入主干）；
-       *  - iptv-org 拉取失败 → 回退纯本地主干（旧行为）；本地失败不影响 org 主干。
-       * 台标：主干按 channel id 精确匹配 logos.json；更多台本地频道按名匹配 logos.json，
-       * 匹配不到用 iptv 源自带台标兜底。
-       * 获取后自动按分组归类，并同步收藏状态；sourceChannels/bySource 供「更多台」。
-       */
+ * 从远程源刷新频道列表：
+ * 主干 = iptv-org API（channels/streams/logos 三 JSON 组装，台标精确匹配）；
+ * 本地 M3U 聚合源 = 补充：
+ * - 本地名命中 iptv-org 频道 → 播放流改用本地流（本地优先）；不写任何兜底流字段；
+ * - 本地频道【不进主干】：全部频道 = iptv-org 主干（~149 条），
+ * 本地独有频道只在「更多台」勾选对应源后出现（不再混入主干）；
+ * - iptv-org 拉取失败 → 回退纯本地主干（旧行为）；本地失败不影响 org 主干。
+ * 台标：主干按 channel id 精确匹配 logos.json；更多台本地频道按名匹配 logos.json，
+ * 匹配不到用 iptv 源自带台标兜底。
+ * 获取后自动按分组归类，并同步收藏状态；sourceChannels/bySource 供「更多台」。
+ */
       refreshChannels: async () => {
         // 单飞去重：已有刷新在飞时后到者直接返回（连点按钮 / 多入口并发：
         // 页面 bootstrap、syncConsumers、自动刷新、下拉刷新都会走到这里）。
@@ -346,7 +346,7 @@ export const useIPTVStore = create<IPTVState>()(
           bySource,
         }).catch(() => {});
 
-        // 中文名增强（方案 B 后台层，fire-and-forget）：cn.m3u 主干已先行渲染（英文名），
+        // 中文名增强（后台层，fire-and-forget）：cn.m3u 主干已先行渲染（英文名），
         // channels.json 的中文名后台拉取（IndexedDB 7 天缓存，只拉一次），到达后用
         // 增强频道重放本地流合并并 set——分类（按频道名判定）随之自动更新。
         if (orgChannels) {
@@ -362,9 +362,9 @@ export const useIPTVStore = create<IPTVState>()(
       },
 
       /**
-       * 切换频道收藏状态
-       * 同时更新频道列表中的 isFavorite 标记和收藏ID列表
-       */
+ * 切换频道收藏状态
+ * 同时更新频道列表中的 isFavorite 标记和收藏ID列表
+ */
       toggleFavorite: (channelId) =>
         set((state) => {
           const isCurrentlyFavorite = state.favoriteChannelIds.includes(channelId);
@@ -420,9 +420,9 @@ export const useIPTVStore = create<IPTVState>()(
       },
 
       /**
-       * 仅清空频道列表与分组（不清设置/播放历史/收藏频道）
-       * 用于「清除全部缓存」：页面挂载时会因缓存未命中自动重新拉取
-       */
+ * 仅清空频道列表与分组（不清设置/播放历史/收藏频道）
+ * 用于「清除全部缓存」：页面挂载时会因缓存未命中自动重新拉取
+ */
       clearChannelsCache: () => {
         lastOrgChannels = null;
         lastLocalResult = null;
@@ -439,8 +439,8 @@ export const useIPTVStore = create<IPTVState>()(
       },
 
       /**
-       * 清除所有缓存数据，仅保留设置项
-       */
+ * 清除所有缓存数据，仅保留设置项
+ */
       clearCache: () => {
         localStorage.removeItem(IPTV_PERSIST_KEY);
         lastOrgChannels = null;
@@ -464,9 +464,9 @@ export const useIPTVStore = create<IPTVState>()(
 
 
       /**
-       * 记录频道播放行为
-       * 更新频道的最后播放时间，并将该频道移至播放历史最前面（去重）
-       */
+ * 记录频道播放行为
+ * 更新频道的最后播放时间，并将该频道移至播放历史最前面（去重）
+ */
       recordPlay: (channelId) => {
         const { channels, playHistory } = get();
         const channel = channels.find(ch => ch.id === channelId);
@@ -554,9 +554,9 @@ export const useIPTVStore = create<IPTVState>()(
         extraSourceIds: state.extraSourceIds,
       }),
       /**
-       * 合并持久化数据与当前默认值
-       * 确保新增的设置字段有默认值，并处理旧版代理路径迁移
-       */
+ * 合并持久化数据与当前默认值
+ * 确保新增的设置字段有默认值，并处理旧版代理路径迁移
+ */
       merge: (persisted, current) => {
         const incoming = persisted as Partial<IPTVState>;
         const settings = { ...current.settings, ...(incoming.settings || {}) };
@@ -567,7 +567,7 @@ export const useIPTVStore = create<IPTVState>()(
         // 迁移旧版 proxyPattern 到新版内置直连白名单：
         // ① 旧默认「IP 形式 URL 不走代理」→ 新内置白名单（更全面的 CDN 直连）
         // ② 空字符串（旧数据未配置/用户留空）→ 新内置白名单（降低 worker 请求量，
-        //    用户仍可在设置页自定义；显式清空后再保存会持久化空值并重新生效）
+        // 用户仍可在设置页自定义；显式清空后再保存会持久化空值并重新生效）
         const LEGACY_DEFAULT_PROXY_PATTERN = '^https?://\\d+\\.\\d+\\.\\d+\\.\\d+';
         if (
           settings.proxyPattern === LEGACY_DEFAULT_PROXY_PATTERN ||
@@ -585,20 +585,20 @@ export const useIPTVStore = create<IPTVState>()(
   )
 );
 
-// ── 跨页签实时同步（2026-09-02）─────────────────────────────
+// ── 跨页签实时同步─────────────────────────────
 // 收藏/播放历史/设置经 zustand persist 落 localStorage（键 IPTV_PERSIST_KEY）。
 // localStorage 的同源跨页签通知是浏览器原生 window 'storage' 事件：其它页签
 // setItem/removeItem 后自动在本页签触发——无需 BroadcastChannel（useUserStore
 // 落 IndexedDB、无原生通知，才需要广播频道，见 useUserStore.ts）。
-//
+
 // 收到本键变更：
-//   ① e.newValue === null（另一页签 clearCache 先 removeItem）→ 镜像归零：
-//      收藏/播放历史/筛选重置、频道 isFavorite 全 false。频道列表本身保留
-//      （它是可自 IDB 缓存/远程重取的运行时数据，不是用户数据）。
-//   ② 常规写入 → persist.rehydrate() 重读合并持久化切片（复用自定义 merge，
-//      含旧版代理路径迁移，不重复实现），再按新 favoriteChannelIds 重派生
-//      channels.isFavorite——否则「心形收藏态」与收藏数组脱节。
-//
+// ① e.newValue === null（另一页签 clearCache 先 removeItem）→ 镜像归零：
+// 收藏/播放历史/筛选重置、频道 isFavorite 全 false。频道列表本身保留
+// （它是可自 IDB 缓存/远程重取的运行时数据，不是用户数据）。
+// ② 常规写入 → persist.rehydrate() 重读合并持久化切片（复用自定义 merge，
+// 含旧版代理路径迁移，不重复实现），再按新 favoriteChannelIds 重派生
+// channels.isFavorite——否则「心形收藏态」与收藏数组脱节。
+
 // 无回环：浏览器规范保证本页签自身的 localStorage 写入不触发自身 storage 事件；
 // 即便其它页签把重派生结果写回，内容与已持久化切片一致（setItem 相同字符串不
 // 产生事件），链路收敛。

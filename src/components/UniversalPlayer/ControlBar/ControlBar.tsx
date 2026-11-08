@@ -32,7 +32,7 @@ interface ControlBarProps {
   onSeek: (time: number, opts?: { silent?: boolean }) => void;
   onVolumeChange: (volume: number) => void;
   onToggleMute?: () => void;
-  /** 音量变化时弹出 3s 音量条（G2：点播模式与 IPTV 一致） */
+  /** 音量变化时弹出 3s 音量条（点播模式与 IPTV 一致） */
   onVolumePopup?: () => void;
   onPlaybackRateChange: (rate: number) => void;
   onDecoderModeChange: (mode: DecoderMode) => void;
@@ -170,7 +170,7 @@ export default function ControlBar({
             </button>
           )}
           {/* 缓冲中是否暂停由 togglePlay 统一决定（缓冲中不暂停，防缓冲锁死）；
-              仅加载/切集未就绪时禁用按钮（此时点播放无意义，且 play() 排队会被切源中断） */}
+ 仅加载/切集未就绪时禁用按钮（此时点播放无意义，且 play() 排队会被切源中断） */}
           <PlayButton isPlaying={isPlaying} disabled={isPlayerLoading && !isReadyToPlay} onClick={onTogglePlay} />
           {hasNextEpisode !== undefined && !isMobile && (
             <button
@@ -264,7 +264,7 @@ export default function ControlBar({
             </MoreMenu>
           )}
           {/* 画中画+全屏：全屏模式移出底部（画中画改由右上角常驻操作组承担），
-              仅保留全屏按钮在底栏右侧收尾 */}
+ 仅保留全屏按钮在底栏右侧收尾 */}
           {!isMobile && !fullscreen && (
             <div className="up-control-window">
               <PiPButton isPiP={isPiP} onClick={onTogglePiP} />
@@ -272,7 +272,7 @@ export default function ControlBar({
             </div>
           )}
           {/* 全屏模式底部栏：字幕/倍速/清晰度之后补「截图 + 全屏」，
-              画中画与更多设置已在右上角常驻，不再出现于底栏 */}
+ 画中画与更多设置已在右上角常驻，不再出现于底栏 */}
           {fullscreen && onScreenshot && (
             <ScreenshotButton onClick={onScreenshot} />
           )}

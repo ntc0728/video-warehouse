@@ -1,13 +1,13 @@
 /**
  * 频道台标解析器（iptv-org 单一来源 + 跨会话状态记忆）
  *
- * 台标来源定稿（2026-09-08 用户定稿）：只来自 iptv-org logos.json
+ * 台标来源：只来自 iptv-org logos.json
  * （经 iptvOrgService.fetchIptvOrgChinaChannels 组装进 channel.logo）。
  * 本地 IPTV 源（M3U tvg-logo）、EPG XMLTV <icon>、在线台标库猜测均已退出台标逻辑。
  *
  * 仍保留的能力：
  * - URL 级 ok/fail 记忆持久化到 IndexedDB（30 天）：上次成功的 URL 优先复用，
- *   失败过的 URL 不再请求，避免每次刷新重复 404。
+ * 失败过的 URL 不再请求，避免每次刷新重复 404。
  * - 模块级 failedLogoUrls 失败记忆：已 404/挂起的 URL 不再返回（会话内即时生效）。
  * - 台标不走代理：http 台标原样直连，失败自然走字母占位。
  */

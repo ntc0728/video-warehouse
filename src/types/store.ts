@@ -11,7 +11,7 @@
  */
 export interface CollectionRecord {
   /** 收藏记录唯一 ID（确定性主键：`col-{videoId}`，同 videoId 全局唯一一条，
-   *  由 DB 写入层归一化，幂等覆盖含跨页签） */
+ * 由 DB 写入层归一化，幂等覆盖含跨页签） */
   id: string;
   /** TMDB 视频 ID（如 tmdb-movie-12345） */
   videoId: string;
@@ -30,9 +30,9 @@ export interface CollectionRecord {
   /** 用户评分（1-5） */
   rating?: number;
   /**
-   * CMS 直链搜索来源的源索引
-   * 存在时收藏页点击跳转到 /play/:id 而非 /detail/:id
-   */
+ * CMS 直链搜索来源的源索引
+ * 存在时收藏页点击跳转到 /play/:id 而非 /detail/:id
+ */
   sourceIndex?: number;
   /** CMS 源配置 ID（域名 key，如 "cj.lzcaiji.com"），用于匹配设置中是否启用 */
   cmsSourceId?: string;
@@ -48,7 +48,7 @@ export interface CollectionRecord {
  */
 export interface HistoryRecord {
   /** 历史记录唯一 ID（确定性主键：`hist-{videoId}...`，由内容身份派生，
-   *  同一视频/选集/线路天然去重，DB 主键级幂等覆盖） */
+ * 同一视频/选集/线路天然去重，DB 主键级幂等覆盖） */
   id: string;
   /** TMDB 视频 ID（如 tmdb-movie-12345） */
   videoId: string;

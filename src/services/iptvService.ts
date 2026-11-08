@@ -43,7 +43,7 @@ export function detectSourceType(content: string): SourceAnalysis {
 }
 
 async function fetchContent(url: string): Promise<string> {
-  // 6s 单次超时 + 不重试：IPTV 所有接口超时不得超过 6s（2026-09-08 用户定稿），
+  // 6s 单次超时 + 不重试：IPTV 所有接口超时不得超过 6s，
   // 超过即判失败；配合竞速窗口「首个成功即收尾」与「零成功时等全部 settle 快速失败」。
   return getText(url, { timeout: 6000, retries: 0 });
 }
@@ -68,7 +68,7 @@ export function getIptvProxyList(proxyConfig?: string): string[] {
 /**
  * 取第一个代理（多值配置的"主代理"）。IPTV 代理本期"解析 + 取第一个"。
  *
- * @deprecated 2026-09-16 起 URL 构造统一走 {@link getActiveIptvProxy}（支持失败轮换）。
+ * @deprecated 起 URL 构造统一走 {@link getActiveIptvProxy}（支持失败轮换）。
  * 本函数保留「恒取第一个」的语义供调用方显式表达「就是要主代理」时使用。
  */
 export function getPrimaryIptvProxy(proxyConfig?: string): string {
@@ -76,12 +76,12 @@ export function getPrimaryIptvProxy(proxyConfig?: string): string {
 }
 
 /**
- * 多代理轮换状态（2026-09-16）。
+ * 多代理轮换状态。
  *
  * 背景：代理配置支持英文 `;` 分隔多个（`getIptvProxyList`），但改造前**所有** URL 构造
  * 都在取 `getPrimaryIptvProxy`，即第 2 个起的代理配置完全不生效（死配置）。
  *
- * 方案：引入「活跃代理」下标——默认 0（= 原来的主代理），当某代理被确认不可用时调
+ * 引入「活跃代理」下标——默认 0（= 原来的主代理），当某代理被确认不可用时调
  * {@link advanceIptvProxy} 推进到下一个（列表内循环）。URL 形状不变（仍只嵌一个代理），
  * 改变的是「第一个挂了之后还有第二个顶上」。
  *
@@ -165,7 +165,7 @@ function decodeProxyParam(raw: string): string {
  * 解包“第三方代理前缀”，提取真实地址。
  * 许多 IPTV 源会把频道地址预先包一层代理（如 gh-proxy.com/m3u8-proxy?url=<内层>），
  * 直接拿去播放往往因为那个中间代理失效/被墙而失败。这里把内层真实地址抽出来，
- * 改走我们配置的代理（iptv-proxy 等），绕开失效的中间代理。
+ * 改走我们配置的代理，绕开失效的中间代理。
  *
  * - 仅当包装者 origin 与 ownProxyUrl 不同（即不是本代理）才解包，保留“防双重代理”语义；
  * - 递归解包多层包装（a-proxy?url=<b-proxy?url=<源站>>），直到拿到非代理包装的真实地址；
@@ -199,7 +199,7 @@ const IPV4_HOST_RE = /^\d{1,3}(?:\.\d{1,3}){3}$/;
  * 是否「数字类型域名」（裸 IP 主机）。
  * IPTV 源里大量 live.php 接口直接挂在 IP:端口 上（如 203.0.113.10:88）；
  * 这类地址经 IPTV 代理转发反而更容易失败（代理侧拿不到源站 Host/端口策略），
- * 因此 2026-09-08 定稿：IP 型地址一律直连，不拼 IPTV 代理。
+ * 因此 ：IP 型地址一律直连，不拼 IPTV 代理。
  */
 export function isIpHostUrl(url: string): boolean {
   try {
@@ -241,7 +241,7 @@ function shouldProxy(url: string, proxyUrl?: string, pattern?: string): boolean 
 }
 
 /** 拼接代理后的播放 URL，按资源类型选择代理端点（m3u8→/m3u8-proxy，dash→/dash-proxy 重写清单，其余单文件→/file-proxy 透传）
- *  可选 headers 追加为 &headers=<JSON> 参数（worker 代理层原生合并到源站请求头，覆盖默认 UA/Referer） */
+ * 可选 headers 追加为 &headers=<JSON> 参数（worker 代理层原生合并到源站请求头，覆盖默认 UA/Referer） */
 function buildProxyUrl(url: string, proxyUrl: string, headers?: Record<string, string>): string {
   // 多值代理：用当前活跃代理（失败可轮换）
   proxyUrl = getActiveIptvProxy(proxyUrl);
@@ -286,28 +286,28 @@ export function buildChannelPlayUrl(
 }
 
 /**
- * 构建 M3U catchup 回看播放地址（Gap G1 / 方案 §3.4「时移与回看」）。
+ * 构建 M3U catchup 回看播放地址（时移与回看）。
  *
  * why：IPTV 频道在 M3U 清单里用 `catchup` / `catchup-source` / `catchup-days` 声明回看能力
  * （字段已解析进 `IPTVChannel`，见 `src/types/iptv.ts:36-44`）。本项目此前只解析不消费；
- * P5 通过本函数把「过去某时刻」换算成可播放的回看 URL，供 IPTVOSDBar 的 catchup 进度条调用。
+ * 本函数把「过去某时刻」换算成可播放的回看 URL，供 IPTVOSDBar 的 catchup 进度条调用。
  *
- * 拼装规则（与 `docs/iptv-hybrid-plan.md` §3.4 一致，并贴合 M3U catchup 规范）：
+ * 拼装规则（贴合 M3U catchup 规范）：
  * - `default`：用 `catchup-source` 模板，替换 `{utc}` / `{lutc}`（及 {start}/{end}/{r} 兜底）。
- *   **必须依赖 `catchup-source`**，模板缺失则无法拼装 → 返回 null。
+ * **必须依赖 `catchup-source`**，模板缺失则无法拼装 → 返回 null。
  * - `append`：参数**追加到频道原始播放 URL** 之后（M3U append 语义，忽略 catchup-source），即 `url?utc=&lutc=`。
  * - `flussonic`：用 `catchup-source` 模板，替换 `{start}` / `{end}`（秒）。**必须依赖模板**，缺失 → 返回 null。
  * - `xtream`：Xtream-Codes timeshift，常见形态为原地址追加 `?timeshift=<起始秒>&duration=<时长秒>`。
- *   因 Xtream 还需账号信息（本类型未承载），只能用频道 URL 拼常见形态；缺 base 时返回 null。
+ * 因 Xtream 还需账号信息（本类型未承载），只能用频道 URL 拼常见形态；缺 base 时返回 null。
  *
  * 时间戳单位：M3U catchup 规范以**秒**计，故入参毫秒先 `/1000` 取整。
  *
  * @returns 回看播放 URL；以下情况返回 `null`（调用方据此禁用时移，保证「无 catchup 与今天行为一致」）：
- *   - `channel.catchup` 缺失，或
- *   - `default`/`flussonic` 模式却无 `catchupSource` 模板，或
- *   - `append`/`xtream` 模式却无频道 `url` 可作基址，或
- *   - 请求的 `startTs` 早于 `now - catchupDays` 窗口下界（服务端无该时点数据）。
- *   拼出的 rawUrl 再走 shouldProxy/buildProxyUrl 代理决策（与频道播放链接一致）。
+ * - `channel.catchup` 缺失，或
+ * - `default`/`flussonic` 模式却无 `catchupSource` 模板，或
+ * - `append`/`xtream` 模式却无频道 `url` 可作基址，或
+ * - 请求的 `startTs` 早于 `now - catchupDays` 窗口下界（服务端无该时点数据）。
+ * 拼出的 rawUrl 再走 shouldProxy/buildProxyUrl 代理决策（与频道播放链接一致）。
  */
 export function buildCatchupUrl(
   channel: Pick<IPTVChannel, 'catchup' | 'catchupSource' | 'url' | 'catchupDays' | 'userAgent' | 'referrer' | 'sourceId'>,
@@ -410,7 +410,7 @@ export function buildSourceProxyUrl(url: string, proxyUrl?: string): string {
 /**
  * 多代理兜底取流：按配置顺序**依次尝试**每个代理，首个成功即返回。
  *
- * 动机（2026-09-16）：多代理配置此前只生效第一个，第二个起是死配置；主代理挂掉时
+ * 动机：多代理配置此前只生效第一个，第二个起是死配置；主代理挂掉时
  * 整个 IPTV 表现为「全部源加载失败」。改为顺序兜底后，主代理不可用仍能靠备用代理工作。
  * 单代理/未配置 = 原行为（只有一条候选）。全部失败抛最后一个错误（保留原始错误语义）。
  */
@@ -732,7 +732,7 @@ export function parseM3U8Content(content: string, sourceUrl?: string): IPTVChann
 
       // 从属性中提取分组信息、tvg-id 与 tvg-logo。
       // 台标一级来源 = iptv-org logos.json（store 合并时按名匹配覆盖）；
-      // 这里解析的 tvg-logo 仅作「匹配不到时的 iptv 源兜底」（2026-09-08 用户定稿）。
+      // 这里解析的 tvg-logo 仅作「匹配不到时的 iptv 源兜底」。
       const attributes = parts[0] ?? '';
       const logoMatch = attributes.match(/tvg-logo="([^"]*)"/);
       const groupMatch = attributes.match(/group-title="([^"]*)"/);

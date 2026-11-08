@@ -115,7 +115,7 @@ export default function IPTVPlayerPage() {
     requestFullscreen(el).catch(() => { /* 平台不支持/无手势时静默 */ });
   }, [isTV]);
 
-  // 9.1：app 端进入 IPTV 播放页自动横屏（全屏铺满播放），离开恢复系统默认方向。
+  //app 端进入 IPTV 播放页自动横屏（全屏铺满播放），离开恢复系统默认方向。
   // web 端 isNativePlatform() 守卫 + 动态 import，零影响；个别 ROM 锁失败静默。
   useEffect(() => {
     if (!isNativePlatform()) return;

@@ -1,7 +1,7 @@
 /**
  * SourceManager — 设置页源管理通用组件（视频源 / IPTV 源 / EPG 源共用）
  *
- * [2026-08-07 源管理整改]
+ * 
  * - 列表：类型图标 + 名称 + 延迟徽章 + 爬建/自建徽章 + 添加时间 + 启用滑块 + 编辑/删除
  * - 工具栏（右侧）：测速 / 按延迟排序 / 全部启用停用
  * - "添加源"下拉：手动添加 / 导入(文件|URL|文本) / 导出(文件|文本)
@@ -271,8 +271,8 @@ export default function SourceManager<T extends ManagedSourceBase>(props: Source
               <div className="source-manager__item-title">
                 <span className="source-manager__name">{item.name}</span>
                 {/* 延迟状态：仅启用源显示（停用源隐藏）；测速中显示旋转图标；
-                    测速完成按延迟分级显示颜色文字；超时红色「超时」；
-                    启用后显示上一次测速的延迟 */}
+ 测速完成按延迟分级显示颜色文字；超时红色「超时」；
+ 启用后显示上一次测速的延迟 */}
                 {item.status.enabled && (item.status.measuring ? (
                   <span className="source-manager__latency source-manager__latency--measuring" aria-label="测速中">
                     <Icon icon={Activity} size="sm" className="spin" />
@@ -342,7 +342,7 @@ function formatTime(t: number): string {
 
 /**
  * 延迟分级色调：
- * - <300ms  优（绿色，--success）
+ * - <300ms 优（绿色，--success）
  * - 300-1000ms 中（黄色，--warning）
  * - >1000ms 差（红色，--error）
  * 返回 CSS modifier 名（fast/medium/slow），由 SourceManager.css 着色

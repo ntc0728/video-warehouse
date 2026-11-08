@@ -78,21 +78,21 @@ interface TMDBStoreState {
   // ---- 发现 ----
   discoverResults: TMDBVideoItem[];
   /**
-   * 分页元信息。
-   *
-   * `reach`（2026-11-05 新增）= **各取页路（movie / tv）真实可达的页数与条目数**，
-   * 是「最大页数」唯一可信的真源。缺省时消费方退回旧口径（只按 totalResults 折算）。
-   *
-   * ⚠️ 为什么必须分路记录（实测 TMDB，2026-11-05）：
-   * - `total_results` 是**该路命中的总条数**，但 `page` 参数硬顶 500（501 直接 HTTP 400
-   *   `status_code:22`），所以 **可达条目 = min(total_results, 20 × min(total_pages, 500))**。
-   *   实测 discover/movie: total_results=20001 但可达只有 10000；discover/tv: 7072 可达 7072。
-   * - `all` 模式两路合并，但**两路页数不同**（movie 500 页 / tv 354 页）→ 355~500 页只有
-   *   movie 的 20 条、没有 tv。合并页大小 M=40 只在「稠密区」成立，稠密区之外是 20 条/页。
-   *   任何按固定 M=40 的算术定位（`t = floor(start/40)+1`）都会在稀疏区整体错位，
-   *   表现为**同一批卡片在多个逻辑页重复出现**（实测重复 2897 张）。
-   * 所以定位必须按「分段线性前缀」算，不能用固定页大小。
-   */
+ * 分页元信息。
+ *
+ * `reach`= **各取页路（movie / tv）真实可达的页数与条目数**，
+ * 是「最大页数」唯一可信的真源。缺省时消费方退回旧口径（只按 totalResults 折算）。
+ *
+ * ⚠️ 为什么必须分路记录（实测 TMDB）：
+ * - `total_results` 是**该路命中的总条数**，但 `page` 参数硬顶 500（501 直接 HTTP 400
+ * `status_code:22`），所以 **可达条目 = min(total_results, 20 × min(total_pages, 500))**。
+ * 实测 discover/movie: total_results=20001 但可达只有 10000；discover/tv: 7072 可达 7072。
+ * - `all` 模式两路合并，但**两路页数不同**（movie 500 页 / tv 354 页）→ 355~500 页只有
+ * movie 的 20 条、没有 tv。合并页大小 M=40 只在「稠密区」成立，稠密区之外是 20 条/页。
+ * 任何按固定 M=40 的算术定位（`t = floor(start/40)+1`）都会在稀疏区整体错位，
+ * 表现为**同一批卡片在多个逻辑页重复出现**（实测重复 2897 张）。
+ * 所以定位必须按「分段线性前缀」算，不能用固定页大小。
+ */
   discoverPagination: {
     page: number;
     totalPages: number;
@@ -101,21 +101,21 @@ interface TMDBStoreState {
     reach?: TMDBReachEntry[];
   };
   /**
-   * 最近一次 discover / search / top-rated 懒加载请求的最终状态
-   * - null      : 从未发起过请求（初始态）
-   * - 'pending' : 请求进行中（loading.discover === true 时通常为此态）
-   * - 'success' : 最近一次请求已成功拿到数据
-   * - 'error'   : 最近一次请求失败
-   *
-   * 用途：让骨架移除条件与"API 响应成功"对齐,避免快速响应(< 100ms)
-   * 或请求失败时骨架闪烁。
-   */
+ * 最近一次 discover / search / top-rated 懒加载请求的最终状态
+ * - null : 从未发起过请求（初始态）
+ * - 'pending' : 请求进行中（loading.discover === true 时通常为此态）
+ * - 'success' : 最近一次请求已成功拿到数据
+ * - 'error' : 最近一次请求失败
+ *
+ * 用途：让骨架移除条件与"API 响应成功"对齐,避免快速响应(< 100ms)
+ * 或请求失败时骨架闪烁。
+ */
   discoverLastStatus: 'pending' | 'success' | 'error' | null;
   /**
-   * 最近一次成功写入 discoverResults 的 filterOptions 快照（方案 B：无 Keep-Alive 下
-   * Browse 重新挂载时据此判断「store 缓存是否对应当前筛选条件」，命中则直接回显、
-   * 跳过重新请求）。搜索模式（search）成功时写入 null，表示当前结果非 discover 数据。
-   */
+ * 最近一次成功写入 discoverResults 的 filterOptions 快照（无 Keep-Alive 下
+ * Browse 重新挂载时据此判断「store 缓存是否对应当前筛选条件」，命中则直接回显、
+ * 跳过重新请求）。搜索模式（search）成功时写入 null，表示当前结果非 discover 数据。
+ */
   discoverFetchedFilter: TMDBFilterOptions | null;
   /** 最近一次成功写入 discoverResults 的时间戳（0 = 从未成功获取） */
   discoverFetchedAt: number;
@@ -172,10 +172,10 @@ interface TMDBStoreState {
   /** @param opts.force=true 时忽略 60min TTL，强制重新拉取（下拉刷新/手动刷新用） */
   fetchAllHomeData: (opts?: { force?: boolean }) => Promise<void>;
   /**
-   * 单区块懒加载取数（视口懒加载用）：**数据为空** 或 **区块 TTL 过期** 才请求，
-   * 已在飞 / 数据齐全且未过期时直接返回（幂等，可被 IO 反复触发）。
-   * 只影响该区块，不触碰其它区块（与 fetchAllHomeData 的整批语义相对）。
-   */
+ * 单区块懒加载取数（视口懒加载用）：**数据为空** 或 **区块 TTL 过期** 才请求，
+ * 已在飞 / 数据齐全且未过期时直接返回（幂等，可被 IO 反复触发）。
+ * 只影响该区块，不触碰其它区块（与 fetchAllHomeData 的整批语义相对）。
+ */
   ensureHomeBlock: (key: HomeBlockKey, opts?: { force?: boolean }) => Promise<void>;
 
   search: (query: string, page?: number, opts?: { reset?: boolean }) => Promise<void>;
@@ -356,12 +356,12 @@ export const HOME_BLOCK_KEYS: readonly HomeBlockKey[] = [
   'airingTodayTv',
 ];
 
-// ── 合集定义单真源（2026-09-30 定稿；2026-11-04 首页合集行删除后仅服务 Chart）──
+// ── 合集定义单真源（首页合集行删除后仅服务 Chart）──
 // 6 组 genre 维度合集，discover 口径与 Chart 页一致（popularity 降序）。
 // 内容组 = 动作电影 / 科幻电影 / 动漫 / 综艺 / 纪录片 / 高分电影（评分≥7.5 过滤，
 // vote_count 走 discoverMovie 封装既有口径 ≥50，非 row 接口）。
 // Chart 页合集榜（/chart?collection=<key>）与顶栏选中态消费本表。
-// 首页合集推荐行已于 2026-11-04 按用户要求删除，勿再在首页挂载处拉取。
+// 首页合集推荐行已删除，勿再在首页挂载处拉取。
 export interface HomeCollectionDef {
   /** 稳定 key：首页卡 key + Chart 页 ?collection= 参数值 */
   key: string;
@@ -462,7 +462,7 @@ const _homeLSData = readHomeLS();
 let _homeFetchAbort: AbortController | null = null;
 
 // 区块级「最近一次成功取数时间」（0/缺省 = 从未取过）。
-// 2026-09-16 视口懒加载：区块不再总是随整批一起取，全局 homeFetchedAt 无法表达
+// 视口懒加载：区块不再总是随整批一起取，全局 homeFetchedAt 无法表达
 // 「这一排是刚才滚到才取的」；TTL 刷新改按区块判定（见 ensureHomeBlock）。
 // 仅内存态：不持久化、不参与渲染（LS 恢复的区块时间戳为 0 = 不触发 TTL 刷新，
 // 与其旧行为一致——旧代码用 homeFetchedAt=0 表达同一语义）。
@@ -547,10 +547,10 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         .map(mapTrendingToVideoItem);
 
       // 注：原先在此对前 5 个 trending 项预取 /images 端点以补全 logoPath，
-      //    但 /images 端点对 backdrops 有数据意义；HeroBanner 已改为 hover 时
-      //    按需懒加载该端点。预取会导致 5 次冗余请求，移除以避免接口滥用。
-      //    logoPath 字段保留（TMDBVideoItem 类型不变），未补全时为 null，
-      //    依赖它的组件（TMDBTrendingBanner）已用 fallback 标题展示。
+      // 但 /images 端点对 backdrops 有数据意义；HeroBanner 已改为 hover 时
+      // 按需懒加载该端点。预取会导致 5 次冗余请求，移除以避免接口滥用。
+      // logoPath 字段保留（TMDBVideoItem 类型不变），未补全时为 null，
+      // 依赖它的组件（TMDBTrendingBanner）已用 fallback 标题展示。
 
       set((s) => ({
           trending: items,
@@ -790,15 +790,15 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   },
 
   /**
-   * 单区块懒加载取数 —— 首页「视口懒加载」的 store 侧入口（2026-09-16）。
-   *
-   * 与 fetchAllHomeData 的区别：只判定并请求**一个**区块，其余区块（尤其是尚未滚入
-   * 视口的）一律不碰 —— 这是懒加载收益能保住的前提（若在这里顺手 fetchAllHomeData，
-   * 首次滚入视口就会把剩下所有区块的请求一次性打出去，等于没做）。
-   *
-   * 幂等：数据已在且区块 TTL 未过期 → 直接返回；正在请求 → 直接返回。
-   * 因此可以被 IO 反复触发、被 60min 定时器轮询，都不会产生重复请求。
-   */
+ * 单区块懒加载取数 —— 首页「视口懒加载」的 store 侧入口。
+ *
+ * 与 fetchAllHomeData 的区别：只判定并请求**一个**区块，其余区块（尤其是尚未滚入
+ * 视口的）一律不碰 —— 这是懒加载收益能保住的前提（若在这里顺手 fetchAllHomeData，
+ * 首次滚入视口就会把剩下所有区块的请求一次性打出去，等于没做）。
+ *
+ * 幂等：数据已在且区块 TTL 未过期 → 直接返回；正在请求 → 直接返回。
+ * 因此可以被 IO 反复触发、被 60min 定时器轮询，都不会产生重复请求。
+ */
   ensureHomeBlock: async (key, opts) => {
     const s = get();
     const force = opts?.force === true;
@@ -834,7 +834,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
 
     // 取消上一轮未完成的批量获取，避免重复请求叠加
     // 注：signal 会透传给各区块请求（见下方 fetches），上一轮是真正被中断，
-    //     而不是像旧实现那样只置位一个没人读取的 aborted 标志。
+    // 而不是像旧实现那样只置位一个没人读取的 aborted 标志。
     _homeFetchAbort?.abort();
     const ctrl = new AbortController();
     _homeFetchAbort = ctrl;
@@ -951,15 +951,15 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
   },
 
   /**
-   * 文本搜索：调 /search/multi 端点，结果写入 discoverResults + discoverPagination
-   * 使 BrowseGrid 可直接消费（与 fetchDiscover / fetchTopRated 走同一渲染路径）。
-   * 同时 loading.discover / errors.discover 共享（UI 骨架与错误显示复用）。
-   *
-   * 客户端过滤：根据当前 filterOptions（category/mediaType/genreIds/originCountry/minVoteAverage）
-   * 对搜索结果进行过滤，确保从首页带过来的分类参数在搜索时生效。
-   *
-   * 懒加载判断：如果 API 未到最后一页，即使过滤后数据不足也允许继续懒加载。
-   */
+ * 文本搜索：调 /search/multi 端点，结果写入 discoverResults + discoverPagination
+ * 使 BrowseGrid 可直接消费（与 fetchDiscover / fetchTopRated 走同一渲染路径）。
+ * 同时 loading.discover / errors.discover 共享（UI 骨架与错误显示复用）。
+ *
+ * 客户端过滤：根据当前 filterOptions（category/mediaType/genreIds/originCountry/minVoteAverage）
+ * 对搜索结果进行过滤，确保从首页带过来的分类参数在搜索时生效。
+ *
+ * 懒加载判断：如果 API 未到最后一页，即使过滤后数据不足也允许继续懒加载。
+ */
   search: async (query: string, page = 1, opts?: { reset?: boolean }) => {
     const seq = ++_discoverSeq; // 竞态保护：仅最新一次搜索可写结果
     const forceReset = opts?.reset === true;
@@ -1016,11 +1016,11 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
       // hasMore 判断：API 未到最后一页就允许懒加载
       const hasMore = page < data.total_pages;
 
-      // total_results 修正（2026-10-10 修「搜到 1 条却显示很多页」）：
-      //   /search/multi 的 total_results 含人物/其它类型且未经客户端筛选，
-      //   而本页 items 已过滤到只剩 movie/tv。直接用原始 total 会把
-      //   「1 部电影 + 一堆人物」虚报成很多逻辑页 → 分页组件误显、翻页全空。
-      //   按本页「视频条数 / 原始条数」比例折算出视频口径的总数估计。
+      // total_results 修正（修「搜到 1 条却显示很多页」）：
+      // /search/multi 的 total_results 含人物/其它类型且未经客户端筛选，
+      // 而本页 items 已过滤到只剩 movie/tv。直接用原始 total 会把
+      // 「1 部电影 + 一堆人物」虚报成很多逻辑页 → 分页组件误显、翻页全空。
+      // 按本页「视频条数 / 原始条数」比例折算出视频口径的总数估计。
       const rawCount = data.results.length;
       const videoCount = items.length;
       const estimatedTotalResults = rawCount > 0
@@ -1111,7 +1111,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
         });
         // mediaType=all 时合并 movie+tv，去重后实际数量可能少于两者之和
         // totalPages 取两者较大值，但若去重后本页不足 2×PAGE_SIZE 则可能已到最后一页
-        // 各取页路的真实可达量（2026-11-05）：`total_results` 常远大于 500 页能返回的量
+        // 各取页路的真实可达量：`total_results` 常远大于 500 页能返回的量
         // （实测 movie 报 20001 但 500 页只有 10000），且**两路页数不同**（movie 500 / tv 354）
         // → 必须逐路记录「可达页数 + 可达条目」，供逻辑分页层做分段前缀定位。
         reach = [
@@ -1211,7 +1211,7 @@ export const useTMDBStore = create<TMDBStoreState>()((set, get) => {
           totalPages: Math.max(movieData.total_pages, tvData.total_pages),
           totalResults: movieData.total_results + tvData.total_results,
           // top_rated 同样两路合并、页数可能不同（movie 500 / tv 356 等），
-          // 逻辑分页层据此做分段前缀定位（2026-11-05）
+          // 逻辑分页层据此做分段前缀定位
           reach: [
             toReachEntry(movieData.total_pages, movieData.total_results),
             toReachEntry(tvData.total_pages, tvData.total_results),

@@ -7,10 +7,10 @@
  * - 多端适配：Mobile / Desktop / TV 三套尺寸（基于 Design Token）
  * - 全屏 / 内联两种模式，可拓展 className / showTip / showProgress
  *
- * 进度条说明（2026-08-04）：
+ * 进度条说明：
  * 原进度条是固定 1.5s 的纯 CSS 动画，与实际加载时长无关：
- *   - 加载 <1.5s → 组件卸载、进度条动画中断（「进度加载很快」）
- *   - 加载 >1.5s → 动画播完停 100% + 条纹无限循环（「持续不断加载」）
+ * - 加载 <1.5s → 组件卸载、进度条动画中断（进度加载很快）
+ * - 加载 >1.5s → 动画播完停 100% + 条纹无限循环（持续不断加载）
  * 现改为组件内 JS 模拟渐进进度：0 → 90% 封顶（指数逼近，速度递减），
  * 组件随加载完成卸载即结束——快则进度走到中途随页面出现而结束，
  * 慢则渐增到 90% 停止示意进行中，绝不出现「满格 100% 卡死」。
@@ -28,7 +28,7 @@ export interface AppLoadingProps {
   /** 是否显示 tip 文字（默认 true） */
   showTip?: boolean;
   /** 是否显示进度条（默认 true；Suspense chunk fallback 场景传 false，
-   *  避免 fallback 与页面 loading 两个实例各播一遍进度条造成「加载两次」感知） */
+ * 避免 fallback 与页面 loading 两个实例各播一遍进度条造成「加载两次」感知） */
   showProgress?: boolean;
   /** 自定义类名 */
   className?: string;

@@ -26,7 +26,7 @@ function damp(dy: number): number {
  * 全局下拉刷新浮层（应用级，仅挂载于 AppLayout 一次）。
  * - 不向任何页面注入 DOM：页面仅通过 usePullToRefresh 钩子注册刷新回调。
  * - 手势监听全局滚动容器（app-shell__scroll）；仅在 scrollTop<=0 且向下拖时接管。
- * - 关键约束：页面内容绝不发生位移（用户明确要求），仅浮层指示器随手势做入场 / 位移动画。
+ * - 关键约束：页面内容绝不发生位移，仅浮层指示器随手势做入场 / 位移动画。
  * - 变体：default=顶部导航栏下方居中指示器；settings=页面中间位移出现刷新按钮。
  */
 export function PullToRefreshOverlay() {
@@ -223,8 +223,8 @@ export function PullToRefreshOverlay() {
 
   return (
     <div className="ptr-overlay" aria-hidden={phase === 'idle'}>
-      {/* 方案 C 的 SVG 光晕 filter：全局仅渲染一次，供 default 变体小电视引用（url(#ptr-halo)）。
-          feMorphology 膨胀 SourceAlpha → 白色 flood 填充轮廓 → 与原始线稿合并，得到柔白光晕。 */}
+      {/* 的 SVG 光晕 filter：全局仅渲染一次，供 default 变体小电视引用（url(#ptr-halo)）。
+ feMorphology 膨胀 SourceAlpha → 白色 flood 填充轮廓 → 与原始线稿合并，得到柔白光晕。 */}
       <svg className="ptr-halo-defs" width="0" height="0" aria-hidden="true">
         <defs>
           <filter id="ptr-halo" x="-40%" y="-40%" width="180%" height="180%">

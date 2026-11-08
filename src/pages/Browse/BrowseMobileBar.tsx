@@ -49,9 +49,9 @@ export default function BrowseMobileBar({
 
   // ── 面板内按「草稿分类」解析筛选依赖 ──────────────────────────────────
   // ⚠️ filterBarProps 里的 genres / categoryLabel / excludedGenreIds 都基于父级
-  //    filterValue.category（面板外实际生效的分类）；而面板内改的是本地 draft。
-  //    若直接用父级值，面板里切换类型后「分类标题 + 下方 genre 列表」不会跟着变
-  //    （2026-11-07 用户反馈）。故这里按 draft.category 重新解析一套，覆盖传入。
+  // filterValue.category（面板外实际生效的分类）；而面板内改的是本地 draft。
+  // 若直接用父级值，面板里切换类型后「分类标题 + 下方 genre 列表」不会跟着变
+  // 。故这里按 draft.category 重新解析一套，覆盖传入。
   const panelCfg = CATEGORY_CONFIG[draft.category]
   const panelGenres = (() => {
     if (panelCfg.genresSource === 'movie') return movieGenres
@@ -170,8 +170,8 @@ export default function BrowseMobileBar({
       </div>
 
       {/* 已选轨（仅智能检索模式展示：直链搜索无 FilterBar，不渲染已选轨）。
-          轨首常驻「类型」chip（不可移除，2026-11-08 用户要求补上）；轨仍是
-          「有已选筛选才出现」，零筛选时类型由结果头类型行承担。 */}
+ 轨首常驻「类型」chip（不可移除， 补上）；轨仍是
+ 「有已选筛选才出现」，零筛选时类型由结果头类型行承担。 */}
       {searchMode === 'smart' && chips.length > 0 && (
         <div className="bmb-rail">
           <span className="bmb-chip">{filterBarProps.categoryLabel}</span>
@@ -194,8 +194,8 @@ export default function BrowseMobileBar({
       )}
 
       {/* 全屏筛选面板（覆盖整个视口含顶部导航栏，顶栏含返回/重置）；
-          FilterBar 强制显示 footer —— 排序作为第五个分组展示（对齐 S3 示例）。
-          面板内操作用草稿值（draft），点「完成」才应用 → 触发接口。 */}
+ FilterBar 强制显示 footer —— 排序作为第五个分组展示（对齐 S3 示例）。
+ 面板内操作用草稿值（draft），点「完成」才应用 → 触发接口。 */}
       <Drawer
         open={open}
         onClose={() => setOpen(false)}
@@ -203,7 +203,7 @@ export default function BrowseMobileBar({
         fullscreen
         onReset={resetDraft}
         /* 「重置/完成」走 footer 插槽：渲染为 .drawer-body 的兄弟节点（不参与滚动）。
-           放在 children 里时会落进滚动容器，sticky 内容不足一屏即失效、滚到底又被顶开。 */
+ 放在 children 里时会落进滚动容器，sticky 内容不足一屏即失效、滚到底又被顶开。 */
         footer={
           <div className="bmb-foot">
             <button type="button" className="bmb-pf-reset" onClick={resetDraft}>

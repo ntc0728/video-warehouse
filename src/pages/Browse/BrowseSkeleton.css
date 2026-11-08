@@ -1,11 +1,11 @@
 /* Browse 结果区专属骨架 — 几何对齐真实 VideoCard。
-   卡片壳（.video-card / .video-card-cover / .video-card-portrait__bottom /
-   __title-wrap / __meta）直接复用 VideoCard.css 的真实类，故本文件只写
-   「骨架私有」的部分：灰块尺寸、角标位置、以及关掉真实卡的交互态。
-   排序条/左栏首屏 chrome 骨架在 BrowseChromeSkeleton.css（2026-09-23）。 */
+ 卡片壳（.video-card / .video-card-cover / .video-card-portrait__bottom /
+ __title-wrap / __meta）直接复用 VideoCard.css 的真实类，故本文件只写
+ 「骨架私有」的部分：灰块尺寸、角标位置、以及关掉真实卡的交互态。
+ 排序条/左栏首屏 chrome 骨架在 BrowseChromeSkeleton.css。 */
 
 /* 骨架层不可交互：真实 .video-card 是 <a>，带 hover 位移 / 描边 / 光泽扫光，
-   骨架必须全部静默（与 #boot-splash 的 pointer-events:none 同口径）。 */
+ 骨架必须全部静默（与 #boot-splash 的 pointer-events:none 同口径）。 */
 .browse-skeleton,
 .browse-skeleton .video-card {
   pointer-events: none;
@@ -13,7 +13,7 @@
 }
 
 /* ── 卡片网格：列数 / 间距 / 纵向 padding 与真实 .video-card-grid 同值，
-      但不复用其类（该类带 fade + 子项 stagger 入场动画，骨架有自己的 .skeleton-scope 淡入） ── */
+ 但不复用其类（该类带 fade + 子项 stagger 入场动画，骨架有自己的 .skeleton-scope 淡入） ── */
 .browse-skeleton__grid {
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
@@ -29,12 +29,12 @@
   border-radius: 0;
 }
 
-/* 三角标皮肤（2026-11-08 方案B 二次定稿）：角标复用真实类
-   （.video-card-rating / -year-badge / -type）+ 真实内容，
-   定位/内边距/字号/圆角全部由 VideoCard.css 唯一决定 → 与真实元素像素级一致，
-   TV 档（[data-device="tv"] 覆写 padding/字号）也自动同步；
-   皮肤层只做三件事：底色换骨架灰、文字/图标透明、去毛玻璃。
-   TR 收藏钮静态态不可见 → 骨架不画。 */
+/* 三角标皮肤：角标复用真实类
+ （.video-card-rating / -year-badge / -type）+ 真实内容，
+ 定位/内边距/字号/圆角全部由 VideoCard.css 唯一决定 → 与真实元素像素级一致，
+ TV 档（[data-device="tv"] 覆写 padding/字号）也自动同步；
+ 皮肤层只做三件事：底色换骨架灰、文字/图标透明、去毛玻璃。
+ TR 收藏钮静态态不可见 → 骨架不画。 */
 .browse-skeleton__skin {
   background: var(--color-skeleton);
   color: transparent;
@@ -43,7 +43,7 @@
 }
 
 /* 标题行：与真实 .video-card-title 同字体档与行高（--text-sm × 1.5），
-   保证标题区高度一致，交接无纵向跳动。 */
+ 保证标题区高度一致，交接无纵向跳动。 */
 .browse-skeleton__title {
   width: 78%;
   height: 1.5em;

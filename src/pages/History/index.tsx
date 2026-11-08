@@ -1,5 +1,5 @@
 /**
- * 观看历史页面（重构）
+ * 观看历史页面
  * 融合 Tab（综合/视频/IPTV）+「更多筛选」面板（状态 chips + 排序）+ 批量管理
  * 统一横版 RecordCard（视频/IPTV 同尺寸），时间轴分组/算珠联动逻辑保持不变
  */
@@ -284,8 +284,8 @@ export default function HistoryPage() {
   }, [watchHistory]);
 
   /** 视频历史基底：按 videoId 去重（同一剧集只保留最新一条），应用搜索。
-   *  2026-10-09 拆出：状态 chip 分面计数需要「状态筛选前」口径，
-   *  base（去重+搜索）与 filtered（+状态筛选）分两段 memo，避免同一逻辑双写漂移。 */
+ * 拆出：状态 chip 分面计数需要「状态筛选前」口径，
+ * base（去重+搜索）与 filtered（+状态筛选）分两段 memo，避免同一逻辑双写漂移。 */
   const historyVideosBase = useMemo<HistoryVideoItem[]>(() => {
     const seenVideo = new Set<string>();
     let list: HistoryVideoItem[] = [...watchHistory]
@@ -315,8 +315,8 @@ export default function HistoryPage() {
   }, [watchHistory, searchByTab, mainTab]);
 
   /** 状态 chip 分面计数：基底（去重+搜索后、状态筛选前）按状态计数 ——
-   *  每个 chip 显示「点它会得到多少条」（分面筛选标准口径：计数不随当前选中状态变化，
-   *  否则未选中的 chip 会被当前筛选清零成误导性 0）。仅视频项 —— IPTV 无观看进度概念。 */
+ * 每个 chip 显示「点它会得到多少条」（分面筛选标准口径：计数不随当前选中状态变化，
+ * 否则未选中的 chip 会被当前筛选清零成误导性 0）。仅视频项 —— IPTV 无观看进度概念。 */
   const statusCounts = useMemo<Record<VideoStatus, number>>(() => {
     const counts: Record<VideoStatus, number> = { all: historyVideosBase.length, unfinished: 0, finished: 0 };
     for (const v of historyVideosBase) {
@@ -385,7 +385,7 @@ export default function HistoryPage() {
 
   /** 当前列表：mainTab 混合视频 + IPTV（按 _histTime），或单类。排序：时间/名称/评分 */
   const currentList = useMemo<(HistoryVideoItem | HistoryChannelItem)[]>(() => {
-    // 2026-09-08 用户指令：综合 tab 下切「已观看/未观看」时不混入 IPTV 数据
+    //综合 tab 下切「已观看/未观看」时不混入 IPTV 数据
     // （IPTV 记录无观看进度概念，参与状态筛选只会产出误导性空态/错位计数）。
     const list: (HistoryVideoItem | HistoryChannelItem)[] =
       mainTab === 'video' ? [...historyVideos]
@@ -538,7 +538,7 @@ export default function HistoryPage() {
     const panelRect = timeline.getBoundingClientRect();
     if (panelRect.width <= 0) return; // 面板隐藏（移动端）时跳过
 
-    // 面板高度贴合滚动容器底缘（Q1-A JS 精确测量，2026-10-10）：
+    // 面板高度贴合滚动容器底缘（Q1-A JS 精确测量）：
     // CSS 固定 height: calc(100vh - --header-height) 仅在 sticky 吸附后成立；
     // 未吸附（scrollTop=0）时面板位于容器顶距 chromeTop 之下，固定高度会向下
     // 溢出 chromeTop 像素 → 「只有一条观看记录也出现滚动条」的假滚动。
@@ -622,7 +622,7 @@ export default function HistoryPage() {
     };
   }, [updateBeadPositions, scheduleBeadUpdate, scrollContainerRef, location.pathname, groupedKeys]);
 
-  // 移动端时间节点吸附检测（2026-09-08 用户指令）：
+  // 移动端时间节点吸附检测：
   // .history-node-col 默认背景透明（未吸附时与页面融为一体，无视觉作用），
   // 仅当 sticky 处于吸附态（rect.top <= scrollerTop + 1）时才加 .is-stuck class 显示背景，
   // 遮住滚过的卡片。CSS 只在 @media (width <= 767px) 和 html[data-device="app"] 块生效，
@@ -796,8 +796,8 @@ export default function HistoryPage() {
         <Icon icon={SlidersHorizontal} size="sm" />
         <span className="action-btn__label">更多筛选</span>
       </button>
-      {/* 2026-11-08：空列表时清空/批量管理置灰不可点（无数据可操作）；
-          批量管理在批量模式下保持可点（「退出管理」出口不能锁死） */}
+      {/* 空列表时清空/批量管理置灰不可点（无数据可操作）；
+ 批量管理在批量模式下保持可点（「退出管理」出口不能锁死） */}
       <button type="button" className="action-btn action-btn--clear" disabled={currentList.length === 0} onClick={handleClearAll}>
         <Icon icon={Trash2} size="sm" />
         <span className="action-btn__label">清空历史</span>
@@ -859,12 +859,12 @@ export default function HistoryPage() {
       )}
       <div className="history-body">
         {userLoading ? (
-          /* 历史页专属骨架（2026-09-18 新增，补齐「12 个非 demo 页里唯一完全无骨架」的缺口）：
-             结构对齐真实内容区（桌面 = 左侧算珠时间轴槽 + 右侧分组节点行 + 记录卡网格；
-             移动/app 由 History.css 同款门控自动收起时间轴），列数读 --history-cols
-             与真实 .history-grid 同源。
-             判定条件与收藏页 Collections（_loading）完全一致 —— 同类页面同一套加载语言；
-             加载期间不再闪「暂无观看记录」空态。 */
+          /* 历史页专属骨架（新增，补齐「12 个页面里唯一完全无骨架」的缺口）：
+ 结构对齐真实内容区（桌面 = 左侧算珠时间轴槽 + 右侧分组节点行 + 记录卡网格；
+ 移动/app 由 History.css 同款门控自动收起时间轴），列数读 --history-cols
+ 与真实 .history-grid 同源。
+ 判定条件与收藏页 Collections（_loading）完全一致 —— 同类页面同一套加载语言；
+ 加载期间不再闪「暂无观看记录」空态。 */
           <HistorySkeleton />
         ) : currentList.length > 0 ? (
           /* key=mainTab：仅「综合↔视频↔IPTV」切换时整体重挂载，触发纯淡入；搜索/筛选/排序不重挂载 */
@@ -941,12 +941,12 @@ export default function HistoryPage() {
             </div>
           </div>
         ) : null}
-        {/* 2026-11-08：空态渲染进 .history-body 内部——此前它是 .record-content 下与
-            .history-body（flex:1 1 0）并列的兄弟，两者把剩余高度对半分，
-            空态块被顶到 ~55% 处不居中。移入后由 body 撑满、wrapper 独占拉伸居中。 */}
+        {/* 空态渲染进 .history-body 内部——此前它是 .record-content 下与
+ .history-body（flex:1 1 0）并列的兄弟，两者把剩余高度对半分，
+ 空态块被顶到 ~55% 处不居中。移入后由 body 撑满、wrapper 独占拉伸居中。 */}
         {!userLoading && currentList.length === 0 && (
           loadError ? (
-            // 读库失败（2026-09-16）：与「真没看过任何片」区分开——否则用户以为记录被清空了，
+            // 读库失败：与「真没看过任何片」区分开——否则用户以为记录被清空了，
             // 且原实现下没有任何重试入口。
             <Empty
               status="error"
@@ -965,7 +965,7 @@ export default function HistoryPage() {
 
       {currentList.length > 0 && <div ref={sentinelRef} aria-hidden="true" />}
 
-      {/* 批量模式胶囊浮动栏（2026-11-08：无数据时不渲染——同收藏页，避免空态被浮动栏撑出滚动条） */}
+      {/* 批量模式胶囊浮动栏（无数据时不渲染——同收藏页，避免空态被浮动栏撑出滚动条） */}
       {currentList.length > 0 && (batchMode || batchIsExiting) && (
         <div className={`batch-action-bar${batchIsExiting ? ' batch-action-bar--exiting' : ''}`}>
           <div className="batch-action-bar__inner">

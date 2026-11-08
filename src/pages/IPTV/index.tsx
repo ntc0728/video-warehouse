@@ -2,10 +2,10 @@
  * IPTV 直播页面
  * 展示 IPTV 频道列表，支持分组筛选、关键词搜索和分页浏览
  *
- * [2026-09-08] 页面大改（demo 终稿：changelogs/demos/demo-iptv-rail-2026-09-08.html）：
+ * 页面大改：
  * - 桌面端（≥1024 且非 TV/App）：左侧 176px 固定文本分类左栏（全部/央视CCTV/主流卫视/
- *   地方卫视/港澳台/体育/影视/少儿/新闻/我的收藏）+「更多台」多选源（设置页已启用的
- *   IPTV 源，最多 3 个）；内容区按分类分节展示；右上角下拉框仅按源过滤当前列表。
+ * 地方卫视/港澳台/体育/影视/少儿/新闻/我的收藏）+「更多台」多选源（设置页已启用的
+ * IPTV 源，最多 3 个）；内容区按分类分节展示；右上角下拉框仅按源过滤当前列表。
  * - 移动端 / App / TV：保留原布局（数据源 chips + GroupPicker + 单网格）。
  * - 可用性检测全链路移除（后台预检测、检测按钮、进度条、可用/不可用统计）。
  *
@@ -45,7 +45,7 @@ const MAX_VISIBLE_SOURCES = 6;
 const IPTV_PAGE_SIZE = 60;
 
 export default function IPTVPage() {
-  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
+  //布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
   const isMobile = useIsMobileLayout();
   const isTV = useIsTV();
   // 桌面左栏布局：≥1024 视口且非移动布局、非 TV（TV 遥控场景保留旧布局）
@@ -107,7 +107,7 @@ export default function IPTVPage() {
   // 下拉刷新：重新拉取 IPTV 频道列表
   usePullToRefresh(async () => {
     await useIPTVStore.getState().refreshChannels();
-    // 2026-09-16：refreshChannels 把源错误写进 store.error 后正常 resolve；而 error 只在
+    //refreshChannels 把源错误写进 store.error 后正常 resolve；而 error 只在
     // 「channels 为空」时的 Empty 里展示（下方两处），有数据时刷新失败会被完全吞掉
     // （浮层照样回弹「刷新成功」）。这里把「彻底失败（无频道 + 有错误）」翻译成 reject
     // 交由浮层 toast；部分源失败不提示，避免多源聚合场景下的噪音。
@@ -119,7 +119,7 @@ export default function IPTVPage() {
     return () => { saveState('iptv', { search: searchKeyword, filter: { group: selectedGroup } }); };
   }, [searchKeyword, selectedGroup, saveState]);
 
-  // [2026-08-13] 惰性 bootstrap iptv/epg 场景：IPTV 页需要 iptv-sources.json（频道源）与
+  // 惰性 bootstrap iptv/epg 场景：IPTV 页需要 iptv-sources.json（频道源）与
   // epg-sources.json（节目单）。不再由 main.tsx 全局拉取，改为场景级幂等触发
   // （bootstrapScene 每场景仅执行一次）。先注入源（syncConsumers 回写 aggregatorUrls /
   // epgUrls），再加载频道缓存——避免新用户 aggregatorUrls 尚未注入就 refresh 空源。
@@ -187,10 +187,10 @@ export default function IPTVPage() {
   }, [toggleExtraSource]);
 
   /**
-   * 主干频道过滤：源过滤（两端共用）+ 关键词 + 勾选的「更多台」源频道合并。
-   * 勾选本地源后，该源频道追加到主干列表一并参与分类计数、搜索和 card 渲染；
-   * 取消勾选则移除。桌面端分类过滤在分节时应用（inCategory）；移动端叠加 selectedGroup。
-   */
+ * 主干频道过滤：源过滤（两端共用）+ 关键词 + 勾选的「更多台」源频道合并。
+ * 勾选本地源后，该源频道追加到主干列表一并参与分类计数、搜索和 card 渲染；
+ * 取消勾选则移除。桌面端分类过滤在分节时应用（inCategory）；移动端叠加 selectedGroup。
+ */
   const mainChannels = useMemo(() => {
     // 把勾选的「更多台」源频道拼接到主干后面（sourceChannels 已按源去重）
     const extra = extraSourceIds.flatMap(id => sourceChannels[id] ?? []);
@@ -246,11 +246,11 @@ export default function IPTVPage() {
   }, [mainChannels]);
 
   /**
-   * 桌面端分节结构：
-   * - 全部频道：按固定分类分节（空分类跳过）+「其他」兜底节
-   * - 具体分类 / 我的收藏：单节
-   * - 勾选的「更多台」源频道已并入 mainChannels 参与分类渲染
-   */
+ * 桌面端分节结构：
+ * - 全部频道：按固定分类分节（空分类跳过）+「其他」兜底节
+ * - 具体分类 / 我的收藏：单节
+ * - 勾选的「更多台」源频道已并入 mainChannels 参与分类渲染
+ */
   const sections = useMemo(() => {
     if (!isDesktopRail) return [];
     const secs: Array<{ title: string; badge?: string; channels: typeof channels }> = [];
@@ -333,9 +333,9 @@ export default function IPTVPage() {
     });
   }, [channels]);
 
-  // F3（2026-08-04）：首次进入且无频道数据时显示「整页骨架占位」——
+  // F3：首次进入且无频道数据时显示「整页骨架占位」——
   // 不渲染 .iptv-top-card（避免空数据筛选卡）也不显示网格区局部 loading。
-  // 2026-09-12 骨架整改：由统一 AppLoading 菊花改为 IPTV 页专属骨架
+  // 由统一 AppLoading 菊花改为 IPTV 页专属骨架
   // （rail 模式与移动模式两套，结构对齐真实布局，随 isDesktopRail 分档）。
   // 仅「首次加载且无数据」走此分支；已有数据后的刷新（isLoading 且 channels 非空）
   // 保持下方 .iptv-grid-card 内局部骨架语义不变。
@@ -345,10 +345,10 @@ export default function IPTVPage() {
         ref={pageRef}
         className={`page-padding iptv-page content-shell${isDesktopRail ? ' iptv-page--rail' : ''}`}
       >
-        {/* 已知量直接取真实真源（2026-09-18）：
-            - 分类行数 = IPTV_CATEGORIES 常量 + 「其他」是否非空（首屏无数据时恒为 0）；
-            - 「更多台」行数 = 已启用 IPTV 源数（本地设置，同步可得，不是未知量）；
-            - 源下拉的出现条件与真实页同一表达式。 */}
+        {/* 已知量直接取真实真源：
+ - 分类行数 = IPTV_CATEGORIES 常量 + 「其他」是否非空（首屏无数据时恒为 0）；
+ - 「更多台」行数 = 已启用 IPTV 源数（本地设置，同步可得，不是未知量）；
+ - 源下拉的出现条件与真实页同一表达式。 */}
         <IPTVSkeleton
           rail={isDesktopRail}
           categoryCount={IPTV_CATEGORIES.length + ((catCounts.get('__other__') ?? 0) > 0 ? 1 : 0)}
@@ -628,9 +628,9 @@ export default function IPTVPage() {
             ) : (
               <>
                 {/* key 由「分组 + 源 + 关键词」构成：切换任一筛选时重挂载网格，
-                    触发与收藏页视频 tab 一致的过场动画——容器 animate-fade-in（整体淡入）
-                    + 卡片 animate-card-enter（cardFadeIn）；content-visibility 保证
-                    仅可见卡片参与动画渲染 */}
+ 触发与收藏页视频 tab 一致的过场动画——容器 animate-fade-in（整体淡入）
+ + 卡片 animate-card-enter（cardFadeIn）；content-visibility 保证
+ 仅可见卡片参与动画渲染 */}
                 <div
                   key={`${selectedGroup ?? '__all__'}-${selectedSource ?? '__all__'}-${debouncedKeyword}`}
                   className="iptv-channel-grid animate-fade-in"

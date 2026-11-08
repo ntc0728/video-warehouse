@@ -59,10 +59,10 @@
   text-align: center;
 }
 
-/* 2026-11-04：选中计数徽章底色改「22% 反色叠透明」。
-   原实现直接用状态色实底 + 反色字，亮色下如 #52c41a 上白字仅 2.27:1；
-   22% 反色（亮=黑 22% / 暗=白 22%）与反色字恒定 11+ :1，且与 RecordShell
-   ≥1024 档的 fused 口径统一（原该档单独覆盖，现全断点同源）。 */
+/* 选中计数徽章底色改「22% 反色叠透明」。
+ 原实现直接用状态色实底 + 反色字，亮色下如 #52c41a 上白字仅 2.27:1；
+ 22% 反色（亮=黑 22% / 暗=白 22%）与反色字恒定 11+ :1，且与 RecordShell
+ ≥1024 档的 fused 口径统一（原该档单独覆盖，现全断点同源）。 */
 .status-tab--active .status-tab__count {
   background: color-mix(in srgb, var(--color-text-inverse) 22%, transparent);
   color: var(--color-text-inverse);
@@ -91,7 +91,7 @@
     border-bottom: none;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .status-tabs {
     flex-wrap: nowrap;

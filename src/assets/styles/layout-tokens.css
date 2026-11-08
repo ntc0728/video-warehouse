@@ -1,29 +1,29 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Layout Tokens — 网格列数 / 左栏宽度 单真源（2026-09-21 收敛建立）
-   ---------------------------------------------------------------------------
-   本文件是以下布局 token 的**唯一定义处**：
-     --card-cols / --iptv-cols / --iptv-page-cols / --history-cols / --rail-w / --chart-cols
-     以及 2026-09-22 自 variables.css / Home.css 迁入的 --page-pad-x / --hero-banner-h / --hero-side-w
-   （--home-rail-w 已于 2026-09-29 随首页左栏「今日趋势 TOP 20」删除一并移除，
-   hero 公式分母改为全内容宽，见下方 HeroBili 节。）
-   由来：这些定义原先散落在 variables.css（--card-cols 基值+断点阶梯+TV、--rail-w）、
-   index.css（--iptv-cols / --iptv-page-cols / --history-cols / --chart-cols 基值+阶梯+TV）、
-   Home.css（--home-rail-w，原 scoped 在 .home-two-col）。启动骨架（index.html 内联，
-   React 挂载前首屏）读不到打包后的 bundle CSS，只能用 JS 手抄一份断点表（colCount()）——
-   那是第二真源，与本文件必然漂移（项目已多次发生「骨架列数与真实网格差一档」，
-   约定见 src/hooks/useGridCols.ts：列数真源只读 CSS token，不在 JS 里另刻断点表）。
+ Layout Tokens — 网格列数 / 左栏宽度 单真源
+ ---------------------------------------------------------------------------
+ 本文件是以下布局 token 的**唯一定义处**：
+ --card-cols / --iptv-cols / --iptv-page-cols / --history-cols / --rail-w / --chart-cols
+ 以及 --page-pad-x / --hero-banner-h / --hero-side-w
+ （--home-rail-w 已随首页左栏「今日趋势 TOP 20」删除一并移除，
+ hero 公式分母改为全内容宽，见下方 HeroBili 节。）
+ 由来：这些定义原先散落在 variables.css（--card-cols 基值+断点阶梯+TV、--rail-w）、
+ index.css（--iptv-cols / --iptv-page-cols / --history-cols / --chart-cols 基值+阶梯+TV）、
+ Home.css（--home-rail-w，原 scoped 在 .home-two-col）。启动骨架（index.html 内联，
+ React 挂载前首屏）读不到打包后的 bundle CSS，只能用 JS 手抄一份断点表（colCount()）——
+ 那是第二真源，与本文件必然漂移（项目已多次发生「骨架列数与真实网格差一档」，
+ 约定见 src/hooks/useGridCols.ts：列数真源只读 CSS token，不在 JS 里另刻断点表）。
 
-   治理：收敛到本单文件 → 被两路消费，结构由「视口 + 设备档」纯 CSS 决定，与接口数据无关：
-     ① vite 插件 transformIndexHtml 在 build/dev 期把本文件全文注入 index.html <head> 的
-        \3c style>，启动骨架首帧即可读到 var(--card-cols) 等（见 vite.config.ts）；
-     ② variables.css 顶部 @import 本文件 → React bundle CSS 自带一份（防御性冗余，
-        与注入值恒同；真实页组件读到的 token 名不变）。
-   ⚠️ 搬运后请勿在 variables.css / index.css / Home.css 里再次定义本文件收录的 token（会重新
-     制造第二真源）。改列数 / 栏宽 / 留白 / Hero 尺寸只改本文件。
+ 治理：收敛到本单文件 → 被两路消费，结构由「视口 + 设备档」纯 CSS 决定，与接口数据无关：
+ ① vite 插件 transformIndexHtml 在 build/dev 期把本文件全文注入 index.html <head> 的
+ \3c style>，启动骨架首帧即可读到 var(--card-cols) 等（见 vite.config.ts）；
+ ② variables.css 顶部 @import 本文件 → React bundle CSS 自带一份（防御性冗余，
+ 与注入值恒同；真实页组件读到的 token 名不变）。
+ ⚠️ 搬运后请勿在 variables.css / index.css / Home.css 里再次定义本文件收录的 token（会重新
+ 制造第二真源）。改列数 / 栏宽 / 留白 / Hero 尺寸只改本文件。
 
-   下列媒体查询与选择器逐行等价搬自原三文件（值未改），保留原相对顺序
-   （层叠顺序 = 源码顺序，TV / 设备覆盖依赖此顺序取胜）。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 下列媒体查询与选择器逐行等价搬自原三文件（值未改），保留原相对顺序
+ （层叠顺序 = 源码顺序，TV / 设备覆盖依赖此顺序取胜）。
+ ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── 基值档（移动优先默认值） ─────────────────────────────────────────────── */
 :root {
@@ -32,10 +32,10 @@
   --iptv-page-cols: 2;                  /* IPTV 页专用网格：默认 */
   --history-cols: 1;                    /* 历史记录网格：默认 (<480) */
   --chart-cols: 2;                      /* 榜单页 .chart-list 布局列：桌面基准 2（≤1023 与 App 单列，见下方覆盖） */
-  --rail-w: clamp(148px, 10vw, 200px);  /* 桌面左栏统一宽（2026-11-07 用户拍板收窄）：1440→148 / 1920→192 / ≥2000→200 封顶（原 248，大视口过宽） */
-  /* 页面全局左右留白（2026-09-22 自 variables.css 迁入）：<1024 档 =
-     var(--space-lg)（bundle 侧 fluid token）/ 14.333px（骨架侧 fallback = clamp 顶）；
-     大屏分档覆盖见下方媒体查询 */
+  --rail-w: clamp(148px, 10vw, 200px);  /* 桌面左栏统一宽：1440→148 / 1920→192 / ≥2000→200 封顶（原 248，大视口过宽） */
+  /* 页面全局左右留白：<1024 档 =
+ var(--space-lg)（bundle 侧 fluid token）/ 14.333px（骨架侧 fallback = clamp 顶）；
+ 大屏分档覆盖见下方媒体查询 */
   --page-pad-x: var(--space-lg, 14.333px);
 }
 
@@ -95,11 +95,11 @@
 }
 
 /* ── --history-cols 断点阶梯（历史记录网格；用 :root 形式，与原 index.css 一致）
-   档位（2026-09-30 用户定稿）：<480→1 / ≥480→2 / ≥768→3 / ≥1280→4 / ≥1920→5 / ≥2560→6。
-   ⚠️ 旧档是 ≥1024→4 / ≥1440→5 / ≥1920→6（1024–1279 就 4 列、1440–1919 就 5 列）；
-   改为「4 列起点右移到 1280、5 列起点右移到 1920、6 列起点右移到 2560」后，
-   1024–1279 保持 3 列、1440–1919 保持 4 列 —— 与「大屏才增列」的观感一致，
-   且全部档位仍落在断点宪法（768/1024/1280/1440/1920/2200/2560）内。 ── */
+ 档位：<480→1 / ≥480→2 / ≥768→3 / ≥1280→4 / ≥1920→5 / ≥2560→6。
+ ⚠️ 旧档是 ≥1024→4 / ≥1440→5 / ≥1920→6（1024–1279 就 4 列、1440–1919 就 5 列）；
+ 改为「4 列起点右移到 1280、5 列起点右移到 1920、6 列起点右移到 2560」后，
+ 1024–1279 保持 3 列、1440–1919 保持 4 列 —— 与「大屏才增列」的观感一致，
+ 且全部档位仍落在断点宪法（768/1024/1280/1440/1920/2200/2560）内。 ── */
 @media (width >= 480px) { :root { --history-cols: 2; } }
 
 @media (width >= 768px) { :root { --history-cols: 3; } }
@@ -110,25 +110,25 @@
 
 @media (width >= 2560px) { :root { --history-cols: 6; } }
 
-/* ── --chart-cols 覆盖档（原在 index.css，2026-09-21 迁入单真源；基值 2 见顶部 :root） ──
-   ≤1023 与 App 单列；App 覆盖用 :root[data-device]（特异性压过 @media 的 :root）。 */
+/* ── --chart-cols 覆盖档（原在 index.css， 迁入单真源；基值 2 见顶部 :root） ──
+ ≤1023 与 App 单列；App 覆盖用 :root[data-device]（特异性压过 @media 的 :root）。 */
 @media (width <= 1023px) { :root { --chart-cols: 1; } }
 :root[data-device="app"] { --chart-cols: 1; }
 
-/* ── --home-rail-w：已删除（2026-09-29）──────────────────────────────────────
-   首页左栏「今日趋势 TOP 20」删除（两栏 .home-two-col 改单列纵向流），
-   本 token 无剩余消费方，定义随之移除；
-   hero 公式分母同步去掉 rail + 栏间 gap 项（见下方 HeroBili 节）。 */
+/* ── --home-rail-w：已删除──────────────────────────────────────
+ 首页左栏「今日趋势 TOP 20」删除（两栏 .home-two-col 改单列纵向流），
+ 本 token 无剩余消费方，定义随之移除；
+ hero 公式分母同步去掉 rail + 栏间 gap 项（见下方 HeroBili 节）。 */
 
-/* ── --page-pad-x 分档覆盖（2026-09-22 自 variables.css 迁入）──────────────
-   迁移动因：下方 --hero-banner-h/--hero-side-w 公式需消费它，且启动骨架（注入
-   本文件）需要同档分档对齐内容盒宽。基值见顶部 :root。
-   2026-09-30 用户拍板：60px 档起点 1440 → 1024 —— 1024–1439 档原 --space-lg
-   流体（15.2–16.5px）放不下换一换浮层（按钮 ~30px + 呼吸），且该档 hero 卡
-   已全档进留白区（见 HeroBili.css），统一按 60px 与 1440 档连续衔接（零跳变）。
-   影响面：该档所有页面内容宽左右各收窄 ~45px（.page-padding / Player /
-   Browse 弹层，见各消费方）。
-   TV 红线：分档用 html:not(tv)，TV 恒 space-lg。 */
+/* ── --page-pad-x 分档覆盖──────────────
+ 迁移动因：下方 --hero-banner-h/--hero-side-w 公式需消费它，且启动骨架（注入
+ 本文件）需要同档分档对齐内容盒宽。基值见顶部 :root。
+60px 档起点 1440 → 1024 —— 1024–1439 档原 --space-lg
+ 流体（15.2–16.5px）放不下换一换浮层（按钮 ~30px + 呼吸），且该档 hero 卡
+ 已全档进留白区（见 HeroBili.css），统一按 60px 与 1440 档连续衔接（零跳变）。
+ 影响面：该档所有页面内容宽左右各收窄 ~45px（.page-padding / Player /
+ Browse 弹层，见各消费方）。
+ TV 红线：分档用 html:not(tv)，TV 恒 space-lg。 */
 @media (width >= 1024px) and (width < 1920px) {
   html:not([data-device="tv"]) { --page-pad-x: 60px; }
 }
@@ -141,74 +141,73 @@
   html:not([data-device="tv"]) { --page-pad-x: 140px; }
 }
 
-/* ── --content-edge-gutter / --fab-breath：浮层按钮的「内容右缘基准」（2026-10-11 用户拍板）───
-   视口右缘到主体内容右缘的实际留白 = 页面留白 + ≥2200 封顶后的居中边距。
-   返回顶部 / 刷新 fab 组 / 换一换等右下浮层改以内容右缘为定位基准（而非视口）；
-   --fab-breath（三次修正 2026-10-11）= 按钮与内容右缘的呼吸间距：不悬浮在内容上，
-   间距随视口增大（1.5vw）但 clamp 12~28px 封顶，消费公式见 BackToTopButton.css
-   （.back-to-top-button / .fab-stack）、HeroBili.css（.hero-bili__shuffle）
-   与启动骨架 bs-shuffle 镜像。
-   TV 无 2200 封顶契约、页面全宽，不定义本组 token（回退各自旧值）。 */
+/* ── --content-edge-gutter / --fab-breath：浮层按钮的「内容右缘基准」───
+ 视口右缘到主体内容右缘的实际留白 = 页面留白 + ≥2200 封顶后的居中边距。
+ 返回顶部 / 刷新 fab 组 / 换一换等右下浮层改以内容右缘为定位基准（而非视口）；
+ --fab-breath= 按钮与内容右缘的呼吸间距：不悬浮在内容上，
+ 间距随视口增大（1.5vw）但 clamp 12~28px 封顶，消费公式见 BackToTopButton.css
+ （.back-to-top-button / .fab-stack）、HeroBili.css（.hero-bili__shuffle）
+ 与启动骨架 bs-shuffle 镜像。
+ TV 无 2200 封顶契约、页面全宽，不定义本组 token（回退各自旧值）。 */
 html:not([data-device="tv"]) {
-  /* 2026-11-04：内容外框上限改为「2200 + 2×pad」（各页 page-padding 根统一口径，
-     见 index.css），故「视口 → 内容右缘」的实际留白 =
-     (100vw − (2200 + 2×pad)) / 2 + pad。旧式按 2200 裸值算，
-     在 ≥2200 时会低估留白（2560 旧值 320 vs 实际 180），导致 fab 压进内容区。
-     ⚠️ min() 内不嵌 calc()（本仓 postcss-calc 会静默丢弃）：先下沉外框宽度 token。 */
+  /* 内容外框上限改为「2200 + 2×pad」（各页 page-padding 根统一口径，
+ 见 index.css），故「视口 → 内容右缘」的实际留白 =
+ (100vw − (2200 + 2×pad)) / 2 + pad。旧式按 2200 裸值算，
+ 在 ≥2200 时会低估留白（2560 旧值 320 vs 实际 180），导致 fab 压进内容区。
+ ⚠️ min() 内不嵌 calc()（本仓 postcss-calc 会静默丢弃）：先下沉外框宽度 token。 */
   --content-outer-max: min(100vw, calc(2200px + 2 * var(--page-pad-x)));
   --content-edge-gutter: calc((100vw - var(--content-outer-max)) / 2 + var(--page-pad-x));
   --fab-breath: clamp(12px, 1.5vw, 28px);
   /* 换一换呼吸距的可用留白上限 = G − 48（≈按钮宽上限+贴屏安全距）。
-     ⚠️ 本仓 [vite:css] postcss-calc 解析器既不支持 min() 内嵌 calc()，也不支持
-     calc(<pct> + min())——嵌套形态会被整条静默丢弃（实测 2026-10-11 build warning）；
-     custom property 的值不参与解析，故把整表达式下沉为 token，消费处只写 var()。
-     浏览器运行时按标准 CSS 求值，无副作用。 */
+ ⚠️ 本仓 [vite:css] postcss-calc 解析器既不支持 min() 内嵌 calc()，也不支持
+ calc(<pct> + min())——嵌套形态会被整条静默丢弃（实测 build warning）；
+ custom property 的值不参与解析，故把整表达式下沉为 token，消费处只写 var()。
+ 浏览器运行时按标准 CSS 求值，无副作用。 */
   --shuffle-max-shift: calc(var(--content-edge-gutter) - 48px);
   /* 换一换左缘锚定最终值：内容右缘 + 呼吸距（受可用留白上限钳制）。
-     ⚠️ 2026-11-04 曾擅自在此加 `+ space-md` 去迁就 fab 位置 —— 已撤销：
-     换一换的定位基准是 .hero-bili__right 右缘（设计如此，勿改）。
-     要对齐 fab 应改 fab，不得改换一换。 */
+ ⚠️ 不要在此加 `+ space-md` 去迁就 fab 位置：
+ 换一换的定位基准是 .hero-bili__right 右缘（设计如此，勿改）。
+ 要对齐 fab 应改 fab，不得改换一换。 */
   --shuffle-left: calc(100% + min(var(--fab-breath), var(--shuffle-max-shift)));
 }
 
-/* ── HeroBili --hero-banner-h / --hero-side-w（2026-09-22 自 Home.css 生效点 +
-   variables.css 兜底收敛至此）───────────────────────────────────────────
-   历史双定义陷阱：variables.css :root 兜底按「全视口宽」算，真实覆盖点在 Home.css
-   `.home-two-col__main`（右列宽分母，特异性 0,2,1）。Home.css 随 HomeRoute 懒
-   chunk 加载 → 首页骨架首帧命中不到生效点时吃兜底 → **banner 瞬时超大、Home.css
-   落地后回缩**（用户 2026-09-22 报「banner 骨架异常显示超大尺寸」的竞态根因）。
-   收敛到本文件 = 主 CSS（variables @import）与骨架注入双路首帧可得，无特异性陷阱。
+/* ── HeroBili --hero-banner-h / --hero-side-w───────────────────────────────────────────
+ 历史双定义陷阱：variables.css :root 兜底按「全视口宽」算，真实覆盖点在 Home.css
+ `.home-two-col__main`（右列宽分母，特异性 0,2,1）。Home.css 随 HomeRoute 懒
+ chunk 加载 → 首页骨架首帧命中不到生效点时吃兜底 → **banner 瞬时超大、Home.css
+ 落地后回缩**（「banner 骨架异常显示超大尺寸」的竞态根因）。
+ 收敛到本文件 = 主 CSS（variables @import）与骨架注入双路首帧可得，无特异性陷阱。
 
-   ══ 2026-11-04 用户定稿：左右视觉 6:4 + 双 16:9 + 下沿齐平 ══
-   ⚠️ 内容宽必须按「先扣留白、再封顶」算：
-     hero 真实宽 = min(100vw − 2×page-pad-x, 2200px)
-   而不是 min(100vw, 2200px) − 2×page-pad-x —— 后者在 100vw−2pad>2200 时
-   会少算整整 2×page-pad-x（≥2560 达 280px），右栏 token 随之偏窄，
-   banner 被 1fr 撑宽 → 右卡封面比例失调（用户 2026-11-04 报「≥2560 封面比例异常」的根因）。
-   等价写法（postcss-calc 安全，min() 内只放 calc-sum，不嵌 calc()）：
-     min(100vw, 2200px + 2×page-pad-x) − 2×page-pad-x
-   栅格可用宽 G = 上式 − 2×space-md − hero-main-gap；
-   栏间 gap g = --hero-side-gap。右栏 2 列 × 3 行，卡片 16:9，banner 16:9。
-   忽略 gap 时行数 R = 1.5×列数 C → 最小整数解 C=2 / R=3（6 张）。
-   含 gap 的精确解（C=2 / R=3）：
-     side-w = 0.4G − (37/45)g
-     banner-w = G − side-w = 0.6G + (37/45)g
-     banner-h = banner-w × 9/16
-     card-w = (side-w − g)/2；card-h = (banner-h − 2g)/3 = card-w × 9/16
-   视觉比例约 60.5:39.5 ~ 60.8:39.2（gap 补偿随视口收敛），比例与视口宽度无关，
-   故 ≥1024 全档统一 2 列 × 3 行，不再按 2560 另起分档。
-   ⚠️ 真实 banner 高度由 `.hero-bili__banner` 的 `aspect-ratio:16/9` 派生；
-   `--hero-banner-h` 仅保留给其它消费方的兼容值（与精确解等高），
-   禁止再用旧「系数 × 内容宽」或「N 列卡高反推」覆写这两个 token。
-   ⚠️ var(...) 的 fallback 值仅服务注入侧（layout-tokens 随 vite 插件注入
-   index.html，--space-md / --hero-side-gap 定义在 variables.css 不随注入；
-   boot-splash 不消费 banner-h，fallback 纯防御）。 */
+ ══ 左右视觉 6:4 + 双 16:9 + 下沿齐平 ══
+ ⚠️ 内容宽必须按「先扣留白、再封顶」算：
+ hero 真实宽 = min(100vw − 2×page-pad-x, 2200px)
+ 而不是 min(100vw, 2200px) − 2×page-pad-x —— 后者在 100vw−2pad>2200 时
+ 会少算整整 2×page-pad-x（≥2560 达 280px），右栏 token 随之偏窄，
+ banner 被 1fr 撑宽 → 右卡封面比例失调（「≥2560 封面比例异常」的根因）。
+ 等价写法（postcss-calc 安全，min() 内只放 calc-sum，不嵌 calc()）：
+ min(100vw, 2200px + 2×page-pad-x) − 2×page-pad-x
+ 栅格可用宽 G = 上式 − 2×space-md − hero-main-gap；
+ 栏间 gap g = --hero-side-gap。右栏 2 列 × 3 行，卡片 16:9，banner 16:9。
+ 忽略 gap 时行数 R = 1.5×列数 C → 最小整数解 C=2 / R=3（6 张）。
+ 含 gap 的精确解（C=2 / R=3）：
+ side-w = 0.4G − (37/45)g
+ banner-w = G − side-w = 0.6G + (37/45)g
+ banner-h = banner-w × 9/16
+ card-w = (side-w − g)/2；card-h = (banner-h − 2g)/3 = card-w × 9/16
+ 视觉比例约 60.5:39.5 ~ 60.8:39.2（gap 补偿随视口收敛），比例与视口宽度无关，
+ 故 ≥1024 全档统一 2 列 × 3 行，不再按 2560 另起分档。
+ ⚠️ 真实 banner 高度由 `.hero-bili__banner` 的 `aspect-ratio:16/9` 派生；
+ `--hero-banner-h` 仅保留给其它消费方的兼容值（与精确解等高），
+ 禁止再用旧「系数 × 内容宽」或「N 列卡高反推」覆写这两个 token。
+ ⚠️ var(...) 的 fallback 值仅服务注入侧（layout-tokens 随 vite 插件注入
+ index.html，--space-md / --hero-side-gap 定义在 variables.css 不随注入；
+ boot-splash 不消费 banner-h，fallback 纯防御）。 */
 @media (width >= 1024px) {
   html:not([data-device="tv"]) {
     /* 0.4G − (37/45)g：先按 6:4 分栅格，再从右栏扣掉栏间/卡间 gap 的补偿项。
-       启动骨架注入侧读不到 --space-md / --hero-side-gap，故给两段 fallback。
-       --hero-content-w 单独成 token：min() 内只写 calc-sum（不嵌 calc()），
-       避开拓扑坑；封顶后仍要再减一次 2×page-pad-x（先扣留白再封顶）。 */
+ 启动骨架注入侧读不到 --space-md / --hero-side-gap，故给两段 fallback。
+ --hero-content-w 单独成 token：min() 内只写 calc-sum（不嵌 calc()），
+ 避开拓扑坑；封顶后仍要再减一次 2×page-pad-x（先扣留白再封顶）。 */
     --hero-content-w: min(100vw, 2200px + 2 * var(--page-pad-x));
     --hero-grid-w: calc(
       var(--hero-content-w) - 2 * var(--page-pad-x)
@@ -224,9 +223,9 @@ html:not([data-device="tv"]) {
 }
 
 /* ── TV 端覆盖（恒定，不随视口变；靠源码顺序 / 特异性取胜，必须置于文件末尾） ──
-   card/iptv 用 html[data-device="tv"]（0,1,1，与上方 @media 的 html:not(app) 同特异性，
-   靠后置源码顺序覆盖）；history 用 :root[data-device="tv"]（0,2,0，特异性即高于 @media
-   的 :root 0,1,0）。两种写法与原文件逐一对应，勿合并。 */
+ card/iptv 用 html[data-device="tv"]（0,1,1，与上方 @media 的 html:not(app) 同特异性，
+ 靠后置源码顺序覆盖）；history 用 :root[data-device="tv"]（0,2,0，特异性即高于 @media
+ 的 :root 0,1,0）。两种写法与原文件逐一对应，勿合并。 */
 html[data-device="tv"] {
   --card-cols: 8;
   --iptv-cols: 5;

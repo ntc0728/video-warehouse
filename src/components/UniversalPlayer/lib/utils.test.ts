@@ -1,11 +1,11 @@
 /**
  * 清晰度档位展示单元测试
  *
- * 覆盖 2026-09-10 走读反馈修复：manifest 未标 RESOLUTION / 纯音频轨的 level（height=0）
+ * 覆盖 走读反馈修复：manifest 未标 RESOLUTION / 纯音频轨的 level（height=0）
  * 会在清晰度菜单里被显示成「0P」这种非法档位。
  * - `getResolutionLabel` 对 height=0 不再回落到 HLSAdapter 生成的 `${h}P`；
  * - `getSelectableLevels` 过滤该档，且必须**保留 adapter 原始索引**——
- *   hls.js 的 `currentLevel` 就是原始下标，过滤后不能重新编号。
+ * hls.js 的 `currentLevel` 就是原始下标，过滤后不能重新编号。
  */
 import { describe, it, expect } from 'vitest';
 import { getResolutionLabel, getSelectableLevels, isSelectableLevel } from './utils';

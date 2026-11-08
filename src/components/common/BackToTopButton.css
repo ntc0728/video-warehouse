@@ -1,22 +1,22 @@
 /* ═══════════════════════════════════════════════════════════════
-   BackToTopButton — 玻璃感返回顶部按钮
-   参考 Ouonnki TV 设计：bg-background/90 + backdrop-blur + rounded-full
+ BackToTopButton — 玻璃感返回顶部按钮
+ 参考 Ouonnki TV 设计：bg-background/90 + backdrop-blur + rounded-full
 
-   设计要点：
-   - 玻璃感：半透明背景 + backdrop-filter blur + saturate
-   - 圆角：var(--radius-full)
-   - 阴影：双层 rgba(0,0,0, X%)，hover 时加深
-   - 动画：CSS keyframe（slide-up + fade）进/退场，无 framer-motion 依赖
-   - 位置：右下，bottom = AppLayout paddingBottom + 自身高度 + 一段 gap
-   - 尺寸：var(--space-2xl) (36-72px)，比 v1 缩小一档
-   ═══════════════════════════════════════════════════════════════ */
+ 设计要点：
+ - 玻璃感：半透明背景 + backdrop-filter blur + saturate
+ - 圆角：var(--radius-full)
+ - 阴影：双层 rgba(0,0,0, X%)，hover 时加深
+ - 动画：CSS keyframe（slide-up + fade）进/退场，无 framer-motion 依赖
+ - 位置：右下，bottom = AppLayout paddingBottom + 自身高度 + 一段 gap
+ - 尺寸：var(--space-2xl) (36-72px)，比 v1 缩小一档
+ ═══════════════════════════════════════════════════════════════ */
 
 .back-to-top-button {
   position: fixed;
-  /* 2026-10-11 三次修正：不悬浮在内容上——按钮住在内容右缘外的留白区，
-     与内容保持 --fab-breath 呼吸距（随视口增大，封顶 28px），距视口右缘保底
-     space-md 不贴边；留白不够时自动压缩呼吸距，永不叠内容也永不超视口。
-     TV 回退旧值（下方 [data-device=tv]）；移动端/app 媒体档另覆盖。 */
+  /* 不悬浮在内容上——按钮住在内容右缘外的留白区，
+ 与内容保持 --fab-breath 呼吸距（随视口增大，封顶 28px），距视口右缘保底
+ space-md 不贴边；留白不够时自动压缩呼吸距，永不叠内容也永不超视口。
+ TV 回退旧值（下方 [data-device=tv]）；移动端/app 媒体档另覆盖。 */
   right: max(calc(var(--content-edge-gutter, 100px) - var(--space-2xl) - var(--fab-breath, 12px)), var(--space-md));
   bottom: var(--space-2xl);
   z-index: var(--z-float);
@@ -133,7 +133,7 @@
     bottom: calc(var(--layout-tabbar-height) + var(--space-lg));
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .back-to-top-button {
     right: var(--space-md);
@@ -148,12 +148,12 @@
 
 
 
-/* ── Reduced motion：本组件豁免（2026-11-08 用户拍板）──
-   原「prefers-reduced-motion: reduce 时关闭所有动画」块已整体移除：用户系统开着
-   Windows「动画效果关闭」，豁免块会杀掉 fab 进出场/点击滚动的全部动画
-   （用户报「换一换不转/fab 僵硬」的共同根因）。本组件的进出场属于**关键操作反馈**
-   （出现/点击后去哪），应用侧刻意无视系统减少动态，始终播放。
-   若将来要恢复 a11y 豁免：给下面两个媒体查询还原 transition/animation:none 即可。 */
+/* ── Reduced motion：本组件豁免──
+ 原「prefers-reduced-motion: reduce 时关闭所有动画」块已整体移除：用户系统开着
+ Windows「动画效果关闭」，豁免块会杀掉 fab 进出场/点击滚动的全部动画
+ （「换一换不转/fab 僵硬」的共同根因）。本组件的进出场属于**关键操作反馈**
+ （出现/点击后去哪），应用侧刻意无视系统减少动态，始终播放。
+ 若将来要恢复 a11y 豁免：给下面两个媒体查询还原 transition/animation:none 即可。 */
 
 @keyframes back-to-top-button-slide-in {
   0% {
@@ -180,27 +180,27 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   右侧浮层动作组（2026-09-11，用户截图指定）
-   仅当 ≥1024 且非 TV 时由 JS 渲染（组件级开关，全部页面生效）：
-     上 = 方形刷新按钮（青蓝半透明玻璃底 + 白色循环箭头，点击 = 软刷新：
-         派发 kino:content-refresh，由 AppLayout 重挂载当前页，主体结构不重载）
-     下 = 方形「顶部」按钮（半透明白底 + 深色 ▲ + 「顶部」文字）
-   尺寸统一走 --fab-size = --space-3xl（32→52px），与既有圆形按钮同档观感。
-   滚动进行中整组淡出，停止 800ms 后淡入（.fab-stack--scrolling）。
-   <1024 / TV 时本组不存在，仍是上面的圆形玻璃按钮。
-   ═══════════════════════════════════════════════════════════════ */
+ 右侧浮层动作组
+ 仅当 ≥1024 且非 TV 时由 JS 渲染（组件级开关，全部页面生效）：
+ 上 = 方形刷新按钮（青蓝半透明玻璃底 + 白色循环箭头，点击 = 软刷新：
+ 派发 kino:content-refresh，由 AppLayout 重挂载当前页，主体结构不重载）
+ 下 = 方形「顶部」按钮（半透明白底 + 深色 ▲ + 「顶部」文字）
+ 尺寸统一走 --fab-size = --space-3xl（32→52px），与既有圆形按钮同档观感。
+ 滚动进行中整组淡出，停止 800ms 后淡入（.fab-stack--scrolling）。
+ <1024 / TV 时本组不存在，仍是上面的圆形玻璃按钮。
+ ═══════════════════════════════════════════════════════════════ */
 
 .fab-stack {
-  /* 2026-11-04 用户要求「fab 与换一换图标平行对齐」——
-     **改 fab 去对齐换一换，不得反过来改换一换**（换一换定位是既有设计）。
-     换一换左缘 = 视口 − gutter − space-md + shift
-       （.hero-bili__right 右缘 = 内容右缘 − grid 右 padding space-md；shift = min(breath, maxShift)）
-     ⇒ fab 的 right = gutter + space-md − shift − fab-size，两浮层左缘严格同列。
-     实测左缘：1440 1381 / 1920 1836 / 2560 2395（与换一换逐档一致）。
-     留白不足时 max(..., space-md) 兜底贴边。 */
+  /* 「fab 与换一换图标平行对齐」——
+ **改 fab 去对齐换一换，不得反过来改换一换**（换一换定位是既有设计）。
+ 换一换左缘 = 视口 − gutter − space-md + shift
+ （.hero-bili__right 右缘 = 内容右缘 − grid 右 padding space-md；shift = min(breath, maxShift)）
+ ⇒ fab 的 right = gutter + space-md − shift − fab-size，两浮层左缘严格同列。
+ 实测左缘：1440 1381 / 1920 1836 / 2560 2395（与换一换逐档一致）。
+ 留白不足时 max(..., space-md) 兜底贴边。 */
   --fab-size: var(--space-3xl);
   /* shift = min(breath, maxShift)，与 --shuffle-left 用同一取值；
-     min() 内不嵌 calc()（本仓 postcss-calc 会丢弃）→ 下沉为局部 token。 */
+ min() 内不嵌 calc()（本仓 postcss-calc 会丢弃）→ 下沉为局部 token。 */
   --fab-shift: min(var(--fab-breath, 12px), var(--shuffle-max-shift, 48px));
   position: fixed;
   right: max(
@@ -213,7 +213,7 @@
   flex-direction: column;
   gap: var(--space-sm);
   /* 默认（即将退场）：低不透明 + 下移一个按钮高（B 站浮层语言：整组从底部
-     滑入/滑出，位移 = 自身按钮高；缓动 expo-out 无回弹，见 --visible 注释） */
+ 滑入/滑出，位移 = 自身按钮高；缓动 expo-out 无回弹，见 --visible 注释） */
   opacity: 0;
   transform: translateY(var(--fab-size));
   transition:
@@ -223,27 +223,27 @@
   pointer-events: none;
 }
 
-/* ── 进出场状态类顺序即优先级（2026-11-08 修正）：
-      --scrolling 必须声明在 --visible 之后 —— 同特异性下后者胜，旧顺序下
-      --visible 的 opacity:1 一直压住 --scrolling 的 opacity:0，「滚动中隐藏」
-      从未生效（滚动时按钮钉死不动 = 僵硬感的另一半来源）。 ── */
+/* ── 进出场状态类顺序即优先级：
+ --scrolling 必须声明在 --visible 之后 —— 同特异性下后者胜，旧顺序下
+ --visible 的 opacity:1 一直压住 --scrolling 的 opacity:0，「滚动中隐藏」
+ 从未生效（滚动时按钮钉死不动 = 僵硬感的另一半来源）。 ── */
 
 .fab-stack--visible {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
-  /* 入场动画（2026-11-08 用户从对比 demo 拍板方案 C）：52px 行程 · 600ms · spring
-     （过冲 ≈5px 的 Q 弹感；spring 需要长时长才能看清过冲，250ms 下只有 2px 且被
-     淡入掩盖）。时长与 TSX 的 EXIT_DURATION_MS 无关（那只管退场卸载）。
-     ⚠️ fill 必须用 backwards 而非 both——both 会在动画结束后**永久持有** 100% 帧
-     （动画填充值优先级高于普通声明），把滚动隐藏态的 opacity:0 压住；
-     backwards 结束后交还级联。 */
+  /* 入场动画：52px 行程 · 600ms · spring
+ （过冲 ≈5px 的 Q 弹感；spring 需要长时长才能看清过冲，250ms 下只有 2px 且被
+ 淡入掩盖）。时长与 TSX 的 EXIT_DURATION_MS 无关（那只管退场卸载）。
+ ⚠️ fill 必须用 backwards 而非 both——both 会在动画结束后**永久持有** 100% 帧
+ （动画填充值优先级高于普通声明），把滚动隐藏态的 opacity:0 压住；
+ backwards 结束后交还级联。 */
   animation: fab-stack-slide-in calc(var(--dur-md) * 2.4) var(--ease-spring) backwards;
 }
 
 /* 退场保持 transition（--exiting 由已渲染态过渡回默认态，本就平滑）；
-   不加 exit keyframe：若从 --scrolling（opacity 0）直接转 --exiting，
-   keyframe 会从 0% 的 opacity 1 起播，反而闪现一帧。 */
+ 不加 exit keyframe：若从 --scrolling（opacity 0）直接转 --exiting，
+ keyframe 会从 0% 的 opacity 1 起播，反而闪现一帧。 */
 .fab-stack--exiting {
   opacity: 0;
   /* 与基础默认态同值（B 站语言：滑出 = 下移一个按钮高）；显式声明仅为可读性 */
@@ -251,14 +251,14 @@
   pointer-events: none;
 }
 
-/* ── 滚动中隐藏：已按用户要求关闭（2026-11-08）──
-   原设计（2026-09-11 拍板）：滚动进行时淡出、停止 800ms 后淡入；2026-11-08 修复
-   优先级使其真正生效后，用户反馈「800ms 太长」且不要滚动中淡出 → 本规则整体停用：
-   TSX 的 isScrolling/--scrolling class 照常切换（逻辑零改动），但不再有任何视觉效果，
-   fab-stack 挂载期间恒显。若将来要恢复：加回
-   `.fab-stack.fab-stack--scrolling { opacity: 0; pointer-events: none; }`
-   ⚠️ 必须双类写法（0,2,0）压过 --visible——单类会被 cssnano 按声明子集合并进
-   基础规则（变成 `.fab-stack, .fab-stack--scrolling`，恒排在 --visible 之前）失效。 */
+/* ── 滚动中隐藏：已关闭──
+ 原设计：滚动进行时淡出、停止 800ms 后淡入； 修复
+ 优先级使其真正生效后，「800ms 太长」且不要滚动中淡出 → 本规则整体停用：
+ TSX 的 isScrolling/--scrolling class 照常切换（逻辑零改动），但不再有任何视觉效果，
+ fab-stack 挂载期间恒显。若将来要恢复：加回
+ `.fab-stack.fab-stack--scrolling { opacity: 0; pointer-events: none; }`
+ ⚠️ 必须双类写法（0,2,0）压过 --visible——单类会被 cssnano 按声明子集合并进
+ 基础规则（变成 `.fab-stack, .fab-stack--scrolling`，恒排在 --visible 之前）失效。 */
 
 @keyframes fab-stack-slide-in {
   0% {
@@ -272,7 +272,7 @@
   }
 }
 
-/* ── 刷新：青蓝方形 + 白色图标（2026-09-11：加圆角 radius-md + 半透明玻璃化） ── */
+/* ── 刷新：青蓝方形 + 白色图标（加圆角 radius-md + 半透明玻璃化） ── */
 .fab-stack__refresh {
   display: flex;
   justify-content: center;
@@ -282,7 +282,7 @@
   padding: 0;
   border: 1px solid rgb(255 255 255 / 25%);
   border-radius: var(--radius-md);
-  /* 半透明化显示（用户拍板）：停止后常态即半透明，hover 恢复实色 */
+  /* 半透明化显示：停止后常态即半透明，hover 恢复实色 */
   background: color-mix(in srgb, var(--color-action-blue) 82%, transparent);
   color: var(--color-on-image);
   cursor: pointer;
@@ -317,18 +317,18 @@
 }
 
 /* ── 「顶部」方形：覆盖 .back-to-top-button 的 fixed / 圆形 / 自带进出场 ──
-   之所以仍复用 .back-to-top-button 基类：home.spec.ts 的「回到顶部」用例按该类名定位。
-   视觉上由本修饰类全量改写（方形、上下排布、无自身动画，随 .fab-stack 一起进出场）。 */
+ 之所以仍复用 .back-to-top-button 基类：home.spec.ts 的「回到顶部」用例按该类名定位。
+ 视觉上由本修饰类全量改写（方形、上下排布、无自身动画，随 .fab-stack 一起进出场）。 */
 .back-to-top-button--square {
   position: static;
   flex-direction: column;
-  /* 2026-09-11 用户反馈：按钮调大到 3xl 档后纵内空间充裕，图标/文字保持零间隙竖排 */
+  /* 按钮调大到 3xl 档后纵内空间充裕，图标/文字保持零间隙竖排 */
   gap: 0;
   width: var(--fab-size);
   height: var(--fab-size);
-  /* 2026-09-11 用户拍板：适当加一点圆角（不用原来的 0 / radius-full），取 radius-md 档 */
+  /* 适当加一点圆角（不用原来的 0 / radius-full），取 radius-md 档 */
   border-radius: var(--radius-md);
-  /* 半透明化显示（用户拍板）：96% → 78%，毛玻璃由基类 backdrop-filter 提供 */
+  /* 半透明化显示：96% → 78%，毛玻璃由基类 backdrop-filter 提供 */
   background: rgb(255 255 255 / 78%);
   opacity: 1;
   transform: none;
@@ -348,7 +348,7 @@
   transform: translateY(0) scale(0.96);
 }
 
-/* 方形形态下图标不再占 60%：与文字上下排布（2026-09-11：按钮调大到 3xl，图标 xs→sm 匹配） */
+/* 方形形态下图标不再占 60%：与文字上下排布（按钮调大到 3xl，图标 xs→sm 匹配） */
 .back-to-top-button--square .back-to-top-button__icon {
   width: var(--icon-sm);
   height: var(--icon-sm);
@@ -357,7 +357,7 @@
 }
 
 .back-to-top-button__label {
-  /* 2026-09-11 用户反馈：按钮调大到 3xl 档，文字恢复 2xs 基准（去掉 0.85 缩放） */
+  /* 按钮调大到 3xl 档，文字恢复 2xs 基准（去掉 0.85 缩放） */
   font-size: var(--text-2xs);
   font-weight: 600;
   line-height: 1;
@@ -370,4 +370,4 @@
   background: rgb(20 20 20 / 72%);
 }
 
-/* fab-stack 侧的 reduced-motion 豁免块已于 2026-11-08 按用户拍板整体移除（见文件上方说明）。 */
+/* fab-stack 侧的 reduced-motion 豁免块已整体移除（见文件上方说明）。 */

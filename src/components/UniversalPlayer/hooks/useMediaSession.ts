@@ -15,7 +15,7 @@ interface UseMediaSessionOptions {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   /** 媒体信息（调用方用 useMemo 稳定引用，避免每次渲染重注册） */
   info: MediaSessionInfo;
-  /** 当前播放流 URL（P3 原生服务接管音频用，与 video 元素同源） */
+  /** 当前播放流 URL（原生媒体服务接管音频用，与 video 元素同源） */
   streamUrl?: string;
   /** 上一集/上一频道；无值时锁屏隐藏对应按钮 */
   onPrev?: () => void;
@@ -28,18 +28,18 @@ function hasMediaSession(): boolean {
 }
 
 /**
- * MediaSession 集成（后台听视频 P1）+ 原生前台服务兜底（P3）。
+ * MediaSession 集成（后台听视频）+ Android 原生前台服务兜底。
  *
- * P1（全平台，已落地）：锁屏/通知栏媒体卡片（标题/副标题/进度）+ 媒体键 play/pause/seek/
+ *（全平台，已落地）：锁屏/通知栏媒体卡片（标题/副标题/进度）+ 媒体键 play/pause/seek/
  * 上下集控制；开关关闭时不注册元数据。play/pause 直接驱动 video 元素，由 usePlayerCore 事件
  * 同步回 store。
  *
- * P3（Android App）：Android WebView 切后台时系统会暂停 media 元素音频。当原生 MediaBridge
+ * Android App：Android WebView 切后台时系统会暂停 media 元素音频。当原生 MediaBridge
  * 可用时，监听 visibilitychange——切后台时启动原生 MediaService（前台服务 + MediaPlayer
  * 独立解码音频）接管播放、暂停 WebView video（省电 + 避免双音轨），切回前台时停止原生服务、
- * 把 video 同步到原生服务的播放位置后恢复播放。Web/iOS 无原生桥时此逻辑跳过，仍由 P1 兜底。
+ * 把 video 同步到原生服务的播放位置后恢复播放。Web/iOS 无原生桥时此逻辑跳过，仍由 兜底。
  *
- * P2（iOS Safari）：iOS 17+ 的 ManagedMediaSource 允许 video 在后台继续播放（HLSAdapter 已配
+ *（iOS Safari）：iOS 17+ 的 ManagedMediaSource 允许 video 在后台继续播放（HLSAdapter 已配
  * preferManagedMediaSource:true），旧 iOS 切后台必停。前端无可靠手段让旧 iOS 后台续播，
  * 仅在开关开启时据 ManagedMediaSource 支持与否给提示（见 useMediaSessionHint）。
  */
@@ -47,7 +47,7 @@ export function useMediaSession({ videoRef, info, streamUrl, onPrev, onNext }: U
   const enabled = usePlayerStore(s => s.backgroundPlay);
   const isPlaying = usePlayerStore(s => s.isPlaying);
 
-  // P3：原生媒体服务兜底——切后台启动、切回前台停止
+  // 原生媒体服务兜底——切后台启动、切回前台停止
   useEffect(() => {
     if (!enabled || !streamUrl) return;
     const bridge = getMediaBridge();

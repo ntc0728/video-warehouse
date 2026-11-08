@@ -2,10 +2,10 @@
  * StillsLightbox — 剧照全屏灯箱
  * 深色背景 + 键盘导航 + 缩略图滑动 + 计数器
  * 增强：主图触摸滑动切换、键盘 Home/End、图片加载淡入
- * 2026-09-10：新增主图缩放（− / + 按钮，每级 5%，50%~200%；放大后可拖拽平移；
- *             单击主图复位到 100%）。缩放控件由 Detail 页的剧照标题行移入本组件。
- * 2026-11-08：主图区域支持鼠标滚轮缩放（一格 ±10%，累计阈值防触控板过敏；
- *             原生 wheel 监听 passive:false 才能 preventDefault）。
+ * ：新增主图缩放（− / + 按钮，每级 5%，50%~200%；放大后可拖拽平移；
+ * 单击主图复位到 100%）。缩放控件由 Detail 页的剧照标题行移入本组件。
+ * ：主图区域支持鼠标滚轮缩放（一格 ±10%，累计阈值防触控板过敏；
+ * 原生 wheel 监听 passive:false 才能 preventDefault）。
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -20,7 +20,7 @@ const ZOOM_MAX = 200;
 const ZOOM_STEP = 5;
 const ZOOM_DEFAULT = 100;
 /** 滚轮缩放：累计 deltaY 每 100（一档滚轮格）走 10%（ZOOM_STEP×2），
-    触控板高频小 delta 平滑累计；监听必须 passive:false 才能 preventDefault */
+ 触控板高频小 delta 平滑累计；监听必须 passive:false 才能 preventDefault */
 const WHEEL_STEP_THRESHOLD = 100;
 const WHEEL_ZOOM_STEP = ZOOM_STEP * 2;
 
@@ -191,7 +191,7 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
       if (!d.active) return;
       d.active = false;
       setPanning(false);
-      // 未发生位移 = 单击 → 复位（用户要求「单击目前显示的图片可以复原」）
+      // 未发生位移 = 单击 → 复位（单击目前显示的图片可以复原）
       if (!d.moved) resetZoom();
     };
     window.addEventListener('mousemove', onMove);
@@ -202,7 +202,7 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
     };
   }, [resetZoom]);
 
-  // ── 鼠标滚轮缩放（2026-11-08）：仅在主图区域生效，zoom/平移溢出由舞台框裁切 ──
+  // ── 鼠标滚轮缩放：仅在主图区域生效，zoom/平移溢出由舞台框裁切 ──
   // React 的 onWheel 是 passive 监听无法 preventDefault，必须原生挂载 { passive: false }；
   // deltaY 累计过阈值才走档（滚轮一格 100 → ±10%），避免触控板高频小 delta 过敏
   useEffect(() => {
@@ -314,9 +314,9 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
         </button>
       )}
 
-      {/* 主图区域。zoom 控件（2026-11-08）移入当前 slide 内、作为 img 的 flex 兄弟节点：
-          图片垂直居中构图下，「图底→zoom 定间距」必须由 flex 布局锚定（zoom 在流内独立行时
-          间距 = 图片下方剩余高度的一半，随图高漂移）。仅当前 slide 渲染，其余 slide 离屏 */}
+      {/* 主图区域。zoom 控件移入当前 slide 内、作为 img 的 flex 兄弟节点：
+ 图片垂直居中构图下，「图底→zoom 定间距」必须由 flex 布局锚定（zoom 在流内独立行时
+ 间距 = 图片下方剩余高度的一半，随图高漂移）。仅当前 slide 渲染，其余 slide 离屏 */}
       <div
         ref={scrollRef}
         className="stills-lightbox__scroll"
@@ -328,8 +328,8 @@ export default function StillsLightbox({ urls, initialIndex, open, onClose }: St
           const zoomed = isCurrent && (zoom !== ZOOM_DEFAULT || pan.x !== 0 || pan.y !== 0);
           return (
             <div key={url} className="stills-lightbox__slide">
-              {/* 主图舞台（2026-11-08）：overflow:hidden 的定界框——zoom/平移的溢出
-                  全部裁在框内，永不覆盖 zoom 行或其它元素 */}
+              {/* 主图舞台：overflow:hidden 的定界框——zoom/平移的溢出
+ 全部裁在框内，永不覆盖 zoom 行或其它元素 */}
               <div className="stills-lightbox__stage">
                 <img
                   src={url}

@@ -1,5 +1,5 @@
 /**
- * 屏幕方向控制（9.1：app 端 IPTV 播放页进入自动横屏）
+ * 屏幕方向控制（app 端 IPTV 播放页进入自动横屏）
  *
  * 基于 @capacitor/screen-orientation 插件：
  * - lockLandscape()：锁定横屏（进入 IPTV 播放页时调用）

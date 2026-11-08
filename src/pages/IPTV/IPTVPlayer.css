@@ -1,6 +1,6 @@
 .iptv-player-page {
   /* 顶层独立路由下，IPTV 播放页本身就是"全屏应用"。
-     用 position: fixed 占满整个浏览器视口，不依赖任何父级布局。 */
+ 用 position: fixed 占满整个浏览器视口，不依赖任何父级布局。 */
   position: fixed;
   inset: 0;
   z-index: var(--z-fullscreen);
@@ -34,10 +34,10 @@
 }
 
 /* 非 TV 端 IPTV 播放页：右上角放大图标移到右下角（TV 端默认全屏，图标不显示）
-   关键：必须撤销 header 的 transform（可见/隐藏态 translateY），
-   否则非 none transform 祖先会成为 position:fixed 后代的包含块，
-   放大按钮会锚定到 header 盒（右上）而非视口（右下）。
-   改用 top 动画维持同样的滑入/滑出观感，不引入 transform。 */
+ 关键：必须撤销 header 的 transform（可见/隐藏态 translateY），
+ 否则非 none transform 祖先会成为 position:fixed 后代的包含块，
+ 放大按钮会锚定到 header 盒（右上）而非视口（右下）。
+ 改用 top 动画维持同样的滑入/滑出观感，不引入 transform。 */
 .iptv-player-page .up-player-header {
   transition: opacity var(--dur-lg) ease, top var(--dur-lg) ease;
 }

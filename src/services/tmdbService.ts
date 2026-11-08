@@ -38,11 +38,11 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
  *
  * 这两个是**接口协议常量**，不是业务数据：
  * - `TMDB_PAGE_CAP`：`page` 参数的硬顶。>500 直接 HTTP 400
- *   `{"status_code":22,"status_message":"Invalid page: Pages start at 1 and max at 500."}`
- *   （实测 501 必失败）。`total_pages` 字段却可能报 1001 —— 所以必须钳。
+ * `{"status_code":22,"status_message":"Invalid page: Pages start at 1 and max at 500."}`
+ * （实测 501 必失败）。`total_pages` 字段却可能报 1001 —— 所以必须钳。
  * - `TMDB_PAGE_SIZE`：单页条数上限（discover / search / top_rated 均为 20）。
- *   只作「一页有多少条」的**兜底**；真实每页条数优先按 `total_results / total_pages`
- *   从接口返回值推导（见 `toReachEntry`），不把 20 写进定位算术。
+ * 只作「一页有多少条」的**兜底**；真实每页条数优先按 `total_results / total_pages`
+ * 从接口返回值推导（见 `toReachEntry`），不把 20 写进定位算术。
  */
 export const TMDB_PAGE_CAP = 500;
 export const TMDB_PAGE_SIZE = 20;
@@ -84,7 +84,7 @@ export function toReachEntry(totalPages: number, totalResults: number): TMDBReac
  * 启动时 onRehydrateStorage 会解密回内存明文，但以下场景仍可能短暂拿到密文：
  * 1) 极早的首次请求（rehydrate 解密 microtask 还没跑完）；
  * 2) onRehydrateStorage 在原地 mutate state 不通知订阅者（zustand v5 行为），
- *    同步读取的组件与直接调用此函数的代码可能仍读到密文。
+ * 同步读取的组件与直接调用此函数的代码可能仍读到密文。
  *
  * 为保证「使用时一定是明文」，每次调用都按需 decryptText：
  * decryptText 对明文输入原样返回（atob/GCM 解密失败兜底输入），
@@ -228,7 +228,7 @@ export function buildOriginalImageUrl(path: string | null): string | null {
 // ============================================================
 
 /**
- * TMDB genre 中文别名表（按 id，2026-11-07 用户拍板）。
+ * TMDB genre 中文别名表（按 id）。
  * TMDB zh-CN 的 /genre/{movie,tv}/list 仍会返回部分**未汉化英文名**
  * （尤以 TV 表含 & 的复合名为甚：Sci-Fi & Fantasy / War & Politics / Action & Adventure），
  * 这些名字字宽 7~8，在两列筛选栏里必然换行/独占，观感割裂。
@@ -436,10 +436,10 @@ export async function discoverTV(
 }
 
 /**
- * 分类快捷入口面板专用 discover（2026-09-06 方案 A2）：
+ * 分类快捷入口面板专用 discover（2）：
  * 与 discoverMovie/discoverTV 的差异——
- *   · 固定 sort_by=popularity.desc（面板语义 = 该分类最热门）；
- *   · vote_count.gte 放宽到 10（现有 50 会过滤综艺×新闻等小池子，实测 101 部的池子被滤到个位数）。
+ * · 固定 sort_by=popularity.desc（面板语义 = 该分类最热门）；
+ * · vote_count.gte 放宽到 10（现有 50 会过滤综艺×新闻等小池子，实测 101 部的池子被滤到个位数）。
  * genreIds 传多个时为 AND 语义（TMDB with_genres 逗号分隔），供「综艺×家庭」类交叉子分类使用。
  */
 export async function discoverCategory(
@@ -536,7 +536,7 @@ export async function fetchTVRecommendations(tvId: number): Promise<TMDBPaginate
  * 用途：HeroBanner 悬停时显示剧照轮播
  *
  * 404 兜底：部分条目没有 images 数据，axios 抛出 404 时返回空 TMDBImages，
- *          避免上游组件崩溃。
+ * 避免上游组件崩溃。
  */
 export async function fetchMovieImages(
   movieId: number,
@@ -560,7 +560,7 @@ export async function fetchMovieImages(
  * 用途：HeroBanner 悬停时显示剧照轮播
  *
  * 404 兜底：部分条目没有 images 数据，axios 抛出 404 时返回空 TMDBImages，
- *          避免上游组件崩溃。
+ * 避免上游组件崩溃。
  */
 export async function fetchTVImages(
   tvId: number,

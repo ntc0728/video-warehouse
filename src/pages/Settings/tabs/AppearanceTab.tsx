@@ -95,13 +95,13 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
             }
           />
         )}
-        {/* 界面缩放手动档（阶段 C）：仅非 TV 显示；TV 走独立 2× 曲线；
-            100% 为默认档，范围 90%–120%（2026-11-08 用户定稿，旧 130%/150% 档已在 store 层钳到 1.2） */}
+        {/* 界面缩放手动档：仅非 TV 显示；TV 走独立 2× 曲线；
+ 100% 为默认档，范围 90%–120%（旧 130%/150% 档已在 store 层钳到 1.2） */}
         {!tvMode && (
           <List.Item
             title="界面缩放"
             extra={
-              /* 2026-09-28：原生 <select> 样式突兀 → 换项目 Select 组件（与 TMDB 语言下拉一致） */
+              /* 原生 <select> 样式突兀 → 换项目 Select 组件（与 TMDB 语言下拉一致） */
               <Select
                 options={[
                   { value: '0', label: '自动' },

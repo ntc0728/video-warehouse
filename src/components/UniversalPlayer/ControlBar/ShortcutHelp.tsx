@@ -47,7 +47,7 @@ const SHORTCUT_GROUPS: { title: string; items: [string, string][] }[] = [
 ];
 
 /**
- * P1-5：快捷键面板（Shift+? / 更多菜单调出）。
+ *-5：快捷键面板（Shift+? / 更多菜单调出）。
  * 桌面端专属；对齐 B站 / YouTube 的「键位速查」体验。
  */
 export default function ShortcutHelp({ visible, onClose }: ShortcutHelpProps) {

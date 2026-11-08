@@ -1,9 +1,9 @@
 /**
  * useSettingsStore 单元测试
  *
- * 核心覆盖 H1 修复（2026-08-05）：
- *   内存始终为明文、持久化层才加密（自定义异步 storage）。
- *   防止回归：setter 不得再用密文覆盖内存值（旧实现导致 TMDB 401）。
+ * 核心覆盖 H1 修复：
+ * 内存始终为明文、持久化层才加密（自定义异步 storage）。
+ * 防止回归：setter 不得再用密文覆盖内存值（旧实现导致 TMDB 401）。
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useSettingsStore, mergeSettingsFromCrossTab } from './useSettingsStore';
@@ -74,17 +74,17 @@ describe('useSettingsStore - H1 Token 加密修复', () => {
 });
 
 /**
- * 跨页签白名单受控合并纯单测（第十轮 SETTINGS-CROSS-001 的快 CI 回归层）
+ * 跨页签白名单受控合并纯单测（快 CI 回归层）
  *
  * E2E 已锁「storage 事件 → merge → 另一页签内存/DOM 更新」全链路；这里直测
  * mergeSettingsFromCrossTab 的自定义逻辑（E2E 的解析/解密/排除/比对细节无法快速
  * 反馈到 CI，且真实跨文档 storage 事件无法在 jsdom 可靠模拟——MODE=test 时监听
  * 不挂载，故不走 dispatchEvent，直接调用导出的合并函数）：
- *   1. 白名单常规键合入
- *   2. 敏感字段密文 → 解密明文合入（非密文原样）
- *   3. 排除键（tvMode/tvOverscan）不覆盖本页值
- *   4. 「无变化不 set」——受控合并防写回回环的收敛根基（E2E 无回环的单元层证据）
- *   5. 空敏感值 / 畸形载荷安全跳过
+ * 1. 白名单常规键合入
+ * 2. 敏感字段密文 → 解密明文合入（非密文原样）
+ * 3. 排除键（tvMode/tvOverscan）不覆盖本页值
+ * 4. 「无变化不 set」——受控合并防写回回环的收敛根基（E2E 无回环的单元层证据）
+ * 5. 空敏感值 / 畸形载荷安全跳过
  */
 describe('useSettingsStore - 跨页签白名单受控合并', () => {
   /** 构造与 persist 落盘同构的载荷（{state, version}） */

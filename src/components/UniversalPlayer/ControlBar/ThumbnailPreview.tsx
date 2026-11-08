@@ -15,7 +15,7 @@ interface ThumbnailPreviewProps {
 }
 
 /**
- * G1：进度条 hover 缩略图预览。
+ *：进度条 hover 缩略图预览。
  * 提供缩略图源时展示该时刻的预览图；无源时回退显示时间戳文本。
  * 精灵图（vtt 列表）解析暂不实现——接入真实缩略图源时扩展 timeToUrl。
  */

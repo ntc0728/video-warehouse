@@ -2,7 +2,7 @@
  * HLSAdapter D1 裸流识别单元测试
  *
  * 覆盖：manifestParsingError（内容非 HLS 清单）→ 上报带 BARE_STREAM 标记的错误；
- *       manifestLoadError（网络层失败）→ 维持「频道源不可用」不带标记（走 A3 兜底）。
+ * manifestLoadError（网络层失败）→ 维持「频道源不可用」不带标记（走 A3 兜底）。
  * 通过 mock hls.js 动态 import，验证 hls.js ERROR 事件到 onError 的映射。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

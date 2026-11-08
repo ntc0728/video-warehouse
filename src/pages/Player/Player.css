@@ -3,11 +3,11 @@
   flex-direction: column;
   width: 100%;
   /* 内容壳直接复用全站 .page-padding（横向 --page-pad-x 分档 + 纵向 --space-sm），
-     封顶与 .content-shell 同口径：max-width = --layout-content-max-width（= min(100%,2200px)），
-     margin-inline 居中。
-     ⚠️ 严禁在此重设 padding / 自算 max-width：
-     - 原 padding:var(--space-sm) 会覆盖 .page-padding 的横向留白 → 满屏宽；
-     - 自算 max-width + 2*--page-pad-x 会把壳算到 1301（1280 视口下），直接溢出视口。 */
+ 封顶与 .content-shell 同口径：max-width = --layout-content-max-width（= min(100%,2200px)），
+ margin-inline 居中。
+ ⚠️ 严禁在此重设 padding / 自算 max-width：
+ - 原 padding:var(--space-sm) 会覆盖 .page-padding 的横向留白 → 满屏宽；
+ - 自算 max-width + 2*--page-pad-x 会把壳算到 1301（1280 视口下），直接溢出视口。 */
   max-width: var(--layout-content-max-width, 100%);
   height: 100%;
   min-height: 100dvh;
@@ -50,9 +50,9 @@
 }
 
 /* 播放器占位符：首次 loading 时铺在 .player-video-area 内，与最终播放器
-   同尺寸同底色（#000），换成播放器时零跳动、零闪烁。
-   不参与任何进场动画 —— 播放器首帧一旦被 opacity / transform 处理过，
-   就会出现重采样模糊 + 控制条抖动。 */
+ 同尺寸同底色（#000），换成播放器时零跳动、零闪烁。
+ 不参与任何进场动画 —— 播放器首帧一旦被 opacity / transform 处理过，
+ 就会出现重采样模糊 + 控制条抖动。 */
 .player-stage-placeholder {
   position: absolute;
   inset: 0;
@@ -63,9 +63,9 @@
 }
 
 /* 侧栏占位：与主分支 .player-sidebar 同宽（flex: 0 0 var(--player-sidebar-w)，
-   该变量在 ≥1024 桌面块定义、带 --layout-sidebar-width 回退），
-   避免播放器在 loading → ready 时因侧栏出现而横向收缩。
-   窄屏（<1024px）下 .player-main 为纵向堆叠、侧栏不占宽度，占位隐藏。 */
+ 该变量在 ≥1024 桌面块定义、带 --layout-sidebar-width 回退），
+ 避免播放器在 loading → ready 时因侧栏出现而横向收缩。
+ 窄屏（<1024px）下 .player-main 为纵向堆叠、侧栏不占宽度，占位隐藏。 */
 .player-sidebar--placeholder {
   flex: 0 0 var(--player-sidebar-w, var(--layout-sidebar-width));
   visibility: hidden;
@@ -88,7 +88,7 @@
 
 .player-panel {
   /* 面板头高度单一真源：.player-panel-header 用它定高，收起态用它锁面板高度，
-     两者永远一致，不写第二份 calc。 */
+ 两者永远一致，不写第二份 calc。 */
   --panel-header-h: calc(var(--space-sm) * 2 + var(--text-sm) * 1.6);
   display: grid;
   grid-template-rows: auto 1fr;
@@ -101,9 +101,9 @@
 }
 
 /* 收起态：只锁面板高度（= header + 上下 1px 边框），body 行转 auto 保留自然高度，
-   超出部分由 .player-panel 的 overflow:hidden 从底部裁掉。
-   ⚠️ 这样收起/展开过程中内容是「被裁切 / 逐渐露出」，而不是瞬间消失。
-   高度变化本身由 usePanelCollapse（WAAPI）做 from→to 动画，动画期间本 height 被覆盖。 */
+ 超出部分由 .player-panel 的 overflow:hidden 从底部裁掉。
+ ⚠️ 这样收起/展开过程中内容是「被裁切 / 逐渐露出」，而不是瞬间消失。
+ 高度变化本身由 usePanelCollapse（WAAPI）做 from→to 动画，动画期间本 height 被覆盖。 */
 .player-panel.collapsed {
   grid-template-rows: auto auto;
   height: calc(var(--panel-header-h) + 2px);
@@ -171,7 +171,7 @@
   flex-shrink: 0;
   color: var(--color-text-tertiary);
   /* 与面板高度动画同曲线（时长由 usePanelCollapse 写入 --collapse-dur）；
-     旧值 transition:none 会让箭头瞬间翻转，是折叠观感生硬的来源之一。 */
+ 旧值 transition:none 会让箭头瞬间翻转，是折叠观感生硬的来源之一。 */
   transition: transform var(--collapse-dur, 220ms) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -189,9 +189,9 @@
 }
 
 /* 收起态：只去掉分隔线，高度/内边距一律不动。
-   ⚠️ 旧实现在这里写 max-height:0 + padding:0 + 过渡 max-height —— 阈值 80vh 与真实
-   内容高度不匹配，动画前段空转、尾段猛冲（生硬根因）；且 body 高度归零会让内容
-   瞬间消失。现在内容保持自然高度，由面板高度动画裁切（见 .player-panel.collapsed）。 */
+ ⚠️ 旧实现在这里写 max-height:0 + padding:0 + 过渡 max-height —— 阈值 80vh 与真实
+ 内容高度不匹配，动画前段空转、尾段猛冲（生硬根因）；且 body 高度归零会让内容
+ 瞬间消失。现在内容保持自然高度，由面板高度动画裁切（见 .player-panel.collapsed）。 */
 .player-panel-body.collapsed {
   border-top-width: 0;
 }
@@ -201,7 +201,7 @@
   overflow: hidden;
 }
 
-/* 用户要求减少动效：箭头不再旋转过渡（高度动画由 hook 内的同一媒体查询跳过） */
+/* 减少动效：箭头不再旋转过渡（高度动画由 hook 内的同一媒体查询跳过） */
 
 .player-panel-loading {
   display: flex;
@@ -235,8 +235,8 @@
 }
 
 /* CMS 源 tab：flex-wrap 内容自适应宽度，放不下自动换行——
-   旧实现 grid 固定列均分会把 tab 压窄，长源名被 .player-cms-name 的
-   ellipsis 截断（移动端旧 max-width 钳制 1/6 行宽同理）。 */
+ 旧实现 grid 固定列均分会把 tab 压窄，长源名被 .player-cms-name 的
+ ellipsis 截断（移动端旧 max-width 钳制 1/6 行宽同理）。 */
 .player-cms-list {
   display: flex;
   flex-wrap: wrap;
@@ -250,7 +250,7 @@
   /* 单个 tab 超长时以容器为上限（name 的 ellipsis 兜底），不撑破面板 */
   max-width: 100%;
   /* 面板内 tab 收窄：--player-tab-h 在 ≥1024 桌面块定义（≈ --comp-tab-height × 0.78）；
-     窄屏/App 无该变量 → 回退 --comp-tab-height，保住触摸目标尺寸。 */
+ 窄屏/App 无该变量 → 回退 --comp-tab-height，保住触摸目标尺寸。 */
   height: var(--player-tab-h, var(--comp-tab-height));
   padding: 0 var(--space-sm);
   border: 1px solid var(--color-border-light);
@@ -370,7 +370,7 @@
   display: inline-flex;
   gap: var(--space-2xs);
   align-items: center;
-  /* 2026-10-11 用户要求适当缩小：纵向 padding xs→2xs（高度约 -4px），横向 sm→xs */
+  /* 适当缩小：纵向 padding xs→2xs（高度约 -4px），横向 sm→xs */
   padding: var(--space-2xs) var(--space-xs);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
@@ -386,7 +386,7 @@
 }
 
 .player-episode-select {
-  /* 2026-10-11 用户要求适当缩小：max-width 7rem→5.5rem，纵向 padding xs→2xs */
+  /* 适当缩小：max-width 7rem→5.5rem，纵向 padding xs→2xs */
   max-width: 5.5rem;
   padding: var(--space-2xs) var(--space-xs);
   border: 1px solid var(--color-border-light);
@@ -398,10 +398,10 @@
   outline: none;
 }
 
-/* 2026-10-11 用户报「点下拉框出现黑色边框」：Chromium 对 <select> 鼠标点击也命中
-   :focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=#000）= 黑框。
-   与 SearchBox 同法抑制（保留 TV/projector 遥控焦点框，键盘 Tab 到达 select 同样无环，
-   与站内控件既有取舍一致）。特异性对齐全局规则，本文件后加载取胜。 */
+/* 「点下拉框出现黑色边框」：Chromium 对 <select> 鼠标点击也命中
+focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=#000）= 黑框。
+ 与 SearchBox 同法抑制（保留 TV/projector 遥控焦点框，键盘 Tab 到达 select 同样无环，
+ 与站内控件既有取舍一致）。特异性对齐全局规则，本文件后加载取胜。 */
 :root:not([data-device="tv"]):not([data-device="projector"]) .player-episode-select:focus-visible {
   outline: none !important;
   box-shadow: none !important;
@@ -471,7 +471,7 @@
 }
 
 /* ── 统一加载指示：小电视图标 + 三点跳动（取代 .player-loading-spinner） ──
-   入场 stage 占位（未调接口 / 接口未响应）与 UniversalPlayer 缓冲遮罩共用视觉。 */
+ 入场 stage 占位（未调接口 / 接口未响应）与 UniversalPlayer 缓冲遮罩共用视觉。 */
 .player-tv-loader {
   display: flex;
   flex-direction: column;
@@ -521,14 +521,14 @@
 }
 
 /* ── 右侧侧栏骨架占位（入场加载阶段，数据就绪后由真实面板替换） ──────────
-   复用项目级 --color-skeleton / --color-skeleton-shine + shimmer 扫光（明暗主题已适配）。
-   ⚠️ 结构必须与真实面板逐层同构，否则「骨架 → 真实面板」切换瞬间会横向/纵向抖动：
-   旧实现自带 .player-skeleton-panel / __head / __body 三套私有类，内边距/边框/
-   scrollbar-gutter 与 .player-panel-* 不完全一致，且面板高度按内容撑（真实面板
-   按 2:4:4 / 3:7 的 flex 比例分配），两侧盒模型对不上 → 肉眼可见抖动。
-   现在骨架直接复用 .player-panel / .player-panel-header / .player-panel-body，
-   并把外层容器设为 display:contents（面板直接成为 .player-sidebar 的 flex 子项，
-   继承 tv/movie 变体的 flex 比例），盒模型逐像素对齐真实面板。 */
+ 复用项目级 --color-skeleton / --color-skeleton-shine + shimmer 扫光（明暗主题已适配）。
+ ⚠️ 结构必须与真实面板逐层同构，否则「骨架 → 真实面板」切换瞬间会横向/纵向抖动：
+ 旧实现自带 .player-skeleton-panel / __head / __body 三套私有类，内边距/边框/
+ scrollbar-gutter 与 .player-panel-* 不完全一致，且面板高度按内容撑（真实面板
+ 按 2:4:4 / 3:7 的 flex 比例分配），两侧盒模型对不上 → 肉眼可见抖动。
+ 现在骨架直接复用 .player-panel / .player-panel-header / .player-panel-body，
+ 并把外层容器设为 display:contents（面板直接成为 .player-sidebar 的 flex 子项，
+ 继承 tv/movie 变体的 flex 比例），盒模型逐像素对齐真实面板。 */
 .player-sidebar-skeleton {
   display: contents;
 }
@@ -588,11 +588,11 @@
 
 
 /* ── 播放器空状态 ──────────────────────────────────────────────────────
-   当视频无数据时显示的占位状态，包含：
-   - 左上角返回按钮（与播放器正常状态一致）
-   - 中心提示信息（图标 + 标题 + 副标题）
-   position: relative 用于定位 up-player-header（绝对定位）
-   ──────────────────────────────────────────────────────────────────── */
+ 当视频无数据时显示的占位状态，包含：
+ - 左上角返回按钮（与播放器正常状态一致）
+ - 中心提示信息（图标 + 标题 + 副标题）
+ position: relative 用于定位 up-player-header（绝对定位）
+ ──────────────────────────────────────────────────────────────────── */
 .player-empty-state {
   position: relative;
   display: flex;
@@ -661,7 +661,7 @@
 
 .player-detail-poster {
   flex-shrink: 0;
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(112px, 68px + 5vw, 300px);
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -690,9 +690,9 @@
 
 .player-detail-meta {
   /* meta 项复用 Detail 页的 .detail-hero-meta-item / --type（全局共享类，
-     见 assets/styles/shared-hero.css）。Detail 页是压在 backdrop 上的白字，
-     这里是 --color-surface 浅底 → 覆写共享变量改回深色字 + 浅色类型胶囊，
-     否则白字压白底看不见。 */
+ 见 assets/styles/shared-hero.css）。Detail 页是压在 backdrop 上的白字，
+ 这里是 --color-surface 浅底 → 覆写共享变量改回深色字 + 浅色类型胶囊，
+ 否则白字压白底看不见。 */
   --hero-meta-color: var(--color-text-secondary);
   --hero-meta-type-bg: var(--color-hover-bg);
   display: flex;
@@ -823,7 +823,7 @@
 .player-recommend-row {
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
-  /* 卡片间距统一 --space-lg（2026-09-03） */
+  /* 卡片间距统一 --space-lg */
   gap: var(--space-lg);
   width: 100%;
   max-width: 100%;
@@ -831,16 +831,16 @@
   padding: 0 var(--space-md);
 }
 
-/* 推荐卡封面圆角（2026-10-10 用户反馈）：与 Detail 页 .detail-recommend 同口径，
-   桌面去卡片化后补回 --radius-md。 */
+/* 推荐卡封面圆角：与 Detail 页 .detail-recommend 同口径，
+ 桌面去卡片化后补回 --radius-md。 */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .player-recommend .video-card-cover {
     border-radius: var(--radius-md);
   }
 }
 
-/* ── 窄屏（<1024px）：纵向堆叠。起点 1024 依据 ADR-023「rail/侧栏类布局例外，
-      （2026-09-08 用户拍板）」，与 Browse BR-C 侧栏筛选、RecordShell rail 同口径。 ── */
+/* ── 窄屏（<1024px）：纵向堆叠。起点 1024 依据 「rail/侧栏类布局例外，
+ 」，与 Browse 侧栏筛选、RecordShell rail 同口径。 ── */
 @media (width < 1024px) {
   .player-main {
     flex-direction: column;
@@ -874,7 +874,7 @@
   }
 
   /* CMS/选季：收起态沿用基础规则（只去分隔线），不再把 body 高度归零 ——
-     归零会让内容瞬间消失，且 max-height:0 与面板高度动画叠加会打架。 */
+ 归零会让内容瞬间消失，且 max-height:0 与面板高度动画叠加会打架。 */
 
   .player-cms-list,
   .player-season-list,
@@ -883,9 +883,9 @@
   }
 
   /* 移动端/App（<1024px）：CMS 源 tab 改为均分行网格——列数由 PlayerCMSPanel 按容器
-     宽度与最宽 tab 自然宽度计算写入 --cms-tab-cols（列宽下限 ≥ 最宽 tab 自然宽度，
-     长源名不会被截断），首行 tab 平均分配空间、后续行与首行列对齐。
-     桌面端（≥1024px）同为均分行网格，但列数按收窄后的侧栏宽度重算。 */
+ 宽度与最宽 tab 自然宽度计算写入 --cms-tab-cols（列宽下限 ≥ 最宽 tab 自然宽度，
+ 长源名不会被截断），首行 tab 平均分配空间、后续行与首行列对齐。
+ 桌面端（≥1024px）同为均分行网格，但列数按收窄后的侧栏宽度重算。 */
   .player-cms-list {
     display: grid;
     grid-template-columns: repeat(var(--cms-tab-cols, 3), 1fr);
@@ -927,7 +927,7 @@
     display: flex;
   }
 }
-/* 9.1 app 恒移动：@media (width < 1024px) 的 app 端恒生效副本（与上一块逐条镜像，改必同步） */
+/* app 恒移动：@media (width < 1024px) 的 app 端恒生效副本（与上一块逐条镜像，改必同步） */
 
   html[data-device="app"] .player-main {
     flex-direction: column;
@@ -962,8 +962,8 @@
     justify-content: flex-start;
   }
 
-  /* 9.1 app 恒移动：CMS 源 tab 同移动端均分行网格规则（首行平均分配、后续行跟随，
-     列数由 JS 写入 --cms-tab-cols），列宽下限 ≥ 最宽 tab 自然宽度、长源名不截断。 */
+  /* app 恒移动：CMS 源 tab 同移动端均分行网格规则（首行平均分配、后续行跟随，
+ 列数由 JS 写入 --cms-tab-cols），列宽下限 ≥ 最宽 tab 自然宽度、长源名不截断。 */
   html[data-device="app"] .player-cms-list {
     display: grid;
     grid-template-columns: repeat(var(--cms-tab-cols, 3), 1fr);
@@ -1147,72 +1147,72 @@
 }
 
 /* ── 桌面端（≥ 1024px）：面板不可折叠，隐藏箭头，播放器 16:9 定高 ────────
-   分栏起点 1280 → 1024（ADR-023「rail/侧栏类布局例外，起点 = 1024」，2026-09-08 用户拍板），
-   与 Browse BR-C 侧栏筛选、RecordShell rail 同口径；1280/1366 笔记本不再掉成纵向堆叠。
-   布局契约（2026-09-09）：
-   · 播放器：宽度动态（flex:1）+ 最小宽度 --player-stage-min-w，高度由 aspect-ratio 16/9 派生；
-   · 面板栏：宽度动态 clamp(220px, 16vw, 300px)（比 --layout-sidebar-width 的 260→320 收窄一档）+ 最小宽度 220；
-   · 同高：父级 .player-main 不再写 min-height，行高由播放器 16:9 派生，
-     两侧 align-items:stretch → 三面板（2:4:4 / 3:7）总高恒等于播放器高度。
-   ───────────────────────────────────────────────────────────────────── */
+ 分栏起点 1280 → 1024（rail/侧栏类布局例外，起点 = 1024），
+ 与 Browse 侧栏筛选、RecordShell rail 同口径；1280/1366 笔记本不再掉成纵向堆叠。
+ 布局契约：
+ · 播放器：宽度动态（flex:1）+ 最小宽度 --player-stage-min-w，高度由 aspect-ratio 16/9 派生；
+ · 面板栏：宽度动态 clamp(220px, 16vw, 300px)（比 --layout-sidebar-width 的 260→320 收窄一档）+ 最小宽度 220；
+ · 同高：父级 .player-main 不再写 min-height，行高由播放器 16:9 派生，
+ 两侧 align-items:stretch → 三面板（2:4:4 / 3:7）总高恒等于播放器高度。
+ ───────────────────────────────────────────────────────────────────── */
 @media (width >= 1024px) {
   html:not([data-device="app"]) .player-page {
     /* 播放页局部布局变量：不上提 :root，避免污染全站与 TV 体系；
-       TV 端（[data-device="tv"] 自有体系）与 app 端走 var() 的第二个参数回退。 */
+ TV 端（[data-device="tv"] 自有体系）与 app 端走 var() 的第二个参数回退。 */
     --player-sidebar-w: clamp(240px, 16vw, 300px);        /* 面板栏：动态 + 240 下限（保 CMS 一行 3 列） */
     --player-sidebar-min-w: 240px;
     --player-stage-min-w: 480px;                          /* 播放器最小宽度 */
     --player-stage-max-h: calc(100dvh - var(--header-height) - var(--space-sm) * 3);
     --player-tab-h: calc(var(--comp-tab-height) * 0.78);  /* 面板内 tab 收窄：≈38→30 / 36→28 */
     /* 内容块封顶 = 「封顶值 − 2×横向留白」，与旧「壳 2200 居中 + padding」逐像素等价：
-       视口 2400(留白100) → min(2200, 2000)=2000；2560(留白140) → min(2280, 1920)=1920；
-       <2200 → 100%（满宽，与旧壳未封顶时一致）。
-       ⚠️ 100% 在此处基准是「本元素内容盒」（已减去留白），故必须写成
-       min(100%, cap − 2×pad) 而不是 calc(min(100%,cap) − 2×pad) —— 后者会重复减留白。 */
+ 视口 2400(留白100) → min(2200, 2000)=2000；2560(留白140) → min(2280, 1920)=1920；
+ <2200 → 100%（满宽，与旧壳未封顶时一致）。
+ ⚠️ 100% 在此处基准是「本元素内容盒」（已减去留白），故必须写成
+ min(100%, cap − 2×pad) 而不是 calc(min(100%,cap) − 2×pad) —— 后者会重复减留白。 */
     --player-content-max: min(100%, calc(var(--layout-content-cap) - var(--page-pad-x) * 2));
     /* ⚠️ 滚动容器必须铺满视口：本元素是播放页桌面端真正的滚动容器（外层
-       .app-shell__scroll 的原生滚动条已被 display:none 隐藏），原生滚动条画在
-       本元素 border-box 的右边缘。旧实现让 .player-page 直接吃 --layout-content-max-width
-       封顶 + margin-inline 居中 → ≥2200 视口下滚动条跟着内容壳内缩（2560 时离浏览器
-       右边 180px），与其他页面（滚动条贴视口右侧）不一致。
-       现在封顶下沉到两个内容块（--player-content-max），本层只负责滚动与留白。 */
+ .app-shell__scroll 的原生滚动条已被 display:none 隐藏），原生滚动条画在
+ 本元素 border-box 的右边缘。旧实现让 .player-page 直接吃 --layout-content-max-width
+ 封顶 + margin-inline 居中 → ≥2200 视口下滚动条跟着内容壳内缩（2560 时离浏览器
+ 右边 180px），与其他页面（滚动条贴视口右侧）不一致。
+ 现在封顶下沉到两个内容块（--player-content-max），本层只负责滚动与留白。 */
     max-width: none;
     height: calc(100dvh - var(--header-height));
     min-height: 0;
     padding-top: 0;
     overflow-y: auto;
     /* ⚠️ 必须常驻预留滚动条槽位：本元素是播放页桌面端真正的滚动容器
-       （外层 .app-shell__scroll 的原生滚动条已被 display:none 隐藏）。
-       入场骨架阶段只有 .player-main（16:9 播放器，高度不足一屏）→ 不溢出 → 无滚动条；
-       TMDB 详情响应后底部 .player-detail-section 加入 → 内容远超 100dvh → 纵向滚动条出现，
-       容器 clientWidth 瞬间窄掉一个滚动条宽度（Windows/Chrome 经典滚动条约 15px），
-       .player-main 是「负 margin 出血 + 自身 padding」撑满内容盒的，宽度直接跟随 clientWidth
-       → 右侧折叠面板整块左移，肉眼看到「骨架一开始没有右边距、数据回来才挤出右边距」的抖动。
-       scrollbar-gutter: stable 让槽位从入场第一帧就存在，两个阶段几何完全一致。 */
+ （外层 .app-shell__scroll 的原生滚动条已被 display:none 隐藏）。
+ 入场骨架阶段只有 .player-main（16:9 播放器，高度不足一屏）→ 不溢出 → 无滚动条；
+ TMDB 详情响应后底部 .player-detail-section 加入 → 内容远超 100dvh → 纵向滚动条出现，
+ 容器 clientWidth 瞬间窄掉一个滚动条宽度（Windows/Chrome 经典滚动条约 15px），
+ .player-main 是「负 margin 出血 + 自身 padding」撑满内容盒的，宽度直接跟随 clientWidth
+ → 右侧折叠面板整块左移，肉眼看到「骨架一开始没有右边距、数据回来才挤出右边距」的抖动。
+ scrollbar-gutter: stable 让槽位从入场第一帧就存在，两个阶段几何完全一致。 */
     scrollbar-gutter: stable;
   }
 
   /* 桌面端：行高不再用 min-height:100dvh 顶满，改由播放器 16:9 派生 ——
-     保留 min-height 会让行高恒等于视口高，stretch 把播放器拉高 → 16:9 被破坏，
-     侧栏也被拉到「高于播放器」，三面板总高与播放器对不上。
-     现在 .player-main height:auto，行高 = max(播放器 16:9 高, 侧栏内容高)。 */
+ 保留 min-height 会让行高恒等于视口高，stretch 把播放器拉高 → 16:9 被破坏，
+ 侧栏也被拉到「高于播放器」，三面板总高与播放器对不上。
+ 现在 .player-main height:auto，行高 = max(播放器 16:9 高, 侧栏内容高)。 */
   /* 桌面端行改为 grid：列宽由 1fr + 侧栏宽度决定，行高自动取两侧最高者。
-     播放器 16:9 高度通常更高 → 侧栏自动同高，不再靠旧 flex stretch 猜测。 */
+ 播放器 16:9 高度通常更高 → 侧栏自动同高，不再靠旧 flex stretch 猜测。 */
   html:not([data-device="app"]) .player-main {
     display: grid;
     /* ⚠️ flex-shrink:0 必须显式写：.player-page 在桌面端是「固定高度 + overflow-y:auto」
-       的 flex column 容器，flex item 默认可收缩 → 播放器区会先被压缩到 min-content
-       高度（16:9 派生高度被压没，侧栏 min-height:100% 随之归零 → 播放器与三面板一起
-       消失），而「压缩」优先于「滚动」。视口越窄（1024–1439）下方详情区越高、溢出越大，
-       压缩越狠，故该区间症状最明显。禁止收缩后总高超出容器 → 正常滚动。 */
+ 的 flex column 容器，flex item 默认可收缩 → 播放器区会先被压缩到 min-content
+ 高度（16:9 派生高度被压没，侧栏 min-height:100% 随之归零 → 播放器与三面板一起
+ 消失），而「压缩」优先于「滚动」。视口越窄（1024–1439）下方详情区越高、溢出越大，
+ 压缩越狠，故该区间症状最明显。禁止收缩后总高超出容器 → 正常滚动。 */
     flex-shrink: 0;
     grid-template-columns: 1fr var(--player-sidebar-w, var(--layout-sidebar-width));
     gap: var(--space-sm);
     /* ⚠️ width:100% 必须显式写：本元素是 .player-page（flex column）的 item，
-       交叉轴靠 stretch 撑满；一旦用 margin-inline:auto 居中而宽度仍是 auto，
-       auto 外边距会吃掉剩余空间、使 stretch 失效 → 宽度退化成 fit-content
-       （实测只剩「侧栏 + gap」= 264px，grid 的 1fr 播放器列被压成 0）。
-       先 width:100% 定住基准，再由 max-width 封顶 + auto 外边距居中。 */
+ 交叉轴靠 stretch 撑满；一旦用 margin-inline:auto 居中而宽度仍是 auto，
+ auto 外边距会吃掉剩余空间、使 stretch 失效 → 宽度退化成 fit-content
+ （实测只剩「侧栏 + gap」= 264px，grid 的 1fr 播放器列被压成 0）。
+ 先 width:100% 定住基准，再由 max-width 封顶 + auto 外边距居中。 */
     width: 100%;
     /* 封顶值见 --player-content-max（定义在 .player-page） */
     max-width: var(--player-content-max, none);
@@ -1224,18 +1224,18 @@
   /* 详情区与播放区同口径封顶居中，保证上下两块左右边缘对齐 */
   html:not([data-device="app"]) .player-detail-section {
     /* 同理禁止收缩：详情区被压缩会让内部内容溢出重叠（且压缩量随视口变化，
-       表现为「详情卡片忽高忽矮」）。 */
+ 表现为「详情卡片忽高忽矮」）。 */
     flex-shrink: 0;
     /* 与 .player-main 同口径：先 width:100% 再封顶居中（auto 外边距居中必须配显式宽度，
-       否则 flex item 退化成 fit-content） */
+ 否则 flex item 退化成 fit-content） */
     width: 100%;
     max-width: var(--player-content-max, none);
     margin-inline: auto;
   }
 
   /* 播放器：宽度由 grid 列宽决定；高度 = 宽 × 9/16。
-     align-self:start 保证不拉伸填满 grid row，保持 16:9。
-     max-height 只在极端矮视口兜底。 */
+ align-self:start 保证不拉伸填满 grid row，保持 16:9。
+ max-height 只在极端矮视口兜底。 */
   html:not([data-device="app"]) .player-video-area {
     flex: none;
     grid-column: 1;
@@ -1247,17 +1247,17 @@
   }
 
   /* 面板栏：第二列宽度固定；align-self: stretch 让侧栏自动填满 grid row 高度，
-     与播放器同高，不再需要 height:100% 循环依赖。 */
+ 与播放器同高，不再需要 height:100% 循环依赖。 */
   html:not([data-device="app"]) .player-sidebar {
-    /* 2026-10-10 修「选集/线路面板未占满剩余高度」：
-       原为 grid + `grid-template-rows: var(--panel-rows)`（PlayerSidebar 按 variant 硬编码
-       行数：tv=3 行 auto auto 1fr / movie=2 行 auto 1fr）。但 PlayerSeasonPanel 在单季/无季时
-       return null → 实际只渲染 2 个子项，而 hasSeasonPanel（据 cmsSeasons + id 前缀）仍判 tv
-       → 3 行模板与 2 子项错位：1fr 落到第 3 行（幽灵空行），选集被压成第 2 行 auto（内容高）
-       → 面板矮、下方大片空白（宽视口 16:9 播放器越高越明显）。
-       改 flex 列：按【实际渲染子项】分配，展开面板 flex:1 撑满、收起面板 flex:0 只留 header，
-       天然免疫子项数 ≠ 行数的错位。容器高度恒定（min-height:100% == 播放器高），
-       flex:1 在恒定高内分配自由空间，与旧 grid 1fr 等价、无内容↔容器过冲。 */
+    /* 修「选集/线路面板未占满剩余高度」：
+ 原为 grid + `grid-template-rows: var(--panel-rows)`（PlayerSidebar 按 variant 硬编码
+ 行数：tv=3 行 auto auto 1fr / movie=2 行 auto 1fr）。但 PlayerSeasonPanel 在单季/无季时
+ return null → 实际只渲染 2 个子项，而 hasSeasonPanel（据 cmsSeasons + id 前缀）仍判 tv
+ → 3 行模板与 2 子项错位：1fr 落到第 3 行（幽灵空行），选集被压成第 2 行 auto（内容高）
+ → 面板矮、下方大片空白（宽视口 16:9 播放器越高越明显）。
+ 改 flex 列：按【实际渲染子项】分配，展开面板 flex:1 撑满、收起面板 flex:0 只留 header，
+ 天然免疫子项数 ≠ 行数的错位。容器高度恒定（min-height:100% == 播放器高），
+ flex:1 在恒定高内分配自由空间，与旧 grid 1fr 等价、无内容↔容器过冲。 */
     display: flex;
     flex: 0 0 var(--player-sidebar-w, var(--layout-sidebar-width));
     flex-direction: column;
@@ -1265,7 +1265,7 @@
     gap: var(--space-sm);
     min-width: var(--player-sidebar-min-w, 220px);
     /* 高度契约：height:0 → 侧栏不参与 .player-main 行高计算，行高只由播放器 16:9 决定；
-       行高确定后 min-height:100% 撑满 == 与播放器同高。overflow:hidden 裁掉超出部分。 */
+ 行高确定后 min-height:100% 撑满 == 与播放器同高。overflow:hidden 裁掉超出部分。 */
     height: 0;
     min-height: 100%;
     overflow: hidden;
@@ -1291,22 +1291,22 @@
   }
 
   /* 收起态统一由基础规则（.player-panel.collapsed 锁面板高度 + body 只去分隔线）处理：
-     桌面端旧写法给 body 加 height:0（且无过渡）→ 收起时内容瞬间消失、面板高度瞬跳。 */
+ 桌面端旧写法给 body 加 height:0（且无过渡）→ 收起时内容瞬间消失、面板高度瞬跳。 */
 
   /* ── 桌面端侧栏 grid 布局 ─────────────────────────────
-   侧栏高度被 .player-main 网格行 stretch 锁死 == 播放器 16:9 高。
-   侧栏用 display:grid 单列，行模板由展开态注入
-   （展开面板行 1fr、折叠面板行 auto=只头部）：
-   · grid 容器高度恒定，fr 只在恒定高度内分配 → 无内容↔容器互耦 → 无过冲；
-   · 折叠动画由面板 body 的 max-height 过渡驱动（demo 方式），sidebar 行只管布局分配；
-  }
+ 侧栏高度被 .player-main 网格行 stretch 锁死 == 播放器 16:9 高。
+ 侧栏用 display:grid 单列，行模板由展开态注入
+ （展开面板行 1fr、折叠面板行 auto=只头部）：
+ · grid 容器高度恒定，fr 只在恒定高度内分配 → 无内容↔容器互耦 → 无过冲；
+ · 折叠动画由面板 body 的 max-height 过渡驱动（设计稿实现方式），sidebar 行只管布局分配；
+ }
 
-  /* 所有面板收起时：sidebar 高度由各面板 header 内容决定，不再撑满播放器高度。
-     ⚠️ align-self:start + height:auto + min-height:auto 三者缺一不可：
-     .player-sidebar 是 .player-main 的 grid item，默认 align-self:stretch；
-     若只写 height:auto 而 min-height:100% 仍在 → 仍被拉到播放器满高。收起态一并放开
-     min-height → 侧栏 = 各 header 内容高（flex 子项均 flex:0 0 auto）。
-     （align-content 为旧 grid 写法残留，flex 下无害。） */
+ /* 所有面板收起时：sidebar 高度由各面板 header 内容决定，不再撑满播放器高度。
+ ⚠️ align-self:start + height:auto + min-height:auto 三者缺一不可：
+ .player-sidebar 是 .player-main 的 grid item，默认 align-self:stretch；
+ 若只写 height:auto 而 min-height:100% 仍在 → 仍被拉到播放器满高。收起态一并放开
+ min-height → 侧栏 = 各 header 内容高（flex 子项均 flex:0 0 auto）。
+ （align-content 为旧 grid 写法残留，flex 下无害。） */
   html:not([data-device="app"]) .player-sidebar--all-collapsed {
     align-content: start;
     align-self: start;
@@ -1314,8 +1314,8 @@
     min-height: auto;
   }
 
-  /* 面板折叠动画：body 用 max-height 过渡（demo 方式），不用 grid-template-rows。
-     sidebar --panel-rows（1fr=展开 / auto=折叠）只负责布局分配，不做动画。 */
+  /* 面板折叠动画：body 用 max-height 过渡（设计稿实现方式），不用 grid-template-rows。
+ sidebar --panel-rows（1fr=展开 / auto=折叠）只负责布局分配，不做动画。 */
   html:not([data-device="app"]) .player-panel {
     display: grid;
     grid-template-rows: auto 1fr;
@@ -1334,16 +1334,16 @@
   }
 
   /* ── 桌面端 CMS tab 均分行网格（有选季 / 无选季两种变体同一套规则）──
-     旧实现桌面端仍是 flex-wrap 内容自适应宽度：有选季面板时 CMS 面板只占 2/10
-     高度、tab 少，整行右侧空一大片，tab 之间没有平分空间。
-     改为与移动端同一套「列数按最宽 tab 自然宽度计算」的网格：
-     列数由 PlayerCMSPanel 写入 --cms-tab-cols，列宽 1fr → 同一行内 tab 平分空间，
-     列宽下限 ≥ 最宽 tab 自然宽度（长源名不会被截断）。 */
+ 旧实现桌面端仍是 flex-wrap 内容自适应宽度：有选季面板时 CMS 面板只占 2/10
+ 高度、tab 少，整行右侧空一大片，tab 之间没有平分空间。
+ 改为与移动端同一套「列数按最宽 tab 自然宽度计算」的网格：
+ 列数由 PlayerCMSPanel 写入 --cms-tab-cols，列宽 1fr → 同一行内 tab 平分空间，
+ 列宽下限 ≥ 最宽 tab 自然宽度（长源名不会被截断）。 */
   html:not([data-device="app"]) .player-panel--cms .player-cms-list {
     display: grid;
     grid-template-columns: repeat(var(--cms-tab-cols, 3), 1fr);
     /* 不垂直居中：少量 tab 行贴顶、上下统一 8px 内边距（与左右同节奏），
-       面板多余高度自然留空在底部，避免「上下对称大留白」的空旷感。 */
+ 面板多余高度自然留空在底部，避免「上下对称大留白」的空旷感。 */
   }
 
   html:not([data-device="app"]) .player-panel--cms .player-cms-item {
@@ -1354,9 +1354,9 @@
 }
 
 /* ── CMS tab 列数测量态（PlayerCMSPanel 同步测量用，量完立即移除，不产生绘制帧）──
-   强制单行 + tab 自然宽度（width: max-content），使 offsetWidth 反映真实内容宽度，
-   不受当前网格/flex 布局的拉伸影响；同时禁用 transition，避免同步测量读到过渡中间值。
-   !important 用于压过 html[data-device="app"] 前缀的移动端网格规则。 */
+ 强制单行 + tab 自然宽度（width: max-content），使 offsetWidth 反映真实内容宽度，
+ 不受当前网格/flex 布局的拉伸影响；同时禁用 transition，避免同步测量读到过渡中间值。
+ !important 用于压过 html[data-device="app"] 前缀的移动端网格规则。 */
 .player-cms-list--measure,
 html[data-device="app"] .player-cms-list--measure {
   display: flex !important;
@@ -1372,23 +1372,23 @@ html[data-device="app"] .player-cms-list--measure .player-cms-item {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   P-A（2026-09-07 超宽视口定稿 T4，2026-09-09 语义更新）：≥2560 播放器封顶 1920 · 16:9
-   根因：2560 下按 16:9 推出的视频面近满屏，侧栏相形过窄。
-   方案：无损等比（letterbox 底色同为 #000 不可见）+ 垂直居中。
-   ⚠️ 2026-09-09 起 .player-page 已接入全站内容区约束（--page-pad-x 留白 +
-   --layout-content-max-width 的 2200 封顶居中），故本块不再是「唯一封顶手段」，
-   降级为「播放器区的专属更窄封顶 1920」（2200 内容区内再收 140，两侧留白）。
-   契约：
-   - 仅 ≥2560 生效（1440 基线零变化）；TV / App 排除；
-   - margin-inline:auto 覆盖 :15 的负 margin → 两侧留白对称；
-   - 全屏不受影响：:fullscreen 作用于 .player-video-area 本身（:29），
-     全屏替换布局中 aspect-ratio 不生效。
-   ═════════════════════════════════════════════════════════════════════ */
+ （超宽视口 ， 语义更新）：≥2560 播放器封顶 1920 · 16:9
+ 根因：2560 下按 16:9 推出的视频面近满屏，侧栏相形过窄。
+ 无损等比（letterbox 底色同为 #000 不可见）+ 垂直居中。
+ ⚠️ 起 .player-page 已接入全站内容区约束（--page-pad-x 留白 +
+ --layout-content-max-width 的 2200 封顶居中），故本块不再是「唯一封顶手段」，
+ 降级为「播放器区的专属更窄封顶 1920」（2200 内容区内再收 140，两侧留白）。
+ 契约：
+ - 仅 ≥2560 生效（1440 基线零变化）；TV / App 排除；
+ - margin-inline:auto 覆盖 :15 的负 margin → 两侧留白对称；
+ - 全屏不受影响：:fullscreen 作用于 .player-video-area 本身（:29），
+ 全屏替换布局中 aspect-ratio 不生效。
+ ═════════════════════════════════════════════════════════════════════ */
 @media (width >= 2560px) {
   html:not([data-device="app"]):not([data-device="tv"]) .player-main {
     width: 100%;
     /* 封顶不再写死 1920：由 --player-content-max 统一计算（≥2560 处 = 2200 − 2×140 = 1920，
-       两处同值但只保留一个真源），避免改动留白分档后两处漂移。 */
+ 两处同值但只保留一个真源），避免改动留白分档后两处漂移。 */
     margin-inline: auto;
   }
 
@@ -1400,14 +1400,14 @@ html[data-device="app"] .player-cms-list--measure .player-cms-item {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   去卡片化（2026-09-30 用户指令）：播放页「详情信息」「推荐区」两个容器
-   去掉卡片四件套 —— border / border-radius / background / box-shadow。
-   口径与 Detail / Chart / SourceChecker 完全一致：
-   - 仅 ≥768 生效（用户原话「移动端不改」）；
-   - 排除 App / TV（两端卡片块承担触达边界与 TV 焦点框，保留）；
-   - 只去「卡片感」四件套，padding / margin / gap 一律不动（间距不属卡片化范畴）；
-   - 写在文件末尾以追加方式覆盖，原始两处规则（:645 / :807）保持原样便于回退。
-   ═════════════════════════════════════════════════════════════════════ */
+ 去卡片化：播放页「详情信息」「推荐区」两个容器
+ 去掉卡片四件套 —— border / border-radius / background / box-shadow。
+ 口径与 Detail / Chart / SourceChecker 完全一致：
+ - 仅 ≥768 生效；
+ - 排除 App / TV（两端卡片块承担触达边界与 TV 焦点框，保留）；
+ - 只去「卡片感」四件套，padding / margin / gap 一律不动（间距不属卡片化范畴）；
+ - 写在文件末尾以追加方式覆盖，原始两处规则（:645 / :807）保持原样便于回退。
+ ═════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .player-detail-info,
   html:not([data-device="app"]):not([data-device="tv"]) .player-recommend {

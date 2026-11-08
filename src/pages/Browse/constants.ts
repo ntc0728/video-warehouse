@@ -43,15 +43,15 @@ export const CATEGORY_CONFIG: Record<CategoryKey, CategoryConfig> = {
 
 // ── 结果区头部「类型」行可见分类 ──────────────────────────────
 /**
- * 2026-11-05：「全部」下线（movie+tv 合并页两路 total_pages 不同、page>500 直接 400，
- *   页数/入参无法稳定对齐），默认选中「电影」（单路）。
- * 2026-11-07：再删「综艺」「动漫」两个入口（用户拍板）——二者本质都属于剧集(tv)，
- *   各自靠 genre/keyword 从 /discover/tv 里切子集，却与剧集共用同一套 TV genre 全表，
- *   导致左栏挂着「新闻/真人秀/肥皂剧/脱口秀/War & Politics」等与子集互斥的二级项、
- *   点进去空结果；留着它们只会不断制造分类歧义。删掉后类型行只保留 4 档：
- *   电影(movie) / 剧集(tv) / 排行榜(top) / 纪录片(documentary)。
- *   注意：variety / anime 作为 CategoryKey / VideoType / Chart 页 tab / 首页快选 / CMS 类型
- *   仍保留（别处合法在用），只是 Browse 类型行不再暴露这两个入口。
+ * ：「全部」下线（movie+tv 合并页两路 total_pages 不同、page>500 直接 400，
+ * 页数/入参无法稳定对齐），默认选中「电影」（单路）。
+ * ：再删「综艺」「动漫」两个入口——二者本质都属于剧集(tv)，
+ * 各自靠 genre/keyword 从 /discover/tv 里切子集，却与剧集共用同一套 TV genre 全表，
+ * 导致左栏挂着「新闻/真人秀/肥皂剧/脱口秀/War & Politics」等与子集互斥的二级项、
+ * 点进去空结果；留着它们只会不断制造分类歧义。删掉后类型行只保留 4 档：
+ * 电影(movie) / 剧集(tv) / 排行榜(top) / 纪录片(documentary)。
+ * 注意：variety / anime 作为 CategoryKey / VideoType / Chart 页 tab / 首页快选 / CMS 类型
+ * 仍保留（别处合法在用），只是 Browse 类型行不再暴露这两个入口。
  * 页面层与首屏 chrome 骨架都以本表为真源，避免占位数量漂移。
  */
 export const VISIBLE_CATEGORY_KEYS: CategoryKey[] = [
@@ -94,7 +94,7 @@ export const SORT_OPTIONS: { label: string; sortBy: 'popularity' | 'vote_average
 /** 防抖：用户点击 chip 后等待多久发起 API 请求 */
 export const FILTER_DEBOUNCE_MS = 300;
 
-// ── 慢取页反馈（2026-09-14 用户拍板 A′）──────────────────
+// ── 慢取页反馈──────────────────
 /**
  * 「旧内容顶住」的取页（翻页 / 下拉刷新 / 列数跨档）超过本时长才显示反馈。
  * 低于本时长的取页视为瞬时完成、静默直接换图（内存页缓存与浏览器 HTTP 缓存

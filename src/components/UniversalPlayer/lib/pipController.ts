@@ -1,16 +1,16 @@
 /**
- * 画中画控制器 —— 修「竖屏点画中画页面卡死」（生产版，自 demo 收敛）
+ * 画中画控制器 —— 修「竖屏点画中画页面卡死」（生产版，自 收敛）
  *
  * 现有 usePlayerCore.togglePiP 的两个致命坑：
- *   1. 无超时地 await loadedmetadata → 元数据不来就永久挂起 → 后续 PiP 请求堵死 → 卡死。
- *   2. iOS iPhone 不允许从「内联竖屏」直接进入 PiP，必须先进全屏再切 presentation mode。
- *   3. 只订阅 enter/leavepictureinpicture，漏了 webkitpresentationmodechanged → 状态回不来。
+ * 1. 无超时地 await loadedmetadata → 元数据不来就永久挂起 → 后续 PiP 请求堵死 → 卡死。
+ * 2. iOS iPhone 不允许从「内联竖屏」直接进入 PiP，必须先进全屏再切 presentation mode。
+ * 3. 只订阅 enter/leavepictureinpicture，漏了 webkitpresentationmodechanged → 状态回不来。
  *
  * 本文件修法：
- *   · 等待元数据带 1.5s 超时，整个请求包 3s 总超时，永不无限挂起
- *   · iOS iPhone 走「先进全屏 → 再切 picture-in-picture」串行路径
- *   · 标准 API 与 Safari presentation mode 双通道，状态用两套事件共同同步
- *   · 失败返回可读 message，由上层 toast
+ * · 等待元数据带 1.5s 超时，整个请求包 3s 总超时，永不无限挂起
+ * · iOS iPhone 走「先进全屏 → 再切 picture-in-picture」串行路径
+ * · 标准 API 与 Safari presentation mode 双通道，状态用两套事件共同同步
+ * · 失败返回可读 message，由上层 toast
  */
 import type { PipCapability } from './deviceCaps';
 

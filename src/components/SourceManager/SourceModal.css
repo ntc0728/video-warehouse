@@ -1,6 +1,6 @@
 /* ── SourceModal ──────────────────────────────
-   弹窗宽度/最大高度放在 Radix Dialog Content 的 class（.source-modal-wrap）上，
-   内部 .source-modal 仅做内容布局（不限定宽度，避免被压缩）。 */
+ 弹窗宽度/最大高度放在 Radix Dialog Content 的 class（.source-modal-wrap）上，
+ 内部 .source-modal 仅做内容布局（不限定宽度，避免被压缩）。 */
 /* Radix Dialog.Content：宽度限制 + 整体 padding（标题与内容都包含在内） */
 .source-modal-wrap {
   width: min(100vw - 2 * var(--space-md), 26rem);
@@ -16,15 +16,15 @@
 }
 
 /* 移动端（≤767px）：与通用 modal 一致改为底部滑出全宽，消除两侧间隙。
-   width 覆盖 .source-modal-wrap 的 min(100vw - 2*space-md, 26rem)（同文件内后者胜），
-   inset/动画继承自 .modal-content-animate 的移动端规则。 */
+ width 覆盖 .source-modal-wrap 的 min(100vw - 2*space-md, 26rem)（同文件内后者胜），
+ inset/动画继承自 .modal-content-animate 的移动端规则。 */
 @media (width <= 767px) {
   .source-modal-wrap {
     width: 100%;
     max-width: 100%;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .source-modal-wrap {
     width: 100%;
@@ -246,7 +246,7 @@
     grid-template-columns: 1fr;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .source-modal__row {
     grid-template-columns: 1fr;

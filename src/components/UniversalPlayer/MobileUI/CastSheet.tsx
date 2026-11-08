@@ -29,8 +29,8 @@ interface CastSheetProps {
 }
 
 /** 投屏底部弹窗（双模式）：
- *  - native：搜索动画 → 设备列表 / 空态 → 连接中 → 已连接控制面板（原生 DLNA 桥）
- *  - web：打开即调系统 Cast 设备选择弹窗（Chromecast / Google TV）→ 已连接控制面板 */
+ * - native：搜索动画 → 设备列表 / 空态 → 连接中 → 已连接控制面板（原生 DLNA 桥）
+ * - web：打开即调系统 Cast 设备选择弹窗（Chromecast / Google TV）→ 已连接控制面板 */
 export default function CastSheet({ visible, onClose, url, title, onCastActiveChange, portalContainer }: CastSheetProps) {
   const mode = getCastMode();
   const isWeb = mode === 'web';

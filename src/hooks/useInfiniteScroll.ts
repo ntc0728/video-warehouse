@@ -2,31 +2,31 @@
  * 通用无限滚动 Hook（双保险：IntersectionObserver + scroll 兜底）
  *
  * 用法：
- *   const { sentinelRef, resetLoading } = useInfiniteScroll({
- *     hasMore,           // 是否还有更多数据
- *     isLoading,         // 当前是否正在加载（防止重复触发）
- *     onLoadMore,        // 触发加载的回调
- *     rootMargin,        // 提前多少像素触发（默认 200px）
- *     scrollContainerRef,// 可选：自定义滚动容器（默认 window）
- *     canLoadMore,       // 可选：业务级开关（默认 true）
- *     disabled,          // 可选：外部完全禁用（默认 false）
- *   });
+ * const { sentinelRef, resetLoading } = useInfiniteScroll({
+ * hasMore, // 是否还有更多数据
+ * isLoading, // 当前是否正在加载（防止重复触发）
+ * onLoadMore, // 触发加载的回调
+ * rootMargin, // 提前多少像素触发（默认 200px）
+ * scrollContainerRef,// 可选：自定义滚动容器（默认 window）
+ * canLoadMore, // 可选：业务级开关（默认 true）
+ * disabled, // 可选：外部完全禁用（默认 false）
+ * });
  *
- *   return (
- *     <>
- *       <List />
- *       <div ref={sentinelRef} aria-hidden="true" />
- *       <div className="load-more-hint">...</div>
- *     </>
- *   );
+ * return (
+ * <>
+ * <List />
+ * <div ref={sentinelRef} aria-hidden="true" />
+ * <div className="load-more-hint">...</div>
+ * </>
+ * );
  *
- *   分批渲染 / 同步切片场景下，onLoadMore 内调用 resetLoading() 释放锁，让哨兵再次触发。
- *   异步加载场景无需调用（hook 内部 useEffect 会随 isLoading 翻转自动重置）。
+ * 分批渲染 / 同步切片场景下，onLoadMore 内调用 resetLoading() 释放锁，让哨兵再次触发。
+ * 异步加载场景无需调用（hook 内部 useEffect 会随 isLoading 翻转自动重置）。
  *
  * 设计要点：
  * - 双保险：IO + scroll 事件兜底（快速滚动/wheel 惯性到距底部 < 200px 时一定触发）
  * - 去重：isLoadingRef（最新 isLoading 同步）+ pageLoadingRef（本次 page 加载中）
- *   防止 IO 与 scroll 同时触发导致重复加载
+ * 防止 IO 与 scroll 同时触发导致重复加载
  * - 业务开关：canLoadMore 业务前置未达成时跳过触发
  */
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
@@ -156,10 +156,10 @@ export function useInfiniteScroll({
     };
     // deps 只允许「结构性」参数：observer 在这几项变化时才重建。
     // ⚠️ 绝不能把 hasMore / canLoadMore / isLoading 等业务布尔量放进 deps：
-    //    re-observe 后下方 rAF 会立即判定哨兵是否在视口内，若在则 triggerLoad →
-    //    visibleCount 变 → hasMore 变 → observer 重建 → 再次触发，形成自放大循环，
-    //    配合同步切片场景的 resetLoading() 会在一次滚动内把列表推满全量。
-    //    业务侧的最新值一律通过 ref（hasMoreRef / triggerLoadRef）在回调内读取。
+    // re-observe 后下方 rAF 会立即判定哨兵是否在视口内，若在则 triggerLoad →
+    // visibleCount 变 → hasMore 变 → observer 重建 → 再次触发，形成自放大循环，
+    // 配合同步切片场景的 resetLoading() 会在一次滚动内把列表推满全量。
+    // 业务侧的最新值一律通过 ref（hasMoreRef / triggerLoadRef）在回调内读取。
   }, [disabled, rootMargin, scrollContainerRef]);
 
   // ── 2) scroll 事件兜底 ──

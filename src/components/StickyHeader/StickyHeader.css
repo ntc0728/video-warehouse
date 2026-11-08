@@ -1,13 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   StickyHeader — 全局顶部导航栏
-   始终高透明度玻璃态 · 左:Logo+首页+IPTV · 中:(空) · 右:导航+筛选+主题
+ StickyHeader — 全局顶部导航栏
+ 始终高透明度玻璃态 · 左:Logo+首页+IPTV · 中:(空) · 右:导航+筛选+主题
 
-   定位策略：
-   - 基础（普通页面）：作为父 .app-shell grid 的第一行常驻视口顶部（position: static）。
-     scroll 容器（CustomScrollbar）紧接其下，滚动条 thumb 真实起点 = 导航栏底部。
-   - immersive（首页 / 详情页）：position: fixed 浮在 Hero 之上，scroll 容器
-     从视口顶部开始，hero 图从导航栏下方铺到屏幕顶（被导航栏盖住上半部分）。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 定位策略：
+ - 基础（普通页面）：作为父 .app-shell grid 的第一行常驻视口顶部（position: static）。
+ scroll 容器（CustomScrollbar）紧接其下，滚动条 thumb 真实起点 = 导航栏底部。
+ - immersive（首页 / 详情页）：position: fixed 浮在 Hero 之上，scroll 容器
+ 从视口顶部开始，hero 图从导航栏下方铺到屏幕顶（被导航栏盖住上半部分）。
+ ═══════════════════════════════════════════════════════════════════════ */
 
 .sticky-header {
   position: static;
@@ -53,21 +53,21 @@
   /* 滚动条已隐藏，不需要补偿 */
 }
 
-/* ── 2026-09-11（用户请求 8）：**移除顶栏内容封顶居中** ────────────────────
-   原实现（2026-09-10）：
-     @media (width >= 768px) {
-       html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__inner {
-         max-width: var(--layout-content-max-width);   // 2200
-         margin-inline: auto;
-       }
-     }
-   效果是「大屏下 logo 与右侧导航被收到 2200 内容带内、左右各留 (视口−2200)/2 的空档」。
-   用户要求「无论什么视口，顶部导航栏都要不受 margin、padding、内容主体宽度等限制，
-   两端紧贴页面左右两侧」→ 整段删除。
+/* ── ：**移除顶栏内容封顶居中** ────────────────────
+ 原实现：
+ @media (width >= 768px) {
+ html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__inner {
+ max-width: var(--layout-content-max-width); // 2200
+ margin-inline: auto;
+ }
+ }
+ 效果是「大屏下 logo 与右侧导航被收到 2200 内容带内、左右各留 (视口−2200)/2 的空档」。
+ 「无论什么视口，顶部导航栏都要不受 margin、padding、内容主体宽度等限制，
+ 两端紧贴页面左右两侧」→ 整段删除。
 
-   删除后 .sticky-header__inner 保持基础档：width:100% + padding: 0 var(--space-md)，
-   左右两端贴页面两侧，仅保留 --space-md 的最小呼吸内距（顶栏背景本身始终 100% 通栏）。
-   注：TV 端原本就排除在本媒体查询外（全宽契约），删除后行为不变。 */
+ 删除后 .sticky-header__inner 保持基础档：width:100% + padding: 0 var(--space-md)，
+ 左右两端贴页面两侧，仅保留 --space-md 的最小呼吸内距（顶栏背景本身始终 100% 通栏）。
+ 注：TV 端原本就排除在本媒体查询外（全宽契约），删除后行为不变。 */
 
 /* ── Left / Right groups ───────────────────────────── */
 
@@ -171,8 +171,8 @@
 }
 
 /* 分类 chips 顶栏挂载（.cqa-nav 相关覆盖规则）已随 CategoryQuickAccessNav
-   移除一并删除（2026-09-29）；后续接管的首页合集行亦于 2026-11-04 删除，
-   顶栏不再挂载任何分类入口。 */
+ 移除一并删除；后续接管的首页合集行亦于 删除，
+ 顶栏不再挂载任何分类入口。 */
 
 /* ── Nav ───────────────────────────────────────────── */
 
@@ -199,7 +199,7 @@
 }
 
 .sticky-header__nav-item:hover:not(.sticky-header__nav-item--active) {
-  /* hover 反馈由 .hover-scale 微放大承担，不再用背景色块（2026-08-12） */
+  /* hover 反馈由 .hover-scale 微放大承担，不再用背景色块 */
   color: var(--color-text);
 }
 
@@ -226,14 +226,14 @@
 }
 
 .sticky-header__theme-btn:hover {
-  /* hover 反馈由 .hover-scale 微放大承担，不再用背景色块（2026-08-12） */
+  /* hover 反馈由 .hover-scale 微放大承担，不再用背景色块 */
   color: var(--color-text);
 }
 
-/* ── 搜索框右侧图标组（demo 2026-09-29 .hdr-icons / .hdr-icon-btn）───────
-   设置 + 主题三态切换，紧随 .sticky-header__center 之后、仅桌面 / TV 渲染。
-   尺寸沿用 --comp-btn-min-height（TV 端 token 自动放大，无需单独规则）；
-   hover 口径 = nav-item / 原版 theme-btn 同款（仅变色 + hover-scale 微放大，无背景色块）。 */
+/* ── 搜索框右侧图标组（.hdr-icons / .hdr-icon-btn）───────
+ 设置 + 主题三态切换，紧随 .sticky-header__center 之后、仅桌面 / TV 渲染。
+ 尺寸沿用 --comp-btn-min-height（TV 端 token 自动放大，无需单独规则）；
+ hover 口径 = nav-item / 原版 theme-btn 同款（仅变色 + hover-scale 微放大，无背景色块）。 */
 .sticky-header__hdr-icons {
   display: flex;
   flex-shrink: 0;
@@ -242,16 +242,16 @@
   margin-left: var(--space-xs);
 }
 
-/* ── 搜索框紧贴图标组（2026-09-30 用户反馈「搜索框贴着 .sticky-header__hdr-icons」）──
-   .sticky-header__center 原 justify-content:center + 子项 .search-box-wrap 的
-   width:100%（受 max-width 封顶）→ 搜索框在剩余空间内居中，与其右侧图标组之间叠了
-   三段空白：① center 剩余空间（主轴居中两侧均分）② center 右 padding-inline(--space-xs)
-   ③ .sticky-header__hdr-icons 的 margin-left(--space-xs)。
-   现将搜索框推到 center 右端（flex-end）并清掉 ②③ → 两者边缘相接、间距 0（用户确认「紧贴」）。
-   仅桌面档（≥1024 = .sticky-header__hdr-icons 的渲染条件 !isMobile）且非 app；
-   TV 保持原间距（TV 端 token 放大、遥控焦点框需要呼吸位，未在本次范围）。
-   移动端（≤1023）不受影响：center 内仍是同一搜索框，但右侧为 .sticky-header__right，
-   且 hdr-icons 不渲染。 */
+/* ── 搜索框紧贴图标组（搜索框贴着 .sticky-header__hdr-icons）──
+ .sticky-header__center 原 justify-content:center + 子项 .search-box-wrap 的
+ width:100%（受 max-width 封顶）→ 搜索框在剩余空间内居中，与其右侧图标组之间叠了
+ 三段空白：① center 剩余空间（主轴居中两侧均分）② center 右 padding-inline(--space-xs)
+ ③ .sticky-header__hdr-icons 的 margin-left(--space-xs)。
+ 现将搜索框推到 center 右端（flex-end）并清掉 ②③ → 两者边缘相接、间距 0（紧贴）。
+ 仅桌面档（≥1024 = .sticky-header__hdr-icons 的渲染条件 !isMobile）且非 app；
+ TV 保持原间距（TV 端 token 放大、遥控焦点框需要呼吸位，未在本次范围）。
+ 移动端（≤1023）不受影响：center 内仍是同一搜索框，但右侧为 .sticky-header__right，
+ 且 hdr-icons 不渲染。 */
 @media (width >= 1024px) {
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__center {
     justify-content: flex-end;
@@ -263,10 +263,10 @@
   }
 }
 
-/* 几何口径（2026-09-30 三次修订）：本类现仅服务主题按钮（图标方盒）。
-   设置入口已改复用 .sticky-header__nav-item 胶囊体系（2026-09-30 用户定稿
-   「设置也改为胶囊样式」，与主导航 <a> 同一套几何 / 断点收窄 / 选中态），
-   原 --active 胶囊规则随之移除（由 nav-item--active 承担）。 */
+/* 几何口径：本类现仅服务主题按钮（图标方盒）。
+ 设置入口已改复用 .sticky-header__nav-item 胶囊体系（
+ 「设置也改为胶囊样式」，与主导航 <a> 同一套几何 / 断点收窄 / 选中态），
+ 原 --active 胶囊规则随之移除（由 nav-item--active 承担）。 */
 .sticky-header__hdr-btn {
   display: flex;
   justify-content: center;
@@ -282,7 +282,7 @@
 
 .sticky-header__hdr-btn:hover {
   /* hover 口径对齐 nav-item / 原版 theme-btn（:201/:228 同款注释）：
-     仅变色 + .hover-scale 微放大，无背景色块（2026-09-30 用户核对指正后修正） */
+ 仅变色 + .hover-scale 微放大，无背景色块 */
   color: var(--color-text);
 }
 
@@ -297,8 +297,8 @@
 }
 
 /* ── 个人设置入口（移动 web 顶栏：头像 + 用户名）──────────────────
-   仅移动 web 渲染（app 端由底部 TabBar 承担导航），点击跳 /settings?tab=personal。
-   用户名限宽 + 省略号，避免 320px 窄屏挤压搜索框。 */
+ 仅移动 web 渲染（app 端由底部 TabBar 承担导航），点击跳 /settings?tab=personal。
+ 用户名限宽 + 省略号，避免 320px 窄屏挤压搜索框。 */
 .sticky-header__profile {
   display: flex;
   flex-shrink: 0;
@@ -315,7 +315,7 @@
 }
 
 .sticky-header__profile:hover {
-  /* hover 反馈由 .hover-scale 微放大承担，不再用背景色块（2026-08-12） */
+  /* hover 反馈由 .hover-scale 微放大承担，不再用背景色块 */
   color: var(--color-text);
 }
 
@@ -349,11 +349,11 @@
 /* ── TV ────────────────────────────────────────────── */
 
 /* E. overscan 对称化：TV 下 .app-shell__main 已通过 padding 给「常驻（in-flow）导航栏」
-   提供四边安全边距，故导航栏自身不再加垂直内边距——否则会挤占内容区高度，使放大后的
-   搜索框 / Logo 溢出上下边缘（安全区默认 5vh 时内容区仅剩约 32px，远小于 1.4× 搜索框）。
-   仅沉浸式（position:fixed，脱离 main 文档流）导航栏需自行用 margin-top（外边距，
-   不挤压内容区）+ 左右 padding 实现过扫描安全边距。内容区高度始终 = --header-height，
-   搜索框垂直居中后上下留白恒定，与桌面端观感一致。 */
+ 提供四边安全边距，故导航栏自身不再加垂直内边距——否则会挤占内容区高度，使放大后的
+ 搜索框 / Logo 溢出上下边缘（安全区默认 5vh 时内容区仅剩约 32px，远小于 1.4× 搜索框）。
+ 仅沉浸式（position:fixed，脱离 main 文档流）导航栏需自行用 margin-top（外边距，
+ 不挤压内容区）+ 左右 padding 实现过扫描安全边距。内容区高度始终 = --header-height，
+ 搜索框垂直居中后上下留白恒定，与桌面端观感一致。 */
 .sticky-header--tv {
   padding: 0;
 }
@@ -369,15 +369,15 @@
 }
 
 /* ── Desktop (≥1024)：密度契约 v2 后顶栏右侧回归校准 ─────────────
-   v2/v2.2 把 space-2xs/xs/sm 收紧 ~27%（1440 处 2xs≈2px / xs≈4px / sm≈8px），
-   顶栏右侧出现两处瑕疵：① 图标组间距拥挤 ② 选中态胶囊偏小。
-   校准原则 = 恢复 v2 前的视觉组合「小 gap + 大内边距」，并在用户反馈后三调收窄：
-   · pill 间视觉间距 = gap 2xs≈2px + 两侧 padding-sm 7.9×2 ≈ 18px
-     （一版 gap sm≈30px 过宽、二版 padding-md≈24px 仍宽，三档定稿 18px）
-   · right 区 gap = xs≈4px（≈ v2 前观感）
-   · 选中胶囊高度方向 padding-xs-plus 保留（方框偏小修复不回退）
-   移动端红线不受影响（≤767 nav 整体隐藏；app 恒移动显式排除；
-   TV 由上方 .sticky-header--tv 更高特异性覆盖，尺寸不变）。 */
+ v2/v2.2 把 space-2xs/xs/sm 收紧 ~27%（1440 处 2xs≈2px / xs≈4px / sm≈8px），
+ 顶栏右侧出现两处瑕疵：① 图标组间距拥挤 ② 选中态胶囊偏小。
+ 校准原则 = 恢复 v2 前的视觉组合「小 gap + 大内边距」，并在后三调收窄：
+ · pill 间视觉间距 = gap 2xs≈2px + 两侧 padding-sm 7.9×2 ≈ 18px
+ （一版 gap sm≈30px 过宽、二版 padding-md≈24px 仍宽，三档 18px）
+ · right 区 gap = xs≈4px（≈ v2 前观感）
+ · 选中胶囊高度方向 padding-xs-plus 保留（方框偏小修复不回退）
+ 移动端红线不受影响（≤767 nav 整体隐藏；app 恒移动显式排除；
+ TV 由上方 .sticky-header--tv 更高特异性覆盖，尺寸不变）。 */
 @media (width >= 1024px) {
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__right {
     gap: var(--space-xs);
@@ -388,32 +388,31 @@
 }
 
 /* ── Narrow desktop: 顶栏去图标（≤1280）─────────────────────────────
-   2026-09-10 用户原话：「视口小于等于 1280 时，顶部导航栏左右两侧不再显示图标只显示文本」。
-   2026-10-09 用户二次强调「字号不要缩小，只去除图标」→ 本段收口为**只做图标显隐**：
-     ① 两侧 nav-item 内 svg display:none（设置入口单独反转：显图标、隐文本）；
-     ② logo 保持可见（防其它模块的隐藏规则误伤，强制恢复）。
-   原 ②③⑤（item padding 收 2xs / 组 gap 收 xs / 主导航 gap 收 2xs）已按
-   「只去除图标」口径整体移除 —— 1024-1280 的字号 / padding / gap / 圆角
-   与 >1280 完全同一套规则（上方 @media width>=1024 段），不再有任何降档。
-   主题按钮 / hdr 按钮为纯图标无文本可替代，按红线「不裁元素」保持原样；
-   移动端红线不受影响（≤767 nav 整体隐藏；app 恒移动显式排除；
-   TV 由上方 .sticky-header--tv 更高特异性覆盖，尺寸不变）。 */
+ 视口 ≤1280 时，顶部导航栏左右两侧不再显示图标、只显示文本，字号不变——本段只做图标显隐：
+ ① 两侧 nav-item 内 svg display:none（设置入口单独反转：显图标、隐文本）；
+ ② logo 保持可见（防其它模块的隐藏规则误伤，强制恢复）。
+ 原 ②③⑤（item padding 收 2xs / 组 gap 收 xs / 主导航 gap 收 2xs）已按
+ 「只去除图标」口径整体移除 —— 1024-1280 的字号 / padding / gap / 圆角
+ 与 >1280 完全同一套规则（上方 @media width>=1024 段），不再有任何降档。
+ 主题按钮 / hdr 按钮为纯图标无文本可替代，按红线「不裁元素」保持原样；
+ 移动端红线不受影响（≤767 nav 整体隐藏；app 恒移动显式排除；
+ TV 由上方 .sticky-header--tv 更高特异性覆盖，尺寸不变）。 */
 @media (width >= 1024px) and (width <= 1280px) {
   /* ① 图标隐藏：顶栏两组 nav-item 内的 svg 直接移除（只作用于顶栏，不影响其它 Icon） */
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item > svg {
     display: none;
   }
-  /* ①c 设置入口单独反转（2026-10-09 用户要求）：显图标、隐文本。
-     与 ① 通用隐藏规则同特异性 (0,2,1)，靠源码顺序靠后取胜。 */
+  /* ①c 设置入口单独反转：显图标、隐文本。
+ 与 ① 通用隐藏规则同特异性 (0,2,1)，靠源码顺序靠后取胜。 */
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item--icon-only > svg {
     display: block;
   }
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__nav-item--icon-only .sticky-header__nav-label {
     display: none;
   }
-  /* ② logo 保持可见（2026-09-10 用户要求「视口 ≤1280 顶部导航栏 logo 不需要隐藏」）：
-     防回归 —— 若有更高特异性的隐藏规则命中此处，本行强制恢复。
-     logo-group 未设 max-width，不会挤压中央搜索框（搜索框另有 420 封顶）。 */
+  /* ② logo 保持可见（视口 ≤1280 顶部导航栏 logo 不需要隐藏）：
+ 防回归 —— 若有更高特异性的隐藏规则命中此处，本行强制恢复。
+ logo-group 未设 max-width，不会挤压中央搜索框（搜索框另有 420 封顶）。 */
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__logo-group,
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__logo-wrap,
   html:not([data-device="app"]):not([data-device="tv"]) .sticky-header__logo-group .sticky-header__brand {
@@ -435,7 +434,7 @@
   gap: var(--space-sm);
 }
 }
-/* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .sticky-header__nav-label {
   display: none;
@@ -479,7 +478,7 @@
   }
 
   /* 移动端中央常驻搜索框：弹性占据剩余空间（两端间距由 .sticky-header__inner 的
-     gap 统一提供，左（菜单+logo）/右（主题按钮）与搜索框间距一致） */
+ gap 统一提供，左（菜单+logo）/右（主题按钮）与搜索框间距一致） */
   .sticky-header__center > .search-box-wrap--header {
     flex: 1;
     min-width: 0;
@@ -492,8 +491,8 @@
   }
 
   /* 移动 web：left/right 均取自然宽度（左侧菜单+logo、右侧个人入口+主题按钮），
-     搜索框 flex:1 弹性占位 —— 顶部新增个人入口后不再严格居中（决策③）。
-     app 端（html[data-device="app"] 副本）不渲染个人入口，维持原固定等宽居中。 */
+ 搜索框 flex:1 弹性占位 —— 顶部新增个人入口后不再严格居中（决策③）。
+ app 端（html[data-device="app"] 副本）不渲染个人入口，维持原固定等宽居中。 */
   .sticky-header__left,
   .sticky-header__right {
     flex: 0 0 auto;
@@ -517,7 +516,7 @@
     display: none;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .sticky-header {
     height: var(--header-height-compact);
@@ -542,7 +541,7 @@
   }
 
   html[data-device="app"] /* 移动端中央常驻搜索框：弹性占据剩余空间（两端间距由 .sticky-header__inner 的
-     gap 统一提供，左（菜单+logo）/右（主题按钮）与搜索框间距一致） */
+ gap 统一提供，左（菜单+logo）/右（主题按钮）与搜索框间距一致） */
   .sticky-header__center > .search-box-wrap--header {
     flex: 1;
     min-width: 0;
@@ -554,16 +553,16 @@
     padding: 0 var(--space-sm);
   }
 
-  html[data-device="app"] /* 方案A：left/right 固定等宽（= 菜单/主题按钮 + 移动端 logo + 内间距，约 76px），
-     center 弹性居中 → 搜索框严格居中于屏幕（两端距屏边缘等距）；
-     app 端无 menu-btn 时 left 宽度不变，与 web 端一致。 */
+  html[data-device="app"] /* left/right 固定等宽（= 菜单/主题按钮 + 移动端 logo + 内间距，约 76px），
+ center 弹性居中 → 搜索框严格居中于屏幕（两端距屏边缘等距）；
+ app 端无 menu-btn 时 left 宽度不变，与 web 端一致。 */
   .sticky-header__left, html[data-device="app"] .sticky-header__right {
     flex: 0 0 calc(var(--comp-btn-min-height) * 2 + var(--space-sm) + var(--space-2xs) * 2);
   }
 
   html[data-device="app"] /* 无 menu-btn（如 App 端隐藏汉堡菜单）时 left 收缩为内容宽度，搜索框随之变大；
-     两端间距仍由 .sticky-header__inner 的 gap 提供。
-     用 :has() 无需 JS 类名（Chrome 105+ / Capacitor WebView 均支持）。 */
+ 两端间距仍由 .sticky-header__inner 的 gap 提供。
+ 用 :has() 无需 JS 类名（Chrome 105+ / Capacitor WebView 均支持）。 */
   .sticky-header__left:not(:has(.sticky-header__menu-btn)) {
     flex: 0 0 auto;
   }
@@ -595,7 +594,7 @@
     position: static;
   }
 }
-/* 9.1 app 恒移动：@media (width < 768px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width < 768px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .sticky-header--immersive {
     position: static;
@@ -631,7 +630,7 @@
     display: none;
   }
 }
-/* 9.1 app 恒移动：@media (width < 768px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width < 768px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .sticky-header__sidebar-toggle {
     display: none;
@@ -640,13 +639,13 @@
 
 
 /* ── Desktop/Tablet web (>=768px)：保留 logo + 折叠按钮 ──
-   TV / 原生 App 保留 header logo（无侧边栏） */
+ TV / 原生 App 保留 header logo（无侧边栏） */
 
 
 /* ── 文字可读性增强 (玻璃态更透明后) ───────────────────
-   浅色主题下文字位于半透明玻璃上,容易被下方页面背景干扰;
-   暗色主题下文字位于深色玻璃上,需要更深的暗影衬托。
-   这些 shadow 仅作用于文字轮廓,不增加额外的图形重绘,性能开销可忽略。 */
+ 浅色主题下文字位于半透明玻璃上,容易被下方页面背景干扰;
+ 暗色主题下文字位于深色玻璃上,需要更深的暗影衬托。
+ 这些 shadow 仅作用于文字轮廓,不增加额外的图形重绘,性能开销可忽略。 */
 .sticky-header__nav-item,
 .sticky-header__nav-label,
 .sticky-header__theme-btn,

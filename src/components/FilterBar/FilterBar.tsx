@@ -19,10 +19,10 @@ import './FilterBar.css';
 export type { FilterBarValue } from './constants';
 
 // ── chip 类名与字宽变量 ──────────────────────────────────────────────
-//   CJK 记 1 字宽、ASCII 记 0.5。labelWidth 以 CSSProperties 变量 --chip-label-w
-//   注入到每个 chip，供 Browse ≥2560 单列时按「(字宽 − 2) × 字宽」动态补偿左缘，
-//   使任意长度（三字 / 四字 / 五字…）文字左缘都对齐两字 chip（见 Browse.css）。
-//   纯数字变量在 <2560 / 其它调用方无任何规则消费 → 零副作用。
+// CJK 记 1 字宽、ASCII 记 0.5。labelWidth 以 CSSProperties 变量 --chip-label-w
+// 注入到每个 chip，供 Browse ≥2560 单列时按「(字宽 − 2) × 字宽」动态补偿左缘，
+// 使任意长度（三字 / 四字 / 五字…）文字左缘都对齐两字 chip（见 Browse.css）。
+// 纯数字变量在 <2560 / 其它调用方无任何规则消费 → 零副作用。
 const labelWidth = (label: string): number =>
   [...label].reduce((w, ch) => w + (/[\u2E80-\u9FFF\uF900-\uFFFD]/.test(ch) ? 1 : 0.5), 0);
 
@@ -47,11 +47,11 @@ export interface FilterBarProps {
   /** 地区选项（由调用方用 buildRegionOptions(store.countries) 生成；缺省回退内置常量） */
   regionOptions?: RegionOption[];
   /**
-   * 组内折叠（2026-11-07 用户拍板，仅 Browse ≥2560 单列启用）。
-   * 单列时三组共 59 项 → 左栏需 1590px、1440 高视口仅 1274px 可用，必然滚动。
-   * 开启后每组默认只露前 N 项（分类 16 / 地区 6 / 年份 6）+「展开」按钮，
-   * 默认总高 ≈980px，一屏放下、不产生滚动条。
-   */
+ * 组内折叠（仅 Browse ≥2560 单列启用）。
+ * 单列时三组共 59 项 → 左栏需 1590px、1440 高视口仅 1274px 可用，必然滚动。
+ * 开启后每组默认只露前 N 项（分类 16 / 地区 6 / 年份 6）+「展开」按钮，
+ * 默认总高 ≈980px，一屏放下、不产生滚动条。
+ */
   collapsible?: boolean;
   /** 结果总数 */
   totalResults?: number;
@@ -60,14 +60,14 @@ export interface FilterBarProps {
   /** 隐藏排序+结果数 footer（用于将 footer 移到父组件其他位置） */
   hideFooter?: boolean;
   /** 分类级类型选项（全部/电影/剧集/综艺/动漫/纪录片/排行榜）。
-      传入后类型行恒显示并驱动 category；不传回落旧 3 档 mediaType 行。 */
+ 传入后类型行恒显示并驱动 category；不传回落旧 3 档 mediaType 行。 */
   categoryOptions?: FilterBarCategoryOption[];
-  /** 隐藏类型行（2026-09-07 用户拍板：桌面侧栏面板不放类型，
-      类型移至结果区头部 browse-sort-bar；默认 false 零回归） */
+  /** 隐藏类型行（桌面侧栏面板不放类型，
+ 类型移至结果区头部 browse-sort-bar；默认 false 零回归） */
   hideType?: boolean;
   /** genres 尚未拉取时仍渲染「分类」行壳（仅 label + 全部），
-      避免首次进入 Browse 左栏整行后到（2026-09-23 用户反馈）。
-      chips 仍等 visibleGenres 落地后逐个出现。 */
+ 避免首次进入 Browse 左栏整行后到。
+ chips 仍等 visibleGenres 落地后逐个出现。 */
   showGenreRowShell?: boolean;
 }
 
@@ -101,12 +101,12 @@ export default function FilterBar({
     collapsible && !openGroups[key] ? list.slice(0, COLLAPSE_LIMIT[key]) : list;
   const toggleGroup = (key: string) => setOpenGroups((s) => ({ ...s, [key]: !s[key] }));
   /**
-   * 折叠态的「展开 N 项 / 收起」按钮。
-   * ⚠️ **不能复用 `filter-bar__chip` 类**（2026-11-07 用户反馈）：
-   *    它和数据项长得一模一样、又排在组末尾 → 看起来像「最后一条数据被选中」。
-   *    故用独立类 `filter-bar__more`：主色纯文字（无边框/无背景/无箭头，与布局 demo 一致），
-   *    明确是「操作」而非「选项」。
-   */
+ * 折叠态的「展开 N 项 / 收起」按钮。
+ * ⚠️ **不能复用 `filter-bar__chip` 类**：
+ * 它和数据项长得一模一样、又排在组末尾 → 看起来像「最后一条数据被选中」。
+ * 故用独立类 `filter-bar__more`：主色纯文字（无边框/无背景/无箭头，与布局设计稿 一致），
+ * 明确是「操作」而非「选项」。
+ */
   const MoreButton = ({ total, shown, groupKey }: { total: number; shown: number; groupKey: string }) => {
     if (!collapsible || total <= shown) return null;
     const opened = !!openGroups[groupKey];
@@ -178,9 +178,9 @@ export default function FilterBar({
   return (
     <div className={`filter-bar${isMobile ? ' filter-bar--mobile' : ''}`}>
       {/* 类型 — hideType 时整行不渲染（类型已移至结果区头部）；
-          传入 categoryOptions 时按调用方给的分类数渲染（Browse 现为 4 档，驱动 category，
-          切换即注入该分类的 mediaType + 默认 genreIds）；
-          都不传回落旧 3 档 mediaType 行（仅「全部」category 显示） */}
+ 传入 categoryOptions 时按调用方给的分类数渲染（Browse 现为 4 档，驱动 category，
+ 切换即注入该分类的 mediaType + 默认 genreIds）；
+ 都不传回落旧 3 档 mediaType 行（仅「全部」category 显示） */}
       {!hideType && (categoryOptions ? (
         <div className="filter-bar__row filter-bar__row--scroll">
           <span className="filter-bar__label">类型</span>
@@ -216,7 +216,7 @@ export default function FilterBar({
       ))}
 
       {/* 分类（细分类型）— 多行 wrap 全展开；
-          showGenreRowShell：genres 未返回时先渲染行壳（label+全部），消除首进左栏“过一会才出现”的空洞 */}
+ showGenreRowShell：genres 未返回时先渲染行壳（label+全部），消除首进左栏“过一会才出现”的空洞 */}
       {(visibleGenres.length > 0 || showGenreRowShell) && (
         <div className="filter-bar__row filter-bar__row--wrap">
           <span className="filter-bar__label filter-bar__chip filter-bar__label--as-chip">

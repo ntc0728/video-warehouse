@@ -1,9 +1,9 @@
 /**
- * HomeTopStrip — 首页顶部过渡带（2026-09-10 大屏整改补强之二）
+ * HomeTopStrip — 首页顶部过渡带
  *
  * 位置：StickyHeader 与 HeroBanner 之间，仅在宽屏桌面（≥1024，与 HeroBili 同条件）渲染。
  *
- * 2026-10-09（用户需求，取代同日早先的「数据源状态」方案）：
+ * （取代原「数据源状态」方案）：
  * 公告位改为**当前热度 Top20 轮播** —— useTMDBStore.trending 按 popularity 降序
  * 取前 20 条，单条显示，5s 自动切换，纵向（上下）滑动动画。
  * 每条格式：热度值 + 标题 + 年份 + 类型(电影/剧集) + 评分。
@@ -12,7 +12,7 @@
  * 首项文案：类名 home-topstrip__crumb 沿用旧名（语义已是「公告」标签）。
  *
  * 视觉：通栏底色 + 底边框，内容宽度与 `.home-page__content` 同为 2200 封顶居中
- *       （与「顶栏对齐」补强同一契约）。
+ * （与「顶栏对齐」补强同一契约）。
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -29,7 +29,7 @@ interface HomeTopStripProps {
   trending: TMDBVideoItem[];
 }
 
-/** 轮播间隔（用户指定 5s） */
+/** 轮播间隔（5s） */
 const ROTATE_INTERVAL_MS = 5000;
 
 /** 热度值显示：≥100 取整（TMDB popularity 上不封顶），<100 保留 1 位小数 */
@@ -38,7 +38,7 @@ function formatHeat(popularity: number): string {
 }
 
 export default function HomeTopStrip({ continueCount, favoriteCount, trending }: HomeTopStripProps) {
-  // 热度 Top20（用户需求 2026-10-09）：popularity 降序，轮播池
+  // 热度 Top20：popularity 降序，轮播池
   const heatTop20 = useMemo(
     () => [...trending].sort((a, b) => b.popularity - a.popularity).slice(0, 20),
     [trending],
@@ -58,7 +58,7 @@ export default function HomeTopStrip({ continueCount, favoriteCount, trending }:
   return (
     <div className="home-topstrip">
       <div className="home-topstrip__inner">
-        {/* 今日热度趋势「整体」卡片（2026-10-11）：标题 + 轮播 + 右侧 pill 同属一张卡。 */}
+        {/* 今日热度趋势「整体」卡片：标题 + 轮播 + 右侧 pill 同属一张卡。 */}
         <div className="home-topstrip__trend">
           <span className="home-topstrip__crumb">今日热度趋势</span>
           {heatTop20.length > 0 && (
@@ -66,8 +66,8 @@ export default function HomeTopStrip({ continueCount, favoriteCount, trending }:
             <div
               className="home-topstrip__rotator-track"
               /* 位移 = 条数 × 单条高（--rotator-h 定义在 Home.css .home-topstrip__rotator）。
-                 禁用 translateY(-N%)：百分比相对 track 自身总高（N 条堆叠），
-                 N% 一步会跳出整屏（2026-10-10 用户报「漂移后空白」根因）。 */
+ 禁用 translateY(-N%)：百分比相对 track 自身总高（N 条堆叠），
+ N% 一步会跳出整屏（「漂移后空白」根因）。 */
               style={{ transform: `translateY(calc(-${heatIndex} * var(--rotator-h)))` }}
             >
               {heatTop20.map((item) => (
@@ -79,8 +79,8 @@ export default function HomeTopStrip({ continueCount, favoriteCount, trending }:
                   aria-label={`查看 ${item.title} 详情`}
                 >
                   {/* 热度/评分样式参考 chart 页 card（Chart.css .chart-row__heat .n/.v）：
-                     热度 = 暖橙 --color-warning-text 加粗 + Flame，评分 = 次级色 + Star，
-                     数字 tabular-nums（配色口径 2026-10-10 用户指定） */}
+ 热度 = 暖橙 --color-warning-text 加粗 + Flame，评分 = 次级色 + Star，
+ 数字 tabular-nums（配色口径 ） */}
                   <span className="home-topstrip__heat">
                     <Icon icon={Flame} size="xs" />
                     {formatHeat(item.popularity)}
@@ -95,8 +95,8 @@ export default function HomeTopStrip({ continueCount, favoriteCount, trending }:
                       {item.voteAverage.toFixed(1)}
                     </span>
                   )}
-                  {/* 简介（2026-10-11 用户需求：评分后新增）：取 TMDB overview，
-                     空间不足时溢出隐藏（text-overflow:ellipsis，见 Home.css __desc）。 */}
+                  {/* 简介（评分后新增）：取 TMDB overview，
+ 空间不足时溢出隐藏（text-overflow:ellipsis，见 Home.css __desc）。 */}
                   {item.description && (
                     <span className="home-topstrip__desc">{item.description}</span>
                   )}

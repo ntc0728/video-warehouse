@@ -1,18 +1,18 @@
-/* 详情页专属骨架 — 几何继承真实类（方案 A · 海报对开，2026-10-10 重构）
-   真实结构类直接复用：.detail-hero / .detail-hero-poster / .detail-hero-info / .detail-hero-body /
-   .detail-hero-topline / .detail-facts / .detail-facts-grid / .detail-fact(--full) /
-   .detail-tabs-wrap / .detail-tabs / .tab-underline / .detail-tab /
-   .detail-cast-row(--collapsed) / .detail-cast-item / .detail-stills-grid / .detail-stills-skeleton /
-   .detail-recommend / .detail-recommend-title / .detail-recommend-row / .detail-recommend-card / .video-card。
-   ≥768 两列、列宽 clamp、海报 2:3 等布局由 Detail.css 基座单真源提供，本文件只写骨架私有灰块尺寸。
-   旧 .detail-top 两栏镜像 / .detail-hero-side 定高 stretch 段随方案 A 退役。 */
+/* 详情页专属骨架 — 几何继承真实类（海报对开）
+ 真实结构类直接复用：.detail-hero / .detail-hero-poster / .detail-hero-info / .detail-hero-body /
+ .detail-hero-topline / .detail-facts / .detail-facts-grid / .detail-fact(--full) /
+ .detail-tabs-wrap / .detail-tabs / .tab-underline / .detail-tab /
+ .detail-cast-row(--collapsed) / .detail-cast-item / .detail-stills-grid / .detail-stills-skeleton /
+ .detail-recommend / .detail-recommend-title / .detail-recommend-row / .detail-recommend-card / .video-card。
+ ≥768 两列、列宽 clamp、海报 2:3 等布局由 Detail.css 基座单真源提供，本文件只写骨架私有灰块尺寸。
+ 旧 .detail-top 两栏镜像 / .detail-hero-side 定高 stretch 段随 退役。 */
 
 .detail-skeleton {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
   /* 宿主 .detail-page--loading 是 align-items:center 的 flex 列，骨架须显式撑满，
-     否则整块收缩到内容宽（真实 .detail-hero 的列宽公式也会失真）。 */
+ 否则整块收缩到内容宽（真实 .detail-hero 的列宽公式也会失真）。 */
   width: 100%;
 }
 
@@ -27,25 +27,25 @@
 
 /* ── hero：真实 .detail-hero 两列几何；__poster-img 吃满 2:3 海报列 ── */
 
-/* 固定高度（2026-11-07）：hero 高度与海报列宽均由 Detail.css ≥768 块的
-   --detail-hero-h 单真源求值（原「JS 量 info 高写 --poster-w」的镜像测量已随
-   真实页同步删除），骨架复用真实类自动同构，无需私有规则。 */
+/* 固定高度：hero 高度与海报列宽均由 Detail.css ≥768 块的
+ --detail-hero-h 单真源求值（原「JS 量 info 高写 --poster-w」的镜像测量已随
+ 真实页同步删除），骨架复用真实类自动同构，无需私有规则。 */
 
 .detail-skeleton__poster {
   background: none;
 }
 
-/* 骨架 hero-info 底色：全设备统一 surface 白底（2026-11-08 用户要求：
-   移动端不再黑色，与桌面同一处理；无边框） */
+/* 骨架 hero-info 底色：全设备统一 surface 白底（
+ 移动端不再黑色，与桌面同一处理；无边框） */
 .detail-skeleton__hero-info {
   background: var(--color-surface);
 }
 
 @media (width >= 768px) {
 
-  /* 内容簇贴底镜像真实页（2026-11-08：真实 hero 内容簇 flex-end 靠近 CTA，
-     空区上浮；骨架同步 flex-end，灰块簇不再垂直居中）。
-     覆盖真实类的钉底几何：__overview-list 不再拉伸、__btn-row 不再 margin-top:auto */
+  /* 内容簇贴底镜像真实页（真实 hero 内容簇 flex-end 靠近 CTA，
+ 空区上浮；骨架同步 flex-end，灰块簇不再垂直居中）。
+ 覆盖真实类的钉底几何：__overview-list 不再拉伸、__btn-row 不再 margin-top:auto */
   html:not([data-device="tv"]) .detail-skeleton__hero-info .detail-hero-body {
     justify-content: flex-end;
   }
@@ -78,11 +78,11 @@
 .detail-skeleton__title {
   width: 14em;
   max-width: 50%;
-  /* 镜像真实 .detail-hero-logo（2026-10-11 实测）：有 logo 时标题位是 logo 图，
-     max-height = --layout-tabbar-height（桌面典型 ≈69px），远大于纯文字标题行盒
-     （text-3xl×1.18 ≈33px）。宽度 184 vs 高 69 → 骨架按 logo 档预留，否则
-     logo 影片数据到达时 hero 向下顶 ≈ 36px。无 logo 回退文字标题时骨架略高，
-     属 logo/文字两态不可预知的已知取舍（优先覆盖更常见的 featured logo）。 */
+  /* 镜像真实 .detail-hero-logo（实测）：有 logo 时标题位是 logo 图，
+ max-height = --layout-tabbar-height（桌面典型 ≈69px），远大于纯文字标题行盒
+ （text-3xl×1.18 ≈33px）。宽度 184 vs 高 69 → 骨架按 logo 档预留，否则
+ logo 影片数据到达时 hero 向下顶 ≈ 36px。无 logo 回退文字标题时骨架略高，
+ 属 logo/文字两态不可预知的已知取舍（优先覆盖更常见的 featured logo）。 */
   height: var(--layout-tabbar-height);
 }
 
@@ -101,7 +101,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  /* max-width 65em 已删（2026-11-08 随真实 desc 放开，大屏简介右侧不再留白） */
+  /* max-width 65em 已删（随真实 desc 放开，大屏简介右侧不再留白） */
 }
 
 .detail-skeleton__overview {
@@ -114,7 +114,7 @@
 }
 
 /* CTA 行：镜像真实 .detail-hero-cta-zone（钉文本区底 + 与简介脱开的 padding-top 同源公式；
-   按钮高 = 真实 --comp-tab-height 胶囊） */
+ 按钮高 = 真实 --comp-tab-height 胶囊） */
 .detail-skeleton__btn-row {
   display: flex;
   gap: var(--space-md);
@@ -133,8 +133,8 @@
   width: 9.5em;
 }
 
-/* 移动端/app 镜像真实按钮尺寸（2026-11-08 实测：真实 .detail-btn 为 ~78×24，
-   text-xs 12px；骨架桌面档 8em/9.5em + comp-tab-height ≈36px 明显偏大） */
+/* 移动端/app 镜像真实按钮尺寸（实测：真实 .detail-btn 为 ~78×24，
+ text-xs 12px；骨架桌面档 8em/9.5em + comp-tab-height ≈36px 明显偏大） */
 @media (width <= 767px) {
   .detail-skeleton__btn {
     width: 5.5em;
@@ -190,8 +190,8 @@ html[data-device="app"] .detail-skeleton__btn--play {
 }
 
 /* ── Tab：外壳复用真实 .tab-underline / .detail-tab（padding + 2px 下划线几何单真源）；
-   内部图标槽 + 标签槽为骨架方框，不渲染真实文字（2026-09-24 用户要求）。
-   槽高取真实内容行高：图标 = --icon-sm；标签 = text-sm 行高 ── */
+ 内部图标槽 + 标签槽为骨架方框，不渲染真实文字。
+ 槽高取真实内容行高：图标 = --icon-sm；标签 = text-sm 行高 ── */
 .detail-skeleton__tab-icon {
   flex-shrink: 0;
   width: var(--icon-sm);

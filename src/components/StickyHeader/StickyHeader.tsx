@@ -22,8 +22,8 @@ import { Icon } from "@/components/ui/Icon";
 
 interface NavItem { key: string; title: string; icon: LucideIcon; path: string; }
 
-/** 主导航（demo 2026-09-29）：logo 右侧固定顺序，桌面 / TV 顶栏承载；
- *  移动端导航由汉堡菜单（web）/ 底部 TabBar（app）承担，不渲染本组 */
+/** 主导航：logo 右侧固定顺序，桌面 / TV 顶栏承载；
+ * 移动端导航由汉堡菜单（web）/ 底部 TabBar（app）承担，不渲染本组 */
 const PRIMARY_NAV_ITEMS: NavItem[] = [
   { key: 'home', title: '首页', icon: House, path: '/' },
   { key: 'browse', title: '浏览', icon: Search, path: '/browse' },
@@ -42,8 +42,8 @@ interface StickyHeaderProps {
 }
 
 /** 沉浸式页面路由前缀：播放页（hero 透明叠加）
- *  首页 / 详情页已改为非沉浸式：header 静态常驻，banner / hero 不再被覆盖
- *  导出供 AppLayout 同步判断（决定侧边栏/顶栏是否应用卡片化，避免破坏全屏播放页） */
+ * 首页 / 详情页已改为非沉浸式：header 静态常驻，banner / hero 不再被覆盖
+ * 导出供 AppLayout 同步判断（决定侧边栏/顶栏是否应用卡片化，避免破坏全屏播放页） */
 export const IMMERSIVE_ROUTES = ['/play', '/player'];
 
 /** 顶部搜索框历史作用域：不同页面的搜索历史互不影响 */
@@ -76,9 +76,9 @@ function isLiveSearchDisabled(pathname: string): boolean {
 export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderProps) {
   const isTV = useIsTV();
   // 移动端布局判断：与 AppLayout 一致（app 端恒真 / 真实手机恒真 / <768px 窄屏）。
-  // 9.1：不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面。
+  //不再用裸 max-width:767px —— app 横屏时宽度 >767 会被误判为桌面。
   const isMobile = useIsMobileLayout();
-  // 9.1：app 端导航由底部 TabBar 承担，汉堡菜单按钮（+ 移动 Sidebar）对 app 隐藏
+  //app 端导航由底部 TabBar 承担，汉堡菜单按钮（+ 移动 Sidebar）对 app 隐藏
   const isNative = isNativePlatform();
   const navigate = useCustomNavigate();
   const location = useLocation();
@@ -108,7 +108,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
     if (path === '/') return location.pathname === '/';
     // 合集直达榜（/chart?collection=<key>）与热度榜共用路由，但不代表导航「热度榜」
     // 被选中 —— 判定口径与 Chart 页 collectionDef 一致（findHomeCollectionDef 命中才算
-    // 合集模式），防止用户误解「进了合集榜 = 在看热度榜」（2026-10-09 用户拍板）
+    // 合集模式），防止用户误解「进了合集榜 = 在看热度榜」
     if (path === '/chart') {
       if (!location.pathname.startsWith('/chart')) return false;
       const colKey = new URLSearchParams(location.search).get('collection');
@@ -232,12 +232,12 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
           )}
         </div>
         <div className="sticky-header__center">
-          {/* 分类 chips 已随 CategoryQuickAccessNav 退役删除（2026-09-29）；
-              后续接管的首页合集行亦于 2026-11-04 删除，顶栏不再挂载分类入口。 */}
+          {/* 分类 chips 已随 CategoryQuickAccessNav 退役删除；
+ 后续接管的首页合集行亦于 删除，顶栏不再挂载分类入口。 */}
           {/* 中央常驻搜索框：不再用 key={location.pathname} 强制重挂载——
-             原先每次导航都销毁重建 SearchBox，会触发整棵搜索框子树重渲染与下拉态丢失，
-             造成肉眼可见的卡顿；改用 SearchBox 内部的 useEffect 按 defaultValue/urlQ/pathname
-             同步输入值（见 SearchBox.tsx），避免无谓的重挂载开销。 */}
+ 原先每次导航都销毁重建 SearchBox，会触发整棵搜索框子树重渲染与下拉态丢失，
+ 造成肉眼可见的卡顿；改用 SearchBox 内部的 useEffect 按 defaultValue/urlQ/pathname
+ 同步输入值（见 SearchBox.tsx），避免无谓的重挂载开销。 */}
           <SearchBox
             variant="header"
             className="sticky-header__search"
@@ -249,14 +249,14 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
             scope={searchScope}
           />
         </div>
-        {/* 搜索框右侧图标组（demo 2026-09-29 .hdr-icons）：设置 + 主题三态切换。
-            仅桌面 / TV 渲染；移动端维持右侧原主题按钮不变。 */}
+        {/* 搜索框右侧图标组（.hdr-icons）：设置 + 主题三态切换。
+ 仅桌面 / TV 渲染；移动端维持右侧原主题按钮不变。 */}
         {!isMobile && (
           <div className="sticky-header__hdr-icons">
-            {/* 设置入口（2026-09-30 用户定稿「也改为胶囊样式」）：复用 nav-item 类体系
-                （与主导航 <a> 同一套胶囊几何 / 断点收窄 / --active 选中态），icon+文字标签。
-                --icon-only：2026-10-09 用户要求 —— ≤1280 窄视口顶栏通用规则是去图标保文本，
-                设置项单独反转（显图标、隐文本）：齿轮为全局通识符号，纯图标更省宽。 */}
+            {/* 设置入口（也改为胶囊样式）：复用 nav-item 类体系
+ （与主导航 <a> 同一套胶囊几何 / 断点收窄 / --active 选中态），icon+文字标签。
+ --icon-only：≤1280 窄视口顶栏通用规则是去图标保文本，
+ 设置项单独反转（显图标、隐文本）：齿轮为全局通识符号，纯图标更省宽。 */}
             <button
               className={`sticky-header__nav-item sticky-header__nav-item--icon-only hover-scale${isActive('/settings') ? ' sticky-header__nav-item--active' : ''}`}
               onClick={() => navigate('/settings')}
@@ -271,7 +271,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
               aria-label={`当前主题：${currentTheme}，点击切换`}
               title={`主题：${currentTheme}`}
             >
-              {/* 2026-10-10 用户要求：主题切换图标尺寸与左侧设置图标一致（原 lg 偏大）。 */}
+              {/* 主题切换图标尺寸与左侧设置图标一致（原 lg 偏大）。 */}
               <Icon icon={ThemeIcon} size={isTV ? 'md' : 'sm'} />
             </button>
           </div>
@@ -280,8 +280,8 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
         {isMobile && (
           <div className="sticky-header__right">
             {/* 个人设置入口（移动 web 头像）→ /settings?tab=personal：
-               桌面 / TV 设置入口迁移至搜索框右侧图标组；app 端导航由底部 TabBar 承担。
-               仅移动 web（isMobile && !isNative）显示头像作为个人设置入口。 */}
+ 桌面 / TV 设置入口迁移至搜索框右侧图标组；app 端导航由底部 TabBar 承担。
+ 仅移动 web（isMobile && !isNative）显示头像作为个人设置入口。 */}
             {isMobile && !isNative && (
               <a
                 href="/settings?tab=personal"

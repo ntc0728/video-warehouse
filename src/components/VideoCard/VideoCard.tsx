@@ -1,7 +1,7 @@
 /**
  * 视频卡片组件（多客户端适配）
  *
- * 竖版海报布局（2:3，2026-11-04 角标统一）
+ * 竖版海报布局（2:3， 角标统一）
  * 评分左上 / 收藏右上 / 封面底部左标题 + 右下竖排 meta（观看状态→类型→年份）/
  * 标题溢出跑马灯；标题移入封面后 info 区对竖版隐藏。
  *
@@ -51,18 +51,18 @@ interface VideoCardProps {
   /** 自定义导航 state，与 navigateTo 配合使用 */
   navigateState?: Record<string, unknown>;
   /** 观看状态（收藏页传入）：传入时封面右下 meta 额外显示「观看状态」
-   *  （竖排顺序：观看状态 → 类型 → 年份）；不传则只显示 类型 → 年份。
-   *  仅竖版卡片使用，其他页面零影响。 */
+ * （竖排顺序：观看状态 → 类型 → 年份）；不传则只显示 类型 → 年份。
+ * 仅竖版卡片使用，其他页面零影响。 */
   status?: 'unwatched' | 'watching' | 'watched';
   /** 封面旧图→新图交叉淡入（首页卡片封面切换用），透传给 LazyImage。 */
   crossfadeOnChange?: boolean;
   /** 跳过进入动画（首页进入过渡期间禁用 animate-card-enter，避免"继续观看"行卡片闪烁）。 */
   skipAnimations?: boolean;
   /** 禁用图片懒加载：为 true 时跳过 IntersectionObserver，不加载图片。
-   *  用于 TMDBMovieRow 的滚动触发加载场景：只有当行标题进入视口后才启用图片加载。 */
+ * 用于 TMDBMovieRow 的滚动触发加载场景：只有当行标题进入视口后才启用图片加载。 */
   imageDisabled?: boolean;
   /** 自定义 IO root（横向滚动行用）：透传给 LazyImage，使相交判定以行滚动容器为根，
-   *  横向屏外的卡片不再发请求（2026-09-11 首屏并发优化）。竖向网格不传，行为不变。 */
+ * 横向屏外的卡片不再发请求（首屏并发优化）。竖向网格不传，行为不变。 */
   imageRootRef?: React.RefObject<HTMLElement | null>;
   /** 跳转前拦截：返回 false 时阻止 Link 导航（如 CMS 源未启用） */
   onBeforeNavigate?: () => boolean;
@@ -85,7 +85,7 @@ const STATUS_LABELS: Record<'unwatched' | 'watching' | 'watched', string> = {
  * 封面 TMDB 搜索兜底缓存：title -> { url, failedAt? }
  * - url：海报 URL；'' 表示「已搜索过」。
  * - failedAt：仅当搜索「失败」（网络/超时）时写入时间戳；成功但无 poster_path 不写
- *   （确定无海报，永不重试）。
+ * （确定无海报，永不重试）。
  * 冷却期（FALLBACK_RETRY_MS）内失败不重试，过冷却期放行重试——避免「一次失败永久占位」。
  * CMS 源 vod_pic 常缺失，封面为空的卡片用标题向 TMDB 搜海报兜底（避免首字母占位）。
  */
@@ -194,7 +194,7 @@ const VideoCard = memo(function VideoCard({
     };
   }, [video.title, video.cover, fallbackPoster, hasToken]);
 
-  // ── 竖版标题跑马灯：只测量，不跑动画（2026-09-03）──
+  // ── 竖版标题跑马灯：只测量，不跑动画──
   // 旧实现用 rAF 常驻循环驱动 transform：每张溢出卡一个 rAF，Browse 页上百张卡片
   // 同时跑会持续占用主线程，且滚到头后瞬间跳回原点（非无缝）。
   // 现改为：测量「第一份文本宽度 + gap」写入 --marquee-distance / --marquee-duration，
@@ -203,7 +203,7 @@ const VideoCard = memo(function VideoCard({
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
-    // 2026-11-03：横版卡标题移至封面左下角，同样启用无缝跑马灯
+    //横版卡标题移至封面左下角，同样启用无缝跑马灯
     // （原实现横版恒不滚动、单行截断；现与竖版同机制，仅作用元素不同）
     let cancelled = false;
     let rafId = 0;
@@ -352,7 +352,7 @@ const VideoCard = memo(function VideoCard({
         )}
 
         {/* 收藏 — 右上角：未收藏 hover 显形，已收藏常驻红底（批量模式下隐藏）。
-            扫光中由 CSS 门控隐藏，加载成功/失败/空源均渲染（失败态须可收藏） */}
+ 扫光中由 CSS 门控隐藏，加载成功/失败/空源均渲染（失败态须可收藏） */}
         {!batchMode && !hideFavorite && (
           <button
             className={`video-card-fav-btn ${isCollected ? 'visible active' : 'hover-visible'}`}
@@ -364,9 +364,9 @@ const VideoCard = memo(function VideoCard({
           </button>
         )}
 
-        {/* 竖版封面角标（2026-11-04 二次定稿：回滚封面内标题方案）：
-            传 status（收藏页）→ 左下 = 年份 + 类型合并、右下 = 观看状态；
-            不传 → 左下 = 年份、右下 = 类型。标题回到下方 info 区。 */}
+        {/* 竖版封面角标（封面内标题已回退）：
+ 传 status（收藏页）→ 左下 = 年份 + 类型合并、右下 = 观看状态；
+ 不传 → 左下 = 年份、右下 = 类型。标题回到下方 info 区。 */}
         {!batchMode && variant !== 'landscape' && status ? (
           <>
             <span className="video-card-badges-bl">
@@ -402,9 +402,9 @@ const VideoCard = memo(function VideoCard({
               <span className="video-card-landscape__source-badge">{overlayLabel}</span>
             )}
 
-            {/* 左下角：标题（2026-11-03 用户定稿 —— 横版标题移入封面内左下角，
-                支持无缝跑马灯）。2026-11-04 修正：进度时间与年份一起放进本 flex 行，
-                标题只吃「剩余宽度」，由布局天然避让，不再靠 padding 硬推（会压住时间）。 */}
+            {/* 左下角：标题（横版标题移入封面内左下角，
+ 支持无缝跑马灯）。 修正：进度时间与年份一起放进本 flex 行，
+ 标题只吃「剩余宽度」，由布局天然避让，不再靠 padding 硬推（会压住时间）。 */}
             <div className="video-card-landscape__bottom">
               <div className="video-card-landscape__title-wrap">
                 <div
@@ -463,7 +463,7 @@ const VideoCard = memo(function VideoCard({
       </div>
 
       {/* info 区：竖版放标题；横版仅当有 timeLabel 时才渲染（继续观看不传 timeLabel
-          → 不渲染空壳，避免一段无内容的 padding 撑高卡片）。 */}
+ → 不渲染空壳，避免一段无内容的 padding 撑高卡片）。 */}
       {(variant !== 'landscape' || timeLabel) && (
         <div className="video-card-info">
           {variant !== 'landscape' && <div className="video-card-title-wrap">

@@ -226,8 +226,8 @@
   flex: 1 1 auto;
   gap: var(--space-2xs);
   align-items: center;
-  /* C2-1（2026-08-04）：搜索框不再无约束撑满整行（原来 flex:1 占满 toolbar 全部
-     剩余宽度显得过长）。上限 16rem（256px），窄屏时仍可收缩；右侧计数/留白平衡。 */
+  /* C2-1：搜索框不再无约束撑满整行（原来 flex:1 占满 toolbar 全部
+ 剩余宽度显得过长）。上限 16rem（256px），窄屏时仍可收缩；右侧计数/留白平衡。 */
   max-width: 16rem;
   padding: var(--space-2xs) var(--space-sm);
   border: 1px solid var(--color-border-light);
@@ -249,9 +249,9 @@
   outline: none;
 }
 
-/* 聚焦指示移交给外层胶囊（2026-11-08）：全局 :focus-visible 黑色 2px outline
-   （亮主题 primary=纯黑）在胶囊外形成粗黑框，观感差；改为胶囊自身 border 变色承担
-   键盘焦点指示（WCAG 2.4.7 仍有可见指示）。!important + 更高特异性压过全局规则 */
+/* 聚焦指示移交给外层胶囊：全局 :focus-visible 黑色 2px outline
+ （亮主题 primary=纯黑）在胶囊外形成粗黑框，观感差；改为胶囊自身 border 变色承担
+ 键盘焦点指示（WCAG 2.4.7 仍有可见指示）。!important + 更高特异性压过全局规则 */
 .playlist-search:focus-within {
   border-color: var(--color-primary);
 }
@@ -290,7 +290,7 @@
   animation: playlist-fade 0.28s var(--ease-out-expo) both;
 }
 
-/* 单元格（剧集 / 线路）—— 2026-09-24 起可为 <button> 或 <Link>（新开页签） */
+/* 单元格（剧集 / 线路）—— 起可为 <button> 或 <Link>（新开页签） */
 .playlist-cell {
   position: relative;
   display: flex;
@@ -402,13 +402,13 @@
 }
 
 /* 已看集：用比弹窗表面更深的步骤色（surface-hover）与「历史已看」做标记，
-   既区别于弹窗底色(surface)，也区别于选中态的主色弱染底 */
+ 既区别于弹窗底色(surface)，也区别于选中态的主色弱染底 */
 .playlist-cell.is-watched {
   background: var(--color-surface-hover);
 }
 
 /* 选中集：主色弱染底 + 数字主色，与「历史已看」的浅色底明显区分
-   （两层都命中时 is-selected 在后面，背景色以选中态为准） */
+ （两层都命中时 is-selected 在后面，背景色以选中态为准） */
 .playlist-cell.is-selected {
   background: color-mix(in srgb, var(--color-primary) 16%, var(--color-surface));
 }
@@ -429,7 +429,7 @@
 }
 
 /* 勾号完成态（已看完）：绿色，与百分比「看完」配色一致；
-   嵌套 .is-watched 提升特异性，确保带已看背景的 cell 完成态仍显示绿色（不被下方 primary 色覆盖） */
+ 嵌套 .is-watched 提升特异性，确保带已看背景的 cell 完成态仍显示绿色（不被下方 primary 色覆盖） */
 .playlist-cell-check.is-complete,
 .playlist-cell.is-watched .playlist-cell-check.is-complete {
   color: var(--color-success-text);
@@ -559,7 +559,7 @@
   }
 
   /* 移动端选集网格：sheet（≤10集底部弹窗）cell 间距放宽到与桌面/drawer 一致的
-     space-sm，避免选集按钮过于拥挤难点选 */
+ space-sm，避免选集按钮过于拥挤难点选 */
   .playlist-grid {
     grid-template-columns: repeat(auto-fill, minmax(3.375rem, 1fr));
     gap: var(--space-sm);
@@ -588,7 +588,7 @@
     gap: var(--space-sm);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .playlist-modal.playlist-modal--sheet {
     position: fixed;
@@ -615,7 +615,7 @@
   }
 
   html[data-device="app"] /* 移动端选集网格：sheet（≤10集底部弹窗）cell 间距放宽到与桌面/drawer 一致的
-     space-sm，避免选集按钮过于拥挤难点选 */
+ space-sm，避免选集按钮过于拥挤难点选 */
   .playlist-grid {
     grid-template-columns: repeat(auto-fill, minmax(3.375rem, 1fr));
     gap: var(--space-sm);

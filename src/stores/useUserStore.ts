@@ -21,7 +21,7 @@ import {
   clearHistory as clearHistoryDB,
 } from '@/services/database';
 
-// ── 跨页签实时同步（2026-09-02）─────────────────────────────
+// ── 跨页签实时同步─────────────────────────────
 // 本页写收藏/历史时经 BroadcastChannel 广播；其它页签收到后静默 reload()
 // 拉最新 DB 快照——「另一页签增删收藏/历史，本页无需手动刷新即更新」。
 // 防回环：广播带随机 session，接收端忽略自己的消息；reload() 只读不写，不二次广播。
@@ -71,13 +71,13 @@ interface UserState {
   _initialized: boolean;
   _loading: boolean;
   /**
-   * 读库失败信息（2026-09-16）。
-   *
-   * 动机：`_loadFromDB` / `reload` 原先失败只 `console.error`，页面拿到的就是「空数组」，
-   * 于是「IndexedDB 读失败」与「用户真的没有收藏/记录」在 UI 上完全无法区分 —— 永久空态、
-   * 无重试入口。现在把失败原因暴露出来，页面据此分流成 `status="error"` + 重试按钮。
-   * null = 没有已知错误（不等于「已成功读过」，读成功的语义仍由 `_initialized` 表达）。
-   */
+ * 读库失败信息。
+ *
+ * 动机：`_loadFromDB` / `reload` 原先失败只 `console.error`，页面拿到的就是「空数组」，
+ * 于是「IndexedDB 读失败」与「用户真的没有收藏/记录」在 UI 上完全无法区分 —— 永久空态、
+ * 无重试入口。现在把失败原因暴露出来，页面据此分流成 `status="error"` + 重试按钮。
+ * null = 没有已知错误（不等于「已成功读过」，读成功的语义仍由 `_initialized` 表达）。
+ */
   loadError: string | null;
 
   addCollection: (videoId: string, meta?: { title?: string; cover?: string; type?: VideoType; year?: number; rating?: number; sourceIndex?: number; cmsSourceId?: string; cmsSourceName?: string }) => void;
@@ -116,10 +116,10 @@ interface UserState {
 
 /**
  * 一次性清理历史遗留记录（电影线路独立去重键 + D4 剧集误写电影键的脏记录）：
- *   - id === `hist-{videoId}`（无线路后缀的电影形态）且 seasonNumber != null
- *     → 历史 bug 产生的污染记录（剧集进度误写入电影键），无内容身份，删除
- *   - id === `hist-{videoId}`（老电影记录）且同 videoId 已存在 `hist-{videoId}-` 前缀的新记录
- *     → 老记录已被新的线路独立记录取代，删除
+ * - id === `hist-{videoId}`（无线路后缀的电影形态）且 seasonNumber != null
+ * → 历史 bug 产生的污染记录（剧集进度误写入电影键），无内容身份，删除
+ * - id === `hist-{videoId}`（老电影记录）且同 videoId 已存在 `hist-{videoId}-` 前缀的新记录
+ * → 老记录已被新的线路独立记录取代，删除
  * 仅当同 videoId 存在新形态记录时才删老电影记录，避免误删仍在使用（从未播放新线路）的老数据。
  */
 async function cleanupLegacyHistoryRecords(): Promise<void> {
@@ -155,9 +155,9 @@ async function cleanupLegacyHistoryRecords(): Promise<void> {
 // ── 历史记录节流落库（P4 优化）──────────────────────────────
 // 播放进度 timeupdate 事件高频触发（约 250ms~1s 一次），若每次都写 IndexedDB
 // 会产生大量事务。改为「内存更新 + 节流批量落库」：
-//   - addHistory 只更新内存态，并把该记录标记为「脏」，调度 3s 节流定时器；
-//   - 定时器触发（或页面退场/隐藏）时，把脏记录一次性批量 upsert；
-//   - 退场兜底：pagehide / visibilitychange(hidden) 时立即 flush，避免丢失。
+// - addHistory 只更新内存态，并把该记录标记为「脏」，调度 3s 节流定时器；
+// - 定时器触发（或页面退场/隐藏）时，把脏记录一次性批量 upsert；
+// - 退场兜底：pagehide / visibilitychange(hidden) 时立即 flush，避免丢失。
 const HISTORY_FLUSH_MS = 3000;
 /** 脏记录集合：dedupId → HistoryRecord（upsert 幂等，可安全覆盖旧值） */
 let historyDirtyRecords = new Map<string, HistoryRecord>();
@@ -294,7 +294,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
       set({ collections, history: mergedHistory, loadError: null });
     } catch (err) {
       console.error('[useUserStore] reload failed:', err);
-      // 2026-09-16：① 记下失败原因（页面据此渲染错误态 + 重试入口，与「真的没有数据」区分）；
+      //① 记下失败原因（页面据此渲染错误态 + 重试入口，与「真的没有数据」区分）；
       // ② 向上抛，让调用方（Collections / History 的下拉刷新）能感知失败。
       // 原先只 console.error 便返回 → 读库失败与「真的没有数据」在 UI 上无法区分，
       // 下拉刷新失败对用户零反馈。现有调用点均已处理：:54 有 .catch(() => {})，
@@ -305,8 +305,8 @@ export const useUserStore = create<UserState>()((set, get) => ({
   },
 
   /**
-   * 添加视频到收藏，已收藏的视频不会重复添加
-   */
+ * 添加视频到收藏，已收藏的视频不会重复添加
+ */
   addCollection: (videoId, meta) => {
     const existing = get().collections.find((c) => c.videoId === videoId);
     if (existing) return;
@@ -359,22 +359,22 @@ export const useUserStore = create<UserState>()((set, get) => ({
     get().collections.some((c) => c.videoId === videoId),
 
   /**
-   * 添加或更新观看历史
-   * 同一内容身份的记录会更新进度和时间，而非重复创建；「最后播放」覆盖旧进度。
-   * 去重（内容身份）策略：
-   *   - 电影：按 videoId + 线路 URL 去重 —— 每条线路各自独立维护进度
-   *   - 剧集：按 videoId + 季号 + 集标题 去重 —— 不同 CMS 源下相同选季/选集共享同一条进度
-   * 源相关字段（cmsSourceId / episodeUrl / vodId）仍记录「最后播放的那次」，仅用于续播定位。
-   */
+ * 添加或更新观看历史
+ * 同一内容身份的记录会更新进度和时间，而非重复创建；「最后播放」覆盖旧进度。
+ * 去重（内容身份）策略：
+ * - 电影：按 videoId + 线路 URL 去重 —— 每条线路各自独立维护进度
+ * - 剧集：按 videoId + 季号 + 集标题 去重 —— 不同 CMS 源下相同选季/选集共享同一条进度
+ * 源相关字段（cmsSourceId / episodeUrl / vodId）仍记录「最后播放的那次」，仅用于续播定位。
+ */
   addHistory: (record) => {
     // 去重键（同时作为持久化 id）：
-    //   电影：按 videoId + 线路 URL —— 每条线路独立进度记录，互不覆盖
-    //   剧集：按 videoId + 季号 + 集标题 —— 相同选季/选集在不同 CMS 源之间共享同一条进度记录
+    // 电影：按 videoId + 线路 URL —— 每条线路独立进度记录，互不覆盖
+    // 剧集：按 videoId + 季号 + 集标题 —— 相同选季/选集在不同 CMS 源之间共享同一条进度记录
     // 区分电影/剧集的依据是 seasonNumber：电影无剧集概念（undefined），剧集必有季号。
     // （注意：电影写入时 episodeLabel 实际被置为线路名称，不能用作区分判据。）
     // 这样「最后播放的进度」始终覆盖同一条记录，满足全局规则：
-    //   - 相同电影的不同线路各自独立进度
-    //   - 相同剧集/相同选季/相同选集，不同源进度保持一致
+    // - 相同电影的不同线路各自独立进度
+    // - 相同剧集/相同选季/相同选集，不同源进度保持一致
     // 注意：cmsSourceId / vodId 等「源相关」字段仍会被最后播放的那次覆盖，
     // 仅用于在该源上续播，不改变进度归属的内容身份。
     const isEpisodic = record.seasonNumber != null && !!record.episodeLabel;

@@ -1,9 +1,9 @@
 /* ============================================================
-   Detail — 详情页（frontend-design-pro 精修）
-   双层渐变 hero + 噪声纹理 + 交错入场动画 + 弹性交互
-   适配：Mobile / Desktop / TV
-   Design Dials: VARIANCE=8 MOTION=6 DENSITY=4
-   ============================================================ */
+ Detail — 详情页（frontend-design-pro 精修）
+ 双层渐变 hero + 噪声纹理 + 交错入场动画 + 弹性交互
+ 适配：Mobile / Desktop / TV
+ Design Dials: VARIANCE=8 MOTION=6 DENSITY=4
+ ============================================================ */
 
 .detail-page {
   display: flex;
@@ -14,9 +14,9 @@
 }
 
 .detail-page--loading {
-  /* 2026-09-12：骨架整改后此处渲染整页 DetailSkeleton（内容高 ~500px+），
-     沿用旧 AppLoading 菊花时代的 justify-content:center 会把骨架垂直居中，
-     与顶栏之间空出 ~160px（实测 1440：顶栏底 60 / 骨架顶 226）→ 改顶对齐。 */
+  /* 此处渲染整页 DetailSkeleton（内容高 ~500px+），
+ 沿用旧 AppLoading 菊花时代的 justify-content:center 会把骨架垂直居中，
+ 与顶栏之间空出 ~160px（实测 1440：顶栏底 60 / 骨架顶 226）→ 改顶对齐。 */
   justify-content: flex-start;
   align-items: center;
   min-height: var(--layout-page-min-height);
@@ -24,13 +24,13 @@
 
 /* ── Hero 区 ───────────────────────────────────── */
 
-/* 方案 A · 海报对开（2026-10-10 拍板）：左列竖海报（返回钮叠左上）| 右列文本区（横板 backdrop 底纹）。
-   基座 = 移动单列（隐藏海报列）；≥768 两列；app 恒单列；TV 视口 ≥1024 走桌面规则。
-   旧 16:9 全屏大图 / G1 全出血 / 双层渐变随 C1 一并移除——hero 高度改由内容驱动。 */
+/* · 海报对开：左列竖海报（返回钮叠左上）| 右列文本区（横板 backdrop 底纹）。
+ 基座 = 移动单列（隐藏海报列）；≥768 两列；app 恒单列；TV 视口 ≥1024 走桌面规则。
+ 旧 16:9 全屏大图 / 全出血 / 双层渐变随 一并移除——hero 高度改由内容驱动。 */
 .detail-hero {
-  /* 固定高度（2026-11-08）：移动端 30vh（280~300 封顶，用户定稿「最大 300px」）——
-     简介不能抬高 hero，长简介弹性区内滚动；桌面 ≥768 档位覆盖为 440/480/520。
-     极端内容溢出时 flex-end 使 topline 向上推出、CTA 恒在底部 */
+  /* 固定高度：移动端 30vh（280~300 封顶，「最大 300px」）——
+ 简介不能抬高 hero，长简介弹性区内滚动；桌面 ≥768 档位覆盖为 440/480/520。
+ 极端内容溢出时 flex-end 使 topline 向上推出、CTA 恒在底部 */
   --detail-hero-h: clamp(280px, 30vh, 300px);
   position: relative;
   display: grid;
@@ -42,23 +42,23 @@
 }
 
 /* TV 恢复内容驱动高度：fill/收缩/贴底机制均 :not(tv)（TV 字号 15→30px 放大，
-   固定 340~460px 会溢出裁掉 CTA）；TV 简介恒 3 行 clamp，高度天然稳定 */
+ 固定 340~460px 会溢出裁掉 CTA）；TV 简介恒 3 行 clamp，高度天然稳定 */
 [data-device="tv"] .detail-hero {
   height: auto;
 }
 
 .detail-hero--skeleton {
-  /* 2026-11-08 统一压暗层（25% 黑垫底 + overlay），见 LazyImage.css 同日注释 */
+  /* 统一压暗层（25% 黑垫底 + overlay），见 LazyImage.css 同文件注释 */
   background: linear-gradient(135deg, var(--color-skeleton) 25%, var(--color-skeleton-shine) 50%, var(--color-skeleton) 75%), rgba(0, 0, 0, 0.25);
   background-size: 200% 100%, 100% 100%;
   background-blend-mode: overlay;
   animation: skeletonShimmer var(--dur-shimmer) ease-in-out infinite;
 }
 
-/* 2026-10-10 用户要求：加载扫光不要影响内部文本/按钮 UI。
-   旧规则在 bgLoaded 前给 .detail-hero-body 加 opacity:0.4 → 真实标题/立即播放/收藏
-   被压淡、与扫光叠加显得闪烁。文本区 .detail-hero-info 本身是不透 surface 底，
-   扫光在其背后不显形，无需再压文字 → 移除压暗，正文/按钮加载期保持正常显示。 */
+/* 加载扫光不要影响内部文本/按钮 UI。
+ 旧规则在 bgLoaded 前给 .detail-hero-body 加 opacity:0.4 → 真实标题/立即播放/收藏
+ 被压淡、与扫光叠加显得闪烁。文本区 .detail-hero-info 本身是不透 surface 底，
+ 扫光在其背后不显形，无需再压文字 → 移除压暗，正文/按钮加载期保持正常显示。 */
 
 @keyframes skeletonShimmer {
   0% {
@@ -70,12 +70,12 @@
 }
 
 .detail-hero-bg {
-  /* 影院模式（2026-11-07 方案 A，用户拍板）：backdrop 图 100% 实色，不再叠透明白底
-     （旧 0.92/0.88 分主题透明度 + veil 白渐变是「白托底保深色字」时代的产物，
-     亮主题下整体发白；现文字带改深色压色 + on-image 白字，亮暗主题同构）。
-     无 backdrop 的影片露出 .detail-hero-info 的 --color-media-surface 深底，白字恒可读。
-     构图（2026-11-08 用户定稿）：left center——垂直取中带（旧 center 20% 偏上，
-     主体易被裁出上缘），水平贴左（与左侧文字带/深色压色同侧） */
+  /* 影院模式：backdrop 图 100% 实色，不再叠透明白底
+ （旧 0.92/0.88 分主题透明度 + veil 白渐变是「白托底保深色字」时代的产物，
+ 亮主题下整体发白；现文字带改深色压色 + on-image 白字，亮暗主题同构）。
+ 无 backdrop 的影片露出 .detail-hero-info 的 --color-media-surface 深底，白字恒可读。
+ 构图：left center——垂直取中带（旧 center 20% 偏上，
+ 主体易被裁出上缘），水平贴左（与左侧文字带/深色压色同侧） */
   --hero-bg-o: 1;
   position: absolute;
   inset: 0;
@@ -100,8 +100,8 @@
 }
 
 /* 右列文本区容器（底纹图 + 压色 + 内容的层叠基底）。
-   影院模式：本块默认不带底色（底色/文字色由 ≥768 影院块按「图上白字」体系注入；
-   <768 / app 端隐藏底纹图，文本区回归页底主题色，见下方对应媒体块）。 */
+ 影院模式：本块默认不带底色（底色/文字色由 ≥768 影院块按「图上白字」体系注入；
+ <768 / app 端隐藏底纹图，文本区回归页底主题色，见下方对应媒体块）。 */
 .detail-hero-info {
   position: relative;
   display: flex;
@@ -109,8 +109,8 @@
   min-width: 0;
   padding: clamp(var(--space-lg), 1.6vw, var(--space-xl));
   border-radius: var(--radius-md);
-  /* 影院模式底色（2026-11-08 全设备含移动端/app）：深色媒体承载面，
-     图未就绪 / 无 backdrop 影片的兜底，白字恒可读 */
+  /* 影院模式底色（全设备含移动端/app）：深色媒体承载面，
+ 图未就绪 / 无 backdrop 影片的兜底，白字恒可读 */
   background: var(--color-media-surface);
   overflow: hidden;
 }
@@ -276,7 +276,7 @@
 }
 
 /* meta 复合覆写：影院 on-image 白（shared-hero 单类默认白字的显式声明）。
-   ⚠️ 亮主题 --color-primary = 纯黑，on-image 语境不得引用其作前景色。 */
+ ⚠️ 亮主题 --color-primary = 纯黑，on-image 语境不得引用其作前景色。 */
 .detail-hero .detail-hero-meta {
   color: var(--color-on-image);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
@@ -289,13 +289,13 @@
 }
 
 /* .detail-hero-rating / .detail-hero-meta-item / --type：见 assets/styles/shared-hero.css
-   （Play 页 player-detail-meta 复用同一套类，必须全局可用） */
+ （Play 页 player-detail-meta 复用同一套类，必须全局可用） */
 
 /* ── 简介 ──────────────────────────────────────── */
 
 .detail-hero-desc {
-  /* 上限 80em（2026-11-08 用户定稿：比旧 65em 放宽 ~23%，但保留上限不全开——
-     大尺寸下右侧仍留一定画面余量，可读区不做无限延伸） */
+  /* 上限 80em（比旧 65em 放宽 ~23%，但保留上限不全开——
+ 大尺寸下右侧仍留一定画面余量，可读区不做无限延伸） */
   max-width: 80em;
   margin: 0;
   /* 影院 on-image 白 + 文字阴影 */
@@ -307,8 +307,8 @@
 
 /* ── 按钮组 ────────────────────────────────────── */
 
-/* CTA 区（2026-11-08 用户要求删 padding-top；margin-top:auto 仅 <768 前提下残留，
-     ≥768 贴底块中已归零） */
+/* CTA 区（删 padding-top；margin-top:auto 仅 <768 前提下残留，
+ ≥768 贴底块中已归零） */
 .detail-hero-cta-zone {
   display: flex;
   flex-direction: column;
@@ -328,9 +328,9 @@
   justify-content: center;
   align-items: center;
   /* 高度/内边距下调：旧值 min-height = --comp-btn-min-width（桌面 60px）
-     + 左右 --space-lg（桌面 28px），在 hero 里明显偏大。
-     改用 --comp-tab-height（桌面 44px）+ --space-md（桌面 18px），
-     与首页 banner CTA（padding --space-sm + 文字 ≈ 40px）量级一致。 */
+ + 左右 --space-lg（桌面 28px），在 hero 里明显偏大。
+ 改用 --comp-tab-height（桌面 44px）+ --space-md（桌面 18px），
+ 与首页 banner CTA（padding --space-sm + 文字 ≈ 40px）量级一致。 */
   min-height: var(--comp-tab-height);
   padding: 0 var(--space-md);
   border: none;
@@ -338,7 +338,7 @@
   font-size: var(--text-sm);
   font-weight: 600;
   /* 中文 4 字（"立即播放" / "加入收藏"）默认 normal 在窄容器下会被按字换行，
-     显式 nowrap 保证按钮内文字始终在同一行。 */
+ 显式 nowrap 保证按钮内文字始终在同一行。 */
   text-decoration: none;
   white-space: nowrap;
   transition: transform var(--dur-md) cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -364,7 +364,7 @@
   filter: brightness(0.9);
   box-shadow: var(--shadow-card);
 }
-/* 继续播放态（有观看历史）：首页 banner「继续播放」同款危险色胶囊（2026-11-08 用户要求） */
+/* 继续播放态（有观看历史）：首页 banner「继续播放」同款危险色胶囊 */
 .detail-btn-play--continue {
   background: var(--color-danger);
   color: var(--color-text-inverse);
@@ -424,11 +424,11 @@
 
 /* ── 桌面端右侧海报 ────────────────────────────── */
 
-/* 两列等高（2026-11-07 改定稿 · 固定高度方案）：hero 高度由 --detail-hero-h 分档固定
-   （不再由内容/展开简介驱动，展开简介只在 hero 内部溢出隐藏，见 ≥768 块）。
-   海报宽 = 高×2/3 的等比关系改由 CSS 对同一变量求值（原 JS ResizeObserver 量 info 高
-   写 --poster-w 的联动已删——它会让「展开简介」间接控制 hero 高度与海报宽度）。
-   上限 330：真机 2:3 档（≥495 高后 cover 轻微裁切，属固定高度的已知取舍）。 */
+/* 两列等高（固定高度方案）：hero 高度由 --detail-hero-h 分档固定
+ （不再由内容/展开简介驱动，展开简介只在 hero 内部溢出隐藏，见 ≥768 块）。
+ 海报宽 = 高×2/3 的等比关系改由 CSS 对同一变量求值（原 JS ResizeObserver 量 info 高
+ 写 --poster-w 的联动已删——它会让「展开简介」间接控制 hero 高度与海报宽度）。
+ 上限 330：真机 2:3 档（≥495 高后 cover 轻微裁切，属固定高度的已知取舍）。 */
 .detail-hero-poster {
   position: relative;
   display: none;
@@ -537,9 +537,9 @@
 .playlist-query-spinner {
   width: var(--comp-btn-min-height);
   height: var(--comp-btn-min-height);
-  /* 2026-10-11 修复「转圈几乎不转」：轨道旧用 --color-skeleton（=shimmer-a，
-     纸白分层后浅档 #f3f4f7 叠白底≈隐形，只剩一段主色弧在转，观感像静止）；
-     改 --color-border（浅 #d9d9d9 / 暗 #363636）使轨道可见，旋转弧完整成环 */
+  /* 修复「转圈几乎不转」：轨道旧用 --color-skeleton（=shimmer-a，
+ 纸白分层后浅档 #f3f4f7 叠白底≈隐形，只剩一段主色弧在转，观感像静止）；
+ 改 --color-border（浅 #d9d9d9 / 暗 #363636）使轨道可见，旋转弧完整成环 */
   border: 3px solid var(--color-border);
   border-radius: 50%;
   animation: querySpin 0.9s linear infinite;
@@ -558,8 +558,8 @@
 }
 
 /* （PRM 下本组件曾有 animation:none，与 animations.css 的功能性转圈白名单口径冲突：
-   白名单 !important 只补 duration/iteration、管不住 name:none → 转圈静止（2026-11-08
-   用户反馈「不转动」根因）。转圈是加载中的唯一视觉信号，PRM 下仍须旋转，规则已删。） */
+ 白名单 !important 只补 duration/iteration、管不住 name:none → 转圈静止（
+ 「不转动」根因）。转圈是加载中的唯一视觉信号，PRM 下仍须旋转，规则已删。） */
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
@@ -630,7 +630,7 @@
 }
 
 .detail-company-logo {
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(20px, 16px + 1vw, 28px);
   height: auto;
   max-height: var(--space-xl);
@@ -683,9 +683,9 @@
   object-fit: cover;
 }
 
-/* 2026-09-14：剧照改用 LazyImage 后，图外多包了一层 .lazy-image-container。
-   .detail-stills-item img 仍能命中内层 <img>，但容器本身没有尺寸 ——
-   aspect-ratio 撑不起格子、骨架占位会塌。故让容器 100% 撑满格子。 */
+/* 剧照改用 LazyImage 后，图外多包了一层 .lazy-image-container。
+ .detail-stills-item img 仍能命中内层 <img>，但容器本身没有尺寸 ——
+ aspect-ratio 撑不起格子、骨架占位会塌。故让容器 100% 撑满格子。 */
 .detail-stills-item .lazy-image-container.detail-stills-img {
   width: 100%;
   height: 100%;
@@ -704,12 +704,12 @@
 .detail-stills-more {
   position: absolute;
   inset: 0;
-  /* 2026-09-14：剧照改用 LazyImage 后必须显式抬高，否则「+N 查看更多」会被盖住。
-     原因：.lazy-image-container 是 position:relative 但 z-index:auto，
-     **不创建层叠上下文** → 其子节点 .lazy-image(z=2) / .lazy-image-placeholder(z=1)
-     与本遮罩同处一个层叠上下文里直接比较。本遮罩 z-index:auto(=0) 且虽在 DOM 里
-     排在 LazyImage 之后，仍会被 z=2 的图压在下面 → 遮罩不可见。
-     取 3 以稳定高于 LazyImage 内部所有层（占位层 1 / 图片 2）。 */
+  /* 剧照改用 LazyImage 后必须显式抬高，否则「+N 查看更多」会被盖住。
+ 原因：.lazy-image-container 是 position:relative 但 z-index:auto，
+ **不创建层叠上下文** → 其子节点 .lazy-image(z=2) / .lazy-image-placeholder(z=1)
+ 与本遮罩同处一个层叠上下文里直接比较。本遮罩 z-index:auto(=0) 且虽在 DOM 里
+ 排在 LazyImage 之后，仍会被 z=2 的图压在下面 → 遮罩不可见。
+ 取 3 以稳定高于 LazyImage 内部所有层（占位层 1 / 图片 2）。 */
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -727,7 +727,7 @@
 
 .detail-stills-more__count {
   color: var(--color-on-image);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   font-size: clamp(var(--text-xl), 2vw + 8px, var(--text-2xl));
   font-weight: 700;
   line-height: 1;
@@ -742,7 +742,7 @@
 .detail-stills-skeleton {
   aspect-ratio: 16 / 9;
   border-radius: var(--radius-md);
-  /* 2026-11-08 统一压暗层（25% 黑垫底 + overlay），见 LazyImage.css 同日注释 */
+  /* 统一压暗层（25% 黑垫底 + overlay），见 LazyImage.css 同文件注释 */
   background: linear-gradient(
     135deg,
     var(--color-skeleton) 25%,
@@ -755,9 +755,9 @@
 }
 
 /* ── 基础信息：行距单一真源 ─────────────────────
-   label 上 / 值下；一行最多 4 列（列宽地板 25% 封顶，2560 下恒 4 列）；
-   行距单一真源 = grid gap（2026-11-08 用户要求：格子删底线分区，原 border-bottom
-   + 配套 padding-bottom 一并移除，行间距完全由 gap 提供）。 */
+ label 上 / 值下；一行最多 4 列（列宽地板 25% 封顶，2560 下恒 4 列）；
+ 行距单一真源 = grid gap（格子删底线分区，原 border-bottom
+ + 配套 padding-bottom 一并移除，行间距完全由 gap 提供）。 */
 .detail-facts {
   margin-top: var(--space-xs);
 }
@@ -793,7 +793,7 @@
   color: var(--color-warning-text);
 }
 /* 国家 / 发行：独占整行，label 左·值右同行基线对齐；放不下自然换行（不折叠）。
-   行距与上方格同源 = grid gap（原「继承 border-bottom + padding-bottom」随 2026-11-08 删底线一并退役） */
+ 行距与上方格同源 = grid gap（原「继承 border-bottom + padding-bottom」随 删底线一并退役） */
 .detail-fact--full {
   display: flex;
   grid-column: 1 / -1;
@@ -813,7 +813,7 @@
 }
 
 /* ── 长字段折叠（CollapsibleValue）：clamp N 行，真溢出才出按钮；
-   行数经 --collapse-lines 传入，检测算法与两处 Chromium 坑见 index.tsx 注释。 */
+ 行数经 --collapse-lines 传入，检测算法与两处 Chromium 坑见 index.tsx 注释。 */
 .detail-collapse {
   display: block;
 }
@@ -856,10 +856,10 @@
   width: 100%;
 }
 
-/* ≥1920 固定 18 列（2026-11-08 用户定稿）：auto-fill 在 2560+ 会自动涨到 22 列，
-   用户要求大屏恒 18 列（头像列宽随 1fr 摊宽、头像定尺寸居中不受影响）。
-   折叠态几何不变：仍 2 行（--cast-collapsed-h 由 JS 按「首行高×2+rowGap」测量）。
-   排除 app（页宽受限走单列语义）/ TV（TV 档 root 字号 15→30px、头像放大，恒 18 列会挤） */
+/* ≥1920 固定 18 列：auto-fill 在 2560+ 会自动涨到 22 列，
+ 大屏恒 18 列（头像列宽随 1fr 摊宽、头像定尺寸居中不受影响）。
+ 折叠态几何不变：仍 2 行（--cast-collapsed-h 由 JS 按「首行高×2+rowGap」测量）。
+ 排除 app（页宽受限走单列语义）/ TV（TV 档 root 字号 15→30px、头像放大，恒 18 列会挤） */
 @media (width >= 1920px) {
   html:not([data-device="app"]):not([data-device="tv"]) .detail-cast-row {
     grid-template-columns: repeat(18, minmax(0, 1fr));
@@ -890,8 +890,8 @@
   border-radius: 50%;
   object-fit: cover;
 }
-/* 演员头像改用 LazyImage（2026-10-10）：圆框/边框收归容器，
-   内部图绝对铺满、不再叠加自身边框；占位 avatar 铺满容器。 */
+/* 演员头像改用 LazyImage：圆框/边框收归容器，
+ 内部图绝对铺满、不再叠加自身边框；占位 avatar 铺满容器。 */
 .detail-cast-item .detail-cast-img {
   width: var(--layout-cast-avatar);
   height: var(--layout-cast-avatar);
@@ -939,11 +939,11 @@
 }
 
 /* 折叠（全视口统一）：限制 2 行高度，超出隐藏。
-   ⚠️ 2026-09-10 修复「第二行被裁一半」：原 `max-height: 16rem` 是硬编码，
-   而头像尺寸 --layout-cast-avatar 是流体值（桌面 clamp(70px→77px) × --ui-scale），
-   条目行高随视口/UI 缩放变化 —— 实测 1440 下 2 行实际需 279px > 16rem(256px)，
-   第二行底部被裁掉 23px。现改为由 JS 按「首行条目实际高度 × 2 + grid 行间距」
-   写入 --cast-collapsed-h，任何视口/缩放档位都精确等于两行高度。 */
+ ⚠️ 修复「第二行被裁一半」：原 `max-height: 16rem` 是硬编码，
+ 而头像尺寸 --layout-cast-avatar 是流体值（桌面 clamp(70px→77px) × --ui-scale），
+ 条目行高随视口/UI 缩放变化 —— 实测 1440 下 2 行实际需 279px > 16rem(256px)，
+ 第二行底部被裁掉 23px。现改为由 JS 按「首行条目实际高度 × 2 + grid 行间距」
+ 写入 --cast-collapsed-h，任何视口/缩放档位都精确等于两行高度。 */
 .detail-cast-row--collapsed {
   max-height: var(--cast-collapsed-h, 16rem);
   overflow: hidden;
@@ -975,8 +975,8 @@
   gap: var(--space-md);
 }
 
-/* header 不换行（2026-11-08 用户要求）：关键词过长时收缩省略，
-   toolbar（重新匹配 + 源检测 pill）恒与标题同一行 */
+/* header 不换行：关键词过长时收缩省略，
+ toolbar（重新匹配 + 源检测 pill）恒与标题同一行 */
 .detail-sources-header {
   display: flex;
   flex-wrap: nowrap;
@@ -1012,7 +1012,7 @@
 
 .detail-sources-toolbar {
   display: flex;
-  /* nowrap（2026-11-08 用户要求）：重新匹配 + 源检测 pill 恒一行，pill 收缩省略不换行 */
+  /* nowrap：重新匹配 + 源检测 pill 恒一行，pill 收缩省略不换行 */
   flex-wrap: nowrap;
   gap: var(--space-sm);
   align-items: center;
@@ -1106,11 +1106,11 @@
   position: relative;
   flex-shrink: 0;
   align-self: flex-start;
-  /* 桌面宽度 56→72 封顶（2026-11-08 用户要求提升视觉分量，仍 2:3 竖图） */
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* 桌面宽度 56→72 封顶（提升视觉分量，仍 2:3 竖图） */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(40px, 28px + 2.5vw, 72px);
-  /* 高度随宽度按 2:3 自动缩放（2026-11-08 用户指正：宽改大高度必须等比；
-     原 max-height 5.5rem=88px 会把 72 宽的 108 高掐成 88，比例失真——已删） */
+  /* 高度随宽度按 2:3 自动缩放（宽改大高度必须等比；
+ 原 max-height 5.5rem=88px 会把 72 宽的 108 高掐成 88，比例失真——已删） */
   aspect-ratio: 2 / 3;
   border-radius: var(--radius-sm);
   background: var(--color-placeholder);
@@ -1216,7 +1216,7 @@ html[data-device="app"] .detail-source-thumb-year {
   align-items: center;
   width: 100%;
   padding: var(--space-2xs) var(--space-sm);
-  /* 2026-10-10 用户要求：默认边框稍加深（border-light #e8e8e8 太浅看不清）→ border-strong #bfbfbf */
+  /* 默认边框稍加深（border-light #e8e8e8 太浅看不清）→ border-strong #bfbfbf */
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
   background: transparent;
@@ -1229,7 +1229,7 @@ html[data-device="app"] .detail-source-thumb-year {
 }
 
 .detail-source-all-btn:hover {
-  /* 2026-10-10 用户要求：hover 边框不用 primary（本主题=#000 黑），改浅灰 border-strong */
+  /* hover 边框不用 primary（本主题=#000 黑），改浅灰 border-strong */
   border-color: var(--color-border-strong);
   background: var(--color-primary-bg, transparent);
   color: var(--color-primary);
@@ -1302,15 +1302,15 @@ html[data-device="app"] .detail-source-thumb-year {
 }
 .detail-season-poster {
   flex-shrink: 0;
-  /* 2026-10-10 用户反馈「竖版封面不要只拉伸高度，宽度也要调整」：
-     .detail-season-card 默认 align-items:stretch → 海报高度被拉到卡片高（随简介长短），
-     而宽度固定 → 竖长失比例。align-self:flex-start 让海报回到自身 2:3 比例（高随宽），
-     不再被卡片高度拉伸。 */
+  /* 「竖版封面不要只拉伸高度，宽度也要调整」：
+ .detail-season-card 默认 align-items:stretch → 海报高度被拉到卡片高（随简介长短），
+ 而宽度固定 → 竖长失比例。align-self:flex-start 让海报回到自身 2:3 比例（高随宽），
+ 不再被卡片高度拉伸。 */
   align-self: flex-start;
-  /* 2026-10-10 用户反馈「小视口下封面图尺寸较大」：原用 --layout-time-display-min-w
-     （流体 90→123px，且 768–1023 档命中上限 ~123px），对季卡缩略图偏大。
-     改为克制的海报档。 */
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B)：季海报缩略图专用窄档 */
+  /* 「小视口下封面图尺寸较大」：原用 --layout-time-display-min-w
+ （流体 90→123px，且 768–1023 档命中上限 ~123px），对季卡缩略图偏大。
+ 改为克制的海报档。 */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·)：季海报缩略图专用窄档 */
   width: clamp(64px, 5vw, 88px);
   aspect-ratio: 2 / 3;
   border-radius: var(--radius-sm);
@@ -1391,8 +1391,8 @@ html[data-device="app"] .detail-source-thumb-year {
 }
 
 /* 多行网格 — 列数由 --card-cols 统一驱动（与首页 TMDBMovieRow 等分公式一致：
-   列宽 = (100%-(cols-1)*gap)/cols，gap 基础 --space-md、≥1280 桌面统一
-   --hero-side-gap（见 index.css「卡片间距统一」块，2026-09-06 对齐首页）） */
+ 列宽 = (100%-(cols-1)*gap)/cols，gap 基础 --space-md、≥1280 桌面统一
+ --hero-side-gap（见 index.css「卡片间距统一」块， 对齐首页）） */
 .detail-recommend-row {
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 7), minmax(0, 1fr));
@@ -1403,10 +1403,10 @@ html[data-device="app"] .detail-source-thumb-year {
   padding: 0 var(--space-sm);
 }
 
-/* 推荐卡封面圆角（2026-10-10 用户反馈）：桌面去卡片化后 .video-card 容器
-   radius 被削（VideoCard.css:98），封面直接铺页面底变直角。与首页
-   Home.css「.home-page .video-card-cover」同口径补回 --radius-md。
-   ≤767 / app / tv 卡片容器仍带 radius+overflow 裁切，无需补。 */
+/* 推荐卡封面圆角：桌面去卡片化后 .video-card 容器
+ radius 被削（VideoCard.css:98），封面直接铺页面底变直角。与首页
+ Home.css「.home-page .video-card-cover」同口径补回 --radius-md。
+ ≤767 / app / tv 卡片容器仍带 radius+overflow 裁切，无需补。 */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .detail-recommend .video-card-cover {
     border-radius: var(--radius-md);
@@ -1427,8 +1427,8 @@ html[data-device="app"] .detail-source-thumb-year {
 }
 
 /* ============================================================
-   Mobile (≤ 767px)
-   ============================================================ */
+ Mobile (≤ 767px)
+ ============================================================ */
 
 @media (width <= 480px) {
   .detail-sources-grid {
@@ -1440,12 +1440,12 @@ html[data-device="app"] .detail-source-thumb-year {
   }
 
   .detail-source-thumb {
-    /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+    /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
     width: clamp(48px, 40px + 4vw, 72px);
     aspect-ratio: 2 / 3;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 480px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 480px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .detail-sources-grid {
   grid-template-columns: minmax(0, 1fr);
@@ -1456,7 +1456,7 @@ html[data-device="app"] .detail-source-thumb-year {
   }
 
   html[data-device="app"] .detail-source-thumb {
-    /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+    /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
     width: clamp(48px, 40px + 4vw, 72px);
     aspect-ratio: 2 / 3;
     max-height: 6.5rem;
@@ -1465,12 +1465,12 @@ html[data-device="app"] .detail-source-thumb-year {
 
 
 @media (width <= 767px) {
-  /* 移动端启用横板底纹（2026-11-08 用户要求，推翻 2026-10-10「页底白形态」旧决策）：
-     hero 已影院化（深底 + on-image 白字），底纹图/压色层与桌面同一体系；
-     文本区保持全出血无圆角（padding 左右 0，文字贴屏缘，可读性靠深色 veil + 文字阴影） */
+  /* 移动端启用横板底纹（推翻 「页底白形态」旧决策）：
+ hero 已影院化（深底 + on-image 白字），底纹图/压色层与桌面同一体系；
+ 文本区保持全出血无圆角（padding 左右 0，文字贴屏缘，可读性靠深色 veil + 文字阴影） */
   .detail-hero-info {
-    /* 左右 padding 恢复（2026-11-08）：底纹图 absolute inset 0 全出血不受影响，
-       白字贴屏缘不可读；上下 0 改 md 统一 */
+    /* 左右 padding 恢复：底纹图 absolute inset 0 全出血不受影响，
+ 白字贴屏缘不可读；上下 0 改 md 统一 */
     padding: var(--space-md);
     border-radius: 0;
     background: var(--color-media-surface);
@@ -1515,7 +1515,7 @@ html[data-device="app"] .detail-source-thumb-year {
   align-items: flex-start;
   }
   .detail-season-poster {
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(48px, 40px + 4vw, 72px);
   }
   .detail-season-info {
@@ -1529,8 +1529,8 @@ html[data-device="app"] .detail-source-thumb-year {
   grid-template-columns: repeat(2, 1fr);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本（方案 A 后 hero 单列/海报列隐藏由基座提供；
-   2026-11-08 随移动端启用底纹：bg/veil 不再隐藏，info 深底同步） */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本（hero 单列/海报列隐藏由基座提供；
+ 随移动端启用底纹：bg/veil 不再隐藏，info 深底同步） */
 
   html[data-device="app"] .detail-hero-info {
     padding: var(--space-md);
@@ -1573,7 +1573,7 @@ html[data-device="app"] .detail-source-thumb-year {
   align-items: flex-start;
   }
   html[data-device="app"] .detail-season-poster {
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   width: clamp(48px, 40px + 4vw, 72px);
   }
   html[data-device="app"] .detail-season-info {
@@ -1590,26 +1590,26 @@ html[data-device="app"] .detail-source-thumb-year {
 
 
 /* ============================================================
-   ≥ 768px（非 app）— 方案 A 两列启用：海报列 + 文本列
-   ── 固定高度（2026-11-07 用户定稿）─────────────────────────
-   根因：hero 高度原本由文本区内容驱动 + RO 把 info 高换算成海报宽写回 --poster-w，
-   「展开简介」解除 3 行 clamp → 文本列变高 → 海报变宽 + hero 被拉高（实测 2000 字
-   简介展开后 hero 冲到 2185px），展开按钮成了整块高度的控制器；折叠态行尾/钉底 CTA
-   之间又留下大片空白。
-   方案：hero 高度按视口分档固定（--detail-hero-h），海报宽 = min(高×2/3, 330) 由 CSS
-   对同一变量求值；简介区成为文本列的弹性区（flex:1 + min-height:0 + overflow:hidden），
-   展开后放不下的文本在简介区内裁切，「展开/收起」按钮始终可见。骨架复用同一批真实类，
-   固定高度自动生效（DetailSkeleton 的同款 JS 测量已同步删除）。
-   分档依据（mock 长简介实测折叠态 info 高）：768→309 / 1440→336 / 2560→385，
-   叠加真实 worst case（logo 失败回退 h1、meta 折行、观看进度行）≈ +110 → 440 起步；
-   视口越大档位越高，兼顾海报 2:3 观感与首屏信息量。
-   ============================================================ */
+ ≥ 768px（非 app）— 两列启用：海报列 + 文本列
+ ── 固定高度─────────────────────────
+ 根因：hero 高度原本由文本区内容驱动 + RO 把 info 高换算成海报宽写回 --poster-w，
+ 「展开简介」解除 3 行 clamp → 文本列变高 → 海报变宽 + hero 被拉高（实测 2000 字
+ 简介展开后 hero 冲到 2185px），展开按钮成了整块高度的控制器；折叠态行尾/钉底 CTA
+ 之间又留下大片空白。
+ hero 高度按视口分档固定（--detail-hero-h），海报宽 = min(高×2/3, 330) 由 CSS
+ 对同一变量求值；简介区成为文本列的弹性区（flex:1 + min-height:0 + overflow:hidden），
+ 展开后放不下的文本在简介区内裁切，「展开/收起」按钮始终可见。骨架复用同一批真实类，
+ 固定高度自动生效（DetailSkeleton 的同款 JS 测量已同步删除）。
+ 分档依据（mock 长简介实测折叠态 info 高）：768→309 / 1440→336 / 2560→385，
+ 叠加真实 worst case（logo 失败回退 h1、meta 折行、观看进度行）≈ +110 → 440 起步；
+ 视口越大档位越高，兼顾海报 2:3 观感与首屏信息量。
+ ============================================================ */
 
 @media (width >= 768px) {
   html:not([data-device="app"]) .detail-hero {
     --detail-hero-h: 440px;
     grid-template-columns: minmax(0, min(calc(var(--detail-hero-h) * 2 / 3), 330px)) minmax(0, 1fr);
-    /* gap 已删（2026-11-08 用户要求）：海报列与文本列齐贴 */
+    /* gap 已删：海报列与文本列齐贴 */
     height: var(--detail-hero-h);
   }
 
@@ -1618,12 +1618,12 @@ html[data-device="app"] .detail-source-thumb-year {
   }
 }
 
-/* ── hero 内容簇贴底 + 简介弹性收缩（2026-11-08 scope 扩展：全宽度、除 TV 外全设备）──
-   移动端 hero 也固定高度（基础规则 clamp(340px,58vh,460px)），展开简介永不撑大 hero */
+/* ── hero 内容簇贴底 + 简介弹性收缩（scope 扩展：全宽度、除 TV 外全设备）──
+ 移动端 hero 也固定高度（基础规则 clamp(340px,58vh,460px)），展开简介永不撑大 hero */
 /* 文本列体固定在 info 内框高度（min-height:0 允许 flex 收缩，否则内容高会把 body
-   撑到超出 info 被 overflow:hidden 连 CTA 一起裁掉——展开简介后按钮不可见）。
-   内容簇贴底（2026-11-08 用户定稿）：全部元素尽量靠近 CTA 按钮，空区上浮；
-   长简介向上抬升直至撑满（唯一可收缩项），仍有剩余则出「展开简介」 */
+ 撑到超出 info 被 overflow:hidden 连 CTA 一起裁掉——展开简介后按钮不可见）。
+ 内容簇贴底：全部元素尽量靠近 CTA 按钮，空区上浮；
+ 长简介向上抬升直至撑满（唯一可收缩项），仍有剩余则出「展开简介」 */
 html:not([data-device="tv"]) .detail-hero-body {
   justify-content: flex-end;
   min-height: 0;
@@ -1632,23 +1632,23 @@ html:not([data-device="tv"]) .detail-hero-body {
 html:not([data-device="tv"]) .detail-hero-body > * {
   flex-shrink: 0;
 }
-/* topline 恒在顶部（2026-11-08 用户要求）：内容簇贴底但 kicker/官方页面行例外——
-   margin-bottom:auto 吸收全部剩余空间，把其余元素压向底部；
-   长简介撑满时簇整体抬升，topline 自然仍在顶 */
+/* topline 恒在顶部：内容簇贴底但 kicker/官方页面行例外——
+ margin-bottom:auto 吸收全部剩余空间，把其余元素压向底部；
+ 长简介撑满时簇整体抬升，topline 自然仍在顶 */
 html:not([data-device="tv"]) .detail-hero-topline {
-  /* 再往上移一点（2026-11-08 用户要求）：负 margin 吃掉 info 顶部 padding 的一部分 */
+  /* 再往上移一点：负 margin 吃掉 info 顶部 padding 的一部分 */
   margin-top: calc(-1 * var(--space-sm));
   margin-bottom: auto;
 }
 /* CTA 原以 margin-top:auto 钉底（内容顶堆叠时代的产物）——内容簇贴底后它会把
-   简介与按钮重新拉开死区，必须归零（间距由 body 的 gap 承担） */
+ 简介与按钮重新拉开死区，必须归零（间距由 body 的 gap 承担） */
 html:not([data-device="tv"]) .detail-hero-cta-zone {
   margin-top: 0;
 }
 
 /* 简介区 = 唯一可收缩项：短简介自然高贴住 meta 下方，长简介向上抬升
-   直至元素撑满 hero，超出部分裁切；展开后原地滚动（见 txt--open）。
-   按钮挂简介区末尾（flex 不参与收缩）保证「收起」始终可见、不被文本推出裁切。 */
+ 直至元素撑满 hero，超出部分裁切；展开后原地滚动（见 txt--open）。
+ 按钮挂简介区末尾（flex 不参与收缩）保证「收起」始终可见、不被文本推出裁切。 */
 html:not([data-device="tv"]) .detail-hero-desc {
   display: flex;
   flex: 0 1 auto;
@@ -1664,10 +1664,10 @@ html:not([data-device="tv"]) .detail-hero-desc .detail-collapse {
 }
 html:not([data-device="tv"]) .detail-hero-desc .detail-collapse-txt {
   /* 收起态 = 动态行数 clamp（TSX RO 按可用高度÷行高取整写回 --collapse-lines，
-     整行裁切不裁半行）；展开态 = 原地滚动（见 txt--open） */
+ 整行裁切不裁半行）；展开态 = 原地滚动（见 txt--open） */
   flex: 0 1 auto;
-  /* 文字底板（2026-11-08）：半透暗 chip + fit-content 贴文字——backdrop 明暗不可控，
-     亮图上白字靠底板保证对比（HeroBanner desc 同语言），亮暗图通吃 */
+  /* 文字底板：半透暗 chip + fit-content 贴文字——backdrop 明暗不可控，
+ 亮图上白字靠底板保证对比（HeroBanner desc 同语言），亮暗图通吃 */
   width: fit-content;
   max-width: 100%;
   min-height: 0;
@@ -1697,14 +1697,14 @@ html:not([data-device="tv"]) .detail-hero-desc .detail-collapse-txt--open {
 }
 
 /* ============================================================
-   ≥ 768px（非 app）— 影院模式（2026-11-07 方案 A，用户拍板）
-   ── on-image 文字/按钮体系 ──────────────────────────────────
-   背景：旧「白 surface 托底 + 白 veil 渐变 + 主题深色字」在亮主题下把
-   backdrop 洗得发白（图 0.92 叠白底 + veil 白渐变盖 70% 宽）。改与首页
-   HeroBanner / 播放页沉浸区同一语言：图 100% 实色 + 左侧深色渐变压色 +
-   文字/按钮切 on-image 白色系，亮暗主题观感一致。
-   ⚠️ 亮主题 --color-primary = 纯黑，on-image 语境一律不得引用其作前景色。
-   ============================================================ */
+ ≥ 768px（非 app）— 影院模式
+ ── on-image 文字/按钮体系 ──────────────────────────────────
+ 背景：旧「白 surface 托底 + 白 veil 渐变 + 主题深色字」在亮主题下把
+ backdrop 洗得发白（图 0.92 叠白底 + veil 白渐变盖 70% 宽）。改与首页
+ HeroBanner / 播放页沉浸区同一语言：图 100% 实色 + 左侧深色渐变压色 +
+ 文字/按钮切 on-image 白色系，亮暗主题观感一致。
+ ⚠️ 亮主题 --color-primary = 纯黑，on-image 语境一律不得引用其作前景色。
+ ============================================================ */
 
 /* Tablet (768–1023px)：播放列表两列 */
 @media (width >= 768px) and (width <= 1023px) {
@@ -1721,12 +1721,12 @@ html:not([data-device="tv"]) .detail-hero-desc .detail-collapse-txt--open {
 }
 
 /* ============================================================
-   Desktop (≥ 1024px)
-   ============================================================ */
+ Desktop (≥ 1024px)
+ ============================================================ */
 
 @media (width >= 1024px) {
-  /* （方案 A：旧 ≥1024 hero 16:9 最小高/横排 content/海报显隐等规则已移除，
-     两列形态统一由上方 ≥768 块提供） */
+  /* （旧 ≥1024 hero 16:9 最小高/横排 content/海报显隐等规则已移除，
+ 两列形态统一由上方 ≥768 块提供） */
 
   html:not([data-device="app"]) .detail-seasons {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1744,16 +1744,16 @@ html:not([data-device="tv"]) .detail-hero-desc .detail-collapse-txt--open {
 }
 
 /* ============================================================
-   移动端 / App 端 — 隐藏返回按钮
-   ============================================================ */
+ 移动端 / App 端 — 隐藏返回按钮
+ ============================================================ */
 [data-device="mobile-web"] .detail-hero-back,
 [data-device="app"] .detail-hero-back {
   display: none;
 }
 
 /* ============================================================
-   TV 端
-   ============================================================ */
+ TV 端
+ ============================================================ */
 
 [data-device="tv"] .detail-hero-info {
   padding: var(--space-2xl);
@@ -1777,48 +1777,45 @@ html:not([data-device="tv"]) .detail-hero-desc .detail-collapse-txt--open {
   font-size: var(--text-base);
 }
 
-/* 旧上半部两栏容器 .detail-top（方案 A 后 DOM 已无此包裹层，规则移除 2026-10-10） */
+/* 旧上半部两栏容器 .detail-top（DOM 已无此包裹层，规则移除 ） */
 
 /* ═══════════════════════════════════════════════════════════════════════
-   【已退役 2026-10-10】上半部两栏 — C1 排列（被方案 A · 海报对开取代；原规则块已删除，注释留史）：
-   changelogs/demos/demo-widescreen-overhaul-2026-09-10.html 议题④
+ 【已退役 】上半部两栏 — 排列（被海报对开布局取代；原规则块已删除，注释留史）：
 
-   为什么是「右栏只放文本类信息」：
-   详情「概览」tab 的内容分两种形态 ——
-     · 纵向 KV 文本（类型标签 / 基础信息 / 发行公司）→ 适合窄栏竖排；
-     · 横向铺开的内容（演员横滚条、剧照大图网格）→ 放窄栏会严重缩水、
-       甚至失去横滚语义，必须保持通栏。
-   实测 C1 右栏内容恰好填满 hero 高度（1440/1920/2560 均为 378/397/422px），
-   不需要滚动；字段更多的影片/剧集由下面的 overflow 兜底。
+ 为什么是「右栏只放文本类信息」：
+ 详情「概览」tab 的内容分两种形态 ——
+ · 纵向 KV 文本（类型标签 / 基础信息 / 发行公司）→ 适合窄栏竖排；
+ · 横向铺开的内容（演员横滚条、剧照大图网格）→ 放窄栏会严重缩水、
+ 甚至失去横滚语义，必须保持通栏。
+ 实测 右栏内容恰好填满 hero 高度（1440/1920/2560 均为 378/397/422px），
+ 不需要滚动；字段更多的影片/剧集由下面的 overflow 兜底。
 
-   ⚠️ 断点 ≥1024 与 isWideDetail（!isMobile && !isTV）一致 ——
-   移动端/平板竖屏/ TV 端不进入本块，基础信息仍渲染在 info tab 内（行为不变）。
-   ═══════════════════════════════════════════════════════════════════════ */
+ ⚠️ 断点 ≥1024 与 isWideDetail（!isMobile && !isTV）一致 ——
+ 移动端/平板竖屏/ TV 端不进入本块，基础信息仍渲染在 info tab 内（行为不变）。
+ ═══════════════════════════════════════════════════════════════════════ */
 @media (width >= 1024px) {
-  /* （旧 C1 两栏 / 右栏定高滚动 / 海报 ×0.78 规则已随方案 A 移除；
-     ≥768 两列见上方基础区 .detail-hero） */
+  /* （旧 两栏 / 右栏定高滚动 / 海报 ×0.78 规则已随移除；
+ ≥768 两列见上方基础区 .detail-hero） */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   去卡片化（第二批，2026-09-30）— 桌面（≥768 非 app 非 TV）移除卡片四件套
+ 去卡片化（第二批）— 桌面（≥768 非 app 非 TV）移除卡片四件套
 
-   背景：2026-09-28「桌面端全站去卡片化」只覆盖了本页右栏
-   `.detail-hero-side`（位于上方 ≥1024 块内），页面主体仍留着卡片 chrome。
-   用户 2026-09-30 指出「detail 页元素去卡片化不彻底」，确认范围为
-   概览 / 相关推荐 / 你可能还喜欢（对应下列两个选择器）。
+ 背景：「桌面端全站去卡片化」只覆盖了本页右栏
+ `.detail-hero-side`（位于上方 ≥1024 块内），页面主体仍留着卡片 chrome。
+ 去卡片化范围 = 概览 / 相关推荐 / 你可能还喜欢（对应下列两个选择器）。
 
-   · .detail-content    三 tab 共用容器大卡（border + radius-lg + surface + shadow-card）
-   · .detail-recommend  相关推荐 / 你可能还喜欢，各一张（border + radius-lg + surface + shadow-card）
+ · .detail-content 三 tab 共用容器大卡（border + radius-lg + surface + shadow-card）
+ · .detail-recommend 相关推荐 / 你可能还喜欢，各一张（border + radius-lg + surface + shadow-card）
 
-   保留：`.detail-source-group`（匹配结果内每个 CMS 源一张）——用户 2026-09-30
-   明确要求「仍要保留卡片化」（去容器卡后，源卡是该区块唯一视觉容器，故保留）；
-   hero 大图圆角、hero 右侧海报卡、类型标签 chip、弹窗内行卡同为用户确认保留；
-   封面 / 剧照 / 骨架 / 控件按 2026-09-28 惯例本就豁免。
-   季信息 tab 的 `.detail-season-card` 不在本次范围，保持卡片。
-   TV / 移动端（≤767）/ html[data-device="app"] 全部保留卡片。
-   `.detail-content` 的 `overflow: hidden` 与 margin、`.detail-recommend` 的
-   padding 属布局，非卡片 chrome，保留不动。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 保留：`.detail-source-group`（匹配结果内每个 CMS 源一张，去容器卡后是该区块唯一视觉容器）；
+ hero 大图圆角、hero 右侧海报卡、类型标签 chip、弹窗内行卡同样保留卡片化；
+ 封面 / 剧照 / 骨架 / 控件按 惯例本就豁免。
+ 季信息 tab 的 `.detail-season-card` 不在本次范围，保持卡片。
+ TV / 移动端（≤767）/ html[data-device="app"] 全部保留卡片。
+ `.detail-content` 的 `overflow: hidden` 与 margin、`.detail-recommend` 的
+ padding 属布局，非卡片 chrome，保留不动。
+ ═══════════════════════════════════════════════════════════════════════ */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .detail-content,
   html:not([data-device="app"]):not([data-device="tv"]) .detail-recommend {

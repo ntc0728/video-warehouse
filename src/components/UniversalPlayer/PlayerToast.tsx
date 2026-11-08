@@ -25,7 +25,7 @@ export function playerToast(msg: string, duration?: number, type?: PlayerToastTy
   playerToastRef.current?.(msg, duration, type);
 }
 
-/** 命令式 API（移动端更多设置操作提示——顶部居中，与 HTML demo 定位一致） */
+/** 命令式 API（移动端更多设置操作提示——顶部居中，与 HTML 定位一致） */
  
 const mobileSettingsToastRef: { current: ((msg: string, duration?: number, type?: PlayerToastType) => void) | null } = { current: null };
 
@@ -56,10 +56,10 @@ const TOAST_ICONS: Record<Exclude<PlayerToastType, 'default'>, { icon: LucideIco
 /**
  * 播放器内提示：操作类（播放/暂停、音量、切线路、切频道、频道号等）+ 更多设置操作类。
  * - 桌面端：操作类提示渲染于播放器右上角（.up-player-toast），紧贴右上角（top: space-lg）——
- *   IPTV 播放页全屏按钮已移至右下角，头部右上角无控件可避让；与全局 sonner toast（中间靠上）区分。
+ * IPTV 播放页全屏按钮已移至右下角，头部右上角无控件可避让；与全局 sonner toast（中间靠上）区分。
  * - 移动端（mobileCenter，仅真实移动设备 App / 真实手机 UA）：操作类提示改在屏幕居中渲染
- *   （.up-player-center-toast，portal 到 body），与更多设置提示一致；
- *   桌面窄窗（视口 <768 但非移动设备）仍走右上角 .up-player-toast。
+ * （.up-player-center-toast，portal 到 body），与更多设置提示一致；
+ * 桌面窄窗（视口 <768 但非移动设备）仍走右上角 .up-player-toast。
  * 统一 3s 自动消失；show(msg, duration, type) 支持语义色图标。
  */
 export function ToastProvider({
@@ -90,14 +90,14 @@ export function ToastProvider({
   const viewportAnchoredRef = useRef(false);
 
   /**
-   * 测量居中提示的目标锚点：
-   * - `roomy`：播放器在视口内还留有足够可见高度（≥ MIN_TOAST_ROOM）
-   * - 播放器可见时：锚到「播放器 ∩ 视口」的可见交集内 —— 水平居中于播放器，
-   *   垂直在播放器高度 30% 处（居中靠上，不遮挡视频主体），并避让 up-player-header。
-   *   ⚠️ 提示以 top 为中心（translate(-50%,-50%)），余量必须 ≥ 提示半高（~18px）
-   *   才不会与 header 重叠（历史 bug：余量 12px 时提示上半截伸进 header 区域）。
-   * - 播放器完全滚出视口时：退回视口定位（居中靠上），由调用方决定是否显示。
-   */
+ * 测量居中提示的目标锚点：
+ * - `roomy`：播放器在视口内还留有足够可见高度（≥ MIN_TOAST_ROOM）
+ * - 播放器可见时：锚到「播放器 ∩ 视口」的可见交集内 —— 水平居中于播放器，
+ * 垂直在播放器高度 30% 处（居中靠上，不遮挡视频主体），并避让 up-player-header。
+ * ⚠️ 提示以 top 为中心（translate(-50%,-50%)），余量必须 ≥ 提示半高（~18px）
+ * 才不会与 header 重叠（历史 bug：余量 12px 时提示上半截伸进 header 区域）。
+ * - 播放器完全滚出视口时：退回视口定位（居中靠上），由调用方决定是否显示。
+ */
   const resolveCenterAnchor = useCallback((): { x: number; y: number; roomy: boolean } => {
     const el = containerRef?.current;
     const viewportFallback = {
@@ -108,7 +108,7 @@ export function ToastProvider({
     if (!el) return viewportFallback;
     const rect = el.getBoundingClientRect();
     // 提示必须落在「播放器 ∩ 视口」的可见交集内。只按视口夹取会让播放器滚走之后提示
-    // 仍停在视口顶部（用户反馈：移动端下滑后提示像跟着浏览器顶部定位，且 fixed 层级
+    // 仍停在视口顶部（移动端下滑后提示像跟着浏览器顶部定位，且 fixed 层级
     // 反而浮在播放器上方）。
     const visibleTop = Math.max(rect.top, 0);
     const visibleBottom = Math.min(rect.bottom, window.innerHeight);
@@ -151,7 +151,7 @@ export function ToastProvider({
     // 触发时播放器已在视口外（典型：设置弹窗 / 抽屉把页面滚下去了）——这是本次操作的
     // 直接反馈，不能因为播放器不在视野里就吞掉，退回视口定位显示。
     // 这种「视口兜底锚定」的提示此后不随滚动自动隐藏；而播放器可见时锚定的提示，
-    // 一旦被滚走就隐藏（用户反馈：下滑后提示不该悬在已滑过去的播放器上方）。
+    // 一旦被滚走就隐藏（下滑后提示不该悬在已滑过去的播放器上方）。
     viewportAnchoredRef.current = !anchor.roomy;
     setCenterVisible(true);
     setCenterPos({ x: anchor.x, y: anchor.y });

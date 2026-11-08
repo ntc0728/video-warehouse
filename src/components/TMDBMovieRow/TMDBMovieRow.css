@@ -1,6 +1,6 @@
 /* ============================================================
-   TMDBMovieRow — 横向滚动行
-   ============================================================ */
+ TMDBMovieRow — 横向滚动行
+ ============================================================ */
 
 .tmdb-movierow {
   margin-bottom: var(--space-lg);
@@ -40,12 +40,12 @@
 }
 
 /* ── 「查看全部」文字链接（行标题右侧，首页 7 推荐行） ──────────────
-   样式口径：text-xs +
-   text-secondary，hover 提亮 + surface-hover 底。可见性分档：
-   · 桌面 ≥1024 非 TV（渲染侧已保证该档才传 onViewAll，故无需 media query）：
-     默认低透明度，hover 行 / 行内获得焦点时显现；
-   · TV：恒显（不依赖 hover），button 原生可聚焦，遥控焦点可达；
-   · 移动端（≤1023 / App）：不传 onViewAll，元素根本不渲染。 */
+ 样式口径：text-xs +
+ text-secondary，hover 提亮 + surface-hover 底。可见性分档：
+ · 桌面 ≥1024 非 TV（渲染侧已保证该档才传 onViewAll，故无需 media query）：
+ 默认低透明度，hover 行 / 行内获得焦点时显现；
+ · TV：恒显（不依赖 hover），button 原生可聚焦，遥控焦点可达；
+ · 移动端（≤1023 / App）：不传 onViewAll，元素根本不渲染。 */
 .tmdb-movierow-viewall {
   display: inline-flex;
   flex: 0 0 auto;
@@ -96,19 +96,19 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
 }
 
 /* 滚动容器 — 永久隐藏横滚条（桌面端用左右箭头按钮，移动端触摸滑动）
-   padding 设为 0，box width 严格等于 100% 公式参考，N 张 card 严格填满可视区 */
+ padding 设为 0，box width 严格等于 100% 公式参考，N 张 card 严格填满可视区 */
 .tmdb-movierow-scroll {
   display: flex;
-  /* 卡片间距 --space-md（2026-09-04 用户调整）：首页行内间距小于全站网格 --space-lg。
-     ⚠️ 下方卡片宽度公式 (100%-(cols-1)*gap)/cols 与骨架行（Home.css）都用 --space-md，
-     改这里必须三处联动，否则 100% 宽公式算出的卡宽与可视区错位。 */
+  /* 卡片间距 --space-md：首页行内间距小于全站网格 --space-lg。
+ ⚠️ 下方卡片宽度公式 (100%-(cols-1)*gap)/cols 与骨架行（Home.css）都用 --space-md，
+ 改这里必须三处联动，否则 100% 宽公式算出的卡宽与可视区错位。 */
   gap: var(--space-md);
   /* 上下留白：TV 聚焦时卡片 scale 放大 + 焦点方框向外延伸，
-     若此处为 0 会被 overflow:auto hidden 纵向裁掉（表现为「方框被裁 / 只剩小圆点」）。
-     padding-block 用 --space-md（桌面 18px / TV 36px）给放大与方框留足空间，
-     且不影响横向卡片宽度的 100% 公式。
-     padding-inline + scroll-padding-inline：行首尾卡片的焦点方框在横滚尽头也有缓冲，
-     不被 overflow-x 裁掉。 */
+ 若此处为 0 会被 overflow:auto hidden 纵向裁掉（表现为「方框被裁 / 只剩小圆点」）。
+ padding-block 用 --space-md（桌面 18px / TV 36px）给放大与方框留足空间，
+ 且不影响横向卡片宽度的 100% 公式。
+ padding-inline + scroll-padding-inline：行首尾卡片的焦点方框在横滚尽头也有缓冲，
+ 不被 overflow-x 裁掉。 */
   padding: var(--space-md) var(--space-xs);
   scroll-padding-inline: var(--space-xs);
   overflow: auto hidden;
@@ -131,8 +131,8 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   cursor: grabbing;
 }
 /* 内容替换瞬间临时禁 snap：分类切换时 scroll-snap 会把 scrollLeft 拉到 maxScroll，
-   导致可见卡与预加载范围错位 → 未命中缓存 → 骨架遮罩闪。复位 scrollLeft=0 期间
-   关闭 snap，避免复位瞬间又被吸附回去；下一帧内容稳定后移除本类恢复 snap。 */
+ 导致可见卡与预加载范围错位 → 未命中缓存 → 骨架遮罩闪。复位 scrollLeft=0 期间
+ 关闭 snap，避免复位瞬间又被吸附回去；下一帧内容稳定后移除本类恢复 snap。 */
 .tmdb-movierow-scroll--no-snap {
   scroll-snap-type: none;
   scroll-behavior: auto;
@@ -144,7 +144,7 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
 }
 
 /* 卡片容器 — 宽度跟随 --card-cols 动态计算，与网格列数完全一致
-   cursor 移到这里：仅在 card 上显示 grab；空白处不响应拖动（pointerdown 直接 return） */
+ cursor 移到这里：仅在 card 上显示 grab；空白处不响应拖动（pointerdown 直接 return） */
 .tmdb-movierow-card {
   flex: 0 0 calc(
     (100% - (var(--card-cols, 7) - 1) * var(--space-md))
@@ -169,7 +169,7 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   position: relative;
   width: 100%;
   border-radius: var(--radius-md);
-  /* 与 .video-card__poster 一致的 shimmer 封面（2026-11-08 统一压暗层，见 LazyImage.css） */
+  /* 与 .video-card__poster 一致的 shimmer 封面（统一压暗层，见 LazyImage.css） */
   background: linear-gradient(
     90deg,
     var(--color-placeholder-shimmer-a) 25%,
@@ -183,11 +183,11 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   aspect-ratio: 2 / 3;
 }
 
-/* 角标皮肤（2026-11-08 方案B 二次定稿）：竖版三角标/横版源徽章直接复用真实类
-   （.video-card-rating / -year-badge / -type / -landscape__source-badge）+ 真实内容，
-   定位/尺寸全部由 VideoCard.css 唯一决定 → 与真实元素像素级一致；
-   皮肤层只换底色为骨架灰、文字/图标透明、去毛玻璃。
-   TR 收藏钮静态态不可见 → 骨架不画。 */
+/* 角标皮肤：竖版三角标/横版源徽章直接复用真实类
+ （.video-card-rating / -year-badge / -type / -landscape__source-badge）+ 真实内容，
+ 定位/尺寸全部由 VideoCard.css 唯一决定 → 与真实元素像素级一致；
+ 皮肤层只换底色为骨架灰、文字/图标透明、去毛玻璃。
+ TR 收藏钮静态态不可见 → 骨架不画。 */
 .tmdb-movierow-skeleton-skin {
   background: var(--color-skeleton);
   color: transparent;
@@ -205,7 +205,7 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
 }
 
 /* 横版骨架（继续观看行）：16:9 封面 + 左上源徽章（复用真实类）+ 底部左标题条 /
-   右侧年份+时间块 / 底部进度条占位（真实卡同位置） */
+ 右侧年份+时间块 / 底部进度条占位（真实卡同位置） */
 .tmdb-movierow-skeleton--landscape .tmdb-movierow-skeleton-img {
   aspect-ratio: 16 / 9;
 }
@@ -222,8 +222,8 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
-/* 右下年份+时间块：与标题同一行、右对齐（2026-11-08 加宽：
-   真实右下同行 = 「年份 + 进度时间」，单年份宽度不足以镜像） */
+/* 右下年份+时间块：与标题同一行、右对齐（加宽：
+ 真实右下同行 = 「年份 + 进度时间」，单年份宽度不足以镜像） */
 .tmdb-movierow-skeleton-land-year {
   position: absolute;
   right: var(--space-xs);
@@ -252,10 +252,10 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
 }
 
 /* 滚动箭头 — 圆形玻璃态
-   垂直锚点（2026-10-09 用户要求）：以封面图中心为参考，而非含标题信息的整卡 ——
-   封面中心 Y 随断点列数 / 卡片变体（竖版 2:3 / 继续观看横版）变化，CSS 无法静态
-   求值，由 TMDBMovieRow 实测首个 .video-card-cover 中心注入 --tmdb-arrow-cy；
-   未测量（SSR 首帧/骨架无封面）回退 50%。 */
+ 垂直锚点：以封面图中心为参考，而非含标题信息的整卡 ——
+ 封面中心 Y 随断点列数 / 卡片变体（竖版 2:3 / 继续观看横版）变化，CSS 无法静态
+ 求值，由 TMDBMovieRow 实测首个 .video-card-cover 中心注入 --tmdb-arrow-cy；
+ 未测量（SSR 首帧/骨架无封面）回退 50%。 */
 .tmdb-movierow-arrow {
   position: absolute;
   top: var(--tmdb-arrow-cy, 50%);
@@ -270,7 +270,7 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   background: rgba(15, 15, 15, 0.55);
   color: var(--color-on-image);
   /* 桌面端默认隐藏，悬停到 .tmdb-movierow-wrapper 才淡入（见下方规则）。
-     移动端箭头本就不渲染（!isMobile），TV 端 display:none 覆盖，二者均不受影响。 */
+ 移动端箭头本就不渲染（!isMobile），TV 端 display:none 覆盖，二者均不受影响。 */
   opacity: 0;
   transform: translateY(-50%);
   transition: opacity var(--dur-sm) ease, background var(--dur-sm) ease, box-shadow var(--dur-sm) ease, transform var(--dur-2xs) ease;
@@ -280,7 +280,7 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
 }
 
 /* 桌面端：悬停到该行（wrapper）才显示左右箭头；键盘聚焦箭头（:focus-within）也显示，
-   保证键盘可达性（非 TV 已无焦点框，必须用可见性提示焦点所在）。 */
+ 保证键盘可达性（非 TV 已无焦点框，必须用可见性提示焦点所在）。 */
 .tmdb-movierow-wrapper:hover .tmdb-movierow-arrow,
 .tmdb-movierow-wrapper:focus-within .tmdb-movierow-arrow {
   opacity: 1;
@@ -292,8 +292,8 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
 }
 
 /* 点击反馈：保留 translateY(-50%) 居中 + 轻微 scale(0.92) 做按下回弹。
-   该箭头已被列入全局排除名单（index.css .tmdb-movierow-arrow{scale:none!important}），
-   因此全局弹性按压不会叠加到这里，也不会顶掉 translateY(-50%) 导致按钮下移。 */
+ 该箭头已被列入全局排除名单（index.css .tmdb-movierow-arrow{scale:none!important}），
+ 因此全局弹性按压不会叠加到这里，也不会顶掉 translateY(-50%) 导致按钮下移。 */
 .tmdb-movierow-wrapper .tmdb-movierow-arrow:active {
   background: rgba(15, 15, 15, 0.85);
   transform: translateY(-50%) scale(0.92);
@@ -308,8 +308,8 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
 }
 
 /* ============================================================
-   TV 端 — 焦点可见 + 更大触控区 + 无 hover 箭头
-   ============================================================ */
+ TV 端 — 焦点可见 + 更大触控区 + 无 hover 箭头
+ ============================================================ */
 
 [data-device="tv"] .tmdb-movierow-arrow,
 [data-device="projector"] .tmdb-movierow-arrow {
@@ -317,8 +317,8 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
 }
 
 /* TV/投影仪端卡片聚焦时放大（焦点方框由全局 [data-device="tv"] :focus-visible 的
-   outline 统一提供，绘制在卡片外侧、不被滚动容器裁切；此处不再叠 box-shadow；
-   projector 焦点交互视同 tv，成对追加） */
+ outline 统一提供，绘制在卡片外侧、不被滚动容器裁切；此处不再叠 box-shadow；
+ projector 焦点交互视同 tv，成对追加） */
 [data-device="tv"] .tmdb-movierow-card:focus,
 [data-device="tv"] .tmdb-movierow-card:focus-within,
 [data-device="projector"] .tmdb-movierow-card:focus,
@@ -333,9 +333,9 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
 }
 
 /* ============================================================
-   「继续观看」行（continueMode）—— 横版 16:9 卡片
-   横版卡片比竖版更宽（列数更少），保证 16:9 下可读性与观感
-   ============================================================ */
+ 「继续观看」行（continueMode）—— 横版 16:9 卡片
+ 横版卡片比竖版更宽（列数更少），保证 16:9 下可读性与观感
+ ============================================================ */
 .tmdb-movierow.tmdb-movierow--continue .tmdb-movierow-card {
   flex-basis: calc(
     (100% - (var(--continue-cols, 5) - 1) * var(--space-md))

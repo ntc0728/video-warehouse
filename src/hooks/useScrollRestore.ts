@@ -9,9 +9,9 @@
  * - 仅当本页可见时才持续持久化滚动位置，避免 Keep-Alive 下隐藏页篡改共享容器的滚动状态。
  *
  * 容器获取优先级：
- *  1. 调用方显式传入的 `containerRef`（推荐）
- *  2. 通过 ScrollContainerContext 自动获取（useScrollContainer）
- *  3. 兜底：null（不附加 listener）
+ * 1. 调用方显式传入的 `containerRef`（推荐）
+ * 2. 通过 ScrollContainerContext 自动获取（useScrollContainer）
+ * 3. 兜底：null（不附加 listener）
  */
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavStore } from '@/stores/useNavStore';
@@ -59,7 +59,7 @@ export function useScrollRestore(
 
   // 本页变为可见时恢复保存的位置（每次可见期只恢复一次）
   // options.restoreFrom 存在时：仅当来源路径命中允许列表才恢复，否则重置到顶部。
-  //   例：收藏页仅「从 detail/play 进入」时恢复滚动条，其余（侧栏/首页进入）重置。
+  // 例：收藏页仅「从 detail/play 进入」时恢复滚动条，其余（侧栏/首页进入）重置。
   useLayoutEffect(() => {
     if (!isActive) {
       // 隐藏时清空守卫，下次可见能重新恢复

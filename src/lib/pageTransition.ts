@@ -1,19 +1,19 @@
 /**
  * 页面过渡动画的统一决策中心 + 黑场转场幕布（curtain）
  *
- * 设计背景（2026-08-30）：
+ * 设计背景：
  * 1. 页面进入动画原先分散挂在各页面自己的根元素上（page-transition-enter /
- *    --stagger），导致分支漏挂（Person 主分支、Player 七个分支、Detail 的
- *    loading / notFound 分支）。现由 AppLayout 的 .page-transition 容器统一接管，
- *    本模块只负责「按路由决定用哪个变体」，页面代码零感知。
+ * --stagger），导致分支漏挂（Person 主分支、Player 七个分支、Detail 的
+ * loading / notFound 分支）。现由 AppLayout 的 .page-transition 容器统一接管，
+ * 本模块只负责「按路由决定用哪个变体」，页面代码零感知。
  *
  * 2. /iptv/play 是顶层独立路由（不走 AppLayout），整个页面就是播放器。
- *    播放器自身不得参与任何进场动画（避免首帧重采样、控制条抖动），
- *    改为「来源页离场 → 黑场幕布 → 播放页挂载 → 幕布淡出」的黑场转场，
- *    视觉上连续、播放器零动画。
+ * 播放器自身不得参与任何进场动画（避免首帧重采样、控制条抖动），
+ * 改为「来源页离场 → 黑场幕布 → 播放页挂载 → 幕布淡出」的黑场转场，
+ * 视觉上连续、播放器零动画。
  *
  * 3. 幕布必须挂在 document.body 上：进入 /iptv/play 时 AppLayout 会被卸载，
- *    任何挂在 React 树内的元素都会随之消失，无法跨越这次导航。
+ * 任何挂在 React 树内的元素都会随之消失，无法跨越这次导航。
  */
 
 /** 页面过渡变体 */
@@ -25,11 +25,11 @@ export type PageVariant =
   /** 零动画：IPTV 播放页，由黑场幕布承担转场 */
   | 'none'
   /**
-   * 首页：容器层刻意不出任何规则，交给首页自己的专属过渡
-   * （Hero 不参与、内容淡入、骨架屏延迟淡入）。
-   * 首页这套是专门调过的 —— 一旦被容器规则接管，HeroBanner 会被卷进
-   * opacity 动画而出现合成层闪烁。保留自治。
-   */
+ * 首页：容器层刻意不出任何规则，交给首页自己的专属过渡
+ * （Hero 不参与、内容淡入、骨架屏延迟淡入）。
+ * 首页这套是专门调过的 —— 一旦被容器规则接管，HeroBanner 会被卷进
+ * opacity 动画而出现合成层闪烁。保留自治。
+ */
   | 'home';
 
 /**
@@ -83,8 +83,8 @@ export function needsLeaveAnimation(fromPath: string, toPath: string): boolean {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   黑场幕布：命令式 DOM，跨 React 树存活
-   ───────────────────────────────────────────────────────────── */
+ 黑场幕布：命令式 DOM，跨 React 树存活
+ ───────────────────────────────────────────────────────────── */
 
 const CURTAIN_ID = 'pt-curtain';
 let holdTimer: number | null = null;
@@ -115,7 +115,7 @@ function clearHoldTimer() {
 export function raiseCurtain(): number {
   if (typeof document === 'undefined') return 0;
   const el = ensureCurtain();
-  // 2026-11-08 全局放开：不再随系统 prefers-reduced-motion 瞬时化（用户拍板，全部动效始终播放）
+  // 全局放开：不再随系统 prefers-reduced-motion 瞬时化（全部动效始终播放）
   const duration = PT_DUR.curtainIn;
 
   el.style.transitionDuration = `${duration}ms`;

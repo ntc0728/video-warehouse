@@ -40,7 +40,7 @@ export function useEpisodeSwitcher({
     const matchedEp = video?.episodes?.find(e => e.id === ep.id) ?? ep;
     switchToEpisode(matchedEp);
     // 临时抑制后续 300ms 内 ToastTrigger 的「已切换到线路名」提示，
-    // 确保本条「已切换到集标题」提示独占显示（审查报告 3.2）
+    // 确保本条「已切换到集标题」提示独占显示
     suppressSourceToast(300);
     // 集数切换提示（右上角；覆盖 ToastTrigger 可能误报的「已切换到线路名」）
     playerToast(`已切换到${matchedEp.title}`);

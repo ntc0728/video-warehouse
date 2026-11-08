@@ -26,7 +26,7 @@ function cmsItem(id: number, name: string, year?: string) {
   };
 }
 
-describe('searchVideoFromMultipleSources 标题打分匹配（2026-11-08）', () => {
+describe('searchVideoFromMultipleSources 标题打分匹配', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getVideoSources).mockResolvedValue([SOURCE]);

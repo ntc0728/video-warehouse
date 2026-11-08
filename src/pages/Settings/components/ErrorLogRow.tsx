@@ -1,7 +1,7 @@
 /**
- * 错误日志「独立设置组 + 弹窗」（2026-10-11 新增，同日二次调整）
+ * 错误日志「独立设置组 + 弹窗」
  * ─────────────────────────────────────────────
- * 个人设置页独立 section（用户要求：单独一个设置项，行内不带右箭头）。
+ * 个人设置页独立 section（单独一个设置项，行内不带右箭头）。
  * 点击行主体打开弹窗（版式对齐「更新日志」：同 Modal 壳 + changelog-modal
  * 宽度 + cl-* 时间轴按天分组）；行最右「清除日志」按钮：hover/点击无黑框
  * （Settings.css 抑制焦点环）；两按钮均挂 .no-press 豁免全局「内容缩放」
@@ -98,7 +98,7 @@ export default function ErrorLogRow() {
 
   return (
     <>
-      {/* 独立设置组（2026-10-11 用户要求：错误日志单独一个设置项，行内不带右箭头） */}
+      {/* 独立设置组（错误日志单独一个设置项，行内不带右箭头） */}
       <section className="settings-personal-section">
         <h3 className="settings-card__title">
           <Icon icon={ScrollText} size="md" className="settings-card__title-icon" />

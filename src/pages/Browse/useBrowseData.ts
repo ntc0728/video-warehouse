@@ -10,13 +10,13 @@
  * - 单一来源：URL 是筛选状态的真相（refresh / 分享 / 前进后退 全部恢复）
  * - store 仅作为内存缓存层：discoverResults / discoverPagination 由 store 持有
  * - **取页唯一出口 = 逻辑分页层**（`useLogicalPage.goto` → `Browse/index.tsx` 的
- *   `fetchTmdbPage`）。本 hook 一律不直接发起 discover / top_rated / search 请求：
- *   本 hook 一拍、逻辑分页层又一拍，会让同一页被请求 2~3 次（重复请求的根因）。
- *   filterSig 变化时本 hook 只把新筛选「延迟写进」store.filterOptions，
- *   逻辑分页层的第一段等待（轮询 filterOptions 对齐）自然形成防抖。
+ * `fetchTmdbPage`）。本 hook 一律不直接发起 discover / top_rated / search 请求：
+ * 本 hook 一拍、逻辑分页层又一拍，会让同一页被请求 2~3 次（重复请求的根因）。
+ * filterSig 变化时本 hook 只把新筛选「延迟写进」store.filterOptions，
+ * 逻辑分页层的第一段等待（轮询 filterOptions 对齐）自然形成防抖。
  *
- * v6(2026-09-14)：移除本 hook 内的全部取页逻辑（mount 立即拉取 / filterSig 重置拉取 /
- *   refreshNow 立即拉取 / goToPage / loadMore / retry），收拢到逻辑分页层。
+ * v6()：移除本 hook 内的全部取页逻辑（mount 立即拉取 / filterSig 重置拉取 /
+ * refreshNow 立即拉取 / goToPage / loadMore / retry），收拢到逻辑分页层。
  * v5：移除骨架批次计数相关 effect（v3+v4 的内联骨架占位图已废弃）。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,7 +30,7 @@ import { FILTER_DEBOUNCE_MS } from './constants';
 import { parseFromUrl, serializeToUrl } from './urlState';
 
 /**
- * discover 缓存回显 TTL（方案 B：无 Keep-Alive）
+ * discover 缓存回显 TTL（无 Keep-Alive）
  * Browse 重新挂载时，若 store 已有「当前筛选条件」的成功结果且未超 TTL，直接回显、
  * 跳过重新请求；超过 TTL 则重新拉取（数据保鲜）。
  * 判定函数在 Browse/index.tsx 的 fetchTmdbPage 内共用（回显决策归取页方）。
@@ -103,7 +103,7 @@ export function useBrowseData() {
   // 首次 mount：只做「filterOptions 对齐 + loading 置位」，**不再自行取页** ——
   // 取页唯一出口是逻辑分页层的 fetchTmdbPage（useLogicalPage.goto(1)）。
   // 这里若也发一次请求，会与 goto(1) 撞成「同一页 2 次请求」。
-  // 方案 B（无 Keep-Alive）：重新挂载时若 store 已有「当前筛选条件」的成功结果
+  //（无 Keep-Alive）：重新挂载时若 store 已有「当前筛选条件」的成功结果
   // 且未超 TTL，首帧直接回显不置 loading（避免切回 Browse 时骨架闪一下）。
   useEffect(() => {
     if (initialFetchDoneRef.current) return;
@@ -177,25 +177,25 @@ export function useBrowseData() {
 
   // ── 5. 取页状态 ────────────────────────────────────
   /**
-   * "正在加载更多"的判定(v5):
-   * - loading.discover && discoverResults.length > 0  → 仍处于请求飞行中
-   * - discoverLastStatus === 'success'               → 最近一次请求已成功,spinner 该走
-   * - discoverLastStatus === 'error'                 → 已失败,spinner 立即消失(无缓冲)
-   *
-   * 区别于 v4:不再有"占位骨架"概念,spinner 直接由 isLoadingMore 驱动
-   *   - 成功:isLoadingMore 翻 false 同一帧 spinner 消失(无 300ms 兜底)
-   *   - 失败:同 success,spinner 立即消失,卡片数量保持不变
-   */
+ * "正在加载更多"的判定(v5):
+ * - loading.discover && discoverResults.length > 0 → 仍处于请求飞行中
+ * - discoverLastStatus === 'success' → 最近一次请求已成功,spinner 该走
+ * - discoverLastStatus === 'error' → 已失败,spinner 立即消失(无缓冲)
+ *
+ * 区别于 v4:不再有"占位骨架"概念,spinner 直接由 isLoadingMore 驱动
+ * - 成功:isLoadingMore 翻 false 同一帧 spinner 消失(无 300ms 兜底)
+ * - 失败:同 success,spinner 立即消失,卡片数量保持不变
+ */
   const isLoadingMore =
     loading.discover && discoverResults.length > 0 && discoverLastStatus !== 'success';
 
   /**
-   * 取页收尾：逻辑分页层装载完成（或本次取页被更晚的 goto 取代）后调用，关闭 loading 遮罩。
-   *
-   * ⚠️ 不做 150ms 缓冲（v6 变更）：原缓冲是为了等「fetch resolve → React 渲染新内容」
-   * 两拍对齐；现在收尾紧跟在逻辑分页层的 setItems 之后（同一批状态更新、同帧渲染），
-   * 缓冲只会白白多留一段「无骨架又无卡片」的空窗。
-   */
+ * 取页收尾：逻辑分页层装载完成（或本次取页被更晚的 goto 取代）后调用，关闭 loading 遮罩。
+ *
+ * ⚠️ 不做 150ms 缓冲（v6 变更）：原缓冲是为了等「fetch resolve → React 渲染新内容」
+ * 两拍对齐；现在收尾紧跟在逻辑分页层的 setItems 之后（同一批状态更新、同帧渲染），
+ * 缓冲只会白白多留一段「无骨架又无卡片」的空窗。
+ */
   const endRefresh = useCallback(() => {
     if (!isMountedRef.current) return;
     setIsRefreshing(false);
@@ -203,14 +203,14 @@ export function useBrowseData() {
   }, []);
 
   /**
-   * 显式刷新（下拉刷新 / 从首页分类导航进入 → /browse?category=...）。
-   *
-   * 只做三件事，**不发请求**（请求由调用方紧接的 `goto(1, { force: true })` 发出）：
-   * - 同步 lastSigRef = 当前 filterSig：避免 filterSig effect 再走一遍防抖分支；
-   * - 立即对齐 filterOptions（调用方的 goto 会跳过防抖路径，这里同步写保证第一段等待
-   *   立刻通过，无需再等 300ms）；
-   * - setIsRefreshing(true) → UI 的 showResultsLoading 立即生效，旧数据被遮挡（无闪现）。
-   */
+ * 显式刷新（下拉刷新 / 从首页分类导航进入 → /browse?category=...）。
+ *
+ * 只做三件事，**不发请求**（请求由调用方紧接的 `goto(1, { force: true })` 发出）：
+ * - 同步 lastSigRef = 当前 filterSig：避免 filterSig effect 再走一遍防抖分支；
+ * - 立即对齐 filterOptions（调用方的 goto 会跳过防抖路径，这里同步写保证第一段等待
+ * 立刻通过，无需再等 300ms）；
+ * - setIsRefreshing(true) → UI 的 showResultsLoading 立即生效，旧数据被遮挡（无闪现）。
+ */
   const refreshNow = useCallback(() => {
     lastSigRef.current = filterSig;
     hadOldDataRef.current = false;

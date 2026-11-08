@@ -125,9 +125,9 @@ describe('shouldProxy 内置直连白名单（useIPTVStore 默认 proxyPattern�
     'http://ge.html-5.me/ii/y.txt', // 项目内置源（未在白名单）
   ];
 
-  // 数字型域名（裸 IP:端口）2026-09-08 定稿：一律直连，不拼 IPTV 代理
+  // 数字型域名（裸 IP:端口） ：一律直连，不拼 IPTV 代理
   const ipHostUrls = [
-    'http://47.97.20.1/live/1.m3u8',
+    'http://203.0.113.9/live/1.m3u8',
     'http://203.0.113.10:88/live.php?id=CCTV3',
   ];
 

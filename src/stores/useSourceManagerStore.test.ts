@@ -1,13 +1,13 @@
 /**
  * useSourceManagerStore 单元测试
  *
- * 核心覆盖 2026-08-07 源管理收敛（ADR-019）的关键业务规则：
- *   1) 至少一个源兜底：IPTV/EPG 停用最后一个已启用源被拒
- *   2) 启用数量上限：MAX_ENABLED（video=6 / iptv=3 / epg=3）
- *   3) bootstrap 幂等 + 仅空列表注入（保证设置页启用状态回显）
- *   4) 自定义源增删：deleteCustom* 仅删 custom、不删 builtin
- *   5) sortByLatency：启用源按延迟升序、未启用排尾
- *   6) reorder：拖拽排序更新顺序并重排 order
+ * 核心覆盖 源管理收敛的关键业务规则：
+ * 1) 至少一个源兜底：IPTV/EPG 停用最后一个已启用源被拒
+ * 2) 启用数量上限：MAX_ENABLED（video=6 / iptv=3 / epg=3）
+ * 3) bootstrap 幂等 + 仅空列表注入（保证设置页启用状态回显）
+ * 4) 自定义源增删：deleteCustom* 仅删 custom、不删 builtin
+ * 5) sortByLatency：启用源按延迟升序、未启用排尾
+ * 6) reorder：拖拽排序更新顺序并重排 order
  *
  * 依赖隔离：mock sourceService（getVideoSources 等）+ mock useIPTVStore（避免真实网络）。
  */

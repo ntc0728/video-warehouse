@@ -2,8 +2,8 @@
  * usePlayerStore 单元测试
  *
  * 覆盖：播放器核心状态管理（音量/倍速/解码/清晰度/循环/镜像/比例）、
- *       reset 与 resetRuntime 的语义区分（保留用户偏好 vs 全量重置）、
- *       updateSubtitleSettings 合并、persist 仅持久化用户偏好。
+ * reset 与 resetRuntime 的语义区分（保留用户偏好 vs 全量重置）、
+ * updateSubtitleSettings 合并、persist 仅持久化用户偏好。
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { usePlayerStore } from './usePlayerStore';

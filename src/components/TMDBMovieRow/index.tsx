@@ -47,32 +47,32 @@ interface TMDBMovieRowProps {
   isLoading?: boolean;
   error?: string | null;
   /**
-   * 继续观看模式：卡片用横版 landscape 样式、显示进度条、
-   * 点击直达 /play/:id。items 传 ContinueWatchingItem[]（类型兼容 TMDBVideoItem 的 id/cover/title/type 字段）。
-   */
+ * 继续观看模式：卡片用横版 landscape 样式、显示进度条、
+ * 点击直达 /play/:id。items 传 ContinueWatchingItem[]（类型兼容 TMDBVideoItem 的 id/cover/title/type 字段）。
+ */
   continueMode?: boolean;
   /** continueMode 时使用的继续观看数据（带 progress/duration/backdrop/overlayLabel） */
   continueItems?: ContinueWatchingItem[];
   /**
-   * 分类切换信号：值变化时将行 scrollLeft 复位为 0。
-   * 首页分类切换时行内容整体替换（items 引用变化），浏览器 scroll-snap 会把
-   * scrollLeft 拉到 maxScroll（40 卡→20 卡时实测 0→2032），导致「预加载收集的
-   * 首屏卡（index 0..N）」与「实际可见卡（行尾）」错位 → 未命中缓存 → 骨架遮罩。
-   * 复位后可见卡回到 index 0 起，与预加载范围对齐，命中 session 缓存直接 loaded。
-   */
+ * 分类切换信号：值变化时将行 scrollLeft 复位为 0。
+ * 首页分类切换时行内容整体替换（items 引用变化），浏览器 scroll-snap 会把
+ * scrollLeft 拉到 maxScroll（40 卡→20 卡时实测 0→2032），导致「预加载收集的
+ * 首屏卡（index 0..N）」与「实际可见卡（行尾）」错位 → 未命中缓存 → 骨架遮罩。
+ * 复位后可见卡回到 index 0 起，与预加载范围对齐，命中 session 缓存直接 loaded。
+ */
   scrollResetToken?: string;
   /**
-   * 卡片封面旧图→新图交叉淡入（首页分类切换用）。开启后卡片以「槽位索引」复用，
-   * 封面切换走 LazyImage 交叉淡入，与 banner/缩略图过渡一致；不开启时保持原 blur-up。
-   */
+ * 卡片封面旧图→新图交叉淡入（首页分类切换用）。开启后卡片以「槽位索引」复用，
+ * 封面切换走 LazyImage 交叉淡入，与 banner/缩略图过渡一致；不开启时保持原 blur-up。
+ */
   crossfadeOnChange?: boolean;
   /** 跳过进入动画（首页进入过渡期间禁用 animate-card-enter，避免"继续观看"行卡片闪烁）。 */
   skipAnimations?: boolean;
   /**
-   * 「查看全部」入口回调：传入时在行标题右侧渲染文字链接（仅首页 7 个推荐行使用；
-   * continueMode 恒不渲染）。可见性由 CSS 控制：桌面 ≥1024 非 TV hover 行时显现，
-   * TV 端恒显（焦点可达）；移动端 / App 由调用方不传本 prop 而整体不渲染。
-   */
+ * 「查看全部」入口回调：传入时在行标题右侧渲染文字链接（仅首页 7 个推荐行使用；
+ * continueMode 恒不渲染）。可见性由 CSS 控制：桌面 ≥1024 非 TV hover 行时显现，
+ * TV 端恒显（焦点可达）；移动端 / App 由调用方不传本 prop 而整体不渲染。
+ */
   onViewAll?: () => void;
 }
 
@@ -127,15 +127,15 @@ function getVideo(item: {
 }
 
 /** 骨架卡片（错开动画延迟，避免同步闪烁）
- *  - 默认竖版（2:3）：镜像 .video-card--portrait 结构 — 封面 + 左上评分 / 右上收藏 +
- *    封面底部「左标题条 + 右侧竖排 meta 占位」（2026-11-04 角标统一后）
- *  - landscape：横版（16:9）继续观看卡，仅封面 + 左上源徽章占位 + info 区时间条
+ * - 默认竖版（2:3）：镜像 .video-card--portrait 结构 — 封面 + 左上评分 / 右上收藏 +
+ * 封面底部「左标题条 + 右侧竖排 meta 占位」（角标统一后）
+ * - landscape：横版（16:9）继续观看卡，仅封面 + 左上源徽章占位 + info 区时间条
  *
  * 张数默认按「列数 × 1.5」派生（覆盖一屏 + 半屏溢出，镜像真实横滚行
  * 「一屏整卡 + 可横向滚」的观感）；列数读 CSS token（--row-cols / --continue-cols），
  * 不写死张数。显式传 count 时以 count 为准。
  *
- * 导出供首页首屏骨架复用（2026-09-18）：骨架直接渲染真实行组件，
+ * 导出供首页首屏骨架复用：骨架直接渲染真实行组件，
  * 「继续观看」行因 continueMode + 空列表会 return null，由首页骨架手搭同结构外壳
  * 并复用本组件 —— 卡片几何仍只有这一处真源。
  */
@@ -152,8 +152,8 @@ export function SkeletonCards({ count, landscape = false }: { count?: number; la
         >
           <div className="tmdb-movierow-skeleton-img">
             {landscape ? (
-              /* 横版（2026-11-08 方案B 对齐真实静态态）：左上源徽章复用真实类+内容
-                 （像素级一致）+ 底部左标题条 / 右侧「年份+时间」宽块 / 底部进度条 */
+              /* 横版（对齐真实静态态）：左上源徽章复用真实类+内容
+ （像素级一致）+ 底部左标题条 / 右侧「年份+时间」宽块 / 底部进度条 */
               <>
                 <span className="video-card-landscape__source-badge tmdb-movierow-skeleton-skin" aria-hidden="true">
                   源1 · 第3集
@@ -163,9 +163,9 @@ export function SkeletonCards({ count, landscape = false }: { count?: number; la
                 <span className="tmdb-movierow-skeleton-land-progress" />
               </>
             ) : (
-              /* 竖版（2026-11-08 方案B 二次定稿）：三角标复用真实类+真实内容
-                 （评分/年份/类型）→ 与真实元素像素级一致（TV 档自动同步）；
-                 TR 收藏钮 hover 才显形 → 不画。标题在下方 info 区 */
+              /* 竖版：三角标复用真实类+真实内容
+ （评分/年份/类型）→ 与真实元素像素级一致（TV 档自动同步）；
+ TR 收藏钮 hover 才显形 → 不画。标题在下方 info 区 */
               <>
                 <span className="video-card-rating tmdb-movierow-skeleton-skin" aria-hidden="true">
                   <Icon icon={Star} size="xs" fill="currentColor" />
@@ -177,8 +177,8 @@ export function SkeletonCards({ count, landscape = false }: { count?: number; la
             )}
           </div>
           {/* 竖版：封面下方 info 区标题占位。
-              横版（继续观看）：真实卡不传 timeLabel → info 区为空（CSS 已收起），
-              骨架同样不渲染任何占位（2026-11-04 修正：此前误加 time 占位）。 */}
+ 横版（继续观看）：真实卡不传 timeLabel → info 区为空（CSS 已收起），
+ 骨架同样不渲染任何占位（修正：此前误加 time 占位）。 */}
           {!landscape && <div className="tmdb-movierow-skeleton-title" />}
         </div>
       ))}
@@ -277,7 +277,7 @@ function TMDBMovieRow({
       const row = rowRef.current;
       const cardRect = cardEl.getBoundingClientRect();
       const rowRect = row.getBoundingClientRect();
-      // 2026-11-08 全局放开：TV 焦点滚动恒 smooth（不再随系统减少动态降级为即时跳转）
+      // 全局放开：TV 焦点滚动恒 smooth（不再随系统减少动态降级为即时跳转）
       const behavior: ScrollBehavior = 'smooth';
 
       // 卡片超出右侧 → 向右滚动
@@ -316,7 +316,7 @@ function TMDBMovieRow({
     // 必须重新计算 hasOverflow，否则箭头在数据到达后不显示
   }, [items, continueItems, updateArrows]);
 
-  // 箭头垂直锚点 = 封面图中心（2026-10-09 用户要求：以封面为参考而非整卡）。
+  // 箭头垂直锚点 = 封面图中心（以封面为参考而非整卡）。
   // 封面高度 = 卡宽 × 宽高比，随断点列数 / 变体（竖版 2:3 / 横版 16:9）变化，
   // 纯 CSS 无法从 wrapper 高度反推 → 实测首个 .video-card-cover（两变体同根类名）
   // 中心相对 wrapper 的 Y，注入 --tmdb-arrow-cy（TMDBMovieRow.css 消费）。
@@ -516,7 +516,7 @@ function TMDBMovieRow({
       <div className="tmdb-movierow-header" ref={headerRef}>
         <h2 className="tmdb-movierow-title">{title}</h2>
         {/* 「查看全部」：仅普通推荐行渲染（continueMode 的「继续观看」无对应 Browse 分类）。
-            样式与可见性口径见 TMDBMovieRow.css .tmdb-movierow-viewall。 */}
+ 样式与可见性口径见 TMDBMovieRow.css .tmdb-movierow-viewall。 */}
         {onViewAll && !continueMode && (
           <button type="button" className="tmdb-movierow-viewall" onClick={onViewAll}>
             查看全部
@@ -544,9 +544,9 @@ function TMDBMovieRow({
         )}
 
         {/* 卡片列表 — pointer 事件注册在 row 容器（外层），
-            handlePointerDown 内部用 closest() 判定 e.target 是否是 .tmdb-movierow-card，
-            空白处 mousedown 不进入 drag 模式；同时 setPointerCapture 绑到 card 元素
-            以保证浏览器原生 click 事件正确命中（jump/收藏按钮正常工作）。 */}
+ handlePointerDown 内部用 closest() 判定 e.target 是否是 .tmdb-movierow-card，
+ 空白处 mousedown 不进入 drag 模式；同时 setPointerCapture 绑到 card 元素
+ 以保证浏览器原生 click 事件正确命中（jump/收藏按钮正常工作）。 */}
         <div
           className={`tmdb-movierow-scroll${isDragging ? ' tmdb-movierow-scroll--dragging' : ''}`}
           ref={rowRef}

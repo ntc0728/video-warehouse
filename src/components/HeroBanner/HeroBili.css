@@ -1,27 +1,27 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   HeroBili — 首页 Hero B 站风（≥1024px 桌面专用，TV 不启用）
-   2026-09-10 用户要求「首页视口 ≥1024 就显示新的 UI 布局」：1280 → 1024。
-   2026-11-04 用户定稿：左 banner : 右 cards = 视觉 6:4，banner 与右卡均 16:9，
-   下沿齐平。双 16:9 方程的最小整数解 = 2 列 × 3 行（6 张），比例与视口宽度
-   无关，≥1024 全档统一；右栏宽度由 layout-tokens.css 的 gap 补偿公式给出。
-   banner 高度改由自身 aspect-ratio 派生，右栏卡片 3 行 stretch 到同一行高。
-   ⚠️ ≤1023 不渲染本组件（HeroBanner 走 Classic）；下方仅保留骨架兼容块。
-   ═══════════════════════════════════════════════════════════════════════ */
+ HeroBili — 首页 Hero B 站风（≥1024px 桌面专用，TV 不启用）
+ 「首页视口 ≥1024 就显示新的 UI 布局」：1280 → 1024。
+左 banner : 右 cards = 视觉 6:4，banner 与右卡均 16:9，
+ 下沿齐平。双 16:9 方程的最小整数解 = 2 列 × 3 行（6 张），比例与视口宽度
+ 无关，≥1024 全档统一；右栏宽度由 layout-tokens.css 的 gap 补偿公式给出。
+ banner 高度改由自身 aspect-ratio 派生，右栏卡片 3 行 stretch 到同一行高。
+ ⚠️ ≤1023 不渲染本组件（HeroBanner 走 Classic）；下方仅保留骨架兼容块。
+ ═══════════════════════════════════════════════════════════════════════ */
 
 .hero-bili {
   display: none;
-  /* 2026-10-10 用户反馈「继续观看标题与上方模块间距有点大」：hero 底距从 --space-sm 收到
-     --space-xs，与行间节奏（movierow margin-bottom --space-xs + padding-top --space-2xs）对齐 */
+  /* 「继续观看标题与上方模块间距有点大」：hero 底距从 --space-sm 收到
+ --space-xs，与行间节奏（movierow margin-bottom --space-xs + padding-top --space-2xs）对齐 */
   margin-bottom: var(--space-xs);
 }
 
 @media (width >= 1024px) {
   /* TV 红线：显示规则必须 :not(tv) 前缀（TV 走原 HeroBanner 路径，本组件不渲染） */
   html:not([data-device="tv"]) .hero-bili {
-    /* 融合方案甲（2026-09-06）：hero 成为一个整体卡——首行分类导航带 +
-       banner/右栏网格；overlay 面板绝对定位锚定本卡
-       2026-09-28 去卡片化：本组件仅 >=1024 桌面渲染，四件套整体移除，
-       banner/右栏直接铺页面底色（间距由 --hero-main-gap / grid padding 提供）。 */
+    /* 融合：hero 成为一个整体卡——首行分类导航带 +
+ banner/右栏网格；overlay 面板绝对定位锚定本卡
+ 去卡片化：本组件仅 >=1024 桌面渲染，四件套整体移除，
+ banner/右栏直接铺页面底色（间距由 --hero-main-gap / grid padding 提供）。 */
     position: relative;
     display: block;
   }
@@ -37,12 +37,12 @@
 
 .hero-bili__banner {
   position: relative;
-  /* 2026-11-04 双 16:9 精确解：banner 自己按 16:9 派生高度，grid stretch 让
-     右栏 3 行卡片撑到同一行高；精确解公式已在 layout-tokens.css 把 gap 补偿
-     进 --hero-side-w，故单卡行高恰好也是 16:9。
-     ⚠️ 不再用 min-height: var(--hero-banner-h)：它会与 aspect-ratio 形成
-     「谁先撑高谁」的循环依赖，且旧反推公式属于 2×2/3×3 档，已作废。
-     内部图片/遮罩/文案全为 absolute，aspect-ratio 提供唯一的固有高度。 */
+  /* 双 16:9 精确解：banner 自己按 16:9 派生高度，grid stretch 让
+ 右栏 3 行卡片撑到同一行高；精确解公式已在 layout-tokens.css 把 gap 补偿
+ 进 --hero-side-w，故单卡行高恰好也是 16:9。
+ ⚠️ 不再用 min-height: var(--hero-banner-h)：它会与 aspect-ratio 形成
+ 「谁先撑高谁」的循环依赖，且旧反推公式属于 2×2/3×3 档，已作废。
+ 内部图片/遮罩/文案全为 absolute，aspect-ratio 提供唯一的固有高度。 */
   aspect-ratio: 16 / 9;
   border-radius: var(--hero-card-radius);
   /* 兜底深色：图片未就绪的透明窗口露深色不露白（与 HeroBanner 同源） */
@@ -73,7 +73,7 @@
 }
 
 /* 主图加载失败：公共品牌兜底（MonitorPlay + kinoTV），
-   压在 banner 图（z-index auto）之上、箭头 / 圆点（z-index 2~3）之下 */
+ 压在 banner 图（z-index auto）之上、箭头 / 圆点（z-index 2~3）之下 */
 .hero-bili__banner-fallback {
   position: absolute;
   inset: 0;
@@ -143,10 +143,10 @@
 }
 
 /* 底部渐变字幕：标题 + meta chips + 双按钮。
-   2026-09-30（P3-B）渐变加深一档（仅调既有黑色的 alpha：0.82→0.88 / 0.35→0.5、
-   延展点 60%→65%），保证 chips 与标题在任何 backdrop 上可读。
-   caption 恒 absolute inset-bottom，不参与布局流——banner 高度 calc
-   （layout-tokens.css 完整表达式）与「第二行卡下沿齐平」不变量不受影响。 */
+ 渐变加深一档（仅调既有黑色的 alpha：0.82→0.88 / 0.35→0.5、
+ 延展点 60%→65%），保证 chips 与标题在任何 backdrop 上可读。
+ caption 恒 absolute inset-bottom，不参与布局流——banner 高度 calc
+ （layout-tokens.css 完整表达式）与「第二行卡下沿齐平」不变量不受影响。 */
 .hero-bili__caption {
   position: absolute;
   right: 0;
@@ -169,25 +169,25 @@
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
 }
 
-/* meta chips（2026-09-30 P3-B）：评分/年份/类型改为胶囊（背景取既有 on-image
-   黑 45%——与 .hero-bili__arrow 同值色板，文字 --color-on-image；评分保留
-   --color-on-image-rating 专用色）。TSX 侧缺字段不渲染对应 chip（无硬造）。 */
+/* meta chips：评分/年份/类型改为胶囊（背景取既有 on-image
+ 黑 45%——与 .hero-bili__arrow 同值色板，文字 --color-on-image；评分保留
+ --color-on-image-rating 专用色）。TSX 侧缺字段不渲染对应 chip（无硬造）。 */
 .hero-bili__meta {
   display: flex;
-  /* 2026-10-10 用户要求：标签左右间距适当调大（xs≈3.9px → sm≈7.9px；纯文字标签无底色后更需间距分隔） */
+  /* 标签左右间距适当调大（xs≈3.9px → sm≈7.9px；纯文字标签无底色后更需间距分隔） */
   gap: var(--space-sm);
   align-items: center;
-  /* 2026-10-10 用户要求「标签上下间距稍微调大」：与标题拉开（2xs≈2px → sm≈8px） */
+  /* 「标签上下间距稍微调大」：与标题拉开（2xs≈2px → sm≈8px） */
   margin-top: var(--space-sm);
   /* 字号再收一档：--text-xs → --text-2xs */
   font-size: var(--text-2xs);
 }
 
-/* 标签配色（2026-10-10 用户定稿：删除背景色与边框，纯文字标签）——
-   caption 恒深色渐变底保证可读：年份/类型白字，评分金色强调（唯一亮点）。
-   无底色后 padding/border-radius/backdrop-filter 均失义，一并移除；
-   间距仅由 .hero-bili__meta 的 gap 承担。行高 1.2（同日定稿压矮）。
-   变体选择器仍需 `.hero-bili__meta > .xxx`（0,2,0）压过基座。 */
+/* 标签配色（删除背景色与边框，纯文字标签）——
+ caption 恒深色渐变底保证可读：年份/类型白字，评分金色强调（唯一亮点）。
+ 无底色后 padding/border-radius/backdrop-filter 均失义，一并移除；
+ 间距仅由 .hero-bili__meta 的 gap 承担。行高 1.2。
+ 变体选择器仍需 `.hero-bili__meta > .xxx`（0,2,0）压过基座。 */
 .hero-bili__meta > span {
   color: var(--color-on-image);
   line-height: 1.2;
@@ -199,11 +199,11 @@
   font-weight: 600;
 }
 
-/* banner 简介（2026-11-04 用户要求：左下按钮上方）：左侧主色竖线 +
-   2 行截断（参考稿已随 2026-11-03 风格提案清理删除）。
-   小视口（1024–1279）降为单行/更小字号，保证左下块高不超按钮行。
-   2026-11-08：半透明黑底从 p（铺满整行）挪到内层 inline .hero-bili__desc-text
-   （底色只贴文本，短行自动收窄；p 只留竖线/排版/截断）。 */
+/* banner 简介（左下按钮上方）：左侧主色竖线 +
+ 2 行截断。
+ 小视口（1024–1279）降为单行/更小字号，保证左下块高不超按钮行。
+半透明黑底从 p（铺满整行）挪到内层 inline .hero-bili__desc-text
+ （底色只贴文本，短行自动收窄；p 只留竖线/排版/截断）。 */
 .hero-bili__desc {
   display: -webkit-box;
   margin: var(--space-sm) 0 0;
@@ -218,8 +218,8 @@
 }
 
 /* 底色贴文本：inline 盒宽度随文字收缩；box-decoration-break: clone 让跨行片段
-   每行都带完整左右内边距与圆角（Chromium 不支持 clone，降级为首末行带圆角、
-   中间行背景贴字，可接受——本 desc 至多 2 行）。 */
+ 每行都带完整左右内边距与圆角（Chromium 不支持 clone，降级为首末行带圆角、
+ 中间行背景贴字，可接受——本 desc 至多 2 行）。 */
 .hero-bili__desc-text {
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
@@ -243,10 +243,10 @@
 }
 
 /* ≥2560（内容封顶 2200、banner 约 1300×735）：左下文案层必须明显放大。
-   2026-11-04 二次修正：上一版只到 --text-3xl（≈30px），相对 1300px 宽的 banner
-   仍偏小（用户再次反馈）。改为在 --text-* 基础上乘倍率：
-   标题 ×1.35（≈41px）、简介 ×1.2（≈16.9px）、按钮 ×1.2（≈15.6px）、
-   标签 ×1.15。倍率写死在媒体查询内，不改全局 --text-* 契约。 */
+上一版只到 --text-3xl（≈30px），相对 1300px 宽的 banner
+ 仍偏小。改为在 --text-* 基础上乘倍率：
+ 标题 ×1.35（≈41px）、简介 ×1.2（≈16.9px）、按钮 ×1.2（≈15.6px）、
+ 标签 ×1.15。倍率写死在媒体查询内，不改全局 --text-* 契约。 */
 @media (width >= 2560px) {
   .hero-bili__title {
     font-size: calc(var(--text-3xl) * 1.35);
@@ -266,7 +266,7 @@
     -webkit-line-clamp: 3;
   }
 
-  /* 2026-11-08：底色随 span 走后，放大档的 padding 同步迁到 text span */
+  /* 底色随 span 走后，放大档的 padding 同步迁到 text span */
   .hero-bili__desc-text {
     padding: var(--space-md) var(--space-lg);
   }
@@ -286,17 +286,17 @@
 }
 
 /* 双按钮沿用 HeroBanner 的 .hero-banner__cta token（HeroBanner.css 全局规则），
-   仅需在此放开 pointer-events（caption 整体 none）；
-   margin-top sm → md（2026-10-10 用户要求标签上下间距稍大，见上方按钮节注释） */
+ 仅需在此放开 pointer-events（caption 整体 none）；
+ margin-top sm → md（标签上下间距稍大，见上方按钮节注释） */
 .hero-bili__caption .hero-banner__actions {
   margin-top: var(--space-md);
   pointer-events: auto;
 }
 
-/* banner 双按钮：较 Classic 再收一档（2026-09-23 padding/字号微调，仅本组件）。
-   纵向用 xs 非 2xs——2xs 桌面仅 ~2px，胶囊会被压扁；横/字号维持收窄。
-   2026-10-10 用户要求「标签上下间距稍微调大」：按钮行与标签行拉开 sm → md
-   （合并进下方 caption 作用域既有规则，不动 HeroBanner.css 共享规则）。 */
+/* banner 双按钮：较 Classic 再收一档（padding/字号微调，仅本组件）。
+ 纵向用 xs 非 2xs——2xs 桌面仅 ~2px，胶囊会被压扁；横/字号维持收窄。
+ 「标签上下间距稍微调大」：按钮行与标签行拉开 sm → md
+ （合并进下方 caption 作用域既有规则，不动 HeroBanner.css 共享规则）。 */
 .hero-bili__caption .hero-banner__cta {
   padding: var(--space-xs) var(--space-sm);
   font-size: var(--text-xs);
@@ -314,10 +314,10 @@
 
 .hero-bili__cards {
   display: grid;
-  /* 2026-11-04 用户定稿：≥1024 全档 2 列 × 3 行 = 6 张，无 2560 分档。
-     与 useHeroSideCols / useHeroSideRows 同步（JS 为唯一真源）。
-     flex:1 + 三行 minmax(0,1fr)：右栏继承 banner 派生的行高并均分 3 行，
-     精确解保证每行卡仍是 16:9、下沿恒齐平。 */
+  /* ≥1024 全档 2 列 × 3 行 = 6 张，无 2560 分档。
+ 与 useHeroSideCols / useHeroSideRows 同步（JS 为唯一真源）。
+ flex:1 + 三行 minmax(0,1fr)：右栏继承 banner 派生的行高并均分 3 行，
+ 精确解保证每行卡仍是 16:9、下沿恒齐平。 */
   flex: 1 1 auto;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(3, minmax(0, 1fr));
@@ -326,22 +326,22 @@
 }
 
 /* 全档统一 6 张：JS 按 2×3 渲染，CSS nth-child 为双保险；
-   ≤1023 本组件不渲染，该规则仅服务复用真实类名的骨架兼容块。 */
+ ≤1023 本组件不渲染，该规则仅服务复用真实类名的骨架兼容块。 */
 html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7) {
   display: none;
 }
 
 @media (width <= 1023px) {
   /* 骨架兼容档：真实 HeroBili 在 <1024 不渲染（HeroBanner 分流到 Classic）。
-     此处只保留网格等宽 + 2 列 × 3 行，避免骨架沿用已作废的 1:1 旧形态。 */
+ 此处只保留网格等宽 + 2 列 × 3 行，避免骨架沿用已作废的 1:1 旧形态。 */
   html:not([data-device="tv"]) .hero-bili__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 /* 单张横版卡：封面 16:9 满铺在上、标题条在下，无卡片内边距。
-   2026-09-28 去卡片化：边框/圆角/底色/投影随外层 .hero-bili 卡一并移除
-   （本组件仅 >=1024 桌面渲染），封面直接铺页面底色。 */
+ 去卡片化：边框/圆角/底色/投影随外层 .hero-bili 卡一并移除
+ （本组件仅 >=1024 桌面渲染），封面直接铺页面底色。 */
 .hero-side-card {
   --hero-corner-fs: calc(var(--text-xs) * 0.9);
   --hero-corner-fav: calc(var(--icon-lg) * 0.9);
@@ -367,12 +367,12 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
 }
 
 /* 封面与卡片同为 16:9：行高由 grid 均分（layout-tokens.css 的精确解保证），
-   封面撑满整卡。 */
+ 封面撑满整卡。 */
 .hero-side-card__cover {
   position: relative;
-  /* 2026-11-04：卡片行高由 grid 均分（精确解使其恰好 16:9），封面撑满整卡。
-     flex:1 + min-height:0 让 flex 子项随 grid 行高伸缩；不再用 aspect-ratio
-     自主派生，避免「卡片内容高 > 分配行高」时把行顶开、破坏下沿齐平。 */
+  /* 卡片行高由 grid 均分（精确解使其恰好 16:9），封面撑满整卡。
+ flex:1 + min-height:0 让 flex 子项随 grid 行高伸缩；不再用 aspect-ratio
+ 自主派生，避免「卡片内容高 > 分配行高」时把行顶开、破坏下沿齐平。 */
   flex: 1 1 auto;
   width: 100%;
   min-height: 0;
@@ -392,12 +392,12 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   transform: scale(1.04);
 }
 
-/* 角标胶囊（2026-10-09 用户要求）：UI 样式与首页下方 video card 封面角标一致
-   （VideoCard.css .video-card-rating / .video-card-badge-item：黑底胶囊 --radius-sm
-   + --text-xs + blur）。
-   2026-11-04：评分仍为左上绝对定位；年份/类型改为右下竖排 meta 内的静态项
-   （类型在上、年份在下，见下方 `--year/--type { position: static }`）。
-   原 text-shadow 裸字方案随胶囊底色一并移除。 */
+/* 角标胶囊：UI 样式与首页下方 video card 封面角标一致
+ （VideoCard.css .video-card-rating / .video-card-badge-item：黑底胶囊 --radius-sm
+ + --text-xs + blur）。
+评分仍为左上绝对定位；年份/类型改为右下竖排 meta 内的静态项
+ （类型在上、年份在下，见下方 `--year/--type { position: static }`）。
+ 原 text-shadow 裸字方案随胶囊底色一并移除。 */
 .hero-side-card__corner {
   position: absolute;
   z-index: 2;
@@ -422,8 +422,8 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   line-height: 1;
 }
 
-/* 2026-11-04 用户定稿：年份/类型改到右下竖排 meta 内（类型在上、年份在下），
-   不再是绝对定位角标；基础 .corner 的 position:absolute 在此复位为 static。 */
+/* 年份/类型改到右下竖排 meta 内（类型在上、年份在下），
+ 不再是绝对定位角标；基础 .corner 的 position:absolute 在此复位为 static。 */
 .hero-side-card__corner--year,
 .hero-side-card__corner--type {
   position: static;
@@ -431,7 +431,7 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
 
 .hero-side-card__corner--year {
   /* 对齐 .video-card-badge-item 的中性深玻璃底；此处刻意浅一档（0.55 vs 0.6），
-     因为 HeroBili 年份与类型竖排堆叠、视觉重量需低于类型胶囊。 */
+ 因为 HeroBili 年份与类型竖排堆叠、视觉重量需低于类型胶囊。 */
   padding: var(--space-3xs) var(--space-xs);
   background: rgba(0, 0, 0, 0.55);
   color: rgba(255, 255, 255, 0.8);
@@ -447,8 +447,8 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   align-items: flex-end;
 }
 
-/* 收藏按钮：与其他卡片统一定稿——圆形黑底 --icon-lg、图标 xs 档；
-   hover = 加深底色 + 放大；已收藏外圈不变、仅心形变红（--color-danger）实心 */
+/* 收藏按钮：与其他卡片统一——圆形黑底 --icon-lg、图标 xs 档；
+ hover = 加深底色 + 放大；已收藏外圈不变、仅心形变红（--color-danger）实心 */
 .hero-side-card__fav {
   position: absolute;
   top: var(--space-xs);
@@ -484,15 +484,15 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   color: var(--color-danger);
 }
 
-/* 标题条 · 方案 A（2026-09-30 用户确认 demos/hero-title-marquee-demo.html）：
-   默认单行 ellipsis 兜底 + hover/focus 溢出时跑马灯，双层结构：
-   ① .hero-side-card__title 容器 + ② fallback 兜底层（block nowrap ellipsis），
-   ③ marquee 跑马灯层：absolute 覆盖标题条（不占布局，切换零跳动），
-   .is-marquee 时显示，双段等长无缝循环 4.5s（复刻原跑马灯参数）。
-   2026-11-03 封面出血：标题浮在封面图底部（渐变压暗 + 白字），不占卡片下行；
-   2026-11-04 起卡高由 grid 行均分（双 16:9 精确解），标题恒不参与布局流。 */
+/* 标题条 ·：
+ 默认单行 ellipsis 兜底 + hover/focus 溢出时跑马灯，双层结构：
+ ① .hero-side-card__title 容器 + ② fallback 兜底层（block nowrap ellipsis），
+ ③ marquee 跑马灯层：absolute 覆盖标题条（不占布局，切换零跳动），
+ .is-marquee 时显示，双段等长无缝循环 4.5s（复刻原跑马灯参数）。
+ 封面出血：标题浮在封面图底部（渐变压暗 + 白字），不占卡片下行；
+ 起卡高由 grid 行均分（双 16:9 精确解），标题恒不参与布局流。 */
 /* 底部一行：左标题 + 右元信息。flex 布局天然保证标题不覆盖右下标签；
-   渐变遮罩从原 title 容器上移到本层，覆盖整行（标题与角标同一底色）。 */
+ 渐变遮罩从原 title 容器上移到本层，覆盖整行（标题与角标同一底色）。 */
 .hero-side-card__bottom {
   position: absolute;
   right: 0;
@@ -513,8 +513,8 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
 }
 
 .hero-side-card__title {
-  /* 2026-11-04：从「绝对定位全宽」改为 flex 子项（左侧、可收缩），
-     让出右侧 meta 宽度 → 标题永不压住类型/年份标签。 */
+  /* 从「绝对定位全宽」改为 flex 子项（左侧、可收缩），
+ 让出右侧 meta 宽度 → 标题永不压住类型/年份标签。 */
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
@@ -542,8 +542,8 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   inset: 0;
   display: none;
   align-items: center;
-  /* 2026-11-03：不再 padding:inherit —— 浮层的 padding 顶部含渐变区（--space-2xl），
-     继承会让跑马灯文字垂直错位。改为与标题内容区一致的左右内边距。 */
+  /* 不再 padding:inherit —— 浮层的 padding 顶部含渐变区（--space-2xl），
+ 继承会让跑马灯文字垂直错位。改为与标题内容区一致的左右内边距。 */
   padding: 0 var(--space-xs);
   /* 背景透明：原标题区铺页面底色，现在标题浮在封面图上，再铺底色会盖出方块。 */
   background: transparent;
@@ -555,8 +555,8 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   display: flex;
 }
 
-/* 2026-11-03 封面出血后 marquee 层背景已透明（否则会盖住封面图），
-   改为「跑马灯启用时隐藏 fallback」，避免两层文字重影。 */
+/* 封面出血后 marquee 层背景已透明（否则会盖住封面图），
+ 改为「跑马灯启用时隐藏 fallback」，避免两层文字重影。 */
 .hero-side-card__title.is-marquee .hero-side-card__title-fallback {
   visibility: hidden;
 }
@@ -579,30 +579,29 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
 }
 
 /* 换一换：脱标浮层（absolute 不占布局）——锚定 .hero-bili__right（= 右栏全宽），
-   top: 0 与第一行卡顶对齐（2026-09-30 用户裁决，知晓并接受压住右列首卡
-   收藏按钮浮现区）。
-   ⚠️ 2026-10-11 四次修正（三次版 right=−fab-breath 方向反了：right 负值外推的是按钮**右缘**，
-   按钮向左延伸致左缘压卡 ≈W−breath，用户反馈「位置没变化」即此）：改用 left 锚定——
-   按钮**左缘** = 容器右缘(=内容右缘) + 呼吸距，天然不叠内容；min() 上限
-   (G − 48)（G=--content-edge-gutter，48 ≈ 按钮宽上限 ≈41 + 贴屏安全距，防留白窄时超出视口），
-   间距随视口增大（--fab-breath clamp 12~28）但不超过可用留白。与 fab 同一口径。
-   旧三次裁决（right=−space-md/−breath 压卡）与更旧「距视口恒 space-md」均废。
-   祖先裁切自查结论不变（三处 overflow 均视口级）。
-   水平（2026-09-30 二次裁决）：全档进页面留白区，统一
-   right = space-md − page-pad-x（按钮右缘距视口恒 space-md 呼吸）。
-   配套：layout-tokens.css 的 --page-pad-x 60px 档起点 1440 → 1024（原 1024–1439
-   的 --space-lg 流体 15.2–16.5px 放不下 ~30px 按钮，卡面浮层回退档已作废删除），
-   1024–1919 档留白恒 60px → 按钮左缘在 hero 右缘外 ~20px，完全不叠卡。
-   z-index 压过兄弟卡片封面（收藏钮 z-index:3 在其上，浮现时仍可点）；
-   图标上、竖排文本下。祖先裁切自查：.app-shell / .app-shell__scroll-wrapper /
-   .app-shell__scroll 三处 overflow 均在视口级 padding box，按钮右缘距视口
-   ≥ space-md > 0，不会被剪，hero 无需任何 overflow 改动。 */
+ top: 0 与第一行卡顶对齐（压住右列首卡收藏按钮浮现区）。
+ ⚠️（此前 right=−fab-breath 方向反了：right 负值外推的是按钮**右缘**，
+ 按钮向左延伸致左缘压卡 ≈W−breath，「位置没变化」即此）：改用 left 锚定——
+ 按钮**左缘** = 容器右缘(=内容右缘) + 呼吸距，天然不叠内容；min() 上限
+ (G − 48)（G=--content-edge-gutter，48 ≈ 按钮宽上限 ≈41 + 贴屏安全距，防留白窄时超出视口），
+ 间距随视口增大（--fab-breath clamp 12~28）但不超过可用留白。与 fab 同一口径。
+ 旧方案（right=−space-md/−breath 压卡）与更旧「距视口恒 space-md」均废。
+ 祖先裁切自查结论不变（三处 overflow 均视口级）。
+ 水平：全档进页面留白区，统一
+ right = space-md − page-pad-x（按钮右缘距视口恒 space-md 呼吸）。
+ 配套：layout-tokens.css 的 --page-pad-x 60px 档起点 1440 → 1024（原 1024–1439
+ 的 --space-lg 流体 15.2–16.5px 放不下 ~30px 按钮，卡面浮层回退档已作废删除），
+ 1024–1919 档留白恒 60px → 按钮左缘在 hero 右缘外 ~20px，完全不叠卡。
+ z-index 压过兄弟卡片封面（收藏钮 z-index:3 在其上，浮现时仍可点）；
+ 图标上、竖排文本下。祖先裁切自查：.app-shell / .app-shell__scroll-wrapper /
+ .app-shell__scroll 三处 overflow 均在视口级 padding box，按钮右缘距视口
+ ≥ space-md > 0，不会被剪，hero 无需任何 overflow 改动。 */
 .hero-bili__shuffle {
   position: absolute;
   top: 0;
   right: auto;
   /* 左缘锚定：整表达式已下沉为 --shuffle-left token（本仓 postcss-calc 不吃
-     calc(<pct> + min())，嵌套形态会被构建静默丢弃）；fallback = 贴内容右缘 */
+ calc(<pct> + min())，嵌套形态会被构建静默丢弃）；fallback = 贴内容右缘 */
   left: var(--shuffle-left, 100%);
   z-index: 2;
   display: flex;
@@ -645,15 +644,15 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
 }
 
 /* ── Reduced motion ────────────────────────────────────────────────────
-   ⚠️ 换一换转圈（.hero-bili__shuffle.is-spinning .hero-bili__shuffle-icon）已于
-   2026-11-08 按用户拍板从本豁免块摘出：用户系统开着 Windows「动画效果关闭」，
-   豁免块把转圈整个禁掉（用户报「图标不转动了」）。转圈属点击反馈动画，应用侧
-   刻意无视系统减少动态；若要恢复 a11y 行为，把该选择器加回下方列表即可。 */
+ ⚠️ 换一换转圈（.hero-bili__shuffle.is-spinning .hero-bili__shuffle-icon）已于
+ 从本豁免块摘出：用户系统开着 Windows「动画效果关闭」，
+ 豁免块把转圈整个禁掉（图标不转动了）。转圈属点击反馈动画，应用侧
+ 刻意无视系统减少动态；若要恢复 a11y 行为，把该选择器加回下方列表即可。 */
 
 
-/* ── 右卡封面加载门控（2026-09-23）──────────────────────────────────
-   扫光中隐藏四角标 + 收藏钮；成功/失败兜底/空封面（无 LazyImage placeholder）显示。
-   放末尾压过 .hero-side-card:hover / :focus-visible / .is-on 显形规则。 */
+/* ── 右卡封面加载门控──────────────────────────────────
+ 扫光中隐藏四角标 + 收藏钮；成功/失败兜底/空封面（无 LazyImage placeholder）显示。
+ 放末尾压过 .hero-side-card:hover / :focus-visible / .is-on 显形规则。 */
 .hero-side-card__cover:has(.lazy-image-placeholder) .hero-side-card__corner,
 .hero-side-card__cover:has(.lazy-image-placeholder) .hero-side-card__fav,
 .hero-side-card:hover .hero-side-card__cover:has(.lazy-image-placeholder) .hero-side-card__fav,

@@ -1,10 +1,10 @@
 /* 历史页骨架 — 几何全部继承 History.css / RecordCard.css 的真实类，
-   本文件只做两件事：① 关掉骨架不该有的交互态；② 给「骨架私有」的占位块
-   （时间轴算珠位 / 节点行圆点）定位 —— 真实同名元素的位置由 JS 驱动，
-   骨架没有 JS，故用静态阶梯排布。 */
+ 本文件只做两件事：① 关掉骨架不该有的交互态；② 给「骨架私有」的占位块
+ （时间轴算珠位 / 节点行圆点）定位 —— 真实同名元素的位置由 JS 驱动，
+ 骨架没有 JS，故用静态阶梯排布。 */
 
 /* 骨架层不可交互：真实 .record-card 带 cursor:pointer + hover 描边/阴影/跑马灯，
-   骨架必须全部静默（与 #boot-splash 的 pointer-events:none 同口径）。 */
+ 骨架必须全部静默（与 #boot-splash 的 pointer-events:none 同口径）。 */
 .history-skeleton,
 .history-skeleton .record-card {
   pointer-events: none;
@@ -91,9 +91,9 @@
 }
 
 /* ── 记录卡内部：封面（16:9 由 .record-card__media 提供）+ 标题 + 元信息 ──
-   ⚠️ 三个块的高度取真实文本行盒：标题 font-size --text-sm / line-height 1.5，
-   元信息行 --text-xs / line-height 1.5 —— 与 .record-card__title / __meta-row 对齐，
-   保证卡片等高、交接无纵向跳动。 */
+ ⚠️ 三个块的高度取真实文本行盒：标题 font-size --text-sm / line-height 1.5，
+ 元信息行 --text-xs / line-height 1.5 —— 与 .record-card__title / __meta-row 对齐，
+ 保证卡片等高、交接无纵向跳动。 */
 .history-skeleton__media {
   width: 100%;
   height: 100%;
@@ -117,4 +117,4 @@
 }
 
 /* <480px 真实卡切「左封面 + 右信息」横版（RecordCard.css），骨架自动跟随
-   （外层 flex 方向由真实类给出），封面宽度也由真实类给出，此处无需重复。 */
+ （外层 flex 方向由真实类给出），封面宽度也由真实类给出，此处无需重复。 */

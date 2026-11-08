@@ -5,9 +5,9 @@ export interface CmsSourceGuard {
   /** 给定 cmsSourceId 判断该源是否已在设置中启用（未传 id 视为放行，如 TMDB 详情类记录） */
   isSourceEnabled: (cmsSourceId?: string) => boolean;
   /**
-   * 跳转前调用：源未启用返回 false 并弹出居中提示弹窗；
-   * 源已启用（或未携带源标识）返回 true，调用方继续导航。
-   */
+ * 跳转前调用：源未启用返回 false 并弹出居中提示弹窗；
+ * 源已启用（或未携带源标识）返回 true，调用方继续导航。
+ */
   requestNavigate: (cmsSourceId?: string, cmsSourceName?: string) => boolean;
   /** 当前被拦截的源名称（用于弹窗文案）；null 表示无弹窗 */
   blockedSourceName: string | null;

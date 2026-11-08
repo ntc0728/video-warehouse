@@ -1,12 +1,12 @@
 /**
- * 播放器「能力探测」——全屏 / 画中画 / 内核兼容性（生产版，自 demo 收敛）
+ * 播放器「能力探测」——全屏 / 画中画 / 内核兼容性（生产版，自 收敛）
  *
  * 同一个播放器要跑在 5 类完全不同的环境里，它们对 <video> 的全屏与画中画支持毫无一致性：
- *   1. 安卓 App（Capacitor WebView）   —— Chromium，Fullscreen API + 标准 PiP 可用
- *   2. 安卓 Web（Chrome / 三星 / 小米 / 华为 / OPPO / vivo 浏览器）
- *   3. iOS Web（Safari / 微信 / QQ）    —— **不支持** Element.requestFullscreen
- *   4. PC Web（Chrome / Edge）          —— 全能力
- *   5. PC 调试安卓（DevTools 设备模拟） —— UA 是安卓，宿主是桌面 Chrome，能力按桌面算
+ * 1. 安卓 App（Capacitor WebView） —— Chromium，Fullscreen API + 标准 PiP 可用
+ * 2. 安卓 Web（Chrome / 三星 / 小米 / 华为 / OPPO / vivo 浏览器）
+ * 3. iOS Web（Safari / 微信 / QQ） —— **不支持** Element.requestFullscreen
+ * 4. PC Web（Chrome / Edge） —— 全能力
+ * 5. PC 调试安卓（DevTools 设备模拟） —— UA 是安卓，宿主是桌面 Chrome，能力按桌面算
  *
  * 「能不能全屏」「能不能画中画」「全屏后还有没有自定义控制栏」必须运行时探测，
  * 不能靠 UA 猜，也不能靠屏幕宽度猜。

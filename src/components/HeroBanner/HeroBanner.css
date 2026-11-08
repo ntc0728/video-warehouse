@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   HeroBanner — 首页 Hero 横幅（Classic 分支：<1024 / TV）
-   布局：卡片容器 + 全宽主背景图（crossfade / 三联 track 滑动切换），16:9。
-   2026-09-11（用户要求「删除缩略图相关所有逻辑」）：右侧竖排缩略图列
-   （.hero-banner__thumbs / HeroThumb / .hero-banner__thumb*）已整体删除，
-   主图区独占整宽，banner 几何退化为纯 16:9，不再依赖 --hero-thumb-count。
-   ≥1024 桌面（非 TV）由 HeroBanner/index.tsx 分流到 HeroBili，本组样式只服务 <1024 / TV。
-   ═══════════════════════════════════════════════════════════════════════ */
+ HeroBanner — 首页 Hero 横幅（Classic 分支：<1024 / TV）
+ 布局：卡片容器 + 全宽主背景图（crossfade / 三联 track 滑动切换），16:9。
+ （删除缩略图相关所有逻辑）：右侧竖排缩略图列
+ （.hero-banner__thumbs / HeroThumb / .hero-banner__thumb*）已整体删除，
+ 主图区独占整宽，banner 几何退化为纯 16:9，不再依赖 --hero-thumb-count。
+ ≥1024 桌面（非 TV）由 HeroBanner/index.tsx 分流到 HeroBili，本组样式只服务 <1024 / TV。
+ ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── 卡片容器 ── */
 .hero-banner__card {
@@ -24,8 +24,8 @@
   flex-direction: row;
   gap: 0;
   width: 100%;
-  /* 几何：右侧缩略图列已删除（2026-09-11）→ 主图区独占整宽，比例退化为纯 16:9。
-     仍由 aspect-ratio 驱动（不依赖 JS 注入高度），任何视口下都无白隙/比例漂移。 */
+  /* 几何：右侧缩略图列已删除→ 主图区独占整宽，比例退化为纯 16:9。
+ 仍由 aspect-ratio 驱动（不依赖 JS 注入高度），任何视口下都无白隙/比例漂移。 */
   aspect-ratio: 16 / 9;
   user-select: none;
   -webkit-user-drag: none;
@@ -40,12 +40,12 @@
   min-width: 0;
   height: 100%;
   /* 兜底深色（与空态占位同源）：banner 始终为照片，任何图片未就绪/重新解码的
-     透明窗口都应露出深色而非白底，避免「切回页签先闪一下灰白再出图」。
-     此前用浅色渐变，亮色主题下渲染为灰白 → 问题 #3 的根因之一。 */
+ 透明窗口都应露出深色而非白底，避免「切回页签先闪一下灰白再出图」。
+ 此前用浅色渐变，亮色主题下渲染为灰白 → 问题 #3 的根因之一。 */
   background: var(--color-media-surface);
   overflow: hidden;
   /* 不设 aspect-ratio（flex 子项上会导致宽高循环矛盾），
-      图片用 object-fit: cover 视觉保持 16:9 */
+ 图片用 object-fit: cover 视觉保持 16:9 */
 }
 
 .hero-banner__bg-wrapper {
@@ -54,7 +54,7 @@
 }
 
 /* 背景层堆叠：旧层常驻 opacity:1 留在底层，仅新层（is-active，叠在上层）淡入 0→1，
-   形成"无凹陷"的真·crossfade（避免两层同时 1→0 / 0→1 中途露出页面底色导致发暗/闪） */
+ 形成"无凹陷"的真·crossfade（避免两层同时 1→0 / 0→1 中途露出页面底色导致发暗/闪） */
 .hero-banner__bg-layer {
   position: absolute;
   inset: 0;
@@ -62,8 +62,8 @@
   height: 100%;
   object-fit: cover;
   /* 主体定位：TMDB backdrop 主体（人物/标题/Logo）通常在画面中上 1/3。
-     center 在容器比 16:9 扁（max-height 生效）时裁掉上下两端、产生「横条」感；
-     偏上 20% 保留更多上方主体。 */
+ center 在容器比 16:9 扁（max-height 生效）时裁掉上下两端、产生「横条」感；
+ 偏上 20% 保留更多上方主体。 */
   object-position: center 20%;
   opacity: 1;
   will-change: opacity;
@@ -92,8 +92,8 @@
 }
 
 /* ── 三联 track（拖拽/滑动动画）──
-   track 内三张 slide 并排，每张 100% 宽，translateX(-100%) 居中当前图。
-   拖拽时偏移跟随，松手后动画滑出。 */
+ track 内三张 slide 并排，每张 100% 宽，translateX(-100%) 居中当前图。
+ 拖拽时偏移跟随，松手后动画滑出。 */
 .hero-banner__track {
   position: absolute;
   inset: 0;
@@ -128,10 +128,10 @@
 }
 
 /* ── 主图左右滑动切换（所有客户端）──
-   slideDir 由「自动轮播 + 手动拖拽」设置：
-   'left' = 新图从右滑入（前进），'right' = 新图从左滑入（后退）。
-   悬停预览无 slideDir → 回退为上方的 crossfade（.is-active 默认 heroBgFadeIn）。
-   .slide-* 选择器特异性更高，设置方向时覆盖 crossfade。 */
+ slideDir 由「自动轮播 + 手动拖拽」设置：
+ 'left' = 新图从右滑入（前进），'right' = 新图从左滑入（后退）。
+ 悬停预览无 slideDir → 回退为上方的 crossfade（.is-active 默认 heroBgFadeIn）。
+ .slide-* 选择器特异性更高，设置方向时覆盖 crossfade。 */
 .hero-banner__main.slide-left .hero-banner__bg-layer.is-active {
   animation: heroBgSlideLeft var(--dur-slow) var(--ease-out-expo);
 }
@@ -188,7 +188,7 @@
 }
 
 /* 主图加载失败：复用公共 .lazy-image-fallback--brand（MonitorPlay 图标 + kinoTV 品牌字）。
-   绘制在背景层（z-index auto）与 track（z-index 1）之上、渐变遮罩与内容叠加之下。 */
+ 绘制在背景层（z-index auto）与 track（z-index 1）之上、渐变遮罩与内容叠加之下。 */
 .hero-banner__fallback {
   position: absolute;
   inset: 0;
@@ -204,8 +204,8 @@
   display: flex;
   align-items: flex-end;
   /* 边距不再挂在这里：track 是三联 flex 行、靠 translateX 百分比位移，
-     挂在外层容器会让「下一张 slide」在落定/滑入时文本左缘贴到容器外缘（缺少左边距）。
-     边距已下沉到每张 .hero-banner__text-slide 自身，与 track transform 解耦。 */
+ 挂在外层容器会让「下一张 slide」在落定/滑入时文本左缘贴到容器外缘（缺少左边距）。
+ 边距已下沉到每张 .hero-banner__text-slide 自身，与 track transform 解耦。 */
   padding: 0;
   pointer-events: none;
   overflow: hidden;
@@ -218,17 +218,17 @@
   max-width: 60%;
   margin-bottom: var(--space-md);
   /* 左 / 下边距：叠在 .hero-banner__text-slide 的 padding（--space-xl）之上，
-     避免文字贴 banner 左下角。写在 .hero-banner__text 本身而非 slide 上，
-     是因为 slide 只负责「随 track 位移」，文字块的边距跟着文字走，
-     无论 track 怎么平移、无论空态（无 slide 包裹）都一致。 */
+ 避免文字贴 banner 左下角。写在 .hero-banner__text 本身而非 slide 上，
+ 是因为 slide 只负责「随 track 位移」，文字块的边距跟着文字走，
+ 无论 track 怎么平移、无论空态（无 slide 包裹）都一致。 */
   margin-left: var(--space-lg);
   /* 始终可见：文本不再有出场/垂直入场动画（问题 #1）；滑动期间随 banner 一起水平位移，
-     由 .hero-banner__text-track 的 transform 驱动（见 textTrackStyle / textTrackIndices）。 */
+ 由 .hero-banner__text-track 的 transform 驱动（见 textTrackStyle / textTrackIndices）。 */
   opacity: 1;
 }
 
 /* 文字 track：与背景图 track 同构（三联 flex 行 + 相同 transform），
-   锚定在 .hero-banner__main（banner 自身区域）内，文字随 banner 物理滑动。 */
+ 锚定在 .hero-banner__main（banner 自身区域）内，文字随 banner 物理滑动。 */
 .hero-banner__text-track {
   display: flex;
   flex-direction: row;
@@ -244,24 +244,24 @@
   width: 100%;
   height: 100%;
   /* 边距下沉到每张 slide：无论 track 怎么 translateX 位移，文本始终自带
-     左/下边距，下一张 banner 落定或滑入时都不会出现「左下角贴边、缺少边距」。 */
+ 左/下边距，下一张 banner 落定或滑入时都不会出现「左下角贴边、缺少边距」。 */
   padding: var(--space-md);
 }
 
 /* 文字始终可见（opacity:1），不再有出场/垂直入场动画（问题 #1）。
-   滑动（slideAnim）期间文字 track 复用背景图 track 的索引 [prev, current(old), next]
-   并镜像其 transform（forward→-200% / backward→0%），物理跟随 banner 一起水平滑动；
-   静止/拖拽/回弹态仍由 textTrackStyle 驱动位移。详见 HeroBanner.tsx。 */
+ 滑动（slideAnim）期间文字 track 复用背景图 track 的索引 [prev, current(old), next]
+ 并镜像其 transform（forward→-200% / backward→0%），物理跟随 banner 一起水平滑动；
+ 静止/拖拽/回弹态仍由 textTrackStyle 驱动位移。详见 HeroBanner.tsx。 */
 
 /* 加载骨架条：复用公共 shimmer 视觉（.thumbnail-skeleton-bg 只提供背景+扫光），
-   尺寸/圆角/宽度由这里提供；height 与对应真实元素的行高对齐。 */
+ 尺寸/圆角/宽度由这里提供；height 与对应真实元素的行高对齐。 */
 .hero-banner__skeleton {
   display: block;
   border-radius: var(--radius-sm);
 }
 
 /* 高度对齐「标题位」：有 logo 时是 logo（max-height --space-3xl，见下方
-   .hero-banner__text .detail-hero-logo），无 logo 时是文字标题。 */
+ .hero-banner__text .detail-hero-logo），无 logo 时是文字标题。 */
 .hero-banner__skeleton--title {
   width: min(60%, 26rem);
   height: var(--space-2xl);
@@ -277,9 +277,9 @@
   height: 0.875rem;
 }
 
-/* 尺寸镜像真实 .hero-banner__cta（2026-11-08 对齐 detail-btn 后）：
-   桌面 min-height --comp-tab-height 档；宽度按「icon-sm + gap-sm + 4 字 text-sm + 2×space-md」
-   ≈ 6rem 取近似（骨架宽度无需逐像素，高度/形状一致即可消除换行跳动）。 */
+/* 尺寸镜像真实 .hero-banner__cta（对齐 detail-btn 后）：
+ 桌面 min-height --comp-tab-height 档；宽度按「icon-sm + gap-sm + 4 字 text-sm + 2×space-md」
+ ≈ 6rem 取近似（骨架宽度无需逐像素，高度/形状一致即可消除换行跳动）。 */
 .hero-banner__skeleton--btn {
   width: 6rem;
   height: var(--comp-tab-height);
@@ -302,7 +302,7 @@ html[data-device="app"] .hero-banner__skeleton--btn {
 /* ── Title & Meta ────────────────────────────────────────────────────── */
 
 /* 标题位 logo：复用 Detail 页的 .detail-hero-logo（全局样式见
-   assets/styles/shared-hero.css），此处只做 banner 场景的尺寸覆盖。 */
+ assets/styles/shared-hero.css），此处只做 banner 场景的尺寸覆盖。 */
 .hero-banner__text .detail-hero-logo {
   max-width: 100%;
   max-height: var(--space-3xl);
@@ -312,7 +312,7 @@ html[data-device="app"] .hero-banner__skeleton--btn {
 .hero-banner__title {
   margin: 0;
   color: var(--color-on-image);
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   font-size: clamp(var(--text-2xl), 3.2vw + 8px, var(--text-3xl));
   font-weight: var(--fw-bold);
   line-height: 1.1;
@@ -377,9 +377,9 @@ html[data-device="app"] .hero-banner__skeleton--btn {
   gap: var(--space-sm);
   align-items: center;
   width: fit-content;
-  /* 尺寸与 Detail hero .detail-btn 对齐（2026-11-08 用户要求两处 hero 按钮一致）：
-     min-height --comp-tab-height 档 + padding 0 --space-md + --text-sm，
-     由「padding 撑高」改为 detail 同款「min-height 撑高」。 */
+  /* 尺寸与 Detail hero .detail-btn 对齐：
+ min-height --comp-tab-height 档 + padding 0 --space-md + --text-sm，
+ 由「padding 撑高」改为 detail 同款「min-height 撑高」。 */
   min-height: var(--comp-tab-height);
   padding: 0 var(--space-md);
   border: none;
@@ -409,14 +409,14 @@ html[data-device="app"] .hero-banner__skeleton--btn {
 /* ── TV ──────────────────────────────────────────────────────────────── */
 
 .hero-banner--tv .hero-banner__title {
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
   font-size: clamp(var(--text-3xl), 3vw + 16px, 40px);
 }
 
 /* ── ≥1024 主图区外框圆角（缩略图列删除后，主图独占整宽）──
-   此档只剩 TV 走到本组件（≥1024 非 TV 分流到 HeroBili）。
-   外层 .hero-banner__card 已有 radius-lg + overflow:hidden，此处给出统一内圆角，
-   与卡片外框同形，避免 TV 端出现直角内块。 */
+ 此档只剩 TV 走到本组件（≥1024 非 TV 分流到 HeroBili）。
+ 外层 .hero-banner__card 已有 radius-lg + overflow:hidden，此处给出统一内圆角，
+ 与卡片外框同形，避免 TV 端出现直角内块。 */
 @media (width >= 1024px) {
   .hero-banner__main {
     border-radius: var(--radius-lg);
@@ -427,14 +427,14 @@ html[data-device="app"] .hero-banner__skeleton--btn {
 
 
 /* ── Mobile / 平板：banner 已是纯 16:9（几何随缩略图列删除而统一），
-   此档只保留卡片自身的移动端外观（更小的圆角 + 底部间距）。 ─── */
+ 此档只保留卡片自身的移动端外观（更小的圆角 + 底部间距）。 ─── */
 @media (width <= 1023px) {
   .hero-banner__card {
     margin-bottom: var(--space-md);
     border-radius: var(--radius-md);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 1023px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .hero-banner__card {
     margin-bottom: var(--space-md);
@@ -455,25 +455,24 @@ html[data-device="app"] .hero-banner__skeleton--btn {
   }
 
   /* 移动端文本距图左/下缘过远根因：slide.padding(--space-xl) 与 text 自身的
-     margin(--space-lg/--space-md) 双重叠加 → 左 28px / 下 24px，在 390px 的
-     16:9 矮图上留白过大。此处双收：slide padding 收到 --space-md(8px)，
-     text margin 收到 --space-sm/--space-xs(6px/3px) → 左≈14px、下≈11px。
-     桌面端保持原值不动（图宽、占比合理）。 */
+ margin(--space-lg/--space-md) 双重叠加 → 左 28px / 下 24px，在 390px 的
+ 16:9 矮图上留白过大。此处双收：slide padding 收到 --space-md(8px)，
+ text margin 收到 --space-sm/--space-xs(6px/3px) → 左≈14px、下≈11px。
+ 桌面端保持原值不动（图宽、占比合理）。 */
   .hero-banner__text-slide {
     padding: var(--space-md);
   }
 
 
   /* 标题阴影收窄：桌面的大半径 60px 模糊阴影落在正在做 transform 动画的文字轨道内，
-     移动端每帧都要重新模糊整个文本层（合成器最贵的操作之一）。移动端标题本就压在
-     图的下缘暗部，去掉大半径光晕对可读性几乎无损。 */
+ 移动端每帧都要重新模糊整个文本层（合成器最贵的操作之一）。移动端标题本就压在
+ 图的下缘暗部，去掉大半径光晕对可读性几乎无损。 */
   .hero-banner__title {
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
   }
 
   /* CTA 按钮（查看详情/继续播放）移动端 = Detail hero .detail-btn 移动档
-     （2026-11-08 用户要求两处 hero 按钮一致）：
-     min-height --space-2xl + padding 0 --space-sm + --text-xs + 图标 --icon-sm。 */
+ min-height --space-2xl + padding 0 --space-sm + --text-xs + 图标 --icon-sm。 */
   .hero-banner__cta {
     gap: var(--space-2xs);
     min-height: var(--space-2xl);
@@ -486,7 +485,7 @@ html[data-device="app"] .hero-banner__skeleton--btn {
     height: var(--icon-sm);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .hero-banner__content {
     padding: var(--space-md);
@@ -507,7 +506,7 @@ html[data-device="app"] .hero-banner__skeleton--btn {
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
   }
 
-  /* 9.1 app 恒移动副本：CTA 按钮 = Detail hero .detail-btn 移动档（与上方 ≤767 块同步） */
+  /* app 恒移动副本：CTA 按钮 = Detail hero .detail-btn 移动档（与上方 ≤767 块同步） */
   html[data-device="app"] .hero-banner__cta {
     gap: var(--space-2xs);
     min-height: var(--space-2xl);

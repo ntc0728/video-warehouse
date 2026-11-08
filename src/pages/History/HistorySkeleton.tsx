@@ -1,9 +1,9 @@
 /**
  * 历史页专属骨架 — 与真实内容区逐层同构：
- *  - 桌面（≥768 且非 app）：左侧算珠时间轴槽（rail + 5 个算珠位）+ 右侧
- *    「分组节点行 + 记录卡网格」；
- *  - 移动 / app：时间轴槽由 History.css 门控自动隐藏，只剩节点行 + 网格
- *    （与真实页同一套门控，骨架不另设断点）。
+ * - 桌面（≥768 且非 app）：左侧算珠时间轴槽（rail + 5 个算珠位）+ 右侧
+ * 「分组节点行 + 记录卡网格」；
+ * - 移动 / app：时间轴槽由 History.css 门控自动隐藏，只剩节点行 + 网格
+ * （与真实页同一套门控，骨架不另设断点）。
  *
  * 为什么复用真实类（.history-content / .history-timeline / .history-groups /
  * .history-group-body / .history-grid / .record-card / .record-card__media /
@@ -13,10 +13,10 @@
  * 复用 .player-panel 的做法）。仅交互态（hover / 跑马灯 / 指针）在
  * HistorySkeleton.css 里关掉。
  *
- * 列数 = 运行时读 --history-cols token（layout-tokens.css 分档，2026-09-30 起
+ * 列数 = 运行时读 --history-cols token（layout-tokens.css 分档， 起
  * <480→1 / ≥480→2 / ≥768→3 / ≥1280→4 / ≥1920→5 / ≥2560→6，TV 恒 5），
  * 与真实 .history-grid 同源；行数由 useFillRows 按滚动容器可视高度实测推导
- * （2026-09-18：不再固定 2 行）。
+ * （不再固定 2 行）。
  *
  * 触发时机：useUserStore 首次从 IndexedDB 读取完成前（_loading）。历史数据在
  * 本地库，正常路径下骨架存在时间极短，靠 .skeleton-scope 的 150ms 延迟淡入

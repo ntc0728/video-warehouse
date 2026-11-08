@@ -1,32 +1,32 @@
 /**
- * 详情页专属骨架 — 与真实页面**逐区块**同构（2026-10-10 按方案 A · 海报对开重构）。
+ * 详情页专属骨架 — 与真实页面**逐区块**同构（按海报对开重构）。
  *
- * 真实渲染顺序（Detail/index.tsx 方案 A）：
- *   .detail-hero（海报对开：≥768 两列 海报列|文本区，<768 单列文本区）
- *     .detail-hero-poster   竖海报 2:3（骨架 = 灰块）
- *     .detail-hero-info     横板底纹区：kicker / 标题 / meta / 简介 3 行 / CTA 按钮行
- *   .detail-facts（资料区）
- *     .detail-tabs-wrap     tab 槽骨架（图标 + 标签方框，不渲染真实文字，外壳复用真实类）
- *     .detail-content
- *       基础信息表   chips 4 + 典型 7 格 + 2 条整行（国家/发行）
- *       演员         .detail-cast-row--collapsed 12 槽
- *       剧照         .detail-stills-grid 6 张
- *   相关推荐 / 你可能还喜欢   各 1 行网格（slice(0,12)）
+ * 真实渲染顺序（Detail/index.tsx）：
+ * .detail-hero（海报对开：≥768 两列 海报列|文本区，<768 单列文本区）
+ * .detail-hero-poster 竖海报 2:3（骨架 = 灰块）
+ * .detail-hero-info 横板底纹区：kicker / 标题 / meta / 简介 3 行 / CTA 按钮行
+ * .detail-facts（资料区）
+ * .detail-tabs-wrap tab 槽骨架（图标 + 标签方框，不渲染真实文字，外壳复用真实类）
+ * .detail-content
+ * 基础信息表 chips 4 + 典型 7 格 + 2 条整行（国家/发行）
+ * 演员 .detail-cast-row--collapsed 12 槽
+ * 剧照 .detail-stills-grid 6 张
+ * 相关推荐 / 你可能还喜欢 各 1 行网格（slice(0,12)）
  *
  * 复用真实结构类（.detail-hero/.detail-hero-poster/.detail-hero-info/.detail-hero-body/
  * .detail-facts-grid/.detail-fact/.detail-tabs/.detail-cast-row/.detail-stills-grid/.detail-recommend），
  * 布局几何单真源自动跟随 ≥768 两列形态；骨架私有类只管灰块尺寸与「同构常量」。
  *
- * 「已知常量不当未知」（2026-09-18 要求）：区块数量与顺序确定；唯一不可知的是条件字段
+ * 「已知常量不当未知」：区块数量与顺序确定；唯一不可知的是条件字段
  * （真实基础信息 12 个条件项 + 2 整行）→ 取典型 INFO_CELL_COUNT=7 / FULL_ROW_COUNT=2 并在此注明。
- * 旧 .detail-top / .detail-hero-side 两栏镜像随方案 A 退役（2026-10-10）。
+ * 旧 .detail-top / .detail-hero-side 两栏镜像随 退役。
  */
 import Skeleton from '@/components/common/Skeleton';
 import { useGridCols } from '@/hooks';
 import './DetailSkeleton.css';
 
 /** tabs：真实前两项恒为概览/播放列表（TV 多一个「季信息」，骨架取公共最小 2）；
-    图标/标签均为骨架方框，wide 区分标签槽宽度档（2 字 vs 4 字） */
+ 图标/标签均为骨架方框，wide 区分标签槽宽度档（2 字 vs 4 字） */
 const TAB_ITEMS = [
   { key: 'info', wide: false },
   { key: 'sources', wide: true },
@@ -47,7 +47,7 @@ const STILL_COUNT = 6;
 const RECOMMEND_SECTIONS = ['相关推荐', '你可能还喜欢'] as const;
 const RECOMMEND_MAX_ITEMS = 12;
 
-/** 竖版海报卡（2026-11-04 二次定稿：封面 2:3 + info 区标题行，封面内标题方案已回滚） */
+/** 竖版海报卡（封面 2:3 + info 区标题行，封面内标题已回退） */
 function RecommendCardSkeleton() {
   return (
     <div className="video-card video-card--portrait detail-skeleton__rec-card">
@@ -101,7 +101,7 @@ export default function DetailSkeleton() {
       {/* ── 资料区：tab 槽 + 基础信息表 + 演员 + 剧照 ── */}
       <div className="detail-facts">
         {/* tab 条：外壳复用真实 .detail-tabs-wrap / .detail-tabs / .detail-tab /
-            .tab-underline（padding / 下划线几何单真源）；图标槽 + 标签槽均为骨架方框 */}
+ .tab-underline（padding / 下划线几何单真源）；图标槽 + 标签槽均为骨架方框 */}
         <div className="detail-tabs-wrap">
           <div className="detail-tabs">
             {TAB_ITEMS.map((tab) => (

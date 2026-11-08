@@ -2,7 +2,7 @@
  * continueItems 单元测试（H-1「继续观看」数据构建）
  *
  * 覆盖：进度过滤（≤0 / ≥90% 已看完）、同 videoId 取最新、
- *      排序（updatedAt 倒序）、数量上限、overlayLabel 拼接。
+ * 排序（updatedAt 倒序）、数量上限、overlayLabel 拼接。
  */
 import { describe, it, expect } from 'vitest';
 import { buildContinueItems, latestByVideoId } from './continueItems';

@@ -2,8 +2,8 @@
  * 筛选页懒加载文字态（2 态文案）
  *
  * 两种文字态：
- *  1. 加载中（isLoading && hasMore）→ spinner + "加载更多中…"
- *  2. 还有更多（!isLoading && hasMore）→ 静态 "下滑加载更多"（呼吸动画）
+ * 1. 加载中（isLoading && hasMore）→ spinner + "加载更多中…"
+ * 2. 还有更多（!isLoading && hasMore）→ 静态 "下滑加载更多"（呼吸动画）
  *
  * 初始无数据（!hasItems）或刷新中（isRefreshing）→ 隐藏整个组件
  * 已加载全部（!hasMore）→ 隐藏整个组件

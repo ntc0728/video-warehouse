@@ -1,15 +1,15 @@
 /* ============================================================
-   跨页共享 Hero 元素（logo / meta）
-   ────────────────────────────────────────────────────────────
-   这些类最初只服务 Detail 页（Detail.css），现被三处复用：
-     - Detail 页   .detail-hero-logo / .detail-hero-meta
-     - Play 页     .player-detail-meta（meta 项与 Detail 页同结构同条件）
-     - 首页 banner .hero-banner__text 内的标题位（用 logo 代替纯文字标题）
-   Detail.css 由 Detail/index.tsx 懒加载引入，Vite 会把它打进 Detail 的
-   异步 CSS chunk —— 首页 / Play 页在未访问过 Detail 页时拿不到这些规则
-   （实测 dist 中 .detail-hero-rating 只存在于 index-DaBpgXjC.css 异步块）。
-   故将共享规则上提到本文件，由 index.css 全局引入。
-   ============================================================ */
+ 跨页共享 Hero 元素（logo / meta）
+ ────────────────────────────────────────────────────────────
+ 这些类最初只服务 Detail 页（Detail.css），现被三处复用：
+ - Detail 页 .detail-hero-logo / .detail-hero-meta
+ - Play 页 .player-detail-meta（meta 项与 Detail 页同结构同条件）
+ - 首页 banner .hero-banner__text 内的标题位（用 logo 代替纯文字标题）
+ Detail.css 由 Detail/index.tsx 懒加载引入，Vite 会把它打进 Detail 的
+ 异步 CSS chunk —— 首页 / Play 页在未访问过 Detail 页时拿不到这些规则
+ （实测 dist 中 .detail-hero-rating 只存在于 index-DaBpgXjC.css 异步块）。
+ 故将共享规则上提到本文件，由 index.css 全局引入。
+ ============================================================ */
 
 /* TMDB Logo（标题位：有 logo 时用它代替文字标题） */
 .detail-hero-logo {
@@ -30,8 +30,8 @@
 }
 
 /* 颜色走可覆写变量：Detail 页是压在 backdrop 上的白字，
-   Play 页 player-detail-meta 是 --color-surface 浅底（深色字），
-   由 .player-detail-meta 覆写这两个变量即可，无需重复写选择器。 */
+ Play 页 player-detail-meta 是 --color-surface 浅底（深色字），
+ 由 .player-detail-meta 覆写这两个变量即可，无需重复写选择器。 */
 .detail-hero-meta-item {
   color: var(--hero-meta-color, rgba(255, 255, 255, 0.8));
 }

@@ -1,6 +1,6 @@
 /* ── ProxySetup（一键配置代理页）──────────────
-   2026-10-10 落地「己 · 三栏分步向导」：左步骤导航 / 中分步面板（上一步·下一步）/ 右深色控制台常驻。
-   全用 Design Token（无裸 hex / 无 transition:all），亮/暗主题自适应。 */
+ 「三栏分步向导」：左步骤导航 / 中分步面板（上一步·下一步）/ 右深色控制台常驻。
+ 全用 Design Token（无裸 hex / 无 transition:all），亮/暗主题自适应。 */
 .proxy-setup {
   display: flex;
   flex: 1 1 0;
@@ -89,7 +89,7 @@
   }
 }
 
-/* 9.1 app 恒移动：app 端保持堆叠 */
+/* app 恒移动：app 端保持堆叠 */
 html[data-device="app"] .proxy-setup__cols {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -200,7 +200,7 @@ html[data-device="app"] .proxy-setup__cols {
   display: none;
 }
 
-/* 2026-09-28 去卡片化：桌面端面板去卡壳（保留结构，无边框背景） */
+/* 去卡片化：桌面端面板去卡壳（保留结构，无边框背景） */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .proxy-setup__panel {
     padding: var(--space-2xs) 0;
@@ -219,7 +219,7 @@ html[data-device="app"] .proxy-setup__cols {
   margin-top: var(--space-xs);
 }
 
-/* 入口卡（radio 圆点，选中语义；demo 为竖排整宽） */
+/* 入口卡（radio 圆点，选中语义； 为竖排整宽） */
 .proxy-setup__grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -231,7 +231,7 @@ html[data-device="app"] .proxy-setup__cols {
     grid-template-columns: 1fr;
   }
 }
-/* 9.1 app 恒移动 */
+/* app 恒移动 */
 html[data-device="app"] .proxy-setup__grid {
   grid-template-columns: 1fr;
 }

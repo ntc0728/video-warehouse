@@ -2,14 +2,14 @@
  * Toast 工具 API
  *
  * 基于 Sonner 的兼容层，保持与旧 API 兼容：
- * - toast.show(content | { content, type?, duration? })  默认类型 default、统一 3s
+ * - toast.show(content | { content, type?, duration? }) 默认类型 default、统一 3s
  * - toast.replace(content | { content, type?, duration? }) 清空队列立即显示
  * - toast.success / toast.warning / toast.error(msg, duration?) 带语义色图标
  *
  * 类型与图标：
  * - success → 绿色对勾（--color-success）
  * - warning → 橙色三角（--color-warning）
- * - error   → 红色圆环感叹号（--color-error）
+ * - error → 红色圆环感叹号（--color-error）
  * - default → 无图标
  */
 import { createElement } from 'react';

@@ -30,18 +30,18 @@
 }
 
 /* ── 缩略图/骨架公共视觉（防分叉）──────────────────
-   使用方（共用一条规则，杜绝配色各自漂移）：
-   - .hero-side-card__cover--skeleton / __title--skeleton    （首页大屏骨架的右卡槽）
-   （原 .cqa-hotcard__poster--empty 面板卡占位随 mega 面板死代码清理删除，2026-10-11；
-     原 .cqa-trend__poster--empty 已随 CategoryHeatRow 组件删除，2026-10-09）
-   （原 .home-skeleton-card-img「首页行骨架海报」已于 2026-09-18 删除 —— 首页骨架行
-     改为直接渲染真实 <TMDBMovieRow>，其骨架卡走 TMDBMovieRow.css 自己的骨架类。）
-   背景 = 项目级 shimmer 渐变（--color-placeholder-shimmer-*）+ rgba(0,0,0,0.25)
-   暗底 + overlay 混合；扫光动画走 --card-shimmer-duration。
-   各处的布局（定位/边框/比例）由各自类提供，本类只负责「视觉背景 + 扫光」。
-   注：2026-09-11 首页 banner 右侧缩略图列删除后，原 .hero-banner__thumb-skeleton /
-   .home-skeleton-hero__thumb 已**连同类定义一起删除**（2026-09-18 复核：全仓 grep
-   仅剩本注释，无定义、无使用方）。保留此行仅为避免后人凭旧文档再把它们加回来。 */
+ 使用方（共用一条规则，杜绝配色各自漂移）：
+ - .hero-side-card__cover--skeleton / __title--skeleton （首页大屏骨架的右卡槽）
+ （原 .cqa-hotcard__poster--empty 面板卡占位随 mega 面板死代码清理删除，；
+ 原 .cqa-trend__poster--empty 已随 CategoryHeatRow 组件删除）
+ （原 .home-skeleton-card-img「首页行骨架海报」已删除 —— 首页骨架行
+ 改为直接渲染真实 <TMDBMovieRow>，其骨架卡走 TMDBMovieRow.css 自己的骨架类。）
+ 背景 = 项目级 shimmer 渐变（--color-placeholder-shimmer-*）+ rgba(0,0,0,0.25)
+ 暗底 + overlay 混合；扫光动画走 --card-shimmer-duration。
+ 各处的布局（定位/边框/比例）由各自类提供，本类只负责「视觉背景 + 扫光」。
+ 注： 首页 banner 右侧缩略图列删除后，原 .hero-banner__thumb-skeleton /
+ .home-skeleton-hero__thumb 已**连同类定义一起删除**（复核：全仓 grep
+ 仅剩本注释，无定义、无使用方）。保留此行仅为避免后人凭旧文档再把它们加回来。 */
 .thumbnail-skeleton-bg {
   background:
     linear-gradient(
@@ -93,9 +93,9 @@
   outline: none;
 }
 
-/* 2026-09-28 去卡片化：桌面端弹窗移除圆角 + 投影（卡片视觉）。
-   background 保留 —— 浮层压在页面内容之上，无底色会与底层文字重叠不可读。
-   <=767 / app 底部抽屉（上圆角 + 贴底滑出）不受影响。 */
+/* 去卡片化：桌面端弹窗移除圆角 + 投影（卡片视觉）。
+ background 保留 —— 浮层压在页面内容之上，无底色会与底层文字重叠不可读。
+ <=767 / app 底部抽屉（上圆角 + 贴底滑出）不受影响。 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .modal-content-animate {
     border-radius: 0;
@@ -120,7 +120,7 @@
 }
 
 /* 移动端：弹窗从底部滑出（bottom-sheet）
-   bottom 读 --kb-inset：虚拟键盘弹起且 interactive-widget 不支持时抬离遮挡（见 useVirtualKeyboardInset）。 */
+ bottom 读 --kb-inset：虚拟键盘弹起且 interactive-widget 不支持时抬离遮挡（见 useVirtualKeyboardInset）。 */
 @media (width <= 767px) {
   .modal-content-animate {
     inset: auto 0 var(--kb-inset, 0);
@@ -135,7 +135,7 @@
     animation: modalSlideDown var(--dur-sm) ease-in forwards;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .modal-content-animate {
     inset: auto 0 var(--kb-inset, 0);
@@ -273,20 +273,20 @@
 }
 
 html {
-  /* 根字号（rem 基准）— 2026-09-15 从 --text-base 解耦：
-     原写法让「最常用的正文 token」同时充当 rem 基准，改字号会连带移动全仓
-     ≈200 处 rem 消费点（组件 rem 字面量 + Tailwind 数字档工具类）。
-     --root-font-size 逐字节复刻改前实测曲线（8 组视口偏差 0.000%）。 */
+  /* 根字号（rem 基准）— 从 --text-base 解耦：
+ 原写法让「最常用的正文 token」同时充当 rem 基准，改字号会连带移动全仓
+ ≈200 处 rem 消费点（组件 rem 字面量 + Tailwind 数字档工具类）。
+ --root-font-size 逐字节复刻改前实测曲线（8 组视口偏差 0.000%）。 */
   font-size: var(--root-font-size);
 }
 
 /* 滚动条 — 极简 6px 淡色，全局规则（应用所有 overflow 元素）
-   说明：thumb 默认极淡色，hover/active 渐深以提供可发现性。
-   横滚容器通过下方白名单例外永久隐藏。 */
+ 说明：thumb 默认极淡色，hover/active 渐深以提供可发现性。
+ 横滚容器通过下方白名单例外永久隐藏。 */
 * {
   /* 原独立 `* {}` 空块（仅注释）已由 D7 合并至此 */
   /* scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-color) transparent; */
+ scrollbar-color: var(--scrollbar-color) transparent; */
   -webkit-tap-highlight-color: transparent;
 }
 *::-webkit-scrollbar {
@@ -312,8 +312,8 @@ html {
   background: transparent;
 }
 /* 彻底隐藏原生滚动条上下两端的箭头按钮（含 Windows classic 主题下渲染的三角）
-   - 同时禁用 start / end / increment / decrement / horizontal / vertical 各子状态
-   - 配合 appearance: none 防止 Webkit 仍渲染装饰性按钮 */
+ - 同时禁用 start / end / increment / decrement / horizontal / vertical 各子状态
+ - 配合 appearance: none 防止 Webkit 仍渲染装饰性按钮 */
 *::-webkit-scrollbar-button,
 *::-webkit-scrollbar-button:start,
 *::-webkit-scrollbar-button:end,
@@ -363,7 +363,7 @@ html {
     font-size: 16px;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] {
     overflow: hidden;
@@ -412,7 +412,7 @@ body {
   background-color: var(--color-background);
   color: var(--color-text);
   /* 中文字体显式声明：iOS 苹方 → Android 思源黑体/小米 MiSans → Windows 微软雅黑。
-     原栈无任何显式中文字体，Android 部分设备/WebView 中文回退参差导致「看着怪」。 */
+ 原栈无任何显式中文字体，Android 部分设备/WebView 中文回退参差导致「看着怪」。 */
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC',
     'MiSans', 'Microsoft YaHei', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
@@ -423,18 +423,18 @@ body {
 }
 
 /* 全局去除移动端点击的灰色高亮方块（原生 web 廉价感来源之一）；
-   改由 index.css 已有的 :active 内容缩放反馈提供「按下」感知。
-   ⚠️ 2026-09-15 D2（A2）：只保留 -webkit- 形式。该属性**从未进入标准**，
-   无前缀的 `tap-highlight-color` 是死代码（stylelint property-no-unknown 已报出）。
-   Chrome/Safari/WebView 全部只认 -webkit-tap-highlight-color。 */
+ 改由 index.css 已有的 :active 内容缩放反馈提供「按下」感知。
+ ⚠️ 只保留 -webkit- 形式。该属性**从未进入标准**，
+ 无前缀的 `tap-highlight-color` 是死代码（stylelint property-no-unknown 已报出）。
+ Chrome/Safari/WebView 全部只认 -webkit-tap-highlight-color。 */
 
-/* 主题切换（2026-08-04 终修）：完全瞬切——transition:none。
-   根因：此前 theme-transitioning 对 `*` 全量元素做颜色过渡（即使仅 3 属性、200ms），
-   Keep-Alive 常驻可见页数百上千元素同时逐帧动画 → 主线程动画压力 → 仍卡顿。
-   CSS 变量（data-theme）更新本身是一次「样式重算 + 一次 repaint」（几十 ms 内完成，
-   无逐帧压力）；去掉过渡即瞬时切换、彻底不卡。
-   body 自身的 0.25s 背景/文字过渡（index.css 全局规则）保留：单元素动画，提供轻微过渡感。
-   注：颜色瞬变不会出现「闪白边」——那是过渡中途的中间色态，瞬切无中间态。 */
+/* 主题切换：完全瞬切——transition:none。
+ 根因：此前 theme-transitioning 对 `*` 全量元素做颜色过渡（即使仅 3 属性、200ms），
+ Keep-Alive 常驻可见页数百上千元素同时逐帧动画 → 主线程动画压力 → 仍卡顿。
+ CSS 变量（data-theme）更新本身是一次「样式重算 + 一次 repaint」（几十 ms 内完成，
+ 无逐帧压力）；去掉过渡即瞬时切换、彻底不卡。
+ body 自身的 0.25s 背景/文字过渡（index.css 全局规则）保留：单元素动画，提供轻微过渡感。
+ 注：颜色瞬变不会出现「闪白边」——那是过渡中途的中间色态，瞬切无中间态。 */
 html.theme-transitioning,
 html.theme-transitioning *,
 html.theme-transitioning *::before,
@@ -443,14 +443,14 @@ html.theme-transitioning *::after {
 }
 
 /* ── 全局按钮 / 可点击项 / tab 点击反馈（统一内容缩放）──────────
-   规则：按下时【仅缩放内部文本与图标】，按钮框 / tab 框保持静止；
-   幅度统一 0.96，缓动用 --ease-out-expo（无过冲）。
-   - 若按钮含结构化子内容（图标 <svg>、文本 <span> 等），缩放其直接子元素、框静止；
-   - 若按钮为纯文本（无元素子节点），退化为整框缩放 0.96（幅度一致，
-     物理上文本与框无法分离，作为统一兜底）；
-   - 排除 .no-press 元素与设置页（.settings-page，其使用专属「内容缩放」规则，避免双重缩放）；
-   - 任何元素在按下缩放时一律不出现阴影框（沿用既有约定）；
-   - 已有自身 transform:scale 按压反馈的元素（如 .back-to-top-button）按下方整改清单排除，避免双重缩放。 */
+ 规则：按下时【仅缩放内部文本与图标】，按钮框 / tab 框保持静止；
+ 幅度统一 0.96，缓动用 --ease-out-expo（无过冲）。
+ - 若按钮含结构化子内容（图标 <svg>、文本 <span> 等），缩放其直接子元素、框静止；
+ - 若按钮为纯文本（无元素子节点），退化为整框缩放 0.96（幅度一致，
+ 物理上文本与框无法分离，作为统一兜底）；
+ - 排除 .no-press 元素与设置页（.settings-page，其使用专属「内容缩放」规则，避免双重缩放）；
+ - 任何元素在按下缩放时一律不出现阴影框（沿用既有约定）；
+ - 已有自身 transform:scale 按压反馈的元素（如 .back-to-top-button）按下方清单排除，避免双重缩放。 */
 button,
 a[role="button"],
 [role="button"],
@@ -491,11 +491,11 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 
-/* 不应用弹性按压的元素（整改清单）：
-   ① 已有自身 transform:scale 反馈 → 避免与全局 scale 叠加成双重缩放；
-   ①′ （2026-10-09 清理：原 .cqa-catcard 首页分类热度榜卡已随 CategoryHeatRow 删除，其本地按压豁免条目移除。）
-   ② 装饰/靠 transform 定位的元素；
-   ③ 设置页独占一行的全宽按钮/行（自身已有 :active 背景反馈，缩放整行观感差）。 */
+/* 不应用弹性按压的元素（清单）：
+ ① 已有自身 transform:scale 反馈 → 避免与全局 scale 叠加成双重缩放；
+ （原 .cqa-catcard 首页分类热度榜卡已随 CategoryHeatRow 删除，其本地按压豁免条目移除。）
+ ② 装饰/靠 transform 定位的元素；
+ ③ 设置页独占一行的全宽按钮/行（自身已有 :active 背景反馈，缩放整行观感差）。 */
 .no-press,
 .filter-bar__chip,
 .group-tag,
@@ -524,9 +524,9 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* ── 无交互视觉反馈工具类 ──────────────────────────────
-   通过类名引入，移除 hover / active / focus 的视觉变化。
-   用于 logo、品牌名等不需要交互反馈的元素。
-   !important 确保覆盖组件级样式及全局按钮点击反馈。 */
+ 通过类名引入，移除 hover / active / focus 的视觉变化。
+ 用于 logo、品牌名等不需要交互反馈的元素。
+ !important 确保覆盖组件级样式及全局按钮点击反馈。 */
 .no-interaction-visual:hover,
 .no-interaction-visual:active {
   background: transparent !important;
@@ -543,16 +543,16 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* ── TV/投影仪模式焦点方框（方向键 / 遥控器导航）─────────────────────
-   此前为「鼠标用户」在大量组件上做了 outline:none 屏蔽，导致 TV 模式下
-   用方向键聚焦按钮 / tab / 卡片时没有任何聚焦框。TV 模式统一重新点亮：
-   · 用 outline 画在边框【外侧】，不被元素自身 overflow:hidden /
-     border-radius 裁切（box-shadow 会被 overflow:hidden 祖先裁掉，
-     表现为「方框被裁 / 只剩一个小圆点」）；
-   · !important + 较高特异性覆盖各组件的 outline:none 屏蔽；
-   · box-shadow:none 清掉组件自带焦点环，避免与 outline 叠成双框；
-   · 例外：.no-interaction-visual（logo / 品牌名）保持无聚焦框。
-   projector（投影仪，设置项手动指定）：焦点交互视同 TV，与 tv 分支成对追加；
-   其几何仍走桌面档（见 html:not([data-device="tv"]) 各分档）。 */
+ 此前为「鼠标用户」在大量组件上做了 outline:none 屏蔽，导致 TV 模式下
+ 用方向键聚焦按钮 / tab / 卡片时没有任何聚焦框。TV 模式统一重新点亮：
+ · 用 outline 画在边框【外侧】，不被元素自身 overflow:hidden /
+ border-radius 裁切（box-shadow 会被 overflow:hidden 祖先裁掉，
+ 表现为「方框被裁 / 只剩一个小圆点」）；
+ · !important + 较高特异性覆盖各组件的 outline:none 屏蔽；
+ · box-shadow:none 清掉组件自带焦点环，避免与 outline 叠成双框；
+ · 例外：.no-interaction-visual（logo / 品牌名）保持无聚焦框。
+ projector（投影仪，设置项手动指定）：焦点交互视同 TV，与 tv 分支成对追加；
+ 其几何仍走桌面档（见 html:not([data-device="tv"]) 各分档）。 */
 [data-device="tv"] :focus-visible:not(.no-interaction-visual),
 [data-device="projector"] :focus-visible:not(.no-interaction-visual) {
   outline: var(--tv-focus-width, 3px) solid var(--color-primary) !important;
@@ -561,8 +561,8 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* 分段控件（收藏/历史 category-segmented、browse search-tabs）：容器 overflow:hidden
-   会把外侧 outline 裁掉，故聚焦时改为内嵌方框（负 offset 画在元素内侧）。覆盖上面的
-   全局外侧 outline，确保这些控件的焦点框清晰可见且不被裁切。 */
+ 会把外侧 outline 裁掉，故聚焦时改为内嵌方框（负 offset 画在元素内侧）。覆盖上面的
+ 全局外侧 outline，确保这些控件的焦点框清晰可见且不被裁切。 */
 [data-device="tv"] .category-segmented__item:focus-visible,
 [data-device="tv"] .browse-search-tab:focus-visible,
 [data-device="projector"] .category-segmented__item:focus-visible,
@@ -579,8 +579,8 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* TV/投影仪：导航栏 logo（.no-interaction-visual）是可聚焦的首页入口，遥控器导航下需显示
-   焦点框——覆盖 .no-interaction-visual:focus-visible 的 outline:none 屏蔽。
-   用外侧 outline（与全局 TV 规则一致）；logo 位于导航栏左侧、通常带左内边距，不会被裁切。 */
+ 焦点框——覆盖 .no-interaction-visual:focus-visible 的 outline:none 屏蔽。
+ 用外侧 outline（与全局 TV 规则一致）；logo 位于导航栏左侧、通常带左内边距，不会被裁切。 */
 [data-device="tv"] .no-interaction-visual:focus-visible,
 [data-device="projector"] .no-interaction-visual:focus-visible {
   outline: var(--tv-focus-width, 3px) solid var(--color-primary) !important;
@@ -588,16 +588,16 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   box-shadow: none !important;
 }
 
-/* 非 TV：恢复键盘焦点指示（2026-09-15，WCAG 2.4.7 AA / 2.4.11 / 2.4.13）
-   原实现把非 TV 的 :focus-visible 全局熄灭（outline 与 box-shadow 同时 none），
-   等于让键盘 / 开关控制 / 语音输入用户**完全失去位置感知** —— 违反 WCAG 2.4.7。
-   为什么可以安全恢复：:focus-visible 只在「键盘或辅助技术」触发时命中，鼠标点击
-   不会命中，故历史上担心的「点一下留下焦点框」本就不会出现（旧屏蔽是过度防御）。
-   用 outline 而非 box-shadow：box-shadow 会被 overflow:hidden / border-radius 祖先裁切。
-   规则形态与上方 TV 块同源，仅参数不同（TV 3px 固定 / 非 TV 2px 流体）。
-   例外：.no-interaction-visual（logo / 品牌名）保持无框（其自身已 !important）。
-   ⚠️ 同时排除 projector：投影仪走上方 TV 方框（焦点交互视同 TV），若命中本桌面
-   分支（特异性更高且源码顺序在后）会把 TV 3px 方框压回 2px 流体环。 */
+/* 非 TV：恢复键盘焦点指示（WCAG 2.4.7 AA / 2.4.11 / 2.4.13）
+ 原实现把非 TV 的 :focus-visible 全局熄灭（outline 与 box-shadow 同时 none），
+ 等于让键盘 / 开关控制 / 语音输入用户**完全失去位置感知** —— 违反 WCAG 2.4.7。
+ 为什么可以安全恢复：:focus-visible 只在「键盘或辅助技术」触发时命中，鼠标点击
+ 不会命中，故历史上担心的「点一下留下焦点框」本就不会出现（旧屏蔽是过度防御）。
+ 用 outline 而非 box-shadow：box-shadow 会被 overflow:hidden / border-radius 祖先裁切。
+ 规则形态与上方 TV 块同源，仅参数不同（TV 3px 固定 / 非 TV 2px 流体）。
+ 例外：.no-interaction-visual（logo / 品牌名）保持无框（其自身已 !important）。
+ ⚠️ 同时排除 projector：投影仪走上方 TV 方框（焦点交互视同 TV），若命中本桌面
+ 分支（特异性更高且源码顺序在后）会把 TV 3px 方框压回 2px 流体环。 */
 :root:not([data-device="tv"]):not([data-device="projector"]) :focus-visible:not(.no-interaction-visual) {
   outline: var(--layout-outline-width, 2px) solid var(--color-primary) !important;
   outline-offset: 2px !important;
@@ -605,7 +605,7 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* 分段控件（收藏/历史 category-segmented、browse search-tabs）：容器 overflow:hidden
-   会把外侧 outline 裁掉，故聚焦时改为内嵌方框（负 offset 画在元素内侧）。与 TV 侧同源。 */
+ 会把外侧 outline 裁掉，故聚焦时改为内嵌方框（负 offset 画在元素内侧）。与 TV 侧同源。 */
 :root:not([data-device="tv"]):not([data-device="projector"]) .category-segmented__item:focus-visible,
 :root:not([data-device="tv"]):not([data-device="projector"]) .browse-search-tab:focus-visible {
   outline: var(--layout-outline-width, 2px) solid var(--color-primary) !important;
@@ -618,9 +618,9 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* 文本输入类豁免：input/textarea 聚焦必命中 :focus-visible（含 autoFocus、移动端/鼠标点按——
-   文本框在任何聚焦方式下都匹配），2px outline 环叠在其自身边框外呈「黑色粗环」观感。
-   文本类输入聚焦态已由 border-color 变化表达，故豁免 outline 环；
-   checkbox/radio/range/file 无替代聚焦指示，仍走上方全局环。 */
+ 文本框在任何聚焦方式下都匹配），2px outline 环叠在其自身边框外呈「黑色粗环」观感。
+ 文本类输入聚焦态已由 border-color 变化表达，故豁免 outline 环；
+ checkbox/radio/range/file 无替代聚焦指示，仍走上方全局环。 */
 :root:not([data-device="tv"]):not([data-device="projector"])
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus-visible,
 :root:not([data-device="tv"]):not([data-device="projector"]) textarea:focus-visible {
@@ -630,7 +630,7 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* ── Tab 通用基类（下划线式） ─────────────────────────────
-   Detail / Person 页共用，避免重复定义 */
+ Detail / Person 页共用，避免重复定义 */
 .tab-underline {
   position: relative;
   padding: var(--space-sm) var(--space-lg);
@@ -654,35 +654,35 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* ── 页面级统一左右下内边距 ─────────────────────────────
-   所有页面根容器统一使用，确保水平/顶部间距一致。
-   Player / IPTVPlayer 因全屏定位脱离文档流，不使用此类。 */
+ 所有页面根容器统一使用，确保水平/顶部间距一致。
+ Player / IPTVPlayer 因全屏定位脱离文档流，不使用此类。 */
 .page-padding {
   padding: var(--space-sm) var(--space-sm) 0 var(--space-sm);
 }
 
 @media (width >= 768px) {
-  /* 桌面端页面主体内容左右留白改由 --page-pad-x 分档驱动（2026-09-05）：
-     <1440 沿用 --space-lg；≥1440<1920=60px；≥1920<2560=100px；≥2560=140px（见 variables.css）。
-     上下与移动端保持一致。 */
+  /* 桌面端页面主体内容左右留白改由 --page-pad-x 分档驱动：
+ <1440 沿用 --space-lg；≥1440<1920=60px；≥1920<2560=100px；≥2560=140px（见 variables.css）。
+ 上下与移动端保持一致。 */
   .page-padding {
     padding-right: var(--page-pad-x);
     padding-left: var(--page-pad-x);
   }
 
-  /* 2026-11-04：统一所有页面「内容主体宽度」= 与首页同一 2200 封顶口径。
-     根因：`.page-padding` 的 padding 与 max-width 在同一元素上，
-     `max-width: min(100%, 2200px)` 作用在**含 padding 的外框** →
-     内容盒 = min(视口, 2200) − 2×pad，比首页内容区窄 2×pad；
-     而首页/收藏/历史根又没有 max-width → 2560 下反而到 2280（超出封顶）。
-     修法：对所有 page-padding 页面根统一「外框上限 = 2200 + 2×pad」，
-     使内容盒在任何视口都恰好 = 2200（1440 → 1320、1920 → 1720、2560 → 2200）。
-     ⚠️ 排除 Player（全屏定位、不吃内容封顶）与 app/TV 分支。 */
+  /* 统一所有页面「内容主体宽度」= 与首页同一 2200 封顶口径。
+ 根因：`.page-padding` 的 padding 与 max-width 在同一元素上，
+ `max-width: min(100%, 2200px)` 作用在**含 padding 的外框** →
+ 内容盒 = min(视口, 2200) − 2×pad，比首页内容区窄 2×pad；
+ 而首页/收藏/历史根又没有 max-width → 2560 下反而到 2280（超出封顶）。
+ 修法：对所有 page-padding 页面根统一「外框上限 = 2200 + 2×pad」，
+ 使内容盒在任何视口都恰好 = 2200（1440 → 1320、1920 → 1720、2560 → 2200）。
+ ⚠️ 排除 Player（全屏定位、不吃内容封顶）与 app/TV 分支。 */
   html:not([data-device="tv"]):not([data-device="app"]) .page-padding:not(.player-page) {
-    /* 2026-11-04：必须同时居中。否则 >「cap+2×pad」视口（如 2560）下外框贴左，
-       右侧多出一整条空白（实测 fab 与内容间距被拉大到 68px，用户截图实证）。
-       居中后「视口 → 内容右缘」留白才等于 --content-edge-gutter 的公式值。
-       ⚠️ width:100% 必须显式：部分页面根（settings-page 等）没有 width，
-       只写 max-width + margin:auto 会按 fit-content 收缩（实测主列被压到 473px）。 */
+    /* 必须同时居中。否则 >「cap+2×pad」视口（如 2560）下外框贴左，
+ 右侧多出一整条空白（实测 fab 与内容间距被拉大到 68px）。
+ 居中后「视口 → 内容右缘」留白才等于 --content-edge-gutter 的公式值。
+ ⚠️ width:100% 必须显式：部分页面根（settings-page 等）没有 width，
+ 只写 max-width + margin:auto 会按 fit-content 收缩（实测主列被压到 473px）。 */
     width: 100%;
     max-width: min(100%, calc(var(--layout-content-cap) + 2 * var(--page-pad-x)));
     margin-inline: auto;
@@ -690,14 +690,14 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   超宽视口内容壳（G1，2026-09-07 定稿方案 T1）
-   契约：--layout-content-max-width（:root=100%，段2=min(100%,2200px)）不修改。
-   ≤2200 视口 = 100%（与现状逐像素一致）；>2200 封顶居中，与 Browse/Home
-   既有接法同构（根节点 border-box 封顶，见 Browse.css:13）。
-   Player 专属窄档 1920 见 T4（Player.css，不用本类）。
-   消费端：IPTV / Detail / Chart 页根（Browse/Home/Person/Collections/History
-   已各自接入）。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 超宽视口内容壳
+ 契约：--layout-content-max-width（:root=100%，段2=min(100%,2200px)）不修改。
+ ≤2200 视口 = 100%（与现状逐像素一致）；>2200 封顶居中，与 Browse/Home
+ 既有接法同构（根节点 border-box 封顶，见 Browse.css:13）。
+ Player 专属窄档 1920 见 （Player.css，不用本类）。
+ 消费端：IPTV / Detail / Chart 页根（Browse/Home/Person/Collections/History
+ 已各自接入）。
+ ═══════════════════════════════════════════════════════════════════════ */
 .content-shell {
   width: 100%;
   max-width: var(--layout-content-max-width);
@@ -705,13 +705,13 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   U-3（2026-09-07 G3 定稿）：≥2560 未激活 tab 文字对比度提档（浅色限定）
-   实施前核查结论：.browse-search-tab / .filter-bar__chip / .filter-bar__label
-   --clickable / .category-segmented__item 的未激活色已是 --color-text-secondary
-   （#666，5.7:1 达标），无需处理；真实的 tertiary(#999,≈2.85:1) 未激活文字
-   消费端是 .tab-underline（Detail / Person 页共用下划线式 tab，:598）。
-   提档 tertiary → secondary；暗色主题 tertiary=#666 本就达标，排他不变。
-   ═══════════════════════════════════════════════════════════════════════ */
+≥2560 未激活 tab 文字对比度提档（浅色限定）
+ 实施前核查结论：.browse-search-tab / .filter-bar__chip / .filter-bar__label
+ --clickable / .category-segmented__item 的未激活色已是 --color-text-secondary
+ （#666，5.7:1 达标），无需处理；真实的 tertiary(#999,≈2.85:1) 未激活文字
+ 消费端是 .tab-underline（Detail / Person 页共用下划线式 tab，:598）。
+ 提档 tertiary → secondary；暗色主题 tertiary=#666 本就达标，排他不变。
+ ═══════════════════════════════════════════════════════════════════════ */
 @media (width >= 2560px) {
   html:not([data-theme="dark"]):not([data-device="app"]):not([data-device="tv"])
     .tab-underline {
@@ -720,13 +720,12 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   全局设计规则 — 桌面端画布最小宽度（2026-09-03 用户拍板写入；2026-09-08 用户判定
-   该设计毫无意义，删除）
-   原规则：桌面 Web（视口 ≥768px 且非 App/TV）body 设 min-width=1024px，
-   窗口压缩到 1024 以下时由浏览器横向滚动条承接、不收缩布局。
-   2026-09-08 用户拍板删除整套：取消该下限后，819px 以下窗口页内布局
-   自行收缩（受各页 grid / fluid token 约束），不再出现强制横向滚动。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 全局设计规则 — 桌面端画布最小宽度（已废弃删除）
+ 原规则：桌面 Web（视口 ≥768px 且非 App/TV）body 设 min-width=1024px，
+ 窗口压缩到 1024 以下时由浏览器横向滚动条承接、不收缩布局。
+ 该规则已删除：取消该下限后，819px 以下窗口页内布局
+ 自行收缩（受各页 grid / fluid token 约束），不再出现强制横向滚动。
+ ═══════════════════════════════════════════════════════════════════════ */
 
 .empty-state-wrapper {
   display: flex;
@@ -781,8 +780,8 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* 胶囊变体（Detail 页“重新匹配”按钮）— 全圆角胶囊样式，hover 时仅背景/文字过渡，边框颜色保持不变。
-   尺寸/圆角与 .sdp-pill(idle) 对齐：相同 padding(5px 11px)、font-size(text-xs)、1px 边框、999px 圆角，
-   并清除 .retry-btn 基类自带的 margin-top，使其在工具栏内与源检测 pill 垂直居中对齐、高度一致。 */
+ 尺寸/圆角与 .sdp-pill(idle) 对齐：相同 padding(5px 11px)、font-size(text-xs)、1px 边框、999px 圆角，
+ 并清除 .retry-btn 基类自带的 margin-top，使其在工具栏内与源检测 pill 垂直居中对齐、高度一致。 */
 .retry-btn--tab {
   gap: var(--space-sm);
   margin-top: 0;
@@ -833,7 +832,7 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
 }
 
 /* 带文字变体：桌面设置页 topbar 等需要「← 返回」明确语义处使用。
-   复用 .back-btn 基础，仅修改圆角/宽度/内含 glyph + 文字间隔。 */
+ 复用 .back-btn 基础，仅修改圆角/宽度/内含 glyph + 文字间隔。 */
 .back-btn--with-text {
   gap: var(--space-xs);
   width: auto;
@@ -877,7 +876,7 @@ main {
     scrollbar-gutter: auto;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] main {
     scrollbar-gutter: auto;
@@ -940,14 +939,14 @@ main {
 }
 
 /* ── IPTV 频道网格列宽(全局可用,收藏 / 历史页共用) ──
-   列数：2 (≤767px) → 3 (768-1023px) → 4 (1024-1279px) → 5 (≥1440px 恒定)
-   （2026-09-06 用户定稿：≥1440 不再升 6；2026-09-07 断点由 1280 右移到 1440，1280–1439 回落 4 列）；TV 端恒 5（见文件末尾覆盖）
-   由 CSS 变量 --iptv-cols 驱动(见下方 :root 断点),各页复用同一列数策略
-   ⚠️ IPTV 页自 2026-09-08 起改用专用 --iptv-page-cols（见下方），不再使用本变量 */
+ 列数：2 (≤767px) → 3 (768-1023px) → 4 (1024-1279px) → 5 (≥1440px 恒定)
+ （≥1440 不再升 6； 断点由 1280 右移到 1440，1280–1439 回落 4 列）；TV 端恒 5（见文件末尾覆盖）
+ 由 CSS 变量 --iptv-cols 驱动(见下方 :root 断点),各页复用同一列数策略
+ ⚠️ IPTV 页自 起改用专用 --iptv-page-cols（见下方），不再使用本变量 */
 .iptv-channel-grid {
   display: grid;
   grid-template-columns: repeat(var(--iptv-cols, 2), minmax(0, 1fr));
-  /* 卡片间距与 .video-card-grid 统一为 --space-lg（2026-09-03） */
+  /* 卡片间距与 .video-card-grid 统一为 --space-lg */
   gap: var(--space-lg);
   grid-auto-rows: auto;
   align-content: start;
@@ -955,63 +954,63 @@ main {
 }
 
 :root {
-  /* --iptv-cols / --iptv-page-cols / --history-cols 基值与断点阶梯已移至 layout-tokens.css（单真源，2026-09-21） */
-  /* ── 页面专用列数默认档（2026-09-18）──
-     人物页作品网格默认跟随 --card-cols（惰性引用：定义在 layout-tokens.css，分档一变它就跟）；
-     榜单 --chart-cols 基值与全部覆盖已移至 layout-tokens.css（单真源，2026-09-21）。 */
+  /* --iptv-cols / --iptv-page-cols / --history-cols 基值与断点阶梯已移至 layout-tokens.css（单真源） */
+  /* ── 页面专用列数默认档──
+ 人物页作品网格默认跟随 --card-cols（惰性引用：定义在 layout-tokens.css，分档一变它就跟）；
+ 榜单 --chart-cols 基值与全部覆盖已移至 layout-tokens.css（单真源）。 */
   --person-work-cols: var(--card-cols);
 }
 
-/* --iptv-cols / --iptv-page-cols 的基值与全部断点阶梯已移至 layout-tokens.css（单真源，2026-09-21）。
-   --iptv-cols：收藏页 IPTV 卡 / 历史页记录卡；--iptv-page-cols：仅 IPTV 页网格（下方 .iptv-page 消费）。 */
+/* --iptv-cols / --iptv-page-cols 的基值与全部断点阶梯已移至 layout-tokens.css（单真源）。
+ --iptv-cols：收藏页 IPTV 卡 / 历史页记录卡；--iptv-page-cols：仅 IPTV 页网格（下方 .iptv-page 消费）。 */
 
 /* IPTV 页网格改用专用列数变量（作用域限定 .iptv-page，其余页面不受影响） */
 .iptv-page .iptv-channel-grid {
   grid-template-columns: repeat(var(--iptv-page-cols, 2), minmax(0, 1fr));
 }
 
-/* ── 页面专用网格列数 token（2026-09-18 骨架整改 P0/P2）─────────────────
-   动机：「页级骨架必须与真实网格同列数」这条约束此前无法自动满足 ——
-   Person 作品网格 / History 记录网格 / Chart 榜单的列数只写在各自页面 CSS 的
-   @media 里，而骨架的 JS 侧（useGridCols）只能读 :root 的计算值
-   （getComputedStyle(documentElement)），读不到页面类上的声明，
-   于是骨架被迫另抄一套断点 —— PersonSkeleton 的 768–1023 档就是这样抄错的
-   （真实锁 5 列、骨架按 --card-cols 取 4 列）。
-   现把三处列数提到 :root 级 token，**页面 CSS 与骨架同读一处**：
-     · --person-work-cols  人物页作品网格（768–1023 锁 5 列，其余等同 --card-cols）
-     · --history-cols      历史页记录卡网格（1/2/3/4/5/6 阶梯，TV 恒 5；已迁 layout-tokens.css）
-                           阶梯（2026-09-30）：1(<480) / 2(≥480) / 3(≥768) / 4(≥1280) / 5(≥1920) / 6(≥2560)
-     · --chart-cols        榜单页 .chart-list 布局列（桌面 2 / ≤1023 与 App 单列；已迁 layout-tokens.css）
-   断点阶梯逐条对齐改前行为，视觉效果零变化；TV/App 覆盖靠 html[data-device] /
-   :root[data-device] 的更高特异性压过 :root 的 (0,1,0)，与 --iptv-cols 同一套做法。
-   默认档（三处 token 的初值）声明在上方已有的 `:root` 块里（--iptv-cols 同一块），
-   不另开 :root 选择器 —— 同文件重复选择器会被 stylelint no-duplicate-selectors 拦。 */
+/* ── 页面专用网格列数 token─────────────────
+ 动机：「页级骨架必须与真实网格同列数」这条约束此前无法自动满足 ——
+ Person 作品网格 / History 记录网格 / Chart 榜单的列数只写在各自页面 CSS 的
+ @media 里，而骨架的 JS 侧（useGridCols）只能读 :root 的计算值
+ （getComputedStyle(documentElement)），读不到页面类上的声明，
+ 于是骨架被迫另抄一套断点 —— PersonSkeleton 的 768–1023 档就是这样抄错的
+ （真实锁 5 列、骨架按 --card-cols 取 4 列）。
+ 现把三处列数提到 :root 级 token，**页面 CSS 与骨架同读一处**：
+ · --person-work-cols 人物页作品网格（768–1023 锁 5 列，其余等同 --card-cols）
+ · --history-cols 历史页记录卡网格（1/2/3/4/5/6 阶梯，TV 恒 5；已迁 layout-tokens.css）
+ 阶梯：1(<480) / 2(≥480) / 3(≥768) / 4(≥1280) / 5(≥1920) / 6(≥2560)
+ · --chart-cols 榜单页 .chart-list 布局列（桌面 2 / ≤1023 与 App 单列；已迁 layout-tokens.css）
+ 断点阶梯逐条对齐改前行为，视觉效果零变化；TV/App 覆盖靠 html[data-device] /
+root[data-device] 的更高特异性压过 :root 的 (0,1,0)，与 --iptv-cols 同一套做法。
+ 默认档（三处 token 的初值）声明在上方已有的 `:root` 块里（--iptv-cols 同一块），
+ 不另开 :root 选择器 —— 同文件重复选择器会被 stylelint no-duplicate-selectors 拦。 */
 
 /* 人物页作品网格：768–1023 锁 5 列（原 Person.css 硬编码档，4→5 的例外；
-   app 端不适用，故带 not(app) 门控与前身完全一致） */
+ app 端不适用，故带 not(app) 门控与前身完全一致） */
 @media (width >= 768px) and (width <= 1023px) {
   html:not([data-device="app"]) {
     --person-work-cols: 5;
   }
 }
 
-/* 历史页记录网格阶梯（--history-cols）已移至 layout-tokens.css（单真源，2026-09-21） */
+/* 历史页记录网格阶梯（--history-cols）已移至 layout-tokens.css（单真源） */
 
-/* 榜单页布局列（--chart-cols：基值 2 / ≤1023 与 App 单列）已移至 layout-tokens.css（单真源，2026-09-21） */
+/* 榜单页布局列（--chart-cols：基值 2 / ≤1023 与 App 单列）已移至 layout-tokens.css（单真源） */
 
-/* TV 端历史记录网格恒 5 列（--history-cols）已移至 layout-tokens.css（单真源，2026-09-21） */
+/* TV 端历史记录网格恒 5 列（--history-cols）已移至 layout-tokens.css（单真源） */
 
 /* ── 通用记录卡片（收藏/历史页共用） ───────────────── */
 .record-card {
   position: relative;
-  /* [2026-08-13] 离屏卡片跳过布局与绘制：收藏/历史页 Keep-Alive 常驻挂载，
-     长列表可达数百卡；从 display:none 切回 display:contents 时全部卡片同帧
-     layout+paint 导致进入页面明显卡顿。content-visibility:auto 让不在视口的
-     卡片跳过布局/绘制，auto 关键字记住上次真实高度避免滚动条跳动。
-     ★ 与 IPTV 卡片 wrap（IPTVChannelCard.css）策略一致。
-     注意：仅可见卡片参与渲染，滚动进入视口的 VideoCard 入场动画（cardFadeIn）
-     可能被跳过（与 IPTV 卡片同款现象，IPTV 卡入场动画已收敛为网格容器级 stagger，
-     容器挂载即播，不依赖卡片自身渲染时机）。 */
+  /* 离屏卡片跳过布局与绘制：收藏/历史页 Keep-Alive 常驻挂载，
+ 长列表可达数百卡；从 display:none 切回 display:contents 时全部卡片同帧
+ layout+paint 导致进入页面明显卡顿。content-visibility:auto 让不在视口的
+ 卡片跳过布局/绘制，auto 关键字记住上次真实高度避免滚动条跳动。
+ ★ 与 IPTV 卡片 wrap（IPTVChannelCard.css）策略一致。
+ 注意：仅可见卡片参与渲染，滚动进入视口的 VideoCard 入场动画（cardFadeIn）
+ 可能被跳过（与 IPTV 卡片同款现象，IPTV 卡入场动画已收敛为网格容器级 stagger，
+ 容器挂载即播，不依赖卡片自身渲染时机）。 */
   content-visibility: auto;
   contain-intrinsic-size: auto 220px;
   transition: transform var(--dur-md) var(--ease-standard);
@@ -1069,12 +1068,12 @@ main {
   color: var(--color-error-text);
 }
 
-/* ── 封面角标基类 .badge-chip（2026-09-15 新增）─────────────────────────
-   所有叠在封面图/视频帧上的角标统一引用本类：**中性深玻璃底 + 白字**。
-   根因：任何「半透明彩底 + 白字」的对比度都取决于封面图（不可控），
-   浅色封面上白字可低至 2.04:1。中性底 α=0.6 时，最坏（纯白封面）仍有
-   5.74:1，浅灰 8.06 / 中灰 12.63 / 深灰 21.00 —— 全档达标且不随主题翻转。
-   色义（成功/警告/危险）改由 __dot 圆点或图标颜色承载，不再用整块底色。 */
+/* ── 封面角标基类 .badge-chip─────────────────────────
+ 所有叠在封面图/视频帧上的角标统一引用本类：**中性深玻璃底 + 白字**。
+ 根因：任何「半透明彩底 + 白字」的对比度都取决于封面图（不可控），
+ 浅色封面上白字可低至 2.04:1。中性底 α=0.6 时，最坏（纯白封面）仍有
+ 5.74:1，浅灰 8.06 / 中灰 12.63 / 深灰 21.00 —— 全档达标且不随主题翻转。
+ 色义（成功/警告/危险）改由 __dot 圆点或图标颜色承载，不再用整块底色。 */
 .badge-chip {
   display: inline-flex;
   gap: var(--space-2xs);
@@ -1098,18 +1097,18 @@ main {
 }
 
 /* LIVE 角标（IPTV 卡）：全局视觉（历史页 RecordCard 与 IPTVChannelCard 共用），
-   定位由各自容器决定——历史页 media 内 absolute（RecordCard.css），
-   IPTVChannelCard 封面 badges 容器内 static（IPTVChannelCard.css） */
+ 定位由各自容器决定——历史页 media 内 absolute（RecordCard.css），
+ IPTVChannelCard 封面 badges 容器内 static（IPTVChannelCard.css） */
 .record-card__live-badge {
   display: inline-flex;
   align-items: center;
-  /* 2026-09-03 横向 padding xs→sm：与状态/类型徽章族（availability-badge / badge-type /
-     badge-source）同尺寸，全站 iptv 状态徽标统一。 */
+  /* 横向 padding xs→sm：与状态/类型徽章族（availability-badge / badge-type /
+ badge-source）同尺寸，全站 iptv 状态徽标统一。 */
   padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-sm);
   /* 可看 = 绿（可用性检测已移除，LIVE 角标常驻绿色）。
-     2026-09-15：底由填充档 --color-success(#52c41a, 白字仅 2.27:1) 换为文字档
-     --color-success-text(#237804, 白字 5.59:1)；绿色语义保留，仅提对比。 */
+底由填充档 --color-success(#52c41a, 白字仅 2.27:1) 换为文字档
+ --color-success-text(#237804, 白字 5.59:1)；绿色语义保留，仅提对比。 */
   background: var(--color-success-text);
   color: var(--color-on-image);
   font-size: var(--text-2xs);
@@ -1167,17 +1166,17 @@ main {
 }
 
 /* ══ Toast 全局样式（Sonner） ═══════════════════════════════════════
-   选择器说明（sonner 实际 DOM 结构，勿回退到 data-placement/.sonner-toaster——不存在）：
-   · toaster 容器 = <ol data-sonner-toaster data-x-position data-y-position>
-   · toast 项     = <li data-sonner-toast class="app-toast" data-styled>
-   位置：
-   · 普通页面 → 顶部居中、顶部导航栏（--header-height）下方（不遮挡导航栏内搜索框）
-   · 播放器页面（body[data-player-toast="active"]）→ 播放器内部「中间靠上」——
-     水平居中 + 垂直约 18%（贴近播放器上部、不在 42% 垂直居中），
-     既不遮挡顶部搜索框/控制栏，又处于播放器内部可视区域
-   居中：toast 项 absolute + left/right:0 + margin:0 auto（不碰 transform，保留 sonner 滑入/滑出动画）
-   样式：黑色透明背景（亮/暗主题统一）+ 圆角 + 文本撑开（与播放器内提示一致）
-   宽度：合理区间（min(22rem, 视口-2rem)），文本居中；图标与文本同高（--icon-* 派生文字 token） */
+ 选择器说明（sonner 实际 DOM 结构，勿回退到 data-placement/.sonner-toaster——不存在）：
+ · toaster 容器 = <ol data-sonner-toaster data-x-position data-y-position>
+ · toast 项 = <li data-sonner-toast class="app-toast" data-styled>
+ 位置：
+ · 普通页面 → 顶部居中、顶部导航栏（--header-height）下方（不遮挡导航栏内搜索框）
+ · 播放器页面（body[data-player-toast="active"]）→ 播放器内部「中间靠上」——
+ 水平居中 + 垂直约 18%（贴近播放器上部、不在 42% 垂直居中），
+ 既不遮挡顶部搜索框/控制栏，又处于播放器内部可视区域
+ 居中：toast 项 absolute + left/right:0 + margin:0 auto（不碰 transform，保留 sonner 滑入/滑出动画）
+ 样式：黑色透明背景（亮/暗主题统一）+ 圆角 + 文本撑开（与播放器内提示一致）
+ 宽度：合理区间（min(22rem, 视口-2rem)），文本居中；图标与文本同高（--icon-* 派生文字 token） */
 [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
   top: calc(var(--header-height) + var(--space-lg)) !important;
 }
@@ -1187,10 +1186,10 @@ body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][da
 }
 
 /* 桌面端播放器页：错误/警告类 sonner toast 约束到播放器内水平居中 + 贴近播放器上边框
-   （header 之下，top 由 UniversalPlayer 实测写入 --player-toast-* 变量）。
-   仅「桌面布局」生效：html[data-mobile-layout] 缺省 且 视口 ≥768px。
-   ⚠️ 移动端布局判定不能只用 @media(max-width:767px)——App 恒移动（横屏视口可 ≥768px）、
-   真实手机 web 桌面模式同理；统一由 AppLayout 按 useIsMobileLayout 写入 html[data-mobile-layout]。 */
+ （header 之下，top 由 UniversalPlayer 实测写入 --player-toast-* 变量）。
+ 仅「桌面布局」生效：html[data-mobile-layout] 缺省 且 视口 ≥768px。
+ ⚠️ 移动端布局判定不能只用 @media(max-width:767px)——App 恒移动（横屏视口可 ≥768px）、
+ 真实手机 web 桌面模式同理；统一由 AppLayout 按 useIsMobileLayout 写入 html[data-mobile-layout]。 */
 @media (width >= 768px) {
   html:not([data-mobile-layout="true"]) body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
     top: calc(var(--player-toast-top, 0px) + var(--space-sm)) !important;
@@ -1201,8 +1200,8 @@ body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][da
 }
 
 /* 移动端布局（App / 真实手机 web / 视口 <768px，一律 html[data-mobile-layout="true"]）：
-   播放器页全局 sonner 提示改屏幕上部（P2-7：垂直居中会与系统手势条/音量 HUD 重叠，
-   上移到安全区下方），桌面端保持播放器内定位不变。 */
+ 播放器页全局 sonner 提示改屏幕上部（-7：垂直居中会与系统手势条/音量 HUD 重叠，
+ 上移到安全区下方），桌面端保持播放器内定位不变。 */
 html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
   top: calc(var(--header-height, 3.5rem) + var(--space-lg)) !important;
 }
@@ -1210,7 +1209,7 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
 [data-sonner-toaster] [data-sonner-toast] {
   right: 0;
   /* 水平居中：absolute + left/right:0 + margin:0 auto；
-     覆盖 sonner 默认 left:0 + width:var(--width)，不动 transform 以保留滑入动画 */
+ 覆盖 sonner 默认 left:0 + width:var(--width)，不动 transform 以保留滑入动画 */
   left: 0;
   justify-content: center;
   /* padding 由 App.tsx inline style 统一（space-sm space-md），此处不重复设置 */
@@ -1241,26 +1240,26 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TV 端 IPTV 列数（--iptv-cols / --iptv-page-cols 恒 5）已移至 layout-tokens.css（单真源，2026-09-21）
-   原 html[data-device="tv"] 覆盖块（靠源码顺序取胜）一并迁出；消费方读注入的 token。
-   ═══════════════════════════════════════════════════════════════════════ */
+ TV 端 IPTV 列数（--iptv-cols / --iptv-page-cols 恒 5）已移至 layout-tokens.css（单真源）
+ 原 html[data-device="tv"] 覆盖块（靠源码顺序取胜）一并迁出；消费方读注入的 token。
+ ═══════════════════════════════════════════════════════════════════════ */
 /* 原 html[data-device="tv"] { --iptv-cols:5; --iptv-page-cols:5; } 已移至 layout-tokens.css 的 TV 覆盖块 */
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   >1440 桌面：卡片间距统一（2026-09-05 用户决策，2026-09-07 断点 1280 → 1440）
-   1) 所有 video / iptv card 之间的间距统一为 var(--hero-side-gap)（10px@1440 → 12px@1920）。
-   2) 焦点环与批量选中态等功能性描边守护保留（特异性盖过卡片自身边框/投影）。
-   ⚠️ 撤销记录（2026-09-05 晚，用户要求恢复边框）：本块原含「全站去卡片化」——
-      video/iptv/record 三类卡 >1280 去 border/bg/shadow——已整体移除，
-      卡片恢复组件自带外观（VideoCard.css / IPTVChannelCard.css / RecordShell）。
-   ⚠️ TV 红线：全部规则带 html:not([data-device="tv"]) 前缀（TV 恒用原卡片外观）。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ >1440 桌面：卡片间距统一（断点 1280 → 1440）
+ 1) 所有 video / iptv card 之间的间距统一为 var(--hero-side-gap)（10px@1440 → 12px@1920）。
+ 2) 焦点环与批量选中态等功能性描边守护保留（特异性盖过卡片自身边框/投影）。
+ ⚠️ 注意：本块曾含「全站去卡片化」——
+ video/iptv/record 三类卡 >1280 去 border/bg/shadow——已整体移除，
+ 卡片恢复组件自带外观（VideoCard.css / IPTVChannelCard.css / RecordShell）。
+ ⚠️ TV 红线：全部规则带 html:not([data-device="tv"]) 前缀（TV 恒用原卡片外观）。
+ ═══════════════════════════════════════════════════════════════════════════ */
 @media (width > 1440px) {
   /* ── 功能性描边守护（特异性高于组件默认规则，确保焦点/选中态可见） ── */
-  /* 键盘焦点环（2026-09-15：改用 outline 口径，与全局规则同源同形，
-     消除「大屏与其它尺寸焦点样式不一致」；box-shadow 会被 overflow:hidden 裁切）
-     ⚠️ 排除 projector：投影仪走 VideoCard.css 的 [data-device="projector"] TV 焦点
-     分支（3px 外框），本桌面 2px 环特异性更高会压过它。 */
+  /* 键盘焦点环（改用 outline 口径，与全局规则同源同形，
+ 消除「大屏与其它尺寸焦点样式不一致」；box-shadow 会被 overflow:hidden 裁切）
+ ⚠️ 排除 projector：投影仪走 VideoCard.css 的 [data-device="projector"] TV 焦点
+ 分支（3px 外框），本桌面 2px 环特异性更高会压过它。 */
   html:not([data-device="tv"]):not([data-device="projector"]) .video-card:focus-visible,
   html:not([data-device="tv"]):not([data-device="projector"]) .iptv-channel-card:focus-visible {
     outline: var(--layout-outline-width, 2px) solid var(--color-primary);
@@ -1288,7 +1287,7 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
   }
 
   /* 首页电影行：gap 与卡宽公式必须三处联动（scroll gap / card 公式 / 骨架行），
-     见 TMDBMovieRow.css 与 Home.css 内的联动警告注释 */
+ 见 TMDBMovieRow.css 与 Home.css 内的联动警告注释 */
   html:not([data-device="tv"]) .tmdb-movierow-scroll {
     gap: var(--hero-side-gap);
   }
@@ -1301,7 +1300,7 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
   }
 
   /* 继续观看行：横版卡公式必须与上方 scroll gap 联动重算
-     （TMDBMovieRow.css:282 原公式用 --space-md，gap 改 --hero-side-gap 后会错位） */
+ （TMDBMovieRow.css:282 原公式用 --space-md，gap 改 --hero-side-gap 后会错位） */
   html:not([data-device="tv"]) .tmdb-movierow.tmdb-movierow--continue .tmdb-movierow-card {
     flex-basis: calc(
       (100% - (var(--continue-cols, 5) - 1) * var(--hero-side-gap))

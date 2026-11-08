@@ -62,7 +62,7 @@ const VOLUME_POPUP_DELAY = 3000;
  */
 const PROXIED_URL_RE = /\/(?:m3u8|ts|dash|file)-proxy\?/i;
 
-/** P0-1：滑动 seek HUD 的时间偏移格式化（h:mm:ss / m:ss） */
+/**-1：滑动 seek HUD 的时间偏移格式化（h:mm:ss / m:ss） */
 function formatSeekHudTime(seconds: number): string {
   const s = Math.max(0, Math.round(seconds));
   const h = Math.floor(s / 3600);
@@ -73,7 +73,7 @@ function formatSeekHudTime(seconds: number): string {
 }
 
 /**
- * P0-3：移动端底部细进度线（原内联在 UniversalPlayer 中）。
+ *-3：移动端底部细进度线（原内联在 UniversalPlayer 中）。
  * 独立订阅 store 进度——timeupdate ~4Hz 的重渲染被隔离在这棵小组件子树内，
  * 不再拖动整棵 UniversalPlayer（含 ControlBar/PlayerCore/MobileUI）每帧 reconcile。
  */
@@ -183,11 +183,10 @@ export default function UniversalPlayer({
   const volumePopupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hasError, setHasError] = useState(false);
 
-  // G2/P3+P4 能力矩阵（docs/iptv-hybrid-plan.md §3.3）：mode 相关能力集中声明于
+  // 播放器能力矩阵：mode 相关能力集中声明于
   // lib/playerCapabilities.ts，组件只读字段、不再逐处判 mode。
-  // P4 已把待迁移清单 9 处全部迁完（见该文件头部）。
   // ⚠️ 必须声明在所有消费点之前：本文件最早的消费点是下方的 showHeaderFullscreen
-  //    （原 :205），声明靠后会触发 TS2448/TS2454（TDZ）。
+  // （原 :205），声明靠后会触发 TS2448/TS2454（TDZ）。
   // 本处不接入 hasCatchup（会触发 currentChannel 前置依赖环）；catchup 感知版见下方 capabilitiesCatchup。
   const capabilities = useMemo(
     () => getCapabilities(mode, { hasError }),
@@ -220,7 +219,7 @@ export default function UniversalPlayer({
   // 头部全屏按钮仅 IPTV 播放页非 TV 端渲染，且被 CSS 移到右下角
   // （.iptv-player-page .up-header-fullscreen-btn position:fixed bottom-right）；
   // 头部右上角从不渲染控件 → 桌面操作类提示紧贴右上角（.up-player-toast top: space-lg）。
-  // P4：原 `mode === 'iptv'` 迁到能力矩阵 `hasHeaderFullscreenBtn`（直播类为 true）。
+  // 现读能力矩阵 `hasHeaderFullscreenBtn`（直播类为 true）。
   // platform / 原生 App 判定不是 mode 的纯函数，故保留在组件侧做与运算（见 playerCapabilities.ts 注释）。
   // 等价性：video→false、iptv→true；`'live'` 经 grep 确认无写入点，视为 iptv 同值，等价。
   const showHeaderFullscreen = capabilities.hasHeaderFullscreenBtn && platform !== 'tv' && !isNativePlatform();
@@ -240,9 +239,9 @@ export default function UniversalPlayer({
   const [subtitleSheetOpen, setSubtitleSheetOpen] = useState(false);
   // 定时关闭（分钟；0 = 关闭）
   const [sleepMinutes, setSleepMinutes] = useState(0);
-  // P1-5：快捷键面板（Shift+? / 更多菜单）
+  //-5：快捷键面板（Shift+? / 更多菜单）
   const [showShortcuts, setShowShortcuts] = useState(false);
-  // P1-6 桌面右键菜单（点播模式，位置为视口坐标）
+  //-6 桌面右键菜单（点播模式，位置为视口坐标）
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   // Issue4：右键菜单触发的设置弹窗（色彩/音效），null 表示关闭
   const [activePanel, setActivePanel] = useState<'color' | 'audio' | null>(null);
@@ -263,7 +262,7 @@ export default function UniversalPlayer({
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
 
   // EPG 数据 hook
-  // P4：原 `useEPGData({ mode })` 迁到能力矩阵 `hasEPG`（视频=false 不加载、直播类=true 加载）。
+  // EPG 加载现读能力矩阵 `hasEPG`（视频=false 不加载、直播类=true 加载）。
   // epgChannels 不再用于台标（台标只来自 iptv-org logos.json），此处不解构。
   const { epgReady, epgProgramsRef, epgStatus, epgError } = useEPGData({ enabled: capabilities.hasEPG, channels: _channels });
 
@@ -314,7 +313,7 @@ export default function UniversalPlayer({
 
   // EPG 加载失败时显示 toast
   useEffect(() => {
-    // P4：原 `mode === 'iptv'` 迁到能力矩阵 `hasEPG`（与上方 EPG 加载口径一致）。
+    // 现读能力矩阵 `hasEPG`（与上方 EPG 加载口径一致）。
     if (epgStatus === 'error' && epgError && capabilities.hasEPG) {
       playerToast(`EPG: ${epgError}`, 3000, 'error');
     }
@@ -337,13 +336,13 @@ export default function UniversalPlayer({
   });
 
   const currentChannel = useMemo(() => {
-    // P4：原 `mode !== 'iptv'` 迁到能力矩阵 `hasChannelList`（直播类为 true，点播为 false）。
+    // 现读能力矩阵 `hasChannelList`（直播类为 true，点播为 false）。
     // 等价性：video→undefined、iptv/live→查频道；`'live'` 无写入点故与 iptv 同值。
     if (!capabilities.hasChannelList || !currentChannelId) return undefined;
     return _channels.find(ch => ch.id === currentChannelId);
   }, [capabilities.hasChannelList, currentChannelId, _channels]);
 
-  // P5：catchup 感知能力集（依赖 currentChannel，故放在 currentChannel 之后）。
+  // catchup 感知能力集（依赖 currentChannel，故放在 currentChannel 之后）。
   // 仅 `canSeek` / `hasTimeshift` 会因 hasCatchup 变化；其余字段与上方 `capabilities` 完全一致。
   // 无 catchup 的频道 hasCatchup=false → 与迁移前逐字等价（零回归）。
   const hasCatchup = mode !== 'video' && !!(currentChannel?.catchup && currentChannel?.catchupSource);
@@ -393,12 +392,12 @@ export default function UniversalPlayer({
     verticalGestureActiveRef,
   });
 
-  // 移动端手势（P0-1/P0-4/P0-5/P0-6：横向滑动 seek + 半屏亮度/音量 + 排除 UI 区 + 滚动分级）
-  // 2026-09-30：纵向滑动的柱状指示器（BrightnessVolumeIndicator）已移除，故此处只取 seekHud；
+  // 移动端手势（-1/-4/-5/-6：横向滑动 seek + 半屏亮度/音量 + 排除 UI 区 + 滚动分级）
+  //纵向滑动的柱状指示器（BrightnessVolumeIndicator）已移除，故此处只取 seekHud；
   // 亮度/音量手势本身保留（仍会写 store.colorFilter 与真实音量），只是不再有视觉反馈。
   const { seekHud } = useTouchGesture({
     containerRef,
-    // P4：原 `mode === 'video'` 迁到能力矩阵 `hasTouchGesture`（点播为 true）。
+    // 现读能力矩阵 `hasTouchGesture`（点播为 true）。
     // `!isDesktopWeb` 是平台/设备判定（非 mode 纯函数），保留在组件侧与运算，等价性不变。
     enabled: !isDesktopWeb && capabilities.hasTouchGesture,
     initialBrightness: 1,
@@ -407,11 +406,11 @@ export default function UniversalPlayer({
       usePlayerStore.getState().setColorFilter({ brightness: v });
     },
     onVolumeChange: (v) => playerCore.setVolume(v),
-    // P0-4：手势开始时同步真实音量（此前初值恒 0）
+    //-4：手势开始时同步真实音量（此前初值恒 0）
     getInitialVolume: () => usePlayerStore.getState().volume,
-    // P0-1：横向滑动 seek（错误态/无时长时由 hook 内部守卫放弃）
-    // G2/P3：改读能力矩阵（lib/playerCapabilities.ts），不再硬编码 mode 判断。
-    // 用 catchup 感知版 capabilitiesCatchup：当前频道自带 catchup 时直播间也开放进度条（P5）。
+    //-1：横向滑动 seek（错误态/无时长时由 hook 内部守卫放弃）
+    // 改读能力矩阵（lib/playerCapabilities.ts），不再硬编码 mode 判断。
+    // 用 catchup 感知版 capabilitiesCatchup：当前频道自带 catchup 时直播间也开放进度条）。
     canSeek: capabilitiesCatchup.canSeek,
     getDuration: () => videoElementRef.current?.duration ?? 0,
     getSeekBaseTime: () => videoElementRef.current?.currentTime ?? 0,
@@ -442,7 +441,7 @@ export default function UniversalPlayer({
   }, [baseHandleChannelSelect]);
 
   const handleToggleFullscreen = useCallback(async () => {
-    // C4/R2：统一走 lib/fullscreen 的 toggleFullscreen（hasError 守卫一致）
+    // C4/：统一走 lib/fullscreen 的 toggleFullscreen（hasError 守卫一致）
     await toggleFullscreen(containerRef.current, videoElementRef.current, hasError);
   }, [hasError]);
 
@@ -471,7 +470,7 @@ export default function UniversalPlayer({
   });
 
   // IPTV 超时 hook
-  // P4：原 `useIPTVTimeout({ mode })` 迁到能力矩阵 `hasTimeoutWatchdog`（直播类为 true）。
+  // 超时看门狗现读能力矩阵 `hasTimeoutWatchdog`（直播类为 true）。
   useIPTVTimeout({ enabled: capabilities.hasTimeoutWatchdog, currentUrl, onTimeout: useCallback(() => setHasError(true), []) });
 
   // 初始化 effect
@@ -492,7 +491,7 @@ export default function UniversalPlayer({
   // A3 播放失败自动切代理：每 URL 最多重试一次（防死循环）
   const proxyRetriedRef = useRef(false);
 
-  // A3+ 多代理轮换（2026-09-16）：已走代理仍失败时换下一个已配置代理。
+  // A3+ 多代理轮换：已走代理仍失败时换下一个已配置代理。
   // 用「已尝试 URL 集合」做上限（与 bareStreamRetriedRef 同一策略）：每个代理的 URL
   // 只进集合一次，轮回到已试过的 URL 即停 —— 天然等于「最多试完所有代理」。
   const proxyRotationTriedRef = useRef<Set<string>>(new Set());
@@ -505,7 +504,7 @@ export default function UniversalPlayer({
   // visibilityState 仍为 'visible'，必须用 document.hasFocus() 补齐。
   const pendingErrorRef = useRef<Error | null>(null);
 
-  // C1 自动切线路：仅含音频时按「频道名」每频道最多自动切 1 次线路（防线路间死循环）。
+  // 自动切线路：仅含音频时按「频道名」每频道最多自动切 1 次线路（防线路间死循环）。
   // /iptv/play 为独立全屏路由，离开页面即卸载组件，标记随之失效，无需手动清理。
   const audioOnlyLineSwitchedRef = useRef<Set<string>>(new Set());
   const currentChannelRef = useRef(currentChannel);
@@ -515,14 +514,14 @@ export default function UniversalPlayer({
   const handleSourceSwitchRef = useRef(handleSourceSwitch);
   handleSourceSwitchRef.current = handleSourceSwitch;
 
-  // D1 裸流降级标记：每 URL 仅降级 1 次（mpegts.js 也失败则走 C1 切线路 / A3 切代理）
+  // D1 裸流降级标记：每 URL 仅降级 1 次（mpegts.js 也失败则走 切线路 / A3 切代理）
   const bareStreamRetriedRef = useRef<Set<string>>(new Set());
 
 // MediaSession（后台听视频）媒体信息：点播 = 影片名 + 集名，IPTV = 频道名；
 // useMemo 稳定引用，避免每次渲染重注册媒体会话
 const mediaSession = useMemo(() => ({
   info: {
-    // P4：原 `mode === 'iptv' ? 频道名 : 剧集名` 迁到能力矩阵 `hasChannelList`
+    // 媒体会话标题现读能力矩阵 `hasChannelList`
     // （直播类=true 取频道名、点播=false 取剧集名）。逐字等价。
     title: capabilities.hasChannelList ? (channelName || 'IPTV 直播') : (title || '视频播放'),
     artist: capabilities.hasChannelList ? '直播' : (episodeLabel || undefined),
@@ -540,7 +539,7 @@ const handleAdapterError = useCallback((error: Error) => {
         pendingErrorRef.current = error;
         return;
       }
-      // C1 视频轨检测：仅含音频的源（manifest 无视频轨）——音频可能已开始播放，
+      // 视频轨检测：仅含音频的源（manifest 无视频轨）——音频可能已开始播放，
       // 无论播放状态都走 toast（不触发全屏错误）。
       // IPTV 模式自动切线路：存在同名其它线路（sourceId 不同）时自动切到第一条其它线路，
       // 每频道名仅自动切 1 次防线路间死循环；无其它线路或已切过则仅 toast 提示
@@ -548,7 +547,7 @@ const handleAdapterError = useCallback((error: Error) => {
         // 已确认源可播放音频（无视频轨）：停止加载动画，避免 spinner 一直转
         usePlayerStore.getState().setPlayerLoading(false);
         const channel = currentChannelRef.current;
-        // P4：原 `mode === 'iptv'` 迁到能力矩阵 `hasChannelList`（直播类=true 走切频道）。
+        // 现读能力矩阵 `hasChannelList`（直播类=true 走切频道）。
         // handleSourceSwitch 内部已用 `switchByChannel` 参数接收该语义。逐字等价。
         if (capabilities.hasChannelList && channel) {
           const sameNameChannels = channelsRef.current.filter(
@@ -569,7 +568,7 @@ const handleAdapterError = useCallback((error: Error) => {
       }
       // D1 裸流降级：HLS 解析失败（manifestParsingError → BARE_STREAM）说明内容非 HLS 清单，
       // 极可能是裸 TS/FLV 流。降级到 mpegts.js 重试同一 URL（每 URL 仅 1 次防循环，
-      // 再次失败则走下方 C1 切线路 / A3 切代理 / VOD 故障转移）。点播与 IPTV 均启用——
+      // 再次失败则走下方 切线路 / A3 切代理 / VOD 故障转移）。点播与 IPTV 均启用——
       // 点播 FLV/TS 直链同样可能被 detectSourceType 归为 m3u8 后解析失败。
       // worker 端 m3u8-proxy 已支持裸流透传，代理 URL 无需改写即可被 mpegts.js 拉流。
       if ((error as Error & { code?: string }).code === ERROR_CODE_BARE_STREAM) {
@@ -584,7 +583,7 @@ const handleAdapterError = useCallback((error: Error) => {
       }
       // A3 播放中失败自动切代理：直连播放时网络类错误（CORS 分片失败/源站不可达）
       // → 若当前 URL 不是代理地址且有可用代理，自动切换重试（每 URL 仅 1 次，防循环）
-      // P4：原 `mode === 'iptv'` 迁到能力矩阵 `hasProxyInjection`（直播类=true）。
+      // 现读能力矩阵 `hasProxyInjection`（直播类=true）。
       // proxyUrl 是否配置、当前 URL 是否已是代理地址，仍留组件侧（非 mode 纯函数）。逐字等价。
       if (capabilities.hasProxyInjection && proxyUrl && !currentUrl.includes('/m3u8-proxy') && !currentUrl.includes('/ts-proxy')) {
         if (!proxyRetriedRef.current) {
@@ -597,7 +596,7 @@ const handleAdapterError = useCallback((error: Error) => {
           return;
         }
       }
-      // A3+ 多代理轮换（2026-09-16）：当前 URL 已走我们配置的代理、但流仍失败时，
+      // A3+ 多代理轮换：当前 URL 已走我们配置的代理、但流仍失败时，
       // 切换到**下一个已配置代理**重试。
       // 背景：代理配置支持英文 `;` 分隔多个（getIptvProxyList），但改造前所有 URL 构造都只
       // 取第一个 → 第二个起是死配置，主代理挂掉 = IPTV 全站不可播。这里补上播放侧的兜底
@@ -628,7 +627,7 @@ const handleAdapterError = useCallback((error: Error) => {
         playerToast(error.message, 3000, 'error');
         return;
       }
-      // P1-3：adapter/网络类错误的具体文案也透传给 PlayerCore 错误覆盖层
+      //-3：adapter/网络类错误的具体文案也透传给 PlayerCore 错误覆盖层
       setHasError(true);
       usePlayerStore.getState().setErrorMessage(error.message);
       onError?.(error);
@@ -681,7 +680,7 @@ skipHistory,
     playerCore.videoRef(element);
   }, [playerCore]);
 
-  // 时移 hook（P5：仅探测 HLS DVR 可 seek 窗口，与 M3U catchup 属性是两个独立概念，见 playerCapabilities.ts 头部说明）
+  // 时移 hook（仅探测 HLS DVR 可 seek 窗口，与 M3U catchup 属性是两个独立概念，见 playerCapabilities.ts 头部说明）
   const timeshift = useTimeshift({ mode, playerCore });
 
   // 同步时移支持状态，用于 EPG 节目单
@@ -689,7 +688,7 @@ skipHistory,
     setTimeshiftSupported(timeshift.supportsTimeshift);
   }, [timeshift.supportsTimeshift]);
 
-  // P5：M3U catchup 时移（与上方 DVR 时移相互独立，见 playerCapabilities.ts 头部「口径区分」）。
+  // M3U catchup 时移（与上方 DVR 时移相互独立，见 playerCapabilities.ts 头部「口径区分」）。
   // 状态：当前正在回看的绝对时间戳（null = 正在看直播边缘）。
   const [catchupSeekTs, setCatchupSeekTs] = useState<number | null>(null);
 
@@ -745,7 +744,7 @@ skipHistory,
     showVolumePopup: showVolumePopupWithTimer,
   });
 
-  // 修复（2026-09-21，E2E TV-001 诊断出）：IPTVChannelList 的「打开自动定位」effect
+  // 修复（E2E TV-001 诊断出）：IPTVChannelList 的「打开自动定位」effect
   // deps 含 onTvFocusChange；原实现是内联箭头函数（每次 render 新引用）→ 每次父渲染
   // 都把遥控器焦点重置回当前播放频道，遥控器换台实际不可用。useCallback 稳定引用。
   const handleTvFocusChange = useCallback(
@@ -798,7 +797,7 @@ skipHistory,
   // 缓冲检测
   useBufferMonitor(videoElementRef, currentUrl);
 
-  // 点击处理（移动端单击即时响应：P1-2）
+  // 点击处理（移动端单击即时响应：-2）
   const { handlePlayerClick, clickTimerRef } = usePlayerClickHandler({
     mode, hasError, isControlsVisible, isMobileLayout,
     hasLongPressedRef, videoElementRef, containerRef,
@@ -889,7 +888,7 @@ skipHistory,
   const volume = usePlayerStore(s => s.volume);
   const isPiP = usePlayerStore(s => s.isPiP);
   const isFullscreen = usePlayerStore(s => s.isFullscreen);
-  // 仅「真机移动端 + 全屏 + 点播」走本次整改（控制栏改造 / 右上角组 / 右侧抽屉）。
+  // 仅「真机移动端 + 全屏 + 点播」启用控制栏改造 / 右上角组 / 右侧抽屉。
   // 用 isMobileDevice 而非 isMobileLayout：横屏手机宽度 > 767px 会被 isMobileLayout 判成非移动，
   // 而 PC 桌面全屏必须保持原样（需求①：pc 桌面 web 不改）。
   const fsMobile = isMobileDevice && isFullscreen && mode === 'video';
@@ -903,12 +902,12 @@ skipHistory,
   // 当前播放流类型（HLS 时显示清晰度卡）；与 useIPTVNavigation 的 currentType 区分命名
   const streamType = usePlayerStore(s => s.currentType);
   const isHls = streamType === 'm3u8';
-  // P1-4 续播卡片：loadProgress 找到历史进度时写入，提供「从头播放」操作
+  //-4 续播卡片：loadProgress 找到历史进度时写入，提供「从头播放」操作
   const resumeAt = usePlayerStore(s => s.resumeAt);
-  // 源切换提示（2026-10-11 用户定稿）：CMS 聚合改选源时写入，与续播卡同位置同生命周期，
+  // 源切换提示：CMS 聚合改选源时写入，与续播卡同位置同生命周期，
   // 作为卡片顶部行（先提示换源，续播行在后），替代全局 toast 避免叠加/不居中。
   const sourceNotice = usePlayerStore(s => s.sourceNotice);
-  // P1-6 右键菜单播放/暂停项的文案与图标
+  //-6 右键菜单播放/暂停项的文案与图标
   const isPlayingForMenu = usePlayerStore(s => s.isPlaying);
 
   const handleResumeFromStart = useCallback(() => {
@@ -917,7 +916,7 @@ skipHistory,
     usePlayerStore.getState().setSourceNotice(null);
   }, [playerCore]);
 
-  // P1-6：桌面点播模式右键菜单（移动端/IPTV 不启用）
+  //-6：桌面点播模式右键菜单（移动端/IPTV 不启用）
   const handleContainerContextMenu = useCallback((e: React.MouseEvent) => {
     if (isMobileLayout || mode === 'iptv' || mode === 'live') return;
     const target = e.target as HTMLElement;
@@ -1109,7 +1108,7 @@ skipHistory,
           {isBuffering ? (
             <>
               <span className="up-iptv-buffering-text">{networkSpeed}</span>
-              {/* 延迟/丢包是直播（IPTV）专属指标，点播缓冲不显示（审查报告 4.2） */}
+              {/* 延迟/丢包是直播（IPTV）专属指标，点播缓冲不显示 */}
               {mode === 'iptv' && (
                 <div className="up-iptv-buffering-metrics">
                   <span className="up-iptv-buffering-metric">
@@ -1126,14 +1125,14 @@ skipHistory,
             </>
           ) : (
             /* 初次准备播放（isPlayerLoading 且未进入缓冲）时也要有文案，
-               否则只剩一只裸电视图标，观感割裂 */
+ 否则只剩一只裸电视图标，观感割裂 */
             <span className="up-iptv-buffering-text">加载中…</span>
           )}
         </div>
       )}
 
       {/* 预加载完成待播放 / 暂停状态显示播放按钮（IPTV 直播加载即播，不显示中间播放按钮）。
-          !isPlayerLoading：切源/加载失败前 isReadyToPlay 残留 true 时禁止闪现播放图标 */}
+ !isPlayerLoading：切源/加载失败前 isReadyToPlay 残留 true 时禁止闪现播放图标 */}
       {isReadyToPlay && !isPlaying && !hasError && !isBuffering && !isPlayerLoading && mode !== 'iptv' && (
         <div
           className="up-player-paused-overlay"
@@ -1165,7 +1164,7 @@ skipHistory,
         </div>
       )}
 
-      {/* P0-1：移动端横向滑动 seek 的居中时间气泡（跟随手指，松手消失） */}
+      {/* -1：移动端横向滑动 seek 的居中时间气泡（跟随手指，松手消失） */}
       {seekHud.active && (
         <div className={`up-seek-hud ${seekHud.deltaSeconds >= 0 ? 'up-seek-hud-forward' : 'up-seek-hud-backward'}`}>
           <Icon icon={seekHud.deltaSeconds >= 0 ? FastForward : Rewind} size="2xl" />
@@ -1183,7 +1182,7 @@ skipHistory,
         channelName={currentChannelName || channelName}
         visible={isControlsVisible || hasError}
         /* TV 端 IPTV 播放页默认全屏，不显示放大图标；非 TV 端放大图标移至右下角（CSS）。
-           9.1：app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全屏按钮 */
+app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全屏按钮 */
         showFullscreenButton={showHeaderFullscreen}
         containerRef={containerRef as React.RefObject<HTMLElement>}
         onBack={() => {
@@ -1214,7 +1213,7 @@ skipHistory,
       />
 
       {/* 全屏/横屏常驻右上角操作组（需求④）：画中画·投屏·更多设置。
-          与控制栏自动隐藏解耦——控制栏隐藏后仍在，点击「更多设置」打开右侧抽屉。 */}
+ 与控制栏自动隐藏解耦——控制栏隐藏后仍在，点击「更多设置」打开右侧抽屉。 */}
       {fsMobile && (
         <div className="up-fs-corner" onClick={(e) => e.stopPropagation()}>
           <HeaderActions
@@ -1245,7 +1244,7 @@ skipHistory,
           totalSources={mode === 'iptv' ? iptvSourceCount : sources.length}
           audioTracks={audioTracks}
           onToggleChannelList={() => setChannelListVisible(true)}
-          // P4：源切换分支迁到 `hasChannelList`（直播类=true 切频道、点播=false 切线路）。
+          // 源切换分支现读 `hasChannelList`（直播类=true 切频道、点播=false 切线路）。
           onSourceSwitch={(index) => handleSourceSwitch(index, capabilities.hasChannelList, currentChannel, _channels, sources)}
           onOpenAudioTrack={handleAudioTrackSelect}
           epgStatus={epgStatus}
@@ -1297,15 +1296,15 @@ skipHistory,
           onNextEpisode={onNextEpisode}
           hasError={hasError}
           /* 直播重载：与下方 PlayerCore.onRetry 同一语义 —— 递增 retryCount 会让
-             usePlayerCore 的主 effect（deps: [url, type, decoderMode, retryCount]）重建
-             适配器并按当前 URL 重新拉流。仅直播/时移（ControlBar 内部 isLiveLike）渲染该按钮。 */
+ usePlayerCore 的主 effect（deps: [url, type, decoderMode, retryCount]）重建
+ 适配器并按当前 URL 重新拉流。仅直播/时移（ControlBar 内部 isLiveLike）渲染该按钮。 */
           onRefresh={() => { setHasError(false); setRetryCount(c => c + 1); }}
         />
       )}
 
-      {/* P1-4 续播卡片：进度恢复后短暂显示，提供「从头播放」操作（6s 自动消失） */}
-      {/* P4：原 `mode === 'video'` 迁到能力矩阵 `hasProgressPersist`（点播=true）。逐字等价。 */}
-      {/* 2026-10-11：顶部行 = 源切换提示（CMS 聚合改选源时），先于续播行展示，同卡不叠加 */}
+      {/* -4 续播卡片：进度恢复后短暂显示，提供「从头播放」操作（6s 自动消失） */}
+      {/* 续播提示现读能力矩阵 `hasProgressPersist`（点播=true）。 */}
+      {/* 顶部行 = 源切换提示（CMS 聚合改选源时），先于续播行展示，同卡不叠加 */}
       {capabilities.hasProgressPersist && (resumeAt != null || sourceNotice != null) && !hasError && (
         <div className={`up-resume-card${sourceNotice != null ? ' up-resume-card--notice' : ''}`} role="status" onClick={(e) => e.stopPropagation()}>
           {sourceNotice != null && (
@@ -1326,12 +1325,12 @@ skipHistory,
         </div>
       )}
 
-      {/* P1-5：快捷键面板（Shift+? / 更多菜单） */}
+      {/* -5：快捷键面板（Shift+? / 更多菜单） */}
       {showShortcuts && (
         <ShortcutHelp visible onClose={() => setShowShortcuts(false)} />
       )}
 
-      {/* P1-6：桌面点播右键菜单（portal 到 body，避免被播放器 transform/contain 影响） */}
+      {/* -6：桌面点播右键菜单（portal 到 body，避免被播放器 transform/contain 影响） */}
       {contextMenu && (
         <ContextMenu
           visible
@@ -1359,21 +1358,21 @@ skipHistory,
       )}
 
       {/* 移动端/App 端：控制栏隐藏时在播放器底部边缘展示细播放进度线（桌面端不渲染）。
-          P0-3：进度订阅隔离在 MobileProgressEdge 内部，避免整棵播放器树跟随 timeupdate 重渲染 */}
+-3：进度订阅隔离在 MobileProgressEdge 内部，避免整棵播放器树跟随 timeupdate 重渲染 */}
       {isMobileLayout && mode === 'video' && (
         <MobileProgressEdge visible={!isControlsVisible} />
       )}
 
-      {/* G2：音量条全模式可用（键盘/滑杆/遥控器调音量时展示）；TV 端同时由 useTVInput 驱动。
-          Web 桌面端隐藏：右侧垂直音量条是触摸/遥控场景设计，桌面走控制栏音量滑杆即可（Issue1） */}
+      {/* 音量条全模式可用（键盘/滑杆/遥控器调音量时展示）；TV 端同时由 useTVInput 驱动。
+ Web 桌面端隐藏：右侧垂直音量条是触摸/遥控场景设计，桌面走控制栏音量滑杆即可（Issue1） */}
       <VolumePopup
         visible={showVolumePopup && !isDesktopWeb}
         volume={volume}
         onVolumeChange={playerCore.setVolume}
       />
 
-      {/* G7-G10 的纵向滑动亮度/音量柱状指示器于 2026-09-30 移除（全端：移动 Web / App / TV）。
-          手势逻辑本身保留在 useTouchGesture 内（仍会调节亮度与音量），仅不再渲染柱子。 */}
+      {/* G7-G10 的纵向滑动亮度/音量柱状指示器于 移除（全端：移动 Web / App / TV）。
+ 手势逻辑本身保留在 useTouchGesture 内（仍会调节亮度与音量），仅不再渲染柱子。 */}
 
       {/* EPG Program Guide overlay */}
       {mode === 'iptv' && showProgramGuide && (
@@ -1467,7 +1466,7 @@ skipHistory,
       )}
 
       {/* 全屏/横屏「更多设置」右侧抽屉（需求⑤）：内容 = 原移动端竖版更多设置全部项，
-          加全屏专属的解码模式与快捷键；选中不关闭以支持连续调节 */}
+ 加全屏专属的解码模式与快捷键；选中不关闭以支持连续调节 */}
         {fsMobile && (
           <SettingsDrawer
             visible={drawerOpen}

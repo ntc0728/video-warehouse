@@ -1,15 +1,15 @@
 /**
- * 全屏策略控制器（生产版，自 demo 收敛）
+ * 全屏策略控制器（生产版，自 收敛）
  *
  * 行业通行做法（腾讯云点播 Web 播放器 / 西瓜播放器 xgplayer / DPlayer 一致）：
- *   全屏优先级 = 元素级 Fullscreen API > video.webkitEnterFullscreen > CSS 网页伪全屏
+ * 全屏优先级 = 元素级 Fullscreen API > video.webkitEnterFullscreen > CSS 网页伪全屏
  *
- *   · fullscreen-api —— container.requestFullscreen()：全屏后自定义控制栏/弹窗/字幕全保留。
- *   · webkit-video  —— video.webkitEnterFullscreen()：系统原生播放器接管，HTML 覆盖层全丢。
- *   · css-pseudo    —— 容器 position:fixed; inset:0 铺满视口：地址栏还在，但自定义 UI 完整保留。
+ * · fullscreen-api —— container.requestFullscreen()：全屏后自定义控制栏/弹窗/字幕全保留。
+ * · webkit-video —— video.webkitEnterFullscreen()：系统原生播放器接管，HTML 覆盖层全丢。
+ * · css-pseudo —— 容器 position:fixed; inset:0 铺满视口：地址栏还在，但自定义 UI 完整保留。
  *
  * ⚠️ iOS iPhone 上绝不能把「全屏」映射成 webkitEnterFullscreen，否则用户全屏后看到的是
- *    系统播放器，业务要求的自定义控制栏/抽屉/字幕渲染不出来。故 iPhone 默认走 CSS 伪全屏。
+ * 系统播放器，业务要求的自定义控制栏/抽屉/字幕渲染不出来。故 iPhone 默认走 CSS 伪全屏。
  *
  * 新增：可订阅的全屏状态管理器，合并「元素级 fullscreenchange / iOS webkitbegin-endfullscreen /
  * CSS 伪全屏」三种来源，让上层 UI（右上角操作组、右侧抽屉、桌面态控制栏）能可靠地感知全屏。
@@ -157,8 +157,8 @@ export async function exitFullscreen(video?: HTMLVideoElement | null): Promise<v
  * 屏幕方向锁定（非桌面端全屏默认横屏，需求⑥）：
  * 1. Web 标准 screen.orientation.lock —— 仅真·全屏下浏览器允许，伪全屏/非全屏会 reject → 静默。
  * 2. App 端兜底（Capacitor WebView 无元素级全屏 → 降级 CSS 伪全屏 → Web lock 必 reject）：
- *    走 @capacitor/screen-orientation 原生桥，无需全屏状态。
- *    iOS 的 Web API 与插件均不支持 lock → 自动静默失败（iOS 不做横屏锁定）。
+ * 走 @capacitor/screen-orientation 原生桥，无需全屏状态。
+ * iOS 的 Web API 与插件均不支持 lock → 自动静默失败（iOS 不做横屏锁定）。
  */
 export async function lockLandscape(): Promise<boolean> {
   try {

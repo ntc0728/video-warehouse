@@ -1,9 +1,9 @@
 /* ── SubPage（移动端独立路由子页全屏容器） ──────────────
-   与设置页 .settings-subpage 同模式：fixed inset:0 + z-index 高于
-   sticky-header(50)，覆盖全视口；顶栏与全局导航栏同高（移动端
-   --header-height-compact），视觉上替代顶部导航栏；
-   body 在顶栏下方独立滚动，无需全局滚动容器 padding 补偿。
-   仅移动端（≤767px）由调用方渲染；样式在全局作用域定义（非 CSS Module）。 */
+ 与设置页 .settings-subpage 同模式：fixed inset:0 + z-index 高于
+ sticky-header(50)，覆盖全视口；顶栏与全局导航栏同高（移动端
+ --header-height-compact），视觉上替代顶部导航栏；
+ body 在顶栏下方独立滚动，无需全局滚动容器 padding 补偿。
+ 仅移动端（≤767px）由调用方渲染；样式在全局作用域定义（非 CSS Module）。 */
 
 .sub-page {
   position: fixed;

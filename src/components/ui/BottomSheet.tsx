@@ -11,11 +11,11 @@ interface BottomSheetProps {
   children: React.ReactNode
   className?: string
   /**
-   * Portal 容器（Radix Dialog.Portal container）。默认 body。
-   * 播放器全屏场景必须传入播放器容器：fullscreen-api 档下 container 处于浏览器
-   * top layer，body 下的弹窗会被完全盖住；伪全屏 container z-index 9998 同样盖住。
-   * （Radix Portal 仅在 open 时挂载，届时传入的 DOM 节点必然已存在。）
-   */
+ * Portal 容器（Radix Dialog.Portal container）。默认 body。
+ * 播放器全屏场景必须传入播放器容器：fullscreen-api 档下 container 处于浏览器
+ * top layer，body 下的弹窗会被完全盖住；伪全屏 container z-index 9998 同样盖住。
+ * （Radix Portal 仅在 open 时挂载，届时传入的 DOM 节点必然已存在。）
+ */
   portalContainer?: HTMLElement | null
 }
 
@@ -30,7 +30,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   const contentRef = useRef<HTMLDivElement>(null)
   const touchStartRef = useRef<{ y: number; time: number } | null>(null)
   const currentTranslateRef = useRef(0)
-  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
+  //布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
   const isMobile = useIsMobileLayout()
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {

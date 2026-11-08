@@ -76,20 +76,20 @@ interface PlayerState {
   mirror: boolean;
   aspectRatio: 'default' | '4:3' | '16:9' | 'fill';
   /** 最近一次「由用户手动发起」的播放标记（点击播放按钮/切集后手动播放）。
-   * 用于 ToastTrigger 区分「用户手动播放」（显示『播放』提示）与
-   * 「自动缓冲播放」（切集/恢复时 canplay 自动播，不重复提示）。 */
+ * 用于 ToastTrigger 区分「用户手动播放」（显示『播放』提示）与
+ * 「自动缓冲播放」（切集/恢复时 canplay 自动播，不重复提示）。 */
   userPlayRequested: boolean;
   /** 最近一次「由用户手动发起」的暂停标记（点击暂停按钮）。
-   * 用于 ToastTrigger 区分「用户手动暂停」（显示『暂停』提示）与
-   * 「拖拽进度条触发的自动 pause」（不提示『暂停』，改显示最新进度）。 */
+ * 用于 ToastTrigger 区分「用户手动暂停」（显示『暂停』提示）与
+ * 「拖拽进度条触发的自动 pause」（不提示『暂停』，改显示最新进度）。 */
   userPauseRequested: boolean;
-  /** 播放错误的具体文案（P1-3）：native error / adapter error 时写入，PlayerCore 覆盖层透传显示 */
+  /** 播放错误的具体文案（-3）：native error / adapter error 时写入，PlayerCore 覆盖层透传显示 */
   errorMessage: string | null;
-  /** 续播恢复目标时间（P1-4/P1-10）：loadProgress 找到历史进度时写入，
-   * 驱动「已从上次位置继续」卡片（从头播放入口）；null 表示本次无续播 */
+  /** 续播恢复目标时间（-4/-10）：loadProgress 找到历史进度时写入，
+ * 驱动「已从上次位置继续」卡片（从头播放入口）；null 表示本次无续播 */
   resumeAt: number | null;
-  /** 源切换提示（2026-10-11 用户定稿）：历史/指定源无数据被改选时由 CMS 源聚合链写入，
-   *  驱动续播卡顶部行（播放器内靠上居中）；与续播卡同生命周期（约 6s 自清） */
+  /** 源切换提示：历史/指定源无数据被改选时由 CMS 源聚合链写入，
+ * 驱动续播卡顶部行（播放器内靠上居中）；与续播卡同生命周期（约 6s 自清） */
   sourceNotice: string | null;
   /** 视频色彩调整（CSS filter）：亮度/饱和度/对比度，1 为原始值（Issue4 色彩调整弹窗） */
   colorFilter: ColorFilter;

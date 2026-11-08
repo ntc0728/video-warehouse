@@ -3,9 +3,9 @@
  *
  * 为什么不能一律 portal 到 document.body：
  * - fullscreen-api 档（Android Chrome / 桌面 Chrome 等）：container 进入浏览器
- *   top layer，body 下的任何元素都会被其覆盖（z-index 无效）；
+ * top layer，body 下的任何元素都会被其覆盖（z-index 无效）；
  * - css-pseudo 伪全屏（App 端 WebView / iPhone）：container z-index 9998，
- *   body 下 z-index 较低的浮层同样被盖。
+ * body 下 z-index 较低的浮层同样被盖。
  *
  * 因此：container 处于全屏态（fullscreenElement / webkitFullscreenElement）时，
  * 浮层必须 portal 进 container 本身；非全屏维持 body

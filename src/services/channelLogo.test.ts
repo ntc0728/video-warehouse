@@ -1,6 +1,6 @@
 /**
  * channelLogo 台标解析器单元测试
- * 台标来源定稿（2026-09-08）：iptv-org logos.json 单一来源（channel.logo），
+ * 台标来源：iptv-org logos.json 单一来源（channel.logo），
  * 本地 M3U tvg-logo / EPG icon / 在线台标库均已退出；本文件覆盖单一候选链 + 失败/成功记忆。
  */
 import { describe, it, expect, afterEach } from 'vitest';

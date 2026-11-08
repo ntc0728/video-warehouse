@@ -6,7 +6,7 @@ import { useEffect } from 'react';
  * 配套 index.html viewport 的 interactive-widget=resizes-content：
  * · 支持该关键字的浏览器：布局视口随键盘缩小，--kb-inset ≈ 0，fixed bottom 已在键盘上方；
  * · 不支持的浏览器：innerHeight 不变、visualViewport.height 缩小，差值即遮挡高度，
- *   index.css 中 bottom:0 的底部浮层（modal/bottomsheet 等）改读 var(--kb-inset) 抬升。
+ * index.css 中 bottom:0 的底部浮层（modal/bottomsheet 等）改读 var(--kb-inset) 抬升。
  *
  * 只监听 visualViewport（resize/scroll），卸载时清掉变量，避免残留到其他页。。
  */

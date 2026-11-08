@@ -1,16 +1,16 @@
 import type { IPTVChannel, IPTVGroup } from '@/types/iptv';
 
 /**
- * IPTV 页「频道分类」固定文本归类工具（2026-09-08 IPTV 页大改）。
+ * IPTV 页「频道分类」固定文本归类工具。
  *
  * 左栏分类为固定文本（全部 / 央视CCTV / 主流卫视 / 地方卫视 / 港澳台 / 体育 /
  * 影视 / 少儿 / 新闻 / 我的收藏），不再依赖 M3U 的 group 字段——采集站分组名
  * 五花八门，固定文本按频道名归类才能保证左栏计数与分节稳定。
  *
- * 归类判据全部基于频道名（demo 终稿规则，changelogs/demos/demo-iptv-rail-2026-09-08.html）：
+ * 归类判据全部基于频道名（规则）：
  * 判定顺序 CCTV → 新闻 → 港澳台 → 体育 → 影视 → 少儿 → 卫视（主流/地方）→ 其他。
  * 例：CCTV-5 体育 → CCTV（CCTV 优先）；凤凰资讯台 → 新闻（新闻优先于港澳台）；
- *     湖南卫视 → 主流卫视；安徽卫视 → 地方卫视。
+ * 湖南卫视 → 主流卫视；安徽卫视 → 地方卫视。
  */
 
 export type IptvCategoryKey =
@@ -45,7 +45,7 @@ export const IPTV_CATEGORIES: IptvCategory[] = [
   { key: '__fav__', label: '我的收藏' },
 ];
 
-/** 主流卫视名单（demo 定稿 8 个；其余「XX卫视」归地方卫视） */
+/** 主流卫视名单（首批 8 个；其余「XX卫视」归地方卫视） */
 const MAINSTREAM_SATELLITES = [
   '湖南卫视',
   '浙江卫视',

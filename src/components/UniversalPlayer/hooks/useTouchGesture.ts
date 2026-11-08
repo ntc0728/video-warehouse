@@ -6,15 +6,15 @@ interface UseTouchGestureOptions {
   initialBrightness: number;
   onBrightnessChange: (value: number) => void;
   onVolumeChange: (value: number) => void;
-  /** P0-4：手势开始时同步真实音量（此前硬编码 0，气泡与实际音量脱节） */
+  /**-4：手势开始时同步真实音量（此前硬编码 0，气泡与实际音量脱节） */
   getInitialVolume: () => number;
-  /** P0-1：横向滑动 seek 是否可用（调用方按 hasError/模式判定） */
+  /**-1：横向滑动 seek 是否可用（调用方按 hasError/模式判定） */
   canSeek: boolean;
-  /** P0-1：视频时长（秒），把像素位移换算成 seek 秒数 */
+  /**-1：视频时长（秒），把像素位移换算成 seek 秒数 */
   getDuration: () => number;
-  /** P0-1：手势起点时的当前播放时间（seek 累计基准） */
+  /**-1：手势起点时的当前播放时间（seek 累计基准） */
   getSeekBaseTime: () => number;
-  /** P0-1：seek 目标时间回调（移动中节流触发，松手时最终触发一次） */
+  /**-1：seek 目标时间回调（移动中节流触发，松手时最终触发一次） */
   onSeekTarget: (targetTime: number) => void;
   /** 纵向手势主导后置 true，通知 useLongPress 取消长按（G8 防手势冲突） */
   verticalGestureActiveRef?: React.MutableRefObject<boolean>;
@@ -32,17 +32,17 @@ const MAX_BRIGHTNESS = 2;
 const INDICATOR_HIDE_DELAY = 1200;
 /** 手势增量灵敏度：位移 1px 对应的值变化（亮度/音量） */
 const SENSITIVITY = 1 / 200;
-/** P0-1：seek 灵敏度——横向滑过 15% 容器宽度 ≈ 全片长（对齐 B站手感） */
+/**-1：seek 灵敏度——横向滑过 15% 容器宽度 ≈ 全片长（对齐 B站手感） */
 const SEEK_SENS_FRACTION = 0.15;
-/** P0-1：拖动中 onSeekTarget 回调节流（ms） */
+/**-1：拖动中 onSeekTarget 回调节流（ms） */
 const SEEK_CB_THROTTLE = 100;
 /**
- * P0-5：容器高度覆盖视口达到该比例才视为「全屏形态」，纵向手势才接管（preventDefault）。
+ *-5：容器高度覆盖视口达到该比例才视为「全屏形态」，纵向手势才接管（preventDefault）。
  * 不依赖 document.fullscreenElement——App 端是 CSS 全屏布局，不触发该 API。
  * 嵌入/可滚动页面（覆盖不足）时纵向滑动交还页面滚动。横向 seek 不受此限制（B站竖屏同样支持）。
  */
 const VIEWPORT_COVERAGE_RATIO = 0.85;
-/** P0-6：手势排除区（与 useLongPress 同名单 + 移动端弹层），触摸这些区域不触发任何手势 */
+/**-6：手势排除区（与 useLongPress 同名单 + 移动端弹层），触摸这些区域不触发任何手势 */
 const GESTURE_EXCLUDE_SELECTOR = [
   '.up-control-bar',
   '.up-player-header',
@@ -58,7 +58,7 @@ const GESTURE_EXCLUDE_SELECTOR = [
   '.up-player-play-button',
 ].join(', ');
 
-/** P0-1：横向滑动 seek 的 HUD 状态（跟随手指的目标时间偏移） */
+/**-1：横向滑动 seek 的 HUD 状态（跟随手指的目标时间偏移） */
 export interface SeekHudState {
   active: boolean;
   /** 相对手势起点的累计偏移（秒，负 = 快退） */
@@ -116,7 +116,7 @@ export function useTouchGesture({
     candidate: 'brightness' | 'volume';
     /** 锁定轴：锁定后不再改变 */
     locked: GestureAxis | null;
-    /** P0-5：手势开始时容器是否覆盖视口（≥85% 视为全屏形态，纵向手势才接管） */
+    /**-5：手势开始时容器是否覆盖视口（≥85% 视为全屏形态，纵向手势才接管） */
     coversViewport: boolean;
     // ── seek 轴状态 ──
     seekBaseTime: number;
@@ -166,14 +166,14 @@ export function useTouchGesture({
     if (!el || !enabled) return;
     // 原生 touch 监听（passive:false 以便 preventDefault），React 合成 touchmove 在 root passive 下无法阻止滚动
     const onTouchStart = (e: TouchEvent) => {
-      // P0-6：控制栏/头部/弹层内的触摸不触发手势（与 useLongPress 同名单）
+      //-6：控制栏/头部/弹层内的触摸不触发手势（与 useLongPress 同名单）
       const target = e.target as HTMLElement | null;
       if (target?.closest(GESTURE_EXCLUDE_SELECTOR)) return;
       const touch = e.touches[0];
       if (!touch) return;
       const rect = el.getBoundingClientRect();
       const relX = touch.clientX - rect.left;
-      // P0-4：手势开始时从真实音量同步一次（此前 volumeRef 恒 0，气泡显示失真）
+      //-4：手势开始时从真实音量同步一次（此前 volumeRef 恒 0，气泡显示失真）
       const realVolume = getInitialVolumeRef.current();
       volumeRef.current = realVolume;
       setVolume(realVolume);
@@ -186,7 +186,7 @@ export function useTouchGesture({
         startY: touch.clientY,
         candidate: relX < rect.width / 2 ? 'brightness' : 'volume',
         locked: null,
-        // P0-5：容器几何覆盖视口 ≥85% 才视为全屏形态
+        //-5：容器几何覆盖视口 ≥85% 才视为全屏形态
         coversViewport: rect.height >= window.innerHeight * VIEWPORT_COVERAGE_RATIO,
         seekBaseTime: 0,
         seekAccum: 0,
@@ -236,7 +236,7 @@ export function useTouchGesture({
       }
 
       if (Math.abs(dx) > Math.abs(dy)) {
-        // 横向主导 → 锁定 seek 轴（P0-1）；seek 不可用（错误态/无时长）才放弃
+        // 横向主导 → 锁定 seek 轴（-1）；seek 不可用（错误态/无时长）才放弃
         if (!canSeekRef.current) {
           gestureRef.current = null;
           return;
@@ -256,7 +256,7 @@ export function useTouchGesture({
       }
 
       // 纵向主导
-      // P0-5：非全屏形态（嵌入/可滚动页面）纵向滑动交还页面滚动，不接管
+      //-5：非全屏形态（嵌入/可滚动页面）纵向滑动交还页面滚动，不接管
       if (!g.coversViewport) {
         gestureRef.current = null;
         return;

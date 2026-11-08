@@ -4,14 +4,14 @@
  *
  * 注意：crypto.subtle 仅在安全上下文（localhost / https）可用
  *
- * ⚠️ 安全边界（2026-11-03 明确，别高估它的作用）
+ * ⚠️ 安全边界（明确，别高估它的作用）
  * ─────────────────────────────────────────────────────────────
  * 密钥 `ENCRYPTION_KEY` 是**写死在前端源码里的常量**，会随 bundle 一起下发
  * （dist 里可 grep 到）。因此本模块**只做到「让 localStorage 里的值不是明文」**：
- *   ✅ 防：随手打开 devtools → Application → localStorage 一眼看到 token 原值；
- *          截图 / 日志 / 同步到云端的 localStorage dump 里不出现明文。
- *   ❌ 不防：任何能执行本页 JS 的人（自身浏览器 devtools、恶意扩展、XSS、
- *          同源脚本）—— 他们能直接调 decryptText() 或读内存里的明文。
+ * ✅ 防：随手打开 devtools → Application → localStorage 一眼看到 token 原值；
+ * 截图 / 日志 / 同步到云端的 localStorage dump 里不出现明文。
+ * ❌ 不防：任何能执行本页 JS 的人（自身浏览器 devtools、恶意扩展、XSS、
+ * 同源脚本）—— 他们能直接调 decryptText() 或读内存里的明文。
  *
  * 这不是实现缺陷，而是纯前端存储的**本质上限**：客户端持有解密能力，就不可能
  * 对客户端保密。真正的凭据保护必须放在服务端（OAuth 授权码换 token、后端代理
@@ -22,8 +22,8 @@
  */
 
 // ⚠️ 硬编码密钥：随 bundle 下发，不构成安全边界（详见文件头「安全边界」）。
-//    改动它会让所有已加密的存量数据解密失败（decryptText 的 catch 会回落成密文字符串），
-//    故除非同时提供迁移逻辑，切勿修改。
+// 改动它会让所有已加密的存量数据解密失败（decryptText 的 catch 会回落成密文字符串），
+// 故除非同时提供迁移逻辑，切勿修改。
 const ENCRYPTION_KEY = 'video-warehouse-v1';
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {

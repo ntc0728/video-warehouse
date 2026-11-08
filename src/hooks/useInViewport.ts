@@ -4,24 +4,24 @@
  * 用途：模块级视口懒加载——页面下部区块只有接近视口时才发请求（Detail 剧照 / Home 内容行）。
  *
  * 用法：
- *   const { ref, inView } = useInViewport<HTMLDivElement>({ rootMargin: '200px' });
- *   return <div ref={ref}>{inView ? <Heavy /> : <Skeleton />}</div>;
+ * const { ref, inView } = useInViewport<HTMLDivElement>({ rootMargin: '200px' });
+ * return <div ref={ref}>{inView ? <Heavy /> : <Skeleton />}</div>;
  *
  * 设计要点：
  * - **回调式 ref（而非 useRef 对象）**：元素可能在「条件渲染」下晚于 Hook 挂载（例如 Detail 剧照
- *   哨兵在 tab 内容里）。若用 useRef 对象，effect 只在挂载那次读 `ref.current`，此时若为 null
- *   就永久不建 observer —— 元素后续出现也不会触发。改用 `useState<Element|null>` + 稳定回调 ref，
- *   把「节点连接/断开」变成 effect 依赖，节点一挂上即建 observer。
+ * 哨兵在 tab 内容里）。若用 useRef 对象，effect 只在挂载那次读 `ref.current`，此时若为 null
+ * 就永久不建 observer —— 元素后续出现也不会触发。改用 `useState<Element|null>` + 稳定回调 ref，
+ * 把「节点连接/断开」变成 effect 依赖，节点一挂上即建 observer。
  * - **滚动根部默认取 `useScrollContainer()` 的容器**（AppLayout 的 `.app-shell__scroll`），
- *   不是 window —— 全站滚动发生在该容器内，显式指定 root 才能拿到准确的相交判定。
- *   容器缺失（如 IPTVPlayer 独立路由）时自动退化为 viewport。
+ * 不是 window —— 全站滚动发生在该容器内，显式指定 root 才能拿到准确的相交判定。
+ * 容器缺失（如 IPTVPlayer 独立路由）时自动退化为 viewport。
  * - **首帧主动判定**：`observe()` 不会立刻回调，元素已在视口内（首屏区块）时必须靠
- *   rAF 里的 rect 判定抢先置位，否则要等到用户滚动才加载。
+ * rAF 里的 rect 判定抢先置位，否则要等到用户滚动才加载。
  * - **隐藏期守卫**：容器不可见（`clientHeight === 0`，如 Keep-Alive `display:none`）时
- *   rect 全 0 无意义，跳过首帧判定（镜像 `useInfiniteScroll.ts` 的既有处理）。
+ * rect 全 0 无意义，跳过首帧判定（镜像 `useInfiniteScroll.ts` 的既有处理）。
  * - **deps 只放结构性参数**（node / disabled / rootMargin / threshold / once）：
- *   `inView` 与业务布尔量绝不进 deps —— 否则 re-observe 会与下游状态互相触发，
- *   形成自放大循环（`useInfiniteScroll.ts` 的 `hasMore` 就是这个坑，见 2026-09-16 评审）。
+ * `inView` 与业务布尔量绝不进 deps —— 否则 re-observe 会与下游状态互相触发，
+ * 形成自放大循环（`useInfiniteScroll.ts` 的 `hasMore` 就是这个坑）。
  */
 import { useCallback, useEffect, useState, type RefObject } from 'react';
 import { useScrollContainer } from './useScrollContext';
@@ -99,7 +99,7 @@ export function useInViewport<T extends HTMLElement = HTMLDivElement>({
       io.disconnect();
     };
     // ⚠️ deps 只允许结构性参数：inView / 业务布尔量进来会形成 re-observe 自放大循环；
-    //    rootRef 是 Context ref（或调用方传入的稳定 ref），其 current 在 effect 内读取即可。
+    // rootRef 是 Context ref（或调用方传入的稳定 ref），其 current 在 effect 内读取即可。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node, disabled, rootMargin, threshold, once]);
 

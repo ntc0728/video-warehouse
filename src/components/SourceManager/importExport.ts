@@ -1,7 +1,7 @@
 /**
  * importExport — 源管理导入/导出工具
  *
- * [2026-08-07 源管理整改]
+ * 
  * - 视频源：导出格式 `{ name, api, detail }[]` JSON
  * - IPTV / EPG 源：导出格式 `{ name, url }[]` JSON
  * - 导入支持 JSON（数组 / {api_site: {...}} / {items: [...]} / 文本逐行 name<分隔符>url）

@@ -24,12 +24,12 @@ interface UseKeyboardShortcutsOptions {
   toggleFullscreen?: () => void;
   onPrevEpisode?: () => void;
   onNextEpisode?: () => void;
-  /** P1-5：Shift+? 快捷键面板开关 */
+  /**-5：Shift+? 快捷键面板开关 */
   onToggleShortcuts?: () => void;
 }
 
 const SEEK_DEBOUNCE_MS = 100;
-/** P1-1：逐帧步长（假设 30fps；浏览器无统一帧元数据，取通用近似值） */
+/**-1：逐帧步长（假设 30fps；浏览器无统一帧元数据，取通用近似值） */
 const FRAME_STEP = 1 / 30;
 
 export function useKeyboardShortcuts({
@@ -72,7 +72,7 @@ export function useKeyboardShortcuts({
     const handleKeyDown = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       const tag = el?.tagName?.toLowerCase();
-      // P1-1：排除输入类 + contentEditable（此前漏 contentEditable）
+      //-1：排除输入类 + contentEditable（此前漏 contentEditable）
       if (tag === 'input' || tag === 'textarea' || tag === 'select' || el?.isContentEditable) return;
       // 聚焦按钮/slider 上的空格/回车是原生激活行为，不抢（避免双触发播放/暂停）
       if (
@@ -120,7 +120,7 @@ export function useKeyboardShortcuts({
         return;
       }
 
-      // 视频模式快捷键（P1-1：对齐 B站/YouTube——K 播放暂停、J/L ±10s、
+      // 视频模式快捷键（-1：对齐 B站/YouTube——K 播放暂停、J/L ±10s、
       // ←→ ±5s、0-9 百分比跳转、Home/End、,/. 逐帧、P 画中画、C 字幕、
       // R 循环（原 L 语义让位给「前进 10s」）、Shift+? 快捷键面板）
       switch (e.key) {

@@ -38,8 +38,8 @@ export function useIsMobile(): boolean {
  * 桌面浏览器把窗口调窄、平板（iPad / Android 平板）不触发。
  *
  * 判定规则：
- *  - 平板：显式 tablet 关键字，或 Android 设备但不带 Mobile（Android 平板特征）；
- *  - 手机：iPhone / iPod / Android+Mobile / 其它移动 UA。
+ * - 平板：显式 tablet 关键字，或 Android 设备但不带 Mobile（Android 平板特征）；
+ * - 手机：iPhone / iPod / Android+Mobile / 其它移动 UA。
  */
 export function getIsRealPhone(): boolean {
   if (typeof navigator === 'undefined') return false;
@@ -65,9 +65,9 @@ export function useIsRealPhone(): boolean {
  * 是否应展示「移动端 UI 布局」。
  *
  * 命中任一即展示移动端布局：
- *  - App 端（Capacitor 原生）；
- *  - 真实手机 web 端（UA 命中手机，排除平板 / 桌面）；
- *  - 视口宽度 < 768px（窄窗 / 平板竖屏 / 桌面窄窗统一走移动端布局）。
+ * - App 端（Capacitor 原生）；
+ * - 真实手机 web 端（UA 命中手机，排除平板 / 桌面）；
+ * - 视口宽度 < 768px（窄窗 / 平板竖屏 / 桌面窄窗统一走移动端布局）。
  *
  * 注意：isNativePlatform 是普通函数（读缓存），useIsRealPhone / useMediaQuery 是 Hook，
  * 三者都无条件调用以保证 Hook 顺序稳定。

@@ -21,7 +21,7 @@ export interface FusedCategories {
   onChange: (key: string) => void;
 }
 
-/** 桌面端内嵌筛选条配置（方案 C，2026-09-06）：状态 chips 常驻 + 排序弹层 */
+/** 桌面端内嵌筛选条配置：状态 chips 常驻 + 排序弹层 */
 export interface RecordInlineFilter {
   statusOptions: { key: string; label: string; color?: string; count?: number }[];
   statusFilter: string;
@@ -42,17 +42,17 @@ interface RecordShellProps {
   /** 融合分类栏（历史页）：渲染 StatusTabs 替代「影视/IPTV 分段 + 状态筛选」，不传时保持原行为 */
   fusedCategories?: FusedCategories;
   /** 桌面端内嵌筛选条：分隔线 + 状态 chips + 排序弹层（≥768 非 app 显示；
-   *  融合 tab 为 IPTV 时整段隐藏——状态/排序仅作用于影视项，IPTV 下无效） */
+ * 融合 tab 为 IPTV 时整段隐藏——状态/排序仅作用于影视项，IPTV 下无效） */
   inlineFilter?: RecordInlineFilter;
   /** 「⋯」溢出菜单内容（仅空间不足的桌面断点 768–1199 显示；≥1200 由 CSS 恢复
-   *  直接显示 actions 里的清空按钮、隐藏本菜单） */
+ * 直接显示 actions 里的清空按钮、隐藏本菜单） */
   overflowActions?: ReactNode;
   /** 附加操作按钮组（历史页：更多筛选/清空历史/批量管理），渲染在 record-aside 右侧 */
   actions?: ReactNode;
   /** 页面类名（collection-page / history-page），承接页面级布局样式 */
   pageClassName?: string;
-  /** 内容区标题（demo-record-left-rail 2026-09-08 方案 A 同款 content__head）。
-   *  仅 ≥1280 桌面 rail 布局显示（移动/app/TV 不渲染视觉，保持原状） */
+  /** 内容区标题（content__head）。
+ * 仅 ≥1280 桌面 rail 布局显示（移动/app/TV 不渲染视觉，保持原状） */
   contentTitle?: string;
   /** 标题右侧的条数元信息（如「共 64 条」），可省略 */
   contentMeta?: string;
@@ -84,7 +84,7 @@ function usePopoverClose(open: boolean, onClose: () => void) {
   return wrapRef;
 }
 
-/** 排序弹层（方案 C）：胶囊按钮 + chips 列表弹层，替代「更多筛选」面板里的常驻排序行 */
+/** 排序弹层：胶囊按钮 + chips 列表弹层，替代「更多筛选」面板里的常驻排序行 */
 function SortMenu({ sortOptions: options, sortBy, onSortChange }: Pick<RecordInlineFilter, 'sortOptions' | 'sortBy' | 'onSortChange'>) {
   const [open, setOpen] = useState(false);
   const wrapRef = usePopoverClose(open, () => setOpen(false));
@@ -122,7 +122,7 @@ function SortMenu({ sortOptions: options, sortBy, onSortChange }: Pick<RecordInl
 }
 
 /** 「⋯」溢出菜单：低频/危险操作收纳——仅空间不足的桌面断点（768–1199）显示，
- *  ≥1200 空间充足时由 CSS 恢复直接显示清空按钮、隐藏本菜单（用户拍板 2026-09-06） */
+ * ≥1200 空间充足时由 CSS 恢复直接显示清空按钮、隐藏本菜单 */
 function OverflowMenu({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const wrapRef = usePopoverClose(open, () => setOpen(false));
@@ -166,7 +166,7 @@ export default function RecordShell({
 }: RecordShellProps) {
   const hasStatus = !!(statusTabs && statusTabs.length > 0 && activeStatus !== undefined && onStatusChange);
   const hasFused = !!(fusedCategories && fusedCategories.tabs.length > 0);
-  // 方案 C（E-②）：IPTV tab 下状态/排序仅作用于影视项，显示无效筛选是认知噪音 → 整段隐藏
+  //（E-②）：IPTV tab 下状态/排序仅作用于影视项，显示无效筛选是认知噪音 → 整段隐藏
   const showInlineFilter = !!(inlineFilter && (!hasFused || fusedCategories!.active !== 'iptv'));
 
   return (
@@ -195,10 +195,10 @@ export default function RecordShell({
                       >
                         <span className="record-filter-chip__dot" aria-hidden="true" />
                         {/* label 包 span + flex:1（镜像 .record-status--fused 的 status-tab
-                            label 规则）：把计数推到按钮右缘 —— 「每个 tab 按钮内右侧显示数量」
-                            （2026-10-10 用户三次追平后定位：裸文本节点不会分配 flex，计数贴文字）。 */}
+ label 规则）：把计数推到按钮右缘 —— 「每个 tab 按钮内右侧显示数量」
+ （此前定位：裸文本节点不会分配 flex，计数贴文字）。 */}
                         <span className="record-filter-chip__label">{opt.label}</span>
-                        {/* 分面计数（2026-10-09 用户要求）：显示「点它会得到多少条」；0 条时隐藏（对齐 .status-tab__count 先例） */}
+                        {/* 分面计数：显示「点它会得到多少条」；0 条时隐藏（对齐 .status-tab__count 先例） */}
                         {opt.count !== undefined && opt.count > 0 && (
                           <span className="record-filter-chip__count">{opt.count}</span>
                         )}
@@ -250,12 +250,12 @@ export default function RecordShell({
             )}
           </aside>
 
-          {/* 2026-09-08 桌面端左栏 rail 改造：把 {children} 包进 .record-content，
-              使 .record-main 在 ≥1280 用 grid 时只有「aside / content」两个 cell，
-              避免 RecordFilterPanel / sentinel / 批量栏 / 弹窗等元素各自占一个 grid cell 导致布局错乱。
-              该层同时延续「父链 flex 拉伸」约定（空状态/加载态依赖它整页居中）。 */}
+          {/* 桌面端左栏 rail 改造：把 {children} 包进 .record-content，
+ 使 .record-main 在 ≥1280 用 grid 时只有「aside / content」两个 cell，
+ 避免 RecordFilterPanel / sentinel / 批量栏 / 弹窗等元素各自占一个 grid cell 导致布局错乱。
+ 该层同时延续「父链 flex 拉伸」约定（空状态/加载态依赖它整页居中）。 */}
           <div className="record-content">
-            {/* demo 同款内容区标题（仅 ≥1280 rail 布局显示，见 RecordShell.css） */}
+            {/* 内容区标题（仅 ≥1280 rail 布局显示，见 RecordShell.css） */}
             {contentTitle && (
               <div className="record-content-head">
                 <h3 className="record-content-head__title">{contentTitle}</h3>

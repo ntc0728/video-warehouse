@@ -1,8 +1,8 @@
 /* ========================================
-   IPTV 频道卡片 — Mobile First 竖排布局
-   Logo 上 + 名称/分组下 + 收藏按钮右上
-   四设备端独立尺寸
-   ======================================== */
+ IPTV 频道卡片 — Mobile First 竖排布局
+ Logo 上 + 名称/分组下 + 收藏按钮右上
+ 四设备端独立尺寸
+ ======================================== */
 
 /* ---- Wrapper: 定位上下文 + 网格项适配 ---- */
 .iptv-channel-card-wrap {
@@ -10,11 +10,11 @@
   width: 100%;
   min-width: 0;
   /* 离屏卡片跳过布局与绘制：Keep-Alive 下 IPTV 组件常驻挂载，
-     visibleCount 滚到多少就常驻多少张卡（可达数百），从 display:none
-     切回 display:contents 时全部卡片同帧 layout+paint 导致切换卡顿。
-     content-visibility:auto 让不在视口的卡片跳过布局/绘制，仅可见的
-     几十张参与重排；auto 关键字记住上次真实高度，避免滚动条跳动。
-     同时首屏/二次进入的入场 cardFadeIn 也只作用于可见卡片，避免批量重绘。 */
+ visibleCount 滚到多少就常驻多少张卡（可达数百），从 display:none
+ 切回 display:contents 时全部卡片同帧 layout+paint 导致切换卡顿。
+ content-visibility:auto 让不在视口的卡片跳过布局/绘制，仅可见的
+ 几十张参与重排；auto 关键字记住上次真实高度，避免滚动条跳动。
+ 同时首屏/二次进入的入场 cardFadeIn 也只作用于可见卡片，避免批量重绘。 */
   content-visibility: auto;
   contain-intrinsic-size: auto 120px;
 }
@@ -51,19 +51,19 @@
   box-shadow: var(--focus-ring);
 }
 
-/* [2026-08-13] 卡片出场动画改为「网格容器级 stagger」——与浏览/收藏/历史页
-   .video-card-grid > *:nth-child(n) 的阶梯入场完全一致（fadeInUp 0.4s，第 n 项
-   delay 递增 0.03s）。此前每张卡固定 0.012s delay 同时播、无阶梯感，与 video card
-   明显不一致；且曾用 reveal 机制（paused+is-revealed）导致首屏卡片透明冻结。
-   [2026-09-06] 动画目标从内层 .iptv-channel-card 上移到网格直接子项
-   .iptv-channel-card-wrap：收藏按钮是 wrap 的兄弟节点（absolute 定位在 wrap 上），
-   动画只作用于卡片时，stagger delay 期间卡片 opacity:0 而已收藏红心先于卡片显形
-   （"卡未出场、收藏图标先出现"）。上移到 wrap 后卡片与收藏按钮同帧淡入。
-   注意：nth-child 计数基于网格直接子项 .iptv-channel-card-wrap（content-visibility
-   元素），animate-fade-in-up 类由 TSX 挂在 wrap 上。 */
+/* 卡片出场动画改为「网格容器级 stagger」——与浏览/收藏/历史页
+ .video-card-grid > *:nth-child(n) 的阶梯入场完全一致（fadeInUp 0.4s，第 n 项
+ delay 递增 0.03s）。此前每张卡固定 0.012s delay 同时播、无阶梯感，与 video card
+ 明显不一致；且曾用 reveal 机制（paused+is-revealed）导致首屏卡片透明冻结。
+ 动画目标从内层 .iptv-channel-card 上移到网格直接子项
+ .iptv-channel-card-wrap：收藏按钮是 wrap 的兄弟节点（absolute 定位在 wrap 上），
+ 动画只作用于卡片时，stagger delay 期间卡片 opacity:0 而已收藏红心先于卡片显形
+ （"卡未出场、收藏图标先出现"）。上移到 wrap 后卡片与收藏按钮同帧淡入。
+ 注意：nth-child 计数基于网格直接子项 .iptv-channel-card-wrap（content-visibility
+ 元素），animate-fade-in-up 类由 TSX 挂在 wrap 上。 */
 
 /* 基础兜底 delay 0.39s：第 13+ 张卡（超过枚举）自动作为最后一批跟队入场，
-   任意列数都不会抢跑（与 .video-card-grid 兜底逻辑一致） */
+ 任意列数都不会抢跑（与 .video-card-grid 兜底逻辑一致） */
 .iptv-channel-grid > *.animate-fade-in-up {
   animation-delay: 0.39s;
 }
@@ -93,17 +93,17 @@
   position: relative;
   flex-shrink: 0;
   width: 100%;
-  /* 封面背景统一 surface-hover：与 VideoCard 一致（2026-08-12）。
-     原 --color-placeholder（亮色 #f5f5f5 / 暗色 #262626）与 VideoCard 的
-     surface-hover 不一致，加载失败时露出冷白/近黑背景造成「占位色不统一」。 */
+  /* 封面背景统一 surface-hover：与 VideoCard 一致。
+ 原 --color-placeholder（亮色 #f5f5f5 / 暗色 #262626）与 VideoCard 的
+ surface-hover 不一致，加载失败时露出冷白/近黑背景造成「占位色不统一」。 */
   background-color: var(--color-surface-hover);
   overflow: hidden;
   aspect-ratio: 3 / 2;
 }
 
-/* 2026-11-08 封面临界态画框（与 VideoCard 同批，用户拍板「方案一加深 + 方案二画框」）：
-   加载/重试期间 1px 内描边锚定边界（IPTV 封面 3:2，台标图小、占位裸露时间更长）。
-   :has 门控与失败态衔接逻辑见 VideoCard.css 同名注释。 */
+/* 封面临界态画框（与 VideoCard 同批，「封面加深 + 临界态画框」）：
+ 加载/重试期间 1px 内描边锚定边界（IPTV 封面 3:2，台标图小、占位裸露时间更长）。
+has 门控与失败态衔接逻辑见 VideoCard.css 同名注释。 */
 .iptv-card-cover:has(.lazy-image-placeholder) {
   box-shadow: inset 0 0 0 1px var(--color-placeholder-border);
 }
@@ -114,7 +114,7 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
 }
 
 /* 横向 cover 失败/缺失兜底由 LazyImage fallbackVariant="tv" 渲染 lucide Tv 图标
-   + kinoTV 品牌字，不再使用内联 Tv 图标占位 */
+ + kinoTV 品牌字，不再使用内联 Tv 图标占位 */
 
 .iptv-card-cover .lazy-image-container {
   position: absolute;
@@ -126,14 +126,14 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
 .iptv-card-cover img {
   width: 100%;
   height: 100%;
-  /* 台标占满容器（2026-09-23 用户定稿）：cover 铺满，异形台标宁裁边不四周留白。
-     原 contain + padding 会把台标缩在中间、封面四周大面积底色（用户反馈「没占满」）。 */
+  /* 台标占满容器：cover 铺满，异形台标宁裁边不四周留白。
+ 原 contain + padding 会把台标缩在中间、封面四周大面积底色（没占满）。 */
   object-fit: cover;
   transition: transform var(--dur-lg);
 }
 
 /* ---- Cover 左上角 LIVE 角标容器（全局 .record-card__live-badge：常驻绿 LIVE；
-       可用性检测已于 2026-09-08 全链路移除） ---- */
+ 可用性检测已全链路移除） ---- */
 .iptv-card-cover__badges {
   position: absolute;
   top: var(--space-2xs);
@@ -211,8 +211,8 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
   text-overflow: ellipsis;
 }
 
-/* 「更多台」来源角标（紫色）：勾选的设置页 IPTV 源名（demo 终稿 .badge.extra）。
-   备用流角标（.iptv-card-fallback-badge）已于 2026-09-08 随兜底流机制一并移除。 */
+/* 「更多台」来源角标（紫色）：勾选的设置页 IPTV 源名（.badge.extra）。
+ 备用流角标（.iptv-card-fallback-badge）已随兜底流机制一并移除。 */
 .iptv-card-source-badge {
   display: inline-flex;
   align-items: center;
@@ -225,8 +225,8 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
   white-space: nowrap;
 }
 
-/* ── P2 增强层：卡片信息区副标题（英文名）/ 分类 ──────────────
-   仅普通文本样式（沿用设计 token），无 @media 尺寸规则，无需 TV 前缀。 */
+/* ── 增强层：卡片信息区副标题（英文名）/ 分类 ──────────────
+ 仅普通文本样式（沿用设计 token），无 @media 尺寸规则，无需 TV 前缀。 */
 .iptv-card-subtitle {
   margin: 0;
   color: var(--color-text);
@@ -284,7 +284,7 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
     line-height: 1.4;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .iptv-card-group {
     right: var(--space-3xs);
@@ -354,15 +354,15 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
   transform: scale(1.1);
 }
 
-/* 已收藏（2026-09-06 统一定稿）：外圈底色不变，仅心形变红（--color-danger）实心 */
+/* 已收藏：外圈底色不变，仅心形变红（--color-danger）实心 */
 .iptv-card-favorite.active {
   color: var(--color-danger);
 }
 
 /* 触屏设备（无 hover）常显兜底：>767px 的触屏（iPad / 折叠屏 / 触屏本）永远没有 hover，
-   hover-visible 的红心会一直 opacity:0 + pointer-events:none，看起来像「图标不见了」。
-   与 VideoCard.css 的 .video-card-fav-btn 同类规则对齐。
-   注意：≤767px / app 端靠上面的 display:none 隐藏，此规则不含 display，不会把它们复活。 */
+ hover-visible 的红心会一直 opacity:0 + pointer-events:none，看起来像「图标不见了」。
+ 与 VideoCard.css 的 .video-card-fav-btn 同类规则对齐。
+ 注意：≤767px / app 端靠上面的 display:none 隐藏，此规则不含 display，不会把它们复活。 */
 @media (hover: none) and (pointer: coarse) {
   .iptv-channel-card-wrap .iptv-card-favorite.hover-visible {
     opacity: 1;
@@ -381,7 +381,7 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
     display: none;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .iptv-card-favorite.hover-visible {
     display: none;
@@ -407,8 +407,8 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
 
 
 /* ========================================
-   Tablet: 768–1023px
-   ======================================== */
+ Tablet: 768–1023px
+ ======================================== */
 @media (width >= 768px) and (width <= 1023px) {
   html:not([data-device="app"]) .iptv-card-cover {
     aspect-ratio: 16 / 10;
@@ -450,8 +450,8 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
 
 
 /* ========================================
-   Desktop: ≥ 1024px
-   ======================================== */
+ Desktop: ≥ 1024px
+ ======================================== */
 @media (width >= 1024px) {
   html:not([data-device="app"]) .iptv-card-cover {
     aspect-ratio: 16 / 9;
@@ -495,8 +495,8 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
 
 
 /* ========================================
-   TV 设备：大字 + 大触控区 + 焦点环
-   ======================================== */
+ TV 设备：大字 + 大触控区 + 焦点环
+ ======================================== */
 [data-device="tv"] .iptv-channel-card,
 [data-device="tv"].iptv-channel-card {
   border-radius: var(--radius-md);
@@ -542,10 +542,10 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
 }
 
 /* 卡片本身被 .iptv-channel-card-wrap 的 content-visibility:auto（paint 包含）
-   裁切，焦点方框若画在卡片上会被裁成「只剩一个小圆点」。
-   改为画在 wrap 自身（绘制在 wrap 边界外侧，不被自身 paint 包含裁切）。
-   全局 [data-device="tv"] :focus-visible 已把卡片自带 box-shadow 清空，
-   此处仅负责在 wrap 上画可见方框。 */
+ 裁切，焦点方框若画在卡片上会被裁成「只剩一个小圆点」。
+ 改为画在 wrap 自身（绘制在 wrap 边界外侧，不被自身 paint 包含裁切）。
+ 全局 [data-device="tv"] :focus-visible 已把卡片自带 box-shadow 清空，
+ 此处仅负责在 wrap 上画可见方框。 */
 [data-device="tv"] .iptv-channel-card-wrap:focus-within {
   outline: var(--tv-focus-width, 3px) solid var(--color-primary);
   outline-offset: var(--tv-focus-offset, 3px);
@@ -556,10 +556,10 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
   outline: none;
 }
 
-/* ── 封面加载门控（2026-09-23）────────────────────────────────────────
-   扫光中隐藏 LIVE/来源/分组/台标角标与红心；成功/失败兜底/空源显示。
-   红心挂在 wrap（封面兄弟）→ 用 wrap:has(.lazy-image-placeholder) 上溯。
-   放末尾压过 hover/focus/touch/TV 各档显形规则（IPTV-090 失败态仍须可见）。 */
+/* ── 封面加载门控────────────────────────────────────────
+ 扫光中隐藏 LIVE/来源/分组/台标角标与红心；成功/失败兜底/空源显示。
+ 红心挂在 wrap（封面兄弟）→ 用 wrap:has(.lazy-image-placeholder) 上溯。
+ 放末尾压过 hover/focus/touch/TV 各档显形规则（IPTV-090 失败态仍须可见）。 */
 .iptv-card-cover__badges,
 .iptv-card-group,
 .iptv-card-source {

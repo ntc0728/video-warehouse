@@ -54,7 +54,7 @@ export default function ToastTrigger({ mode, disabled = false }: { mode?: Player
       // 切换线路（首帧 src 从 null 初始化为实际值不算「切换」，不提示）
       if (src && prevSource.current !== null && src !== prevSource.current) {
         // 切集/切线路瞬间会短暂经过此处；抑制窗口内跳过，避免误报「已切换到线路名」
-        // 后由 handlePlayEpisode 的集标题提示独占显示（审查报告 3.2）
+        // 后由 handlePlayEpisode 的集标题提示独占显示
         if (!isSourceToastSuppressed()) {
           prevSource.current = src;
           const sources = state.sources;
@@ -67,7 +67,7 @@ export default function ToastTrigger({ mode, disabled = false }: { mode?: Player
       }
 
       // 播放/暂停不再提示：播放与暂停是最高频的两个操作，每次点击都弹一次提示
-      // 属于噪声（用户 2026-09-10 明确要求去掉）。播放态的其它反馈由画面本身给出。
+      // 属于噪声（去掉）。播放态的其它反馈由画面本身给出。
 
       // 倍速变化
       if (rate !== prevPlaybackRate.current) {

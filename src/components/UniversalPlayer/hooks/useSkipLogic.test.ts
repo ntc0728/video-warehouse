@@ -3,8 +3,8 @@
  *
  * 该 hook 已导出且直接返回 hasSkippedIntroRef/hasSkippedOutroRef，所以**无需为可测性抽纯函数**
  * （抽函数＝改播放链结构，属行为类改动，会触发全量 E2E 门禁）。这里用最小 video 替身即可覆盖全部分支：
- *  - 跳片头条件（useSkipLogic.ts:17）：`skipIntro && !已跳 && ct < 阈值 && ct > 0.5`
- *  - 跳片尾条件（:30）：`skipOutro && !已跳 && ct > dur - 阈值 && ct < dur - 1`
+ * - 跳片头条件（useSkipLogic.ts:17）：`skipIntro && !已跳 && ct < 阈值 && ct > 0.5`
+ * - 跳片尾条件（:30）：`skipOutro && !已跳 && ct > dur - 阈值 && ct < dur - 1`
  *
  * useSettingsStore 用最小替身 mock（hook 只读 getState()），避免连带加载 settings 的持久化/加密存储。
  */

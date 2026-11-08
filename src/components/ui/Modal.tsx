@@ -13,10 +13,10 @@ interface ModalProps {
   children?: React.ReactNode
   className?: string
   /**
-   * Portal 容器（Radix Dialog.Portal container）。默认 body。
-   * 播放器全屏场景（尤其是 App WebView 的 css-pseudo 全屏 z-index:9998，及真实全屏 top layer）
-   * 必须传入播放器容器，否则 body 下的弹窗会被完全盖住。
-   */
+ * Portal 容器（Radix Dialog.Portal container）。默认 body。
+ * 播放器全屏场景（尤其是 App WebView 的 css-pseudo 全屏 z-index:9998，及真实全屏 top layer）
+ * 必须传入播放器容器，否则 body 下的弹窗会被完全盖住。
+ */
   portalContainer?: HTMLElement | null
 }
 

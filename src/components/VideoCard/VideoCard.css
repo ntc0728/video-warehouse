@@ -1,18 +1,18 @@
 /* ============================================================
-   公共 Grid 容器 — Browse / Collections 共用
-   视觉契约:列数与首页横滚行同一 --card-cols 阶梯等分（2026-09-06 对齐）,
-   水平 padding 由 grid 自管(页面级 padding 0)
-   ============================================================ */
+ 公共 Grid 容器 — Browse / Collections 共用
+ 视觉契约:列数与首页横滚行同一 --card-cols 阶梯等分（对齐）,
+ 水平 padding 由 grid 自管(页面级 padding 0)
+ ============================================================ */
 
 .video-card-grid {
   display: grid;
   grid-template-columns: repeat(var(--card-cols, 6), minmax(0, 1fr));
-  /* 卡片间距统一 --space-lg（2026-09-03）：与首页横滚行 / IPTV 频道网格一致，
-     不再走 --grid-gap（它仍是 Detail 源网格的间距来源）。 */
+  /* 卡片间距统一 --space-lg：与首页横滚行 / IPTV 频道网格一致，
+ 不再走 --grid-gap（它仍是 Detail 源网格的间距来源）。 */
   gap: var(--space-lg);
   /* width: 100% 让 grid 撑满父容器,1fr 才能均分列宽;
-     旧实现用 max-content 会让 1fr 退化为 0,grid 永远收缩到内容自然宽(单卡约 60px),
-     视觉上卡片"远远小于"父容器应有的尺寸。 */
+ 旧实现用 max-content 会让 1fr 退化为 0,grid 永远收缩到内容自然宽(单卡约 60px),
+ 视觉上卡片"远远小于"父容器应有的尺寸。 */
   width: 100%;
   margin: 0;
   padding: var(--space-md) 0;
@@ -20,20 +20,20 @@
 }
 
 /* ≥1440 卡片间距与首页行统一为 --hero-side-gap（见 index.css「卡片间距统一」块，
-   该覆盖也在那里）——列布局恒走上方 --card-cols 等分，与首页 VideoCard 行一致。
-   （原「≥1280 auto-fill --card-size 固定轨道 + 居中」已撤销：收藏/Browse 卡片
-   与首页行卡尺寸脱节，290px vs ~180px 差异过大，2026-09-06 用户拍板回归等分。）
-   子项 stagger 入场动画。
-   兜底延迟 0.39s：nth-child 只枚举到 12，第 13+ 个子项若无延迟（0s）会比第 1 个
-   还早出现（fadeInUp 的 both 让有延迟的项先保持透明），视觉上"最后几张卡直接闪现、
-   不跟队"——收藏页 7 列 ×2 行=14 张可视卡片时第 13/14 张即复现。
-   基础规则先给所有子项压轴延迟（0.36s+0.03s），再由下方枚举覆盖前 12 个为递增小延迟：
-   超出枚举的子项自动作为最后一批跟队入场，任意列数（--card-cols 最大 10）都不会抢跑。 */
+ 该覆盖也在那里）——列布局恒走上方 --card-cols 等分，与首页 VideoCard 行一致。
+ （原「≥1280 auto-fill --card-size 固定轨道 + 居中」已废弃：收藏/Browse 卡片
+ 与首页行卡尺寸脱节，290px vs ~180px 差异过大，回归等分。）
+ 子项 stagger 入场动画。
+ 兜底延迟 0.39s：nth-child 只枚举到 12，第 13+ 个子项若无延迟（0s）会比第 1 个
+ 还早出现（fadeInUp 的 both 让有延迟的项先保持透明），视觉上"最后几张卡直接闪现、
+ 不跟队"——收藏页 7 列 ×2 行=14 张可视卡片时第 13/14 张即复现。
+ 基础规则先给所有子项压轴延迟（0.36s+0.03s），再由下方枚举覆盖前 12 个为递增小延迟：
+ 超出枚举的子项自动作为最后一批跟队入场，任意列数（--card-cols 最大 10）都不会抢跑。 */
 .video-card-grid > * {
-  /* 2026-11-04：fill-mode 由 both 改 backwards —— `both` 会把 `to{transform:translateY(0)}`
-     永久锁在元素上（动画声明优先级高于普通声明），导致 :hover 的 translateY(-3px) 被压掉，
-     表现为「hover 只有封面缩放、整卡不上浮」（用户 2026-11-04 反馈）。
-     backwards 只在 delay 期间保持 from（stagger 效果不变），动画结束即释放 transform。 */
+  /* fill-mode 由 both 改 backwards —— `both` 会把 `to{transform:translateY(0)}`
+ 永久锁在元素上（动画声明优先级高于普通声明），导致 :hover 的 translateY(-3px) 被压掉，
+ 表现为「hover 只有封面缩放、整卡不上浮」。
+ backwards 只在 delay 期间保持 from（stagger 效果不变），动画结束即释放 transform。 */
   animation: fadeInUp var(--dur-spring) var(--ease-standard) backwards;
   animation-delay: 0.39s;
 }
@@ -56,9 +56,9 @@
 }
 
 /* ============================================================
-   VideoCard — 竖版海报卡片（2:3）
-   评分左上 / 收藏右上 / 年份左下 / 类型右下 / 溢出跑马灯
-   ============================================================ */
+ VideoCard — 竖版海报卡片（2:3）
+ 评分左上 / 收藏右上 / 年份左下 / 类型右下 / 溢出跑马灯
+ ============================================================ */
 
 .video-card {
   display: flex;
@@ -93,9 +93,9 @@
   border-radius: var(--radius-md);
 }
 
-/* 2026-09-28 去卡片化：桌面端移除卡片四件套（border/radius/surface/shadow），
-   海报直接铺页面底色；hover 保留上浮微交互（阴影随卡删除），
-   :focus-visible 焦点环为可访问性必需，保留。<=767 / app 保持上方卡片样式。 */
+/* 去卡片化：桌面端移除卡片四件套（border/radius/surface/shadow），
+ 海报直接铺页面底色；hover 保留上浮微交互（阴影随卡删除），
+focus-visible 焦点环为可访问性必需，保留。<=767 / app 保持上方卡片样式。 */
 @media (width >= 768px) {
   html:not([data-device="app"]) .video-card {
     border: none;
@@ -149,20 +149,20 @@
 .video-card-cover {
   position: relative;
   width: 100%;
-  /* 2026-09-28：封面容器自带占位底（原 transparent → 露卡片 surface）。
-     去卡后卡片 surface 在桌面消失，透明会直接露页面底 --color-background，
-     与等待/失败态同色 → 隐形。改 --color-placeholder（对页面底 ΔE≥8）。 */
+  /* 封面容器自带占位底（原 transparent → 露卡片 surface）。
+ 去卡后卡片 surface 在桌面消失，透明会直接露页面底 --color-background，
+ 与等待/失败态同色 → 隐形。改 --color-placeholder（对页面底 ΔE≥8）。 */
   background-color: var(--color-placeholder);
   overflow: hidden;
   aspect-ratio: 2 / 3;
 }
 
-/* 2026-11-08 封面临界态画框（用户拍板「方案一加深 + 方案二画框」）：
-   加载/重试期间（占位层存在）给封面容器加 1px 内描边 + 浅投影，锚定卡片边界，
-   解决占位底与页面底过近「隐形」问题（尤其「继续观看」横版行与 hover 扫光临界态）。
-   :has 门控占位存在：图片揭示后描边消失；失败终态占位卸载，由
-   .lazy-image-fallback--brand 自带描边接管，两态无缝衔接不叠加。
-   暗档投影不可见故仅浅色加投影；描边色随 --color-placeholder-border 翻主题。 */
+/* 封面临界态画框（封面加深 + 临界态画框）：
+ 加载/重试期间（占位层存在）给封面容器加 1px 内描边 + 浅投影，锚定卡片边界，
+ 解决占位底与页面底过近「隐形」问题（尤其「继续观看」横版行与 hover 扫光临界态）。
+has 门控占位存在：图片揭示后描边消失；失败终态占位卸载，由
+ .lazy-image-fallback--brand 自带描边接管，两态无缝衔接不叠加。
+ 暗档投影不可见故仅浅色加投影；描边色随 --color-placeholder-border 翻主题。 */
 .video-card-cover:has(.lazy-image-placeholder) {
   box-shadow: inset 0 0 0 1px var(--color-placeholder-border);
 }
@@ -197,10 +197,10 @@ html:not([data-theme="dark"]) .video-card-cover:has(.lazy-image-placeholder) {
 
 .video-card-rating {
   /* 星标档位就地覆写：Icon 的 xs 档取 --icon-xs（= --text-2xs × 1.40 ≈ 12.6–15.4px），
-     比数字（--text-xs ≈ 11–12.7px）大一圈，且因 flex 行高取「最高子项」把胶囊顶到
-     ≈19px（字高仅 11.3px）——视觉上「星比数字抢眼、胶囊偏厚」。
-     改为与角标字号同档；Icon 仍按 SIZE_VAR 注入 width/height，故用 token 覆写而非
-     直接写 svg 尺寸（inline style 会赢过样式表规则）。 */
+ 比数字（--text-xs ≈ 11–12.7px）大一圈，且因 flex 行高取「最高子项」把胶囊顶到
+ ≈19px（字高仅 11.3px）——视觉上「星比数字抢眼、胶囊偏厚」。
+ 改为与角标字号同档；Icon 仍按 SIZE_VAR 注入 width/height，故用 token 覆写而非
+ 直接写 svg 尺寸（inline style 会赢过样式表规则）。 */
   --icon-xs: var(--text-xs);
   position: absolute;
   top: var(--space-xs);
@@ -319,7 +319,7 @@ html:not([data-theme="dark"]) .video-card-cover:has(.lazy-image-placeholder) {
   transform: scale(1.1);
 }
 
-/* 已收藏（2026-09-06 统一定稿）：外圈底色不变，仅心形变红（--color-danger）实心 */
+/* 已收藏：外圈底色不变，仅心形变红（--color-danger）实心 */
 .video-card-fav-btn.active {
   color: var(--color-danger);
 }
@@ -334,7 +334,7 @@ html:not([data-theme="dark"]) .video-card-cover:has(.lazy-image-placeholder) {
     display: none;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .video-card-fav-btn.hover-visible {
     display: none;
@@ -347,7 +347,7 @@ html:not([data-theme="dark"]) .video-card-cover:has(.lazy-image-placeholder) {
 
 
 /* 触屏设备（含宽屏平板/折叠屏 App）：收藏按钮常显可点，
-   避免「无 hover 也无 TV focus」时收藏入口不可达 */
+ 避免「无 hover 也无 TV focus」时收藏入口不可达 */
 @media (hover: none) and (pointer: coarse) {
   .video-card-fav-btn.hover-visible {
     opacity: 1;
@@ -371,9 +371,9 @@ html:not([data-theme="dark"]) .video-card-cover:has(.lazy-image-placeholder) {
   pointer-events: auto;
 }
 
-/* ── 竖版封面角标（2026-11-04 二次定稿：回滚封面内标题方案）──
-   收藏页（status）：左下 = 年份 + 类型合并、右下 = 观看状态；
-   其它页面：左下 = 年份、右下 = 类型。标题回到 info 区（下方）。 */
+/* ── 竖版封面角标（封面内标题已回退）──
+ 收藏页（status）：左下 = 年份 + 类型合并、右下 = 观看状态；
+ 其它页面：左下 = 年份、右下 = 类型。标题回到 info 区（下方）。 */
 
 .video-card-badges-bl {
   position: absolute;
@@ -423,9 +423,9 @@ html:not([data-theme="dark"]) .video-card-cover:has(.lazy-image-placeholder) {
 }
 
 /* ── 收藏页角标移动端重排（status 分支）──
-   桌面：左下 = 年份 + 类型并排、右下 = 观看状态；
-   移动：年份靠左下、类型靠右下（badges-bl 撑满底部宽度 + type 右对齐）、
-   观看状态叠在类型上方。 */
+ 桌面：左下 = 年份 + 类型并排、右下 = 观看状态；
+ 移动：年份靠左下、类型靠右下（badges-bl 撑满底部宽度 + type 右对齐）、
+ 观看状态叠在类型上方。 */
 @media (width <= 767px) {
   .video-card-badges-bl {
     right: var(--space-xs);
@@ -457,8 +457,8 @@ html[data-device="app"] .video-card-status {
   padding: var(--space-xs) var(--space-sm);
 }
 
-/* 2026-11-04 二次定稿：竖版标题回到 info 区（封面内标题方案已回滚），
-   故 info 区对竖版恢复显示；横版仍用 info 区显示 timeLabel。 */
+/* 竖版标题回到 info 区（封面内标题已回退），
+ 故 info 区对竖版恢复显示；横版仍用 info 区显示 timeLabel。 */
 
 .video-card-title-wrap {
   width: 100%;
@@ -478,19 +478,19 @@ html[data-device="app"] .video-card-status {
 .video-card-title-track {
   display: flex;
   /* 两份标题之间的间距：无缝滚动时前后两段内容不粘连（与卡片间距同一 token）。
-     仅一份文本时 flex 无兄弟项，gap 不产生任何可见间距。 */
+ 仅一份文本时 flex 无兄弟项，gap 不产生任何可见间距。 */
   gap: var(--space-lg);
   width: fit-content;
   white-space: nowrap;
 }
 
-/* ── 竖版标题溢出 → 无缝跑马灯（2026-09-03）─────────────────────────────
-   位移距离 = 第一份文本宽 + 两段之间 gap，由 JS 写入 --marquee-distance：
-   动画走完时第二份文本正好补到第一份的起始位置 → 首尾相接，无跳帧、无空档。
-   默认暂停；播放时机由下方 animation-play-state 规则控制：
-     · 桌面（精确指针）：hover 卡片 / 键盘聚焦时滚动
-     · 移动端（≤767px 与 App）：无 hover，自动滚动
-   暂停态 animation 仍存在但不推进，hover 时从当前相位续播，不会重置。 */
+/* ── 竖版标题溢出 → 无缝跑马灯─────────────────────────────
+ 位移距离 = 第一份文本宽 + 两段之间 gap，由 JS 写入 --marquee-distance：
+ 动画走完时第二份文本正好补到第一份的起始位置 → 首尾相接，无跳帧、无空档。
+ 默认暂停；播放时机由下方 animation-play-state 规则控制：
+ · 桌面（精确指针）：hover 卡片 / 键盘聚焦时滚动
+ · 移动端（≤767px 与 App）：无 hover，自动滚动
+ 暂停态 animation 仍存在但不推进，hover 时从当前相位续播，不会重置。 */
 @keyframes video-card-title-marquee {
   from { transform: translateX(0); }
   to   { transform: translateX(calc(-1 * var(--marquee-distance, 100%))); }
@@ -501,17 +501,17 @@ html[data-device="app"] .video-card-status {
   animation-play-state: paused;
 }
 
-/* 2026-11-04 修复「hover 不生效」：原规则被包在 `@media (hover: hover) and (pointer: fine)`
-   里，触屏笔记本 / 部分指针设备不匹配该条件 → hover 永远不滚。
-   现改为**默认所有设备 hover/focus 都滚**（无媒体查询门槛），
-   触屏无 hover 的设备由下方 `@media (hover: none)` 与移动端规则接管为常驻播放。 */
+/* 修复「hover 不生效」：原规则被包在 `@media (hover: hover) and (pointer: fine)`
+ 里，触屏笔记本 / 部分指针设备不匹配该条件 → hover 永远不滚。
+ 现改为**默认所有设备 hover/focus 都滚**（无媒体查询门槛），
+ 触屏无 hover 的设备由下方 `@media (hover: none)` 与移动端规则接管为常驻播放。 */
 .video-card:hover .video-card-title--overflow .video-card-title-track,
 .video-card:focus-visible .video-card-title--overflow .video-card-title-track,
 .video-card:focus-within .video-card-title--overflow .video-card-title-track {
   animation-play-state: running;
 }
 
-/* 无 hover 能力的设备（触屏）：常驻自动播放（2026-11-04 用户要求移动端自动播放） */
+/* 无 hover 能力的设备（触屏）：常驻自动播放（移动端自动播放） */
 @media (hover: none) {
   .video-card-title--overflow .video-card-title-track {
     animation-play-state: running;
@@ -537,14 +537,14 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 }
 
 /* ============================================================
-   Mobile
-   ============================================================ */
+ Mobile
+ ============================================================ */
 
 @media (width <= 767px) {
   .video-card:hover { transform: translateY(-1px); }
   .video-card:hover .video-card-cover img { transform: none; }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .video-card:hover { transform: translateY(-1px); }
   html[data-device="app"] .video-card:hover .video-card-cover img { transform: none; }
@@ -552,8 +552,8 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 
 
 /* ============================================================
-   TV 端
-   ============================================================ */
+ TV 端
+ ============================================================ */
 
 [data-device="tv"] .video-card-title {
   font-size: var(--text-base);
@@ -576,9 +576,9 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 }
 
 /* ============================================================
-   VideoCard — 横版变体（16:9）
-   历史页专用，backdrop 封面 + 标题时间同行信息区
-   ============================================================ */
+ VideoCard — 横版变体（16:9）
+ 历史页专用，backdrop 封面 + 标题时间同行信息区
+ ============================================================ */
 
 .video-card--landscape .video-card-cover {
   aspect-ratio: 16 / 9;
@@ -591,8 +591,8 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 .video-card--landscape .video-card-info {
   display: flex;
   gap: var(--space-xs);
-  /* 2026-11-03：横版标题已移入封面，info 区只剩时间标签 →
-     原来的 space-between 会把它顶到最左，改为右对齐保持「时间在右」语义。 */
+  /* 横版标题已移入封面，info 区只剩时间标签 →
+ 原来的 space-between 会把它顶到最左，改为右对齐保持「时间在右」语义。 */
   justify-content: flex-end;
   align-items: baseline;
   padding: var(--space-xs) var(--space-sm) var(--space-sm);
@@ -614,8 +614,8 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   white-space: nowrap;
 }
 
-/* 2026-11-04：横版 hover 与竖版统一（上浮 + 封面 scale(1.06) + glow 扫光）。
-   旧规则单独禁用横版封面放大，导致「竖版会缩放、横版只有上浮」的不一致（用户报）。 */
+/* 横版 hover 与竖版统一（上浮 + 封面 scale(1.06) + glow 扫光）。
+ 旧规则单独禁用横版封面放大，导致「竖版会缩放、横版只有上浮」的不一致。 */
 
 @media (width <= 767px) {
   .video-card--landscape .video-card-info {
@@ -627,7 +627,7 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
     font-size: var(--text-xs);
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .video-card--landscape .video-card-info {
     gap: var(--space-2xs);
@@ -670,12 +670,12 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 }
 
 /* 进度条容器（未播放轨道）
-   ⚠️ 2026-11-04：轨道底色由 `rgba(255,255,255,.15)` 改为 `rgba(0,0,0,.78)`。
-   旧值原本被文字层的 0.86 黑渐变压住（overlay z-index 4 < 文字层 5），
-   等效观感 ≈ 15% 白叠 86% 黑（约 #3d3d3d 暗灰）；本次修「遮罩」把轨道提到
-   z-index 6 后，15% 白直接叠封面图 → 未播放段明显变亮（用户报「颜色被调亮」）。
-   改用 78% 黑底，在任意封面图上都还原原来的暗灰轨道观感。
-   条高同步收窄一档（用户要求「高度稍微调小」）：space-xs → space-2xs。 */
+ ⚠️ 轨道底色由 `rgba(255,255,255,.15)` 改为 `rgba(0,0,0,.78)`。
+ 旧值原本被文字层的 0.86 黑渐变压住（overlay z-index 4 < 文字层 5），
+ 等效观感 ≈ 15% 白叠 86% 黑（约 #3d3d3d 暗灰）；本次修「遮罩」把轨道提到
+ z-index 6 后，15% 白直接叠封面图 → 未播放段明显变亮（颜色被调亮）。
+ 改用 78% 黑底，在任意封面图上都还原原来的暗灰轨道观感。
+ 条高同步收窄一档（高度稍微调小）：space-xs → space-2xs。 */
 .video-card-landscape__progress-bar-wrap {
   width: 100%;
   height: var(--space-2xs);
@@ -684,9 +684,9 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 }
 
 /* 进度条填充 — 品红/粉色。
-   ⚠️ 2026-11-04：填充段必须**不被文字层遮罩**——overlay 已提到 z-index 6
-   （高于文字层 5），且文字层渐变止于条上方（background-size 扣掉条高），
-   故粉红段以 `--color-progress-fill` 原色直接可见，不再被压暗。 */
+ ⚠️ 填充段必须**不被文字层遮罩**——overlay 已提到 z-index 6
+ （高于文字层 5），且文字层渐变止于条上方（background-size 扣掉条高），
+ 故粉红段以 `--color-progress-fill` 原色直接可见，不再被压暗。 */
 .video-card-landscape__progress-bar {
   height: 100%;
   background: var(--color-progress-fill);
@@ -705,11 +705,11 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-/* ── 封面加载门控（2026-09-23）────────────────────────────────────────
-   扫光中（LazyImage 仍挂 .lazy-image-placeholder）隐藏四角标/收藏/进度；
-   成功(.loaded)、重试用尽失败(.error)、空源（无 placeholder）均显示。
-   以 placeholder 是否存在为真源：空源/失败不再走 JS imageLoaded（失败恒 false 的缺陷）。
-   放在文件末尾：fav 需压过 hover(0,4,0) / TV focus(0,5,0) / touch 常显。 */
+/* ── 封面加载门控────────────────────────────────────────
+ 扫光中（LazyImage 仍挂 .lazy-image-placeholder）隐藏四角标/收藏/进度；
+ 成功(.loaded)、重试用尽失败(.error)、空源（无 placeholder）均显示。
+ 以 placeholder 是否存在为真源：空源/失败不再走 JS imageLoaded（失败恒 false 的缺陷）。
+ 放在文件末尾：fav 需压过 hover(0,4,0) / TV focus(0,5,0) / touch 常显。 */
 .video-card-source-badge,
 .video-card-rating,
 .video-card-year-badge,
@@ -759,13 +759,13 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   横版卡封面内文字层（2026-11-03 用户定稿）
-   ───────────────────────────────────────────────────────────────────────
-   布局：封面底部一行 flex —— [标题（左，可跑马灯）][年份]，靠右下对齐；
-   标题区自动占满剩余宽度并可溢出滚动；年份间距 --space-xs。
-   （2026-11-04 用户要求继续观看卡删除类型标签，故只剩年份。）
-   底部整体压一层向上渐变，保证白字在任意封面图上的可读性。
-   ═══════════════════════════════════════════════════════════════════════ */
+ 横版卡封面内文字层
+ ───────────────────────────────────────────────────────────────────────
+ 布局：封面底部一行 flex —— [标题（左，可跑马灯）][年份]，靠右下对齐；
+ 标题区自动占满剩余宽度并可溢出滚动；年份间距 --space-xs。
+ （继续观看卡删除类型标签，故只剩年份。）
+ 底部整体压一层向上渐变，保证白字在任意封面图上的可读性。
+ ═══════════════════════════════════════════════════════════════════════ */
 .video-card-landscape__bottom {
   position: absolute;
   inset: auto 0 0;
@@ -775,9 +775,9 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   align-items: flex-end;
   padding: var(--space-xl) var(--space-xs) var(--space-xs);
   /* 渐变遮罩：上透下实。
-     ⚠️ 2026-11-04：渐变必须**止于进度条上方** —— 原实现铺满整层（含底部条区域），
-     不透明 0.86 直接糊在进度条上，用户看到的就是「进度条有一层遮罩」。
-     用 background-size 把渐变高度压到 calc(100% - 条高)，底部条区域保持透明。 */
+ ⚠️ 渐变必须**止于进度条上方** —— 原实现铺满整层（含底部条区域），
+ 不透明 0.86 直接糊在进度条上，用户看到的就是「进度条有一层遮罩」。
+ 用 background-size 把渐变高度压到 calc(100% - 条高)，底部条区域保持透明。 */
   background-image: linear-gradient(
     to top,
     rgba(0, 0, 0, 0.86) 0%,
@@ -829,8 +829,8 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 }
 
 /* 进度条贴底全宽（独立层，不参与文字行布局）。
-   z-index 6：**必须高于文字层 5** —— 文字层带不透明渐变遮罩，
-   若在其下会被整条盖住（用户 2026-11-04 报「进度条有一层遮罩」）。 */
+ z-index 6：**必须高于文字层 5** —— 文字层带不透明渐变遮罩，
+ 若在其下会被整条盖住（进度条有一层遮罩）。 */
 .video-card--landscape .video-card-landscape__progress-overlay {
   top: auto;
   bottom: 0;
@@ -838,8 +838,8 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   height: auto;
 }
 
-/* 进度时间：2026-11-04 改为文字行内的静态项（与年份同一右对齐组），
-   不再绝对定位 —— 标题 flex:1 只吃剩余宽度，天然不会压到时间。 */
+/* 进度时间： 改为文字行内的静态项（与年份同一右对齐组），
+ 不再绝对定位 —— 标题 flex:1 只吃剩余宽度，天然不会压到时间。 */
 .video-card--landscape .video-card-landscape__progress-text {
   position: static;
   color: var(--color-on-image);
@@ -852,15 +852,15 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 }
 
 /* 文字层：底部 padding 只需留出进度条高度（space-xs），不再用大 padding 硬推。
-   z-index 5：高于进度条 4，文字在条上方自然可读。 */
+ z-index 5：高于进度条 4，文字在条上方自然可读。 */
 .video-card--landscape .video-card-landscape__bottom {
   z-index: 5;
   padding-bottom: calc(var(--space-2xs) * 2);
 }
 
 @media (width <= 767px) {
-  /* 移动端：进度时间脱离文字行、在封面居中显示（用户 2026-11-04 要求）。
-     overlay 铺满封面，bar 贴底，时间绝对居中。 */
+  /* 移动端：进度时间脱离文字行、在封面居中显示。
+ overlay 铺满封面，bar 贴底，时间绝对居中。 */
   .video-card--landscape .video-card-landscape__progress-overlay {
     inset: 0;
   }
@@ -881,13 +881,13 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
     transform: translate(-50%, -50%);
   }
 
-  /* ⚠️ 包含块修正（2026-11-08 用户复测「时间没有居中」）：
-     时间元素的绝对定位包含块是**最近的 positioned 祖先** = .video-card-landscape__bottom，
-     而它默认只是底部一条（inset: auto 0 0，高度 = 标题行）——上面的 50%/50% 只在
-     「标题行内」居中，视觉上仍贴在标题旁，垂直方向永远到不了封面中部。
-     移动端把文字层铺满封面（标题行靠 align-items:flex-end + padding 贴底不变），
-     渐变遮罩同步收口到底部（原 strip 高度 ≈ --space-2xl + --space-md，position:bottom），
-     避免暗渐变铺满整张封面。此后 50%/50% 才是真正的「封面正中」。 */
+  /* ⚠️ 包含块修正：
+ 时间元素的绝对定位包含块是**最近的 positioned 祖先** = .video-card-landscape__bottom，
+ 而它默认只是底部一条（inset: auto 0 0，高度 = 标题行）——上面的 50%/50% 只在
+ 「标题行内」居中，视觉上仍贴在标题旁，垂直方向永远到不了封面中部。
+ 移动端把文字层铺满封面（标题行靠 align-items:flex-end + padding 贴底不变），
+ 渐变遮罩同步收口到底部（原 strip 高度 ≈ --space-2xl + --space-md，position:bottom），
+ 避免暗渐变铺满整张封面。此后 50%/50% 才是真正的「封面正中」。 */
   .video-card--landscape .video-card-landscape__bottom {
     inset: 0;
     background-size: 100% calc(var(--space-2xl) + var(--space-md));
@@ -906,10 +906,10 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
     font-size: var(--text-2xs);
   }
 
-  /* 封面便签文本统一压到全站最小字号档（2026-11-08 用户要求）：
-     源徽章（爱奇艺资源 / 电影天堂·9季第13集）原 --text-xs → --text-2xs；
-     进度时间胶囊与标题已是 --text-2xs（全站最小文本 token，见 variables.css），
-     此处显式声明以锚定「移动端恒最小」契约（若设了 ui-scale 仍会等比放大）。 */
+  /* 封面便签文本统一压到全站最小字号档：
+ 源徽章（爱奇艺资源 / 电影天堂·9季第13集）原 --text-xs → --text-2xs；
+ 进度时间胶囊与标题已是 --text-2xs（全站最小文本 token，见 variables.css），
+ 此处显式声明以锚定「移动端恒最小」契约（若设了 ui-scale 仍会等比放大）。 */
   .video-card-landscape__source-badge {
     font-size: var(--text-2xs);
   }

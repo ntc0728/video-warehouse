@@ -1,7 +1,7 @@
 /**
  * 并发控制工具
  *
- * 背景（2026-09-16 评审）：多处「对 N 个同质对象各发一次请求」写成 `for + await` 串行，
+ * 背景：多处「对 N 个同质对象各发一次请求」写成 `for + await` 串行，
  * 于是总耗时 = N × 单次 RTT。典型：`videoService.searchVideoSeasonsFromSingleSource` 对
  * 每个「第X季」条目串行解析（N 次详情请求）；`SourceChecker` 串行探测全部源。
  *
@@ -14,9 +14,9 @@
  *
  * 语义要点：
  * - 顺序保证：`results[i]` 恒对应 `items[i]`，与完成先后无关（调用方常依赖顺序，
- *   例如按搜索结果顺序写入 `Map` 决定「第一季」是谁）。
+ * 例如按搜索结果顺序写入 `Map` 决定「第一季」是谁）。
  * - 快速失败：任一 mapper 抛错 → 整个 Promise reject（与 `Promise.all` 一致）；
- *   此时其它在飞任务不会被主动打断，调用方应配合 `AbortSignal` 取消底层请求。
+ * 此时其它在飞任务不会被主动打断，调用方应配合 `AbortSignal` 取消底层请求。
  * - `limit` 会被规整到 `[1, items.length]`，空数组直接返回 `[]`。
  *
  * @param items 待处理数组（只读）

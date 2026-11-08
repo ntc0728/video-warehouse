@@ -1,17 +1,17 @@
 /**
- * Chart — 热度榜页（2026-09-06 v2，设计 demo：changelogs/demos/demo-chart-page-2026-09-06.html）
+ * Chart — 热度榜页
  *
  * 路由 /chart?category=movie|tv|variety|anime|documentary|trend（&window=day|week 限趋势榜）。
  * 定位与分工：/chart = 沉浸式看完整榜单（排名 + 热度 + 无缝滚动加载全部）；
  * browse = 筛选探索页；首页 overlay 面板 = hero 内快速预览（20 条客户端分页）。
  *
- * 数据口径（用户拍板延续）：
- *   · 榜单统一 discover 口径（sort_by=popularity.desc + page 翻页）——trending 为趋势序
- *     不可控且综艺/动漫/纪录片无 trending 端点，仅「趋势榜」tab 用 trending（标注趋势序）；
- *   · discover 分页拉取间 popularity 漂移会产生边界乱序/重复（demo 实测抓到跨页重复），
- *     故每次追加后「按 id 去重 + 按 popularity 降序重排」（趋势榜只去重、保留趋势序）；
- *   · 封面失败兜底 = LazyImage 默认 fallbackVariant 'image'（MonitorPlay + kinoTV 品牌字），
- *     与全站卡片一致，页面不自写图片失败逻辑。
+ * 数据口径：
+ * · 榜单统一 discover 口径（sort_by=popularity.desc + page 翻页）——trending 为趋势序
+ * 不可控且综艺/动漫/纪录片无 trending 端点，仅「趋势榜」tab 用 trending（标注趋势序）；
+ * · discover 分页拉取间 popularity 漂移会产生边界乱序/重复（实测抓到跨页重复），
+ * 故每次追加后「按 id 去重 + 按 popularity 降序重排」（趋势榜只去重、保留趋势序）；
+ * · 封面失败兜底 = LazyImage 默认 fallbackVariant 'image'（MonitorPlay + kinoTV 品牌字），
+ * 与全站卡片一致，页面不自写图片失败逻辑。
  *
  * 入口：首页「分类热度榜」三张分类卡 + 行标题「查看完整榜单」；面板「查看更多」仍跳 browse。
  */
@@ -91,13 +91,13 @@ interface ChartFeed {
   exhausted: boolean;
 }
 const feedCache = new Map<string, ChartFeed>();
-/** 合集模式（/chart?collection=<key>，2026-09-30 首页合集卡直达）feed 缓存与常驻 tab 同池，
- *  key 前缀区分，永不与 tab key 冲突 */
+/** 合集模式（/chart?collection=<key>， 首页合集卡直达）feed 缓存与常驻 tab 同池，
+ * key 前缀区分，永不与 tab key 冲突 */
 const feedKey = (tab: ChartCategoryKey, window: TrendWindow, collectionKey?: string) =>
   collectionKey ? `collection:${collectionKey}` : tab === 'trend' ? `trend:${window}` : tab;
 
 /** 合集模式下的 tab 高亮匹配：mediaType + genreIds 精确命中（动漫/综艺/纪录片），
- *  其余（动作/科幻/高分）落对应媒体类型大 tab —— 高亮仅作 UI 归属，数据走合集口径 */
+ * 其余（动作/科幻/高分）落对应媒体类型大 tab —— 高亮仅作 UI 归属，数据走合集口径 */
 function matchTabForCollection(def: HomeCollectionDef): ChartCategoryKey {
   const hit = CHART_TABS.find(
     (t) => t.mediaType === def.mediaType && (t.genreIds ?? []).join(',') === def.genreIds.join(','),
@@ -157,7 +157,7 @@ export default function ChartPage() {
   const scrollContainer = useScrollContainer();
 
   // URL 驱动 tab：/chart?category=variety&window=week（可分享、可回退）
-  // 合集直达（2026-09-30）：/chart?collection=<key> 优先于 category —— 首页合集卡
+  // 合集直达：/chart?collection=<key> 优先于 category —— 首页合集卡
   // 跳入时按合集定义取数（独立 feed 缓存），tab 高亮只作 UI 归属、点 tab 即离开合集模式。
   const params = new URLSearchParams(location.search);
   const categoryParam = params.get('category');
@@ -177,11 +177,11 @@ export default function ChartPage() {
   const [feed, setFeed] = useState<ChartFeed | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /* 2026-09-18：本次会话是否已成功加载过任意榜单 —— 区分「首载」与「切 tab/时间窗」。
-     首载 → 页级骨架 ChartSkeleton（与 Browse/Collections 同流派）；
-     之后 → 居中「小电视 + 加载中…」（2026-09-10 用户要求的切 tab 观感，不推翻）。 */
+  /* 本次会话是否已成功加载过任意榜单 —— 区分「首载」与「切 tab/时间窗」。
+ 首载 → 页级骨架 ChartSkeleton（与 Browse/Collections 同流派）；
+ 之后 → 居中「小电视 + 加载中…」。 */
   const [everLoaded, setEverLoaded] = useState(false);
-  // 2026-09-10 用户要求：切 tab / 时间窗时**不显示旧图与遮罩**，直接清空数据走
+  //切 tab / 时间窗时**不显示旧图与遮罩**，直接清空数据走
   // 居中「小电视 + 加载中」。原实现保留旧榜单降沉（chart-list--refreshing + 胶囊），
   // 观感上「旧图还挂在那里」，已按需求改为清空。
   const curFeedKeyRef = useRef<string | null>(null);
@@ -324,7 +324,7 @@ export default function ChartPage() {
         </div>
 
         {/* 合集直达榜（?collection=）不渲染分类 tabs：榜单口径由合集定义唯一决定，
-            展示 tabs 会让用户误以为本页是通用热度榜（2026-10-09 用户拍板） */}
+ 展示 tabs 会让用户误以为本页是通用热度榜 */}
         {!collectionDef && (
           <nav className="chart-tabs" aria-label="榜单分类">
             {CHART_TABS.map((t) => (
@@ -356,12 +356,12 @@ export default function ChartPage() {
 
         {showInitialSkeleton ? (
           /* 首载（本次会话尚无任何榜单数据）：与 Browse / Collections 同流派的
-             页级骨架 —— 结构对齐下方 .chart-list，列数读 --chart-cols，张数随视口。
-             2026-09-18 用户拍板恢复骨架；切 tab / 时间窗不进本分支（见 showInitialSkeleton）。 */
+ 页级骨架 —— 结构对齐下方 .chart-list，列数读 --chart-cols，张数随视口。
+ 恢复骨架；切 tab / 时间窗不进本分支（见 showInitialSkeleton）。 */
           <ChartSkeleton />
         ) : showInitialLoading ? (
           /* 切 tab / 切时间窗共用（数据已清空）：居中「小电视 + 加载中」
-             （2026-09-10 用户要求：切换 chart-tabs 按钮时下方不显示旧图与遮罩）。 */
+ （切换 chart-tabs 按钮时下方不显示旧图与遮罩）。 */
           <div className="chart-loading">
             <div className="chart-loading__inner" role="status">
               <TvMascot blink size={44} />
@@ -370,7 +370,7 @@ export default function ChartPage() {
           </div>
         ) : error && items.length === 0 ? (
           /* 加载失败：对齐 Browse 失败态（Empty error 图标 +「加载失败」标题 + 描述）。
-             2026-10-09 用户要求：去掉页内重试按钮（不提供页内恢复入口）。 */
+去掉页内重试按钮（不提供页内恢复入口）。 */
           <Empty status="error" title="加载失败" description={error} />
         ) : (
           <div className="chart-list" role="list">
@@ -397,10 +397,10 @@ export default function ChartPage() {
 }
 
 /** 榜单行标题：溢出检测 + 悬浮该行时跑马灯展示全标题。
- *  范式与历史页 `RecordCard`（`src/components/RecordCard`）一致（用户 2026-09-10 指定参考）：
- *  ① 同一元素上测 `scrollWidth > clientWidth + 1`（自身 overflow:hidden + nowrap，
- *     注意**不能** `text-overflow:ellipsis` 之外的额外裁切干扰）；
- *  ② 溢出时渲染**双段轨道**（标题复制两份、各带尾间距），动画平移 `-50%` 无缝循环。 */
+ * 范式与历史页 `RecordCard`（`src/components/RecordCard`）一致（参考）：
+ * ① 同一元素上测 `scrollWidth > clientWidth + 1`（自身 overflow:hidden + nowrap，
+ * 注意**不能** `text-overflow:ellipsis` 之外的额外裁切干扰）；
+ * ② 溢出时渲染**双段轨道**（标题复制两份、各带尾间距），动画平移 `-50%` 无缝循环。 */
 function ChartRowTitle({ title }: { title: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [overflow, setOverflow] = useState(false);
@@ -433,9 +433,9 @@ function ChartRowTitle({ title }: { title: string }) {
 
 /** 榜单行：排名（top3 暖橙强调）+ 封面 + 标题/年份/类型徽标 + 热度值/评分
  *
- * 封面 2026-09-10 用户要求分两态：
- *  · ≥1024：横版 16:9，取 backdropPath
- *  · <1024：**竖版 2:3**，取 posterPath（112×168，见 Chart.css 的 @media (width <= 1023px)）
+ * 封面 分两态：
+ * · ≥1024：横版 16:9，取 backdropPath
+ * · <1024：**竖版 2:3**，取 posterPath（112×168，见 Chart.css 的 @media (width <= 1023px)）
  * 数据源必须跟着切——横图裁成竖版会有构图问题，故用 useIsMobile（max-width:1023px，
  * 与 CSS 断点严格一致）在 JS 侧选图。 */
 function ChartRow({ item, rank, showBadge }: { item: TMDBVideoItem; rank: number; showBadge: boolean }) {

@@ -3,11 +3,11 @@
  *
  * 覆盖 wd 双重编码缺陷的两道防线：
  * 1. extractUrlParam：url 参数未整体编码时从原始 query 提取完整目标地址
- *    （searchParams.get("url") 会在第一个 & 处截断）
+ * （searchParams.get("url") 会在第一个 & 处截断）
  * 2. unwrapSelfNested：历史版本前端重试曾把已包装代理地址再包一层
- *    （proxy?url=proxy?url=...），多出的编码层泄漏到目标站（wd 带字面量 %）。
- *    输入约定：handleRequest 中 searchParams.get("url") 已解码一次的 targetUrl；
- *    若它仍指向自身 /proxy（自嵌套残留），解开一层得到真实目标地址。
+ * （proxy?url=proxy?url=...），多出的编码层泄漏到目标站（wd 带字面量 %）。
+ * 输入约定：handleRequest 中 searchParams.get("url") 已解码一次的 targetUrl；
+ * 若它仍指向自身 /proxy（自嵌套残留），解开一层得到真实目标地址。
  */
 import { describe, it, expect } from 'vitest';
 import { extractUrlParam, unwrapSelfNested } from '../../worker/cors-proxy.js';

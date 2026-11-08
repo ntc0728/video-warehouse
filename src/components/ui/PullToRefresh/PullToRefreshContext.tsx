@@ -21,15 +21,15 @@ export interface PTRHandler {
   /** 是否启用（默认 true） */
   enabled?: boolean;
   /**
-   * 刷新时展示的参数摘要（如「搜索: 动作」「分类: 电影」），用于浮层提示
-   * 「记录参数」——证明刷新保留了当前页面的搜索/筛选状态。
-   */
+ * 刷新时展示的参数摘要（如「搜索: 动作」「分类: 电影」），用于浮层提示
+ * 「记录参数」——证明刷新保留了当前页面的搜索/筛选状态。
+ */
   meta?: () => string | undefined;
   /**
-   * 浮层视觉变体：
-   * - 'default'（默认）：顶部导航栏下方居中的指示器
-   * - 'settings'：页面中间位移出现的圆形刷新按钮（设置页专用）
-   */
+ * 浮层视觉变体：
+ * - 'default'（默认）：顶部导航栏下方居中的指示器
+ * - 'settings'：页面中间位移出现的圆形刷新按钮（设置页专用）
+ */
   variant?: 'default' | 'settings';
 }
 
@@ -101,7 +101,7 @@ export function PullToRefreshProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * 订阅浮层当前阶段（供页面做联动，如「刷新中禁用某些交互」或 Demo 状态回显）。
+ * 订阅浮层当前阶段（供页面做联动，如「刷新中禁用某些交互」或 状态回显）。
  * 未订阅者零开销；订阅者在手势移动期间会按帧收到回调。
  */
 export function usePullPhase(): PTRPhaseState {
@@ -123,7 +123,7 @@ export function usePullPhase(): PTRPhaseState {
  * 参数保留：onRefresh 通过闭包捕获页面当前状态（如 Browse 从 URL 读取的搜索/筛选），
  * 因此刷新天然复用当前参数——这正是「相关页面记录搜索参数」的实现方式。
  *
- * 单活跃页面假设：AppLayout 同一时刻只渲染一个路由组件（方案 B：无 Keep-Alive），
+ * 单活跃页面假设：AppLayout 同一时刻只渲染一个路由组件（无 Keep-Alive），
  * 故浮层始终取「当前挂载页面」注册的处理器；路由切换时旧页 register(null) 后新页注册。
  */
 export function usePullToRefresh(
@@ -133,18 +133,18 @@ export function usePullToRefresh(
     meta?: () => string | undefined;
     variant?: 'default' | 'settings';
     /**
-     * 刷新失败（onRefresh 抛错/返回 rejected Promise）时的用户提示。
-     * - 不传（默认）：用通用文案 `PTR_DEFAULT_ERROR_TEXT` 弹 error toast
-     * - 传字符串：用自定义文案
-     * - 传 false：不提示（页面已有自己的错误 UI，避免重复提示）
-     *
-     * 背景（2026-09-16）：浮层 `settle` 同时挂 fulfilled/rejected（`PullToRefreshOverlay.tsx:157-160`），
-     * 无论成败都进 success 态并回弹 → 刷新失败对用户完全不可见。这里保持浮层视觉语义不变，
-     * 只在失败路径补一条 toast，属于「反馈闭环」而非视觉变更。
-     *
-     * 注意：只有「会 reject」的回调才走这条路径。若 store 内部把错误吞掉后正常 resolve
-     * （如 `useUserStore.reload` / `fetchAllHomeData`），调用方需自行探测并把失败翻译成 reject。
-     */
+ * 刷新失败（onRefresh 抛错/返回 rejected Promise）时的用户提示。
+ * - 不传（默认）：用通用文案 `PTR_DEFAULT_ERROR_TEXT` 弹 error toast
+ * - 传字符串：用自定义文案
+ * - 传 false：不提示（页面已有自己的错误 UI，避免重复提示）
+ *
+ * 背景：浮层 `settle` 同时挂 fulfilled/rejected（`PullToRefreshOverlay.tsx:157-160`），
+ * 无论成败都进 success 态并回弹 → 刷新失败对用户完全不可见。这里保持浮层视觉语义不变，
+ * 只在失败路径补一条 toast，属于「反馈闭环」而非视觉变更。
+ *
+ * 注意：只有「会 reject」的回调才走这条路径。若 store 内部把错误吞掉后正常 resolve
+ * （如 `useUserStore.reload` / `fetchAllHomeData`），调用方需自行探测并把失败翻译成 reject。
+ */
     toastOnError?: string | false;
   },
 ) {

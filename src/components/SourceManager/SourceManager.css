@@ -1,9 +1,9 @@
 /* ── SourceManager ──────────────────────────────
-   设置页源管理通用组件（视频源 / IPTV 源 / EPG 源共用）
-   结构：.source-manager-block（外层：标题 + 卡片）
-         ├─ .source-manager__title（标题，卡片外，始终显示）
-         └─ .source-manager（卡片：折叠 header + toolbar + list，
-                             与设置页 .list-item 同卡片化） */
+ 设置页源管理通用组件（视频源 / IPTV 源 / EPG 源共用）
+ 结构：.source-manager-block（外层：标题 + 卡片）
+ ├─ .source-manager__title（标题，卡片外，始终显示）
+ └─ .source-manager（卡片：折叠 header + toolbar + list，
+ 与设置页 .list-item 同卡片化） */
 .source-manager-block {
   display: flex;
   flex-direction: column;
@@ -21,7 +21,7 @@
   min-width: 0;
   padding: var(--space-md);
   /* gap 与 body 收缩动画同曲线同时长：避免折叠瞬间 gap 8→0 瞬时跳变
-     （卡片底部先跳 8px 再慢慢收 = 「按钮移动 + 收起延迟」的观感） */
+ （卡片底部先跳 8px 再慢慢收 = 「按钮移动 + 收起延迟」的观感） */
   transition: gap 0.35s cubic-bezier(0.76, 0, 0.24, 1);
 }
 .source-manager-block.is-collapsed .source-manager {
@@ -67,8 +67,8 @@
   grid-template-rows: 0fr;
 }
 /* toolbar ↔ list 间距：用 flex gap 而非 margin，折叠时容器高度收缩到 0、
-   overflow hidden 裁剪，间距随动画自然消失不残留（margin 在 grid 0fr 折叠
-   动画中会在底部露出一条空隙，避免用） */
+ overflow hidden 裁剪，间距随动画自然消失不残留（margin 在 grid 0fr 折叠
+ 动画中会在底部露出一条空隙，避免用） */
 .source-manager__body-inner {
   display: flex;
   flex-direction: column;
@@ -245,7 +245,7 @@
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   /* 与设置页 .list-item 卡片化保持一致：边框 + 阴影过渡，
-     避免滑块切换触发的整体透明度渐变（停用态用瞬时 opacity） */
+ 避免滑块切换触发的整体透明度渐变（停用态用瞬时 opacity） */
   transition: border-color var(--dur-xs) ease, box-shadow var(--dur-xs) ease;
 }
 .source-manager__item.is-disabled {
@@ -273,10 +273,10 @@
   box-shadow: 0 -2px 0 var(--color-primary);
 }
 
-/* 2026-09-28 去卡片化（用户拍板：source-manager 面板不用卡片式布局，
-   但 .source-manager__item 条目保留卡片）：
-   桌面仅 popover 属浮层（例外）：只删 border/radius/shadow，保留底色防与底层内容重叠；
-   条目卡片、拖拽 is-dragging/is-drop-target 指示均为原生规则，不进本块。 */
+/* 去卡片化（source-manager 面板不用卡片式布局，
+ 但 .source-manager__item 条目保留卡片）：
+ 桌面仅 popover 属浮层（例外）：只删 border/radius/shadow，保留底色防与底层内容重叠；
+ 条目卡片、拖拽 is-dragging/is-drop-target 指示均为原生规则，不进本块。 */
 @media (width >= 768px) {
   html:not([data-device="app"]):not([data-device="tv"]) .source-manager__popover {
     border: none;
@@ -481,7 +481,7 @@
     margin-left: calc(-1 * var(--space-2xs));
   }
 }
-/* 9.1 app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 639px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .source-manager__toolbar {
     gap: var(--space-2xs);

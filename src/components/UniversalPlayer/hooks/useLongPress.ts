@@ -4,10 +4,10 @@ interface UseLongPressOptions {
   onSeek: (direction: 'left' | 'right') => void;
   disabled?: boolean;
   /**
-   * 移动端纵向滑动手势（亮度/音量）激活标记：
-   * useTouchGesture 在纵向位移主导锁定后置 true，本 hook 据此立即取消
-   * 长按快进/快退，避免「垂直滑动调亮度/音量」与「水平长按 seek」冲突（G7-G10）。
-   */
+ * 移动端纵向滑动手势（亮度/音量）激活标记：
+ * useTouchGesture 在纵向位移主导锁定后置 true，本 hook 据此立即取消
+ * 长按快进/快退，避免「垂直滑动调亮度/音量」与「水平长按 seek」冲突（G7-G10）。
+ */
   verticalGestureActiveRef?: React.MutableRefObject<boolean>;
 }
 
@@ -94,7 +94,7 @@ export function useLongPress({ onSeek, disabled = false, verticalGestureActiveRe
     clearLongPress();
   }, [clearLongPress]);
 
-  // P2-5：组件卸载时清掉 pending 长按定时器与 seek 循环，避免泄漏后继续触发 seek
+  //-5：组件卸载时清掉 pending 长按定时器与 seek 循环，避免泄漏后继续触发 seek
   useEffect(() => () => clearLongPress(), [clearLongPress]);
 
   return {

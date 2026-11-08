@@ -3,7 +3,7 @@ import type { PlayerLevel, DecoderMode } from '@/types/player';
 import type { AudioTrack } from './PlayerAdapter';
 
 /** D1 裸流识别错误码：HLSAdapter 在 manifestParsingError（内容非 HLS 清单）时上报，
- *  上层据此降级到 mpegts.js 重试同一 URL（零额外请求识别裸流）。 */
+ * 上层据此降级到 mpegts.js 重试同一 URL（零额外请求识别裸流）。 */
 export const ERROR_CODE_BARE_STREAM = 'BARE_STREAM';
 
 function getQualityLabel(level: { width: number; height: number; bitrate: number }): string {
@@ -116,16 +116,16 @@ export class HLSAdapter extends BasePlayerAdapter {
         lowLatencyMode: false,
         startLevel: this.startLevel >= 0 ? this.startLevel : -1,
         preferManagedMediaSource: true,
-        // 缓冲上限 = 「60MB 内存」与「300s（5 分钟）时长」两者取最小值（2026-09-30 定稿）。
+        // 缓冲上限 = 「60MB 内存」与「300s（5 分钟）时长」两者取最小值。
         // 实现依据 hls.js 1.6 的 getMaxBufferLength()（dist/hls.js 实测）：
-        //   maxBufLen = max(8 × maxBufferSize / levelBitrate, maxBufferLength)
-        //   最终量   = min(maxBufLen, maxMaxBufferLength)     ← 天然「取最小」语义
+        // maxBufLen = max(8 × maxBufferSize / levelBitrate, maxBufferLength)
+        // 最终量 = min(maxBufLen, maxMaxBufferLength) ← 天然「取最小」语义
         // 于是「60MB / 5 分钟谁先到就用谁」只需显式写 maxMaxBufferLength=300：
-        //   · 高码率：60MB 换算秒数 < 300s → 由 60MB 先行封顶；
-        //   · 低码率：60MB 换算秒数 > 300s → 由 maxMaxBufferLength 截到 300s。
+        // · 高码率：60MB 换算秒数 < 300s → 由 60MB 先行封顶；
+        // · 低码率：60MB 换算秒数 > 300s → 由 maxMaxBufferLength 截到 300s。
         // ⚠️ 历史教训：早期版本只写 maxBufferSize（90MB/60MB）而不写 maxMaxBufferLength，
-        //    于是低码率源上永远取默认值 600s（10 分钟），改 maxBufferSize 完全看不出效果
-        //    —— 「字节上限」管不住「时长上限」，两者必须成对写。
+        // 于是低码率源上永远取默认值 600s（10 分钟），改 maxBufferSize 完全看不出效果
+        // —— 「字节上限」管不住「时长上限」，两者必须成对写。
         // maxBufferLength（下限 30s）/ backBufferLength（Infinity 回看）不设置，走默认值。
         maxBufferSize: 60 * 1024 * 1024,
         maxMaxBufferLength: 300,
@@ -146,7 +146,7 @@ export class HLSAdapter extends BasePlayerAdapter {
         return;
       }
 
-      // 直播流（IPTV）manifest 加载后：收敛缓冲 + 低延迟参数（吸收自 player-iptv-frontend-refactor.md 整改1）
+      // 直播流（IPTV）manifest 加载后：收敛缓冲 + 低延迟参数
       this.hls.on(HlsJs.Events.LEVEL_LOADED, (_e: unknown, data: { details?: { live?: boolean } }) => {
         if (data.details?.live && this.hls) {
           // 直播：收敛缓冲 + 低延迟参数（点播的 300s 上限在此被更严的 120s 覆盖）。
@@ -178,7 +178,7 @@ export class HLSAdapter extends BasePlayerAdapter {
           name: getQualityLabel({ width: l.width, height: l.height, bitrate: l.bitrate }),
         }));
 
-        // C1 视频轨检测：所有 level 的宽高均为 0 → manifest 不含视频轨（纯音频源/音频-only 分片）
+        // 视频轨检测：所有 level 的宽高均为 0 → manifest 不含视频轨（纯音频源/音频-only 分片）
         // 直接 onError 上报，由上层（UniversalPlayer）决定 toast 提示或切线路
         const hasVideoTrack = this.levels.some(l => l.width > 0 && l.height > 0);
         if (!hasVideoTrack) {
@@ -341,11 +341,11 @@ export class HLSAdapter extends BasePlayerAdapter {
   }
 
   /**
-   * 唤醒加载引擎（切后台/页签切换较久后返回前台时调用）。
-   * hls.js 的加载循环依赖定时器，后台页签被浏览器强节流后可能停滞或 fatal 停转；
-   * startLoad 是官方恢复入口（内部 stopLoad 后重启加载循环，可重入），
-   * 重置错误计数后重启，保证恢复期间新的 fatal 仍能走 startLoad 重试而非直接放弃。
-   */
+ * 唤醒加载引擎（切后台/页签切换较久后返回前台时调用）。
+ * hls.js 的加载循环依赖定时器，后台页签被浏览器强节流后可能停滞或 fatal 停转；
+ * startLoad 是官方恢复入口（内部 stopLoad 后重启加载循环，可重入），
+ * 重置错误计数后重启，保证恢复期间新的 fatal 仍能走 startLoad 重试而非直接放弃。
+ */
   resume(): void {
     this.resetErrorCount();
     if (this.hls) {

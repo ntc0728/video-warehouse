@@ -1,9 +1,9 @@
 /**
  * database.ts 收敛/守卫逻辑单元测试
- * 覆盖三类修复（2026-09-02，跨页签 IDB 问题）：
- *  1. addCollectionRecord 确定性主键 col-{videoId} → 跨页签重复收藏幂等收敛
- *  2. getCollections 惰性收敛 → 遗留随机 id / 同 videoId 双记录自愈
- *  3. upsertHistoryRecords 保留 updatedAt 较新者 → 防旧脏 flush 覆盖新进度
+ * 覆盖三类修复（跨页签 IDB 问题）：
+ * 1. addCollectionRecord 确定性主键 col-{videoId} → 跨页签重复收藏幂等收敛
+ * 2. getCollections 惰性收敛 → 遗留随机 id / 同 videoId 双记录自愈
+ * 3. upsertHistoryRecords 保留 updatedAt 较新者 → 防旧脏 flush 覆盖新进度
  * 用 fake-indexeddb 提供真实 IndexedDB 语义（含主键/索引约束）。
  */
 import 'fake-indexeddb/auto';
@@ -41,7 +41,7 @@ interface RawDB {
 }
 
 /** 用独立连接绕过写入层归一化，直接播种「旧 bug」形态的原始数据。
- *  先调 getCollections 让模块按 DB_VERSION 建好库（删库后裸 openDB 会建出 v1 空库）。 */
+ * 先调 getCollections 让模块按 DB_VERSION 建好库（删库后裸 openDB 会建出 v1 空库）。 */
 async function seedRawCollections(rows: Array<{ id: string; videoId: string; addedAt: number; title?: string }>): Promise<void> {
   await getCollections();
   const raw = (await openDB('video-warehouse')) as unknown as RawDB;

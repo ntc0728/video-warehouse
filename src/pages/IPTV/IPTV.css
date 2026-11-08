@@ -305,7 +305,7 @@
     scroll-snap-align: start;
   }
 }
-/* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .iptv-header-top {
     flex-wrap: nowrap;
@@ -400,7 +400,7 @@
 
 /* ── 网格 div 本身不需要入场动画 ─────────────────────
  * 卡片级 cardFadeIn 动画由 IPTVChannelCard 内部管理，
- * 新建的卡片会自动淡入（opacity: 0.4 → 1）。        */
+ * 新建的卡片会自动淡入（opacity: 0.4 → 1）。 */
 
 /* ── 刷新时的内容加载态 ──────────────────────────── */
 .iptv-content-loading {
@@ -414,8 +414,8 @@
 }
 
 /* ── IPTV 页卡片模块（仅桌面端 >=1024px）─────────────
-   两个卡片：top-card 固定在顶部包裹筛选/控制，grid-card 包裹频道网格随内容增长。
-   滚动条在外层主页面，不在卡片内部。 */
+ 两个卡片：top-card 固定在顶部包裹筛选/控制，grid-card 包裹频道网格随内容增长。
+ 滚动条在外层主页面，不在卡片内部。 */
 
 .iptv-top-card {
   flex-shrink: 0;
@@ -427,17 +427,17 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* ── P2 增强层「更多台」开关行（2026-09-08 已移除：新语义改为左栏按源勾选） ── */
+/* ── 增强层「更多台」开关行（已移除：新语义改为左栏按源勾选） ── */
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   桌面端左栏布局（2026-09-08 demo 终稿方案 B：changelogs/demos/demo-iptv-rail-2026-09-08.html）
-   ≥1024 且非 TV/App 渲染（JS 分支控制 DOM，CSS 不写 media 尺寸规则）。
-   2026-09-08 二改：视觉规格对齐收藏/历史页 RecordShell 方案 A rail——
-   宽度流体 clamp(124px, 8.61vw, 224px)（2026-09-08 二改：原 max-content + 保底
-   124px → 与设置页/Browse 左栏同曲线；原固定 176px）、条目 8px var(--space-sm) 内距 +
-   500 字重（原 min-height 30px）、组间距 --space-lg、分隔线 --space-sm 上下距、
-   计数徽标 text-secondary + line-height 1.2。
-   ═══════════════════════════════════════════════════════════════════════════ */
+ 桌面端左栏布局
+ ≥1024 且非 TV/App 渲染（JS 分支控制 DOM，CSS 不写 media 尺寸规则）。
+ 二改：视觉规格对齐收藏/历史页 RecordShell rail——
+ 宽度流体 clamp(124px, 8.61vw, 224px)（原 max-content + 保底
+ 124px → 与设置页/Browse 左栏同曲线；原固定 176px）、条目 8px var(--space-sm) 内距 +
+ 500 字重（原 min-height 30px）、组间距 --space-lg、分隔线 --space-sm 上下距、
+ 计数徽标 text-secondary + line-height 1.2。
+ ═══════════════════════════════════════════════════════════════════════════ */
 .iptv-rail-layout {
   display: flex;
   gap: var(--space-lg);
@@ -449,17 +449,17 @@
   top: var(--space-sm);
   flex-shrink: 0;
   align-self: flex-start;
-  /* 2026-09-08 与设置页/Browse 左栏统一：流体曲线；
-     2026-09-10 四页统一改用共享 token --rail-w（clamp(148px, 10vw, 200px)，2026-11-07 上限收窄），
-     并加右侧 1px 边框（左栏视觉语言统一 = 方案 B，用户拍板）；
-     替换原 max-content 内容自适应（原 min-width 保底不再需要）；
-     不设 max-height / overflow:auto——与 RecordShell 一致保持 visible，
-     避免未来加弹层时被裁切（rail 内容恒短，不会超视口） */
+  /* 与设置页/Browse 左栏统一：流体曲线；
+ 四页统一改用共享 token --rail-w（clamp(148px, 10vw, 200px)， 上限收窄），
+ 并加右侧 1px 边框（左栏视觉语言统一 =）；
+ 替换原 max-content 内容自适应（原 min-width 保底不再需要）；
+ 不设 max-height / overflow:auto——与 RecordShell 一致保持 visible，
+ 避免未来加弹层时被裁切（rail 内容恒短，不会超视口） */
   width: var(--rail-w);
-  /* 2026-11-05 两侧留白对称 + 撑满可视高（四处左栏同批修复）：
-     ① 原 `0 var(--space-sm) 0 0` 左内距为 0 → 内容偏左、右侧多空一条；改为左右对称 --space-sm；
-     ② 原高度 = 内容自然高（679px @2560），可视高 1357px → 下方空 678px；补 min-height 撑满
-        （min(视口高, 100%)：短页取 100% 落视口底、长页取 100dvh−header）。 */
+  /* 两侧留白对称 + 撑满可视高（四处左栏同批修复）：
+ ① 原 `0 var(--space-sm) 0 0` 左内距为 0 → 内容偏左、右侧多空一条；改为左右对称 --space-sm；
+ ② 原高度 = 内容自然高（679px @2560），可视高 1357px → 下方空 678px；补 min-height 撑满
+ （min(视口高, 100%)：短页取 100% 落视口底、长页取 100dvh−header）。 */
   min-height: min(calc(100dvh - var(--header-height) - var(--space-sm)), 100%);
   padding: 0 var(--space-sm);
   border-right: 1px solid var(--color-border-light);
@@ -467,16 +467,16 @@
 
 .iptv-rail__title {
   display: block;
-  /* 2026-11-05：左栏改为两侧对称 padding 后，标题保留自身 --space-sm 左内距 ——
-     栏 + 条目各 --space-sm，两者叠加后标题文字才与条目文字同左缘；
-     右侧 margin 去掉（栏右内距已足够，避免右缘多空一条）。 */
+  /* 左栏改为两侧对称 padding 后，标题保留自身 --space-sm 左内距 ——
+ 栏 + 条目各 --space-sm，两者叠加后标题文字才与条目文字同左缘；
+ 右侧 margin 去掉（栏右内距已足够，避免右缘多空一条）。 */
   margin: 0 0 var(--space-sm) var(--space-sm);
   color: var(--color-text-tertiary);
   font-size: var(--text-2xs);
   font-weight: 600;
 }
 
-/* 分组分隔线：RecordShell 方案 A 同款（1px + --space-sm 上下距，通栏） */
+/* 分组分隔线：RecordShell 同款（1px + --space-sm 上下距，通栏） */
 .iptv-rail__sep {
   height: 1px;
   margin: var(--space-sm) 0;
@@ -513,9 +513,9 @@
 }
 
 /* 选中态必须连 :hover 一起声明（同特异性 :hover 靠后即覆盖选中底色）；
-   2026-09-10 修复：选中字色由硬编码 #fff 改为 --color-text-inverse ——
-   暗色主题下 --color-primary 是 #fff（variables.css:677 一带），
-   硬编码白字会变成「白底白字」完全不可读。 */
+ 修复：选中字色由硬编码 #fff 改为 --color-text-inverse ——
+ 暗色主题下 --color-primary 是 #fff（variables.css:677 一带），
+ 硬编码白字会变成「白底白字」完全不可读。 */
 .iptv-rail__item.is-on,
 .iptv-rail__item.is-on:hover {
   background: var(--color-primary);
@@ -544,7 +544,7 @@
 }
 
 /* 选中态下的计数徽标：底色跟随选中字色（浅色主题=白/暗色主题=黑），
-   避免暗色下「白底 + 白色半透明徽标 + 白字」三重不可见（2026-09-10 修复） */
+ 避免暗色下「白底 + 白色半透明徽标 + 白字」三重不可见 */
 .iptv-rail__item.is-on .iptv-rail__cnt {
   background: color-mix(in srgb, var(--color-text-inverse) 22%, transparent);
   color: var(--color-text-inverse);
@@ -562,9 +562,9 @@
   transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 
-/* 2026-11-04：勾由内联 SVG（stroke 写死 white）改为伪元素 + currentColor。
-   原实现暗色下 --color-primary = #fff，白勾叠白底 → 1.00:1 完全不可见；
-   currentColor 随 --color-text-inverse 翻转（亮黑底白勾 / 暗白底深勾）。 */
+/* 勾由内联 SVG（stroke 写死 white）改为伪元素 + currentColor。
+ 原实现暗色下 --color-primary = #fff，白勾叠白底 → 1.00:1 完全不可见；
+ currentColor 随 --color-text-inverse 翻转（亮黑底白勾 / 暗白底深勾）。 */
 .iptv-rail__item.is-on .iptv-rail__box {
   border-color: var(--color-primary);
   background: var(--color-primary);
@@ -589,10 +589,10 @@
   min-width: 0;
 }
 
-/* 桌面左栏布局下网格容器去卡片化（2026-09-08 用户定稿）：无边框/圆角/底色/投影，
-   与页面背景融为一体；移动端/TV 走旧布局（无 .iptv-page--rail），保留原卡片外观
-   2026-09-28：top-card 同批并入去卡（原「仅桌面 >=1024」注释有误——
-   移动/App/TV 也渲染 top-card，故必须挂 .iptv-page--rail 前缀隔离）。 */
+/* 桌面左栏布局下网格容器去卡片化：无边框/圆角/底色/投影，
+ 与页面背景融为一体；移动端/TV 走旧布局（无 .iptv-page--rail），保留原卡片外观
+top-card 同批并入去卡（原「仅桌面 >=1024」注释有误——
+ 移动/App/TV 也渲染 top-card，故必须挂 .iptv-page--rail 前缀隔离）。 */
 .iptv-page--rail .iptv-top-card,
 .iptv-page--rail .iptv-grid-card {
   border: none;
@@ -648,8 +648,8 @@
   align-items: center;
   margin: 0 0 var(--space-sm);
   /* 吸顶时遮住滚过的卡片：背景取页面底色（桌面 .iptv-grid-card 已去卡片外观），
-     上下 padding 是吸顶态的呼吸空间；sticky 天生受限于 .iptv-sec 容器，
-     滚出该节范围即自动解除吸顶，无需 JS */
+ 上下 padding 是吸顶态的呼吸空间；sticky 天生受限于 .iptv-sec 容器，
+ 滚出该节范围即自动解除吸顶，无需 JS */
   padding: var(--space-xs) 0;
   background: var(--color-background);
 }

@@ -2,11 +2,11 @@
  * useDocumentTitle — 动态设置浏览器页签标题
  *
  * 用法：
- *   useDocumentTitle()           — 仅路由标题
- *   useDocumentTitle('海王')      — 路由 + 内容标题
- *   useDocumentTitle(null, true)  — 沉浸模式，只显示内容标题
+ * useDocumentTitle() — 仅路由标题
+ * useDocumentTitle('海王') — 路由 + 内容标题
+ * useDocumentTitle(null, true) — 沉浸模式，只显示内容标题
  *
- * 方案 B（无 Keep-Alive）：页面只在激活时挂载，卸载即销毁，不存在「多页并发
+ *（无 Keep-Alive）：页面只在激活时挂载，卸载即销毁，不存在「多页并发
  * 挂载、非激活页覆盖标题」的问题。因此本 hook 简化为「挂载/内容变化即写标题」，
  * 不再依赖激活路由上下文（原 SelfRouteContext / activeRouteStore 已删除）。
  */
@@ -35,7 +35,7 @@ const routeTitles: Record<string, string> = {
  *
  * 与 useDocumentTitle 的分工：
  * - 本 hook 只负责「路由名」兜底（如「搜索 - kinoTV」），在 AppLayout / 顶层路由
- *   挂载阶段即用 layout effect 写入，页面 chunk 还在 Suspense 时也生效。
+ * 挂载阶段即用 layout effect 写入，页面 chunk 还在 Suspense 时也生效。
  * - useDocumentTitle 在数据就绪后再把内容标题（如「海王 · 详情」）叠加到路由名之上。
  * 二者写入顺序：子组件 effect（内容标题）在父级 layout effect（路由名）之后运行，
  * 故内容标题最终生效；路由名仅在页面尚未挂载（Suspense）或内容未就绪时可见。

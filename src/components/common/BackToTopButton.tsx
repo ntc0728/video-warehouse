@@ -32,10 +32,10 @@ interface BackToTopButtonProps {
 }
 
 const EXIT_DURATION_MS = 250;
-/** 滚动停止多少毫秒后 FAB 才淡入（2026-09-11 用户拍板：滚动中隐藏，停止后淡入并半透明化显示） */
+/** 滚动停止多少毫秒后 FAB 才淡入（滚动中隐藏，停止后淡入并半透明化显示） */
 const SCROLL_IDLE_MS = 800;
-/** 点击「顶部」的平滑滚动时长（2026-11-08 用户反馈原生 smooth 观感僵硬/各端不一致，
- *  改为固定时长 + ease-out-expo 的 rAF 动画；prefers-reduced-motion 直接跳顶） */
+/** 点击「顶部」的平滑滚动时长（原生 smooth 观感僵硬/各端不一致，
+ * 改为固定时长 + ease-out-expo 的 rAF 动画；prefers-reduced-motion 直接跳顶） */
 const SMOOTH_SCROLL_MS = 450;
 
 export default function BackToTopButton({
@@ -47,7 +47,7 @@ export default function BackToTopButton({
   const location = useLocation();
   const defaultScrollRef = useScrollContainer();
   const scrollContainerRef = customScrollRef ?? defaultScrollRef;
-  // ≥1024 且非 TV：全部页面统一「方形刷新 + 方形顶部」浮层（2026-09-11 用户拍板：
+  // ≥1024 且非 TV：全部页面统一「方形刷新 + 方形顶部」浮层（
   // 刷新 = 页面刷新，且不应只在首页出现 —— 组件级开关，使用方零改动自动获得）
   const isWideDesktop = useIsWideDesktop();
   const showActionStack = isWideDesktop;
@@ -133,10 +133,10 @@ export default function BackToTopButton({
   );
 
   /** 点击「顶部」：rAF 平滑滚动（固定 450ms + ease-out-expo，各端观感一致）。
-   *  原生 behavior:'smooth' 时长由浏览器自定且各端差异大（用户反馈僵硬）；
-   *  用户滚轮/触摸接管时立即让位。
-   *  ⚠️ 2026-11-08：不再检查 prefers-reduced-motion——用户系统开着 Windows
-   *  「动画效果关闭」，检查会把平滑滚动退化成瞬间跳顶（用户拍板豁免，见 CSS 注释）。 */
+ * 原生 behavior:'smooth' 时长由浏览器自定且各端差异大（僵硬）；
+ * 用户滚轮/触摸接管时立即让位。
+ * ⚠️ 不再检查 prefers-reduced-motion——用户系统开着 Windows
+ * 「动画效果关闭」，检查会把平滑滚动退化成瞬间跳顶（见 CSS 注释）。 */
   const handleClick = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
@@ -168,17 +168,17 @@ export default function BackToTopButton({
   }, [scrollContainerRef]);
 
   /**
-   * 刷新 = 软刷新（2026-09-11 用户二次拍板：只刷新页面内容——图片、文本等重新请求，
-   * 页面主体结构（Layout 壳/侧栏/顶栏/滚动容器）不重载）。
-   * 由 AppLayout 监听 kino:content-refresh 后给当前路由组件换 key 重挂载实现。
-   */
+ * 刷新 = 软刷新（只刷新页面内容——图片、文本等重新请求，
+ * 页面主体结构（Layout 壳/侧栏/顶栏/滚动容器）不重载）。
+ * 由 AppLayout 监听 kino:content-refresh 后给当前路由组件换 key 重挂载实现。
+ */
   const handleRefresh = useCallback(() => {
     window.dispatchEvent(new CustomEvent('kino:content-refresh'));
   }, []);
 
   if (!shouldRender) return null;
 
-  // ── ≥1024 全页面形态：方形刷新（上）+ 方形「顶部」（下）（用户 2026-09-11 截图样式）──
+  // ── ≥1024 全页面形态：方形刷新（上）+ 方形「顶部」（下）──
   // 进出场动画挂在容器上（原圆形按钮挂在按钮自身），避免两枚按钮各自 translate 观感割裂。
   if (showActionStack) {
     return createPortal(
@@ -202,7 +202,7 @@ export default function BackToTopButton({
         <button
           type="button"
           /* 复用 .back-to-top-button 基类：home.spec.ts 的「回到顶部」用例按该类名定位，
-             方形形态只加修饰类，避免断言失配。 */
+ 方形形态只加修饰类，避免断言失配。 */
           className="back-to-top-button back-to-top-button--square"
           onClick={handleClick}
           aria-label="返回顶部"

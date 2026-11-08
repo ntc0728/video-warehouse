@@ -71,8 +71,8 @@ function sortByNumber(eps: Episode[]): Episode[] {
 
 // 根据 cell 取到对应的进度记录。进度以「内容身份」为准（与 store.addHistory
 // 的去重键一致）：
-//   - 电影（line）：按线路 URL（line.url）独立，每条线路各自维护进度
-//   - 剧集（ep）：按 季号+集号 统一，相同选集在不同源之间共享同一进度
+// - 电影（line）：按线路 URL（line.url）独立，每条线路各自维护进度
+// - 剧集（ep）：按 季号+集号 统一，相同选集在不同源之间共享同一进度
 // 因此「最后播放的进度」始终覆盖、相同选集跨源保持一致。
 function cellProgress(
   item: Item,
@@ -93,7 +93,7 @@ export default function PlaylistModal({
   onPlayEpisode,
   onPlayLine,
 }: PlaylistModalProps) {
-  // 9.1：布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
+  //布局判断统一 useIsMobileLayout（app 端恒真，横屏不误判桌面）
   const isMobile = useIsMobileLayout();
   const isTV = useIsTV();
   const { isSeries, seasons, seasonNumbers, video, sourceName } = data;
@@ -104,8 +104,8 @@ export default function PlaylistModal({
   const liveHistory = useUserStore((s) => s.history);
 
   // 实时重建 progressMap，按「内容身份」聚合（与 store.addHistory 去重键一致）：
-  //   - 电影：按线路 URL（episodeUrl）独立，每条线路各自维护进度
-  //   - 剧集：键 's{季号}-{episodeLabel}'，相同选集跨源共用
+  // - 电影：按线路 URL（episodeUrl）独立，每条线路各自维护进度
+  // - 剧集：键 's{季号}-{episodeLabel}'，相同选集跨源共用
   // 因此「最后播放的进度」始终生效，相同选集不同源进度保持一致。
   const liveProgressMap = useMemo<Record<string, PlaylistProgressEntry>>(() => {
     const map: Record<string, PlaylistProgressEntry> = {};
@@ -281,21 +281,21 @@ export default function PlaylistModal({
   // 不用 IntersectionObserver —— 其绑定依赖 sentinelRef/bodyRef 在 effect 运行时的
   // 就绪状态，弹窗挂载初期数据未就绪时会被 `if (!el) return` 跳过且后续不重建，
   // 导致懒加载永久失效（大量选集无法显示）。改为：
-  //   1. 兜底：visibleCount/filtered 变化时检查哨兵是否在容器可视区内（内容不足
-  //      一屏时无需滚动自动补齐，每次 +40 直至填满或全部加载）；
-  //   2. 滚动：body（滚动容器）的 scroll 事件触发时同款检查（超一屏时滚动加载）。
+  // 1. 兜底：visibleCount/filtered 变化时检查哨兵是否在容器可视区内（内容不足
+  // 一屏时无需滚动自动补齐，每次 +40 直至填满或全部加载）；
+  // 2. 滚动：body（滚动容器）的 scroll 事件触发时同款检查（超一屏时滚动加载）。
   // 加载更多：滚动事件 + 兜底检查双保险。
   // 关键约束：本组件内容经 Radix Dialog.Portal 渲染，bodyRef/sentinelRef 在组件
   // useEffect 首次运行时可能尚未挂载（Portal 时序），若此时按 ref 直接 return，
   // 且 deps（visibleCount/filtered.length）保持稳定导致 effect 不再重跑，懒加载
   // 监听将「从未绑定」，大量选集无法显示。因此：
-  //   1. 用 requestAnimationFrame 等待 body 挂载后再绑定；
-  //   2. 滚动监听挂在 document（capture）上捕获 .playlist-body 的滚动（scroll 不冒泡）；
-  //   3. 每次 visibleCount/filtered 变化后做一次兜底检查（内容不足一屏时自动补齐）。
+  // 1. 用 requestAnimationFrame 等待 body 挂载后再绑定；
+  // 2. 滚动监听挂在 document（capture）上捕获 .playlist-body 的滚动（scroll 不冒泡）；
+  // 3. 每次 visibleCount/filtered 变化后做一次兜底检查（内容不足一屏时自动补齐）。
   useEffect(() => {
     let raf = 0;
     let unbind: (() => void) | null = null;
-    // I2（2026-08-04）：rAF 自递归加最大尝试上限——若 Portal 异常/弹窗生命周期边缘
+    // I2：rAF 自递归加最大尝试上限——若 Portal 异常/弹窗生命周期边缘
     // 导致 bodyRef 始终取不到，约 1s（60 帧）后放弃，避免无限空转（无网络但有 CPU 空转）。
     let tries = 0;
     const tryBind = () => {
@@ -566,7 +566,7 @@ export default function PlaylistModal({
               if (playUrl) sp.set('play', playUrl);
               if (it.kind === 'ep') {
                 sp.set('season', String(it.seasonNumber));
-                // 2026-10-11：额外携带集号 epn（新开页签 query 兜底），供 Player 在
+                //额外携带集号 epn（新开页签 query 兜底），供 Player 在
                 // URL 精确匹配落空时按（季,集号）兜底定位
                 sp.set('epn', String(it.number));
               }
@@ -709,7 +709,7 @@ export default function PlaylistModal({
             src={video.cover || posterUrl || ''}
             alt={video.title}
             // CMS 封面缺失或加载失败时回退到 TMDB 海报（LazyImage 的 error/空值统一走 fallbackSrc）；
-            // posterUrl 也缺失时不传 fallbackSrc → LazyImage 按主题自适应占位（9.1）
+            // posterUrl 也缺失时不传 fallbackSrc → LazyImage 按主题自适应占位
             fallbackSrc={posterUrl || undefined}
           />
         </div>

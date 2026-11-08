@@ -1,11 +1,11 @@
 /**
  * sourceLatency — 设置页"测速"工具
  *
- * [2026-08-07 源管理整改] 批量并发测速（限速 6），避免对源站/代理造成风暴。
+ * 批量并发测速（限速 6），避免对源站/代理造成风暴。
  *
  * 设计：
  * - 测速用 axios + AbortController：直接请求源地址（不走 httpClient 拦截器，避开 corsProxy 注入），
- *   通过 AbortController 强制短超时（默认 8000ms），可手动 cancel。
+ * 通过 AbortController 强制短超时（默认 8000ms），可手动 cancel。
  * - 限速：手写简易 p-limit（并发上限 6）。一批 Promise 同时启动，任意完成就从池里补一个。
  * - 返回 id → latency (ms|null) 映射；超时/失败为 null。
  * - 进度回调：每完成一个调用 onProgress(done, total)。

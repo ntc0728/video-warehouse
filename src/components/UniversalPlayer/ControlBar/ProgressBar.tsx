@@ -8,17 +8,17 @@ interface ProgressBarProps {
   duration: number;
   buffered: number;
   /**
-   * @param opts.silent 拖拽/连续 seek 时置 true —— 跳过「已跳转 xx:xx」提示。
-   *   拖拽过程中 targetTime 已由 tooltip + 圆点实时反馈，再弹 toast 属重复打扰；
-   *   键盘 / 点击（单次）seek 仍为 false，保留操作反馈。
-   */
+ * @param opts.silent 拖拽/连续 seek 时置 true —— 跳过「已跳转 xx:xx」提示。
+ * 拖拽过程中 targetTime 已由 tooltip + 圆点实时反馈，再弹 toast 属重复打扰；
+ * 键盘 / 点击（单次）seek 仍为 false，保留操作反馈。
+ */
   onSeek: (time: number, opts?: { silent?: boolean }) => void;
-  /** G1：hover 缩略图源（可选）；缺省时 tooltip 仅显示时间戳 */
+  /**：hover 缩略图源（可选）；缺省时 tooltip 仅显示时间戳 */
   thumbnails?: ThumbnailSource;
   /**
-   * P1-11：缓冲中拖拽钳制——向前拖不超出已缓冲区间（向后不受限），
-   * 兼顾「缓冲中不可乱拖」与「防缓冲锁死」（审查报告 1.4 折中方案）
-   */
+ *-11：缓冲中拖拽钳制——向前拖不超出已缓冲区间（向后不受限），
+ * 兼顾「缓冲中不可乱拖」与「防缓冲锁死」（折中方案）
+ */
   isBuffering?: boolean;
 }
 
@@ -38,10 +38,10 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
   const [pendingTime, setPendingTime] = useState<number | null>(null);
   const [pendingPosition, setPendingPosition] = useState(0);
 
-  // P4：原 `const isLive = mode === 'live'` 迁到能力矩阵 `canSeek`（统一口径）。
+  // 能否拖拽现读能力矩阵 `canSeek`（统一口径）。
   // 等价性（对当前可达模式 video / live 逐字等价）：
-  //   video → canSeek=true → isLive=false（可拖拽）；live（无 catchup）→ canSeek=false → isLive=true（禁拖拽）。
-  // 注：ControlBar 仅在 mode!=='iptv' 时渲染，故单此处不影响 IPTV OSD；P5 的直播回看走 IPTVOSDBar 专属进度条。
+  // video → canSeek=true → isLive=false（可拖拽）；live（无 catchup）→ canSeek=false → isLive=true（禁拖拽）。
+  // 注：ControlBar 仅在 mode!=='iptv' 时渲染，故单此处不影响 IPTV OSD；IPTV 直播回看走 IPTVOSDBar 专属进度条。
   const isLive = !canSeek;
 
   const calcTime = useCallback((clientX: number): number => {
@@ -186,17 +186,17 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
     : progress;
 
   /**
-   * 灰条 = 「从当前播放位置（圆点）向右延伸的已缓冲区间」。
-   *
-   * 旧实现恒从 0 画到「已缓冲末端」（再取 max(末端, progress) 兜底），有两个问题：
-   * ① 往回拖 / 快退后灰条与圆点脱节 —— 圆点回到 10 分，灰条仍从 0 画到 45 分，
-   *    看起来像「记住了最长播放记录」；
-   * ② 已缓冲区间多段时（如 [0,45min] ∪ [55min,57min]），单条 width% 会把中间
-   *    没有数据的 45–55min 空隙也涂成灰色，显示偏乐观。
-   *
-   * 改为「起点 = 圆点位置，宽度 = 末端 − 起点」后两者同时消失：
-   * 拖到哪灰条起点跟到哪；且只会画出圆点之后真实存在的那段缓冲。
-   */
+ * 灰条 = 「从当前播放位置（圆点）向右延伸的已缓冲区间」。
+ *
+ * 旧实现恒从 0 画到「已缓冲末端」（再取 max(末端, progress) 兜底），有两个问题：
+ * ① 往回拖 / 快退后灰条与圆点脱节 —— 圆点回到 10 分，灰条仍从 0 画到 45 分，
+ * 看起来像「记住了最长播放记录」；
+ * ② 已缓冲区间多段时（如 [0,45min] ∪ [55min,57min]），单条 width% 会把中间
+ * 没有数据的 45–55min 空隙也涂成灰色，显示偏乐观。
+ *
+ * 改为「起点 = 圆点位置，宽度 = 末端 − 起点」后两者同时消失：
+ * 拖到哪灰条起点跟到哪；且只会画出圆点之后真实存在的那段缓冲。
+ */
   const bufferedEndPercent = duration > 0 && Number.isFinite(duration)
     ? Math.min(100, (buffered / duration) * 100)
     : 0;
@@ -204,7 +204,7 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
   const bufferedWidthPercent = Math.max(0, bufferedEndPercent - bufferedStartPercent);
   const displayTime = (displayPercent / 100) * duration;
 
-  // P0-2：键盘操作进度（role=slider 标准交互；Shift 加速步长）
+  //-2：键盘操作进度（role=slider 标准交互；Shift 加速步长）
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (isLive || duration <= 0) return;
     const step = e.shiftKey ? 30 : 5;
@@ -248,7 +248,7 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        /* P0-2：进度条语义化 + 键盘可达（B站/YouTube 均为 role=slider） */
+        /* -2：进度条语义化 + 键盘可达（B站/YouTube 均为 role=slider） */
         role="slider"
         aria-label="播放进度"
         aria-valuemin={0}
@@ -267,9 +267,9 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
         {!isLive && (
           <div className="up-progress-thumb" style={{ left: `${displayPercent}%` }} />
         )}
-        {/* 无时长（加载中）时隐藏 tooltip，避免显示「0:00」（审查报告 4.3）。
-            G1：提供缩略图源时展示预览图，否则回退时间戳文本。
-            tooltip 水平钳制：两端不溢出进度条边界（left clamp，宽约 9rem 上限） */}
+        {/* 无时长（加载中）时隐藏 tooltip，避免显示「0:00」。
+提供缩略图源时展示预览图，否则回退时间戳文本。
+ tooltip 水平钳制：两端不溢出进度条边界（left clamp，宽约 9rem 上限） */}
         {hoverTime !== null && !isLive && duration > 0 && (
           <div
             className="up-progress-tooltip"

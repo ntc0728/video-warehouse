@@ -2,15 +2,15 @@
  * 筛选页 URL ↔ FilterBarValue 双向转换
  *
  * URL 形态：
- *   /browse?category=movie&mediaType=movie&genre=28,12&region=US&minRating=7&sort=vote_average.desc&page=1
+ * /browse?category=movie&mediaType=movie&genre=28,12&region=US&minRating=7&sort=vote_average.desc&page=1
  *
- * - category     : CategoryKey（必填；缺省回退为 'all'）
- * - mediaType    : 'all' | 'movie' | 'tv'
- * - genre        : 多选用逗号分隔（'28,12'），空 = 全部
- * - region       : 地区 code；空 = 全部
- * - minRating    : 0 / 6 / 7 / 8
- * - sort         : 'popularity.desc' | 'release_date.desc' | 'vote_average.desc'
- * - page         : 数字（懒加载进度；非必填）
+ * - category : CategoryKey（必填；缺省回退为 'all'）
+ * - mediaType : 'all' | 'movie' | 'tv'
+ * - genre : 多选用逗号分隔（'28,12'），空 = 全部
+ * - region : 地区 code；空 = 全部
+ * - minRating : 0 / 6 / 7 / 8
+ * - sort : 'popularity.desc' | 'release_date.desc' | 'vote_average.desc'
+ * - page : 数字（懒加载进度；非必填）
  */
 import type { FilterBarValue } from '@/components/FilterBar';
 import type { CategoryKey } from '@/types/category';
@@ -45,7 +45,7 @@ function parseGenreIds(raw: string | null): number[] {
     .filter((n) => Number.isFinite(n) && n > 0);
 }
 
-/** 默认 FilterBarValue（进入筛选页无 URL 时的兜底）——2026-11-05 起默认「电影」单路 */
+/** 默认 FilterBarValue（进入筛选页无 URL 时的兜底）—— 起默认「电影」单路 */
 export function getDefaultFilterValue(): FilterBarValue {
   return {
     category: 'movie',
@@ -65,10 +65,10 @@ export function parseFromUrl(params: URLSearchParams): FilterBarValue {
 
   const categoryRaw = params.get('category') ?? def.category;
   // 类型行可见档位 = VISIBLE_CATEGORY_KEYS 白名单，旧/非法 category 一律兜底：
-  //   · category=all → 默认「电影」；
-  //   · category=variety / anime → 剧集 'tv'（二者本质属剧集，避免落到
-  //     「类型行不显示、配置却还在」的孤立状态）；
-  //   · 其它非法值 → 默认「电影」。
+  // · category=all → 默认「电影」；
+  // · category=variety / anime → 剧集 'tv'（二者本质属剧集，避免落到
+  // 「类型行不显示、配置却还在」的孤立状态）；
+  // · 其它非法值 → 默认「电影」。
   const legacyTv = categoryRaw === 'variety' || categoryRaw === 'anime';
   const category: CategoryKey =
     legacyTv ? 'tv'

@@ -38,7 +38,7 @@ function bufferedEndFromCurrent(video: HTMLVideoElement): number {
  * 把当前已缓冲末端写入 store。
  *
  * 灰条原先只监听 video 的 `progress` 事件，而暂停 / 加载中不会有新的下载推进，
- * 该事件不触发 → seek 之后灰条一直停在旧位置（用户反馈：无论加载中还是暂停中，
+ * 该事件不触发 → seek 之后灰条一直停在旧位置（无论加载中还是暂停中，
  * 灰条都应以最新播放位置为准）。因此 seek 即时、seeked、timeupdate 也各同步一次。
  */
 function syncBufferedProgress(video: HTMLVideoElement | null): void {
@@ -62,13 +62,13 @@ function isTimeBuffered(video: HTMLVideoElement, time: number): boolean {
  * 旧实现失效原因（实测）：
  * 1. 同值重写 transform + offsetWidth —— 不产生任何样式变化，合成层不失效，完全无效。
  * 2. 追加 translateZ(0) 两帧后还原 —— translateZ 只触发「合成层重绘」，若解码管道
- *    未重新提交帧，重绘的仍是最后一帧 → 视觉不变。
+ * 未重新提交帧，重绘的仍是最后一帧 → 视觉不变。
  *
  * 分级策略（副作用从低到高）：
  * - 直播流：不 seek（会跳过实时位置），直接 display:none→block 重建合成层。
  * - 点播：currentTime 微推 +0.1s —— 强制解码器解码新位置、合成器提交新帧；
- *   rVFC 可用时监听首个新帧提交即恢复原位置（超时 600ms 兜底）；rVFC 不可用延时 400ms 恢复。
- *   ±100ms 对进度条不可见，timeupdate 同步 store 后 UI 一致。
+ * rVFC 可用时监听首个新帧提交即恢复原位置（超时 600ms 兜底）；rVFC 不可用延时 400ms 恢复。
+ * ±100ms 对进度条不可见，timeupdate 同步 store 后 UI 一致。
  * - currentTime 不可微推（0s / 时长异常）：退回 display 翻转重建。
  *
  * 抽出为纯函数以便单测验证策略选择与位置恢复（视觉解冻需真机验证）。
@@ -161,7 +161,7 @@ interface UsePlayerCoreOptions {
   isLive?: boolean;
   /** 重试次数（用于错误恢复） */
   retryCount?: number;
-  /** 播放进度回调（ currentTime, duration ） */
+  /** 播放进度回调（currentTime, duration ） */
   onProgress?: (progress: number, duration: number) => void;
   /** 播放结束回调 */
   onEnded?: () => void;
@@ -281,21 +281,21 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
 // 浏览器后台 Tab 会停掉 video 的帧呈现；带 transform（镜像/画面比例）或 filter
 // （色彩调整）的视频合成层，部分 Chromium 版本切回前台后不会自动重新栅格化，
 // 画面停在最后一帧。解冻策略见 reviveFrozenVideo()（其上方定义）。
-//
-// 后台恢复链（2026-09-02 增强）：后台页签定时器被强节流，hls.js 加载循环可能
+
+// 后台恢复链（增强）：后台页签定时器被强节流，hls.js 加载循环可能
 // 停滞甚至 fatal 停转（errorCount 打满后 onError，engine 不再拉数据）→ 返回前台
 // 后画面即使解冻也无新帧、无法续播、重试前引擎就是死的。因此返回前台时：
 // 1) 播放态（含媒体层已有 error）先 adapter.resume() 唤醒加载引擎（HLS：重置
-//    错误计数 + startLoad 可重入重启）；2) video.play() 幂等续播；
+// 错误计数 + startLoad 可重入重启）；2) video.play() 幂等续播；
 // 3) reviveFrozenVideo 解决合成层冻结。用户主动暂停（paused）不打扰。
-//
-// 两个入口（2026-09-02 二次增强）：
+
+// 两个入口（二次增强）：
 // - visibilitychange：页签间切换（hidden ↔ visible），经典后台节流场景。
 // - window focus/blur：切到其他软件（浏览器整个窗口失焦）。此时页签 visibilityState
-//   保持 'visible'，visibilitychange 不触发；但失焦/遮挡会停掉视频帧呈现 → 返回后
-//   画面冻结（音频正常走），MSE 管线背压还可能诱发 hls.js fatal 停转。focus 事件
-//   与 visibilitychange 走同一条恢复链；快速 alt-tab（<1s）不触发，避免无谓微抖。
-//
+// 保持 'visible'，visibilitychange 不触发；但失焦/遮挡会停掉视频帧呈现 → 返回后
+// 画面冻结（音频正常走），MSE 管线背压还可能诱发 hls.js fatal 停转。focus 事件
+// 与 visibilitychange 走同一条恢复链；快速 alt-tab（<1s）不触发，避免无谓微抖。
+
 // resume() 无条件调用（幂等）：引擎死转时 readyState 可能仍 ≥3（缓冲未耗尽），
 // 仅按 readyState 判定会漏掉死引擎；startLoad 可重入且每次用户 play() 本就会调，
 // 返回前台时多调一次的开销可忽略。
@@ -359,7 +359,7 @@ useEffect(() => {
     store.setBufferedProgress(0);
     store.setPlayerLoading(true);
     store.setReadyToPlay(false);
-    // P1-3/P1-4：新源加载清上一集的错误文案与续播卡片
+    //-3/-4：新源加载清上一集的错误文案与续播卡片
     store.setErrorMessage(null);
     store.setResumeAt(null);
 
@@ -383,7 +383,7 @@ useEffect(() => {
       usePlayerStore.getState().setReadyToPlay(true);
       // 进度恢复：canplay（视频可播放）时每个源/集仅恢复一次。与「自动跳转」提示联动——
       // 提示时机跟随 loadProgress 内部的 seeked 等待，保证「视频可以播放之后才提示」
-      // （审查报告 2.1/2.2：不再在 loadedmetadata 时提前恢复，也不再有 episodeUrl 双入口）
+      // （/2.2：不再在 loadedmetadata 时提前恢复，也不再有 episodeUrl 双入口）
       if (!progressRestoredRef.current) {
         progressRestoredRef.current = true;
         const token = progressTokenRef.current;
@@ -411,7 +411,7 @@ useEffect(() => {
       } else if (video.paused) {
         // 仅「视频确实未在播放」时才写暂停态（首次加载就绪）；
         // 播放中 seek 重缓冲完成后 canplay 会再次触发，此时视频仍在播放（paused=false），
-        // 不能把 UI 播放状态错误置为暂停（审查报告 4.1：UI 与实际播放状态不一致）
+        // 不能把 UI 播放状态错误置为暂停（UI 与实际播放状态不一致）
         usePlayerStore.getState().setPlaying(false);
       }
     };
@@ -424,11 +424,11 @@ useEffect(() => {
     const handlePause = () => {
       getStore().setPlaying(false);
       // 暂停（含缓冲中主动暂停）即清除缓冲态：暂停后不再等待 waiting/canplay 才恢复，
-      // 避免「缓冲遮罩常驻 + 播放按钮/进度条持续禁用」的锁死（审查报告 1.1/4.4）
+      // 避免「缓冲遮罩常驻 + 播放按钮/进度条持续禁用」的锁死（/4.4）
       getStore().setBuffering(false);
       onPause?.();
     };
-    // P0-3：进度写 store 节流——timeupdate 高频触发会让所有订阅 progress 的组件
+    //-3：进度写 store 节流——timeupdate 高频触发会让所有订阅 progress 的组件
     // （ControlBar/TimeDisplay 等）跟着重渲染；200ms 节流 + 跳变 >1s 立即写（seek 响应）
     let lastProgressWriteAt = 0;
     let lastProgressWriteCt = 0;
@@ -475,7 +475,7 @@ useEffect(() => {
       }
       // 成功拿到元数据即清除上一轮错误文案（错误覆盖层显示恢复为默认/隐藏）
       getStore().setErrorMessage(null);
-      // P1-8 清晰度记忆恢复：每个新源 levels 就绪后应用上次显式选择的档位（index 仍有效时）。
+      //-8 清晰度记忆恢复：每个新源 levels 就绪后应用上次显式选择的档位（index 仍有效时）。
       // -1（自动）是默认值，无需恢复；loadSource 时的 setCurrentLevel(-1) 不再丢失用户偏好。
       try {
         const remembered = Number(localStorage.getItem('kinotv-remembered-level'));
@@ -488,7 +488,7 @@ useEffect(() => {
         }
       } catch { /* localStorage 不可用忽略 */ }
       // 进度恢复统一在 canplay（可播放）时执行一次，不再在此触发——loadedmetadata 仅元数据
-      // 就绪（视频仍在缓冲），此时恢复会提前弹「已自动跳转」提示（审查报告 2.1/2.2）
+      // 就绪（视频仍在缓冲），此时恢复会提前弹「已自动跳转」提示（/2.2）
     };
 
     // 解码字节增量上报状态：用于 estimator 的"解码字节"数据源
@@ -540,7 +540,7 @@ useEffect(() => {
         playerToast(msg, 3000, 'error');
         return;
       }
-      // P1-3：具体错误文案透传给 PlayerCore 错误覆盖层（替代固定「播放失败」文案）
+      //-3：具体错误文案透传给 PlayerCore 错误覆盖层（替代固定「播放失败」文案）
       getStore().setErrorMessage(msg);
       onError?.(new Error(msg));
     };
@@ -601,13 +601,13 @@ useEffect(() => {
   }, [url, type, decoderMode, retryCount]);
 
   /**
-   * episodeUrl 变化的进度恢复入口已移除（审查报告 2.2）
-   *
-   * 原实现与 loadedmetadata 构成「双入口」，同一内容可能重复 getHistory + 重复 seek。
-   * 进度恢复统一收敛到 handleCanPlay 的 progressRestoredRef 单入口（每个源/集仅一次）。
-   * episodeUrl === url（PlayerPage 传入 episodeUrl={currentSrc.url}），url 变化时主 effect
-   * 会重建并重置 progressRestoredRef，因此 canplay 入口天然覆盖切集场景。
-   */
+ * episodeUrl 变化的进度恢复入口已移除
+ *
+ * 原实现与 loadedmetadata 构成「双入口」，同一内容可能重复 getHistory + 重复 seek。
+ * 进度恢复统一收敛到 handleCanPlay 的 progressRestoredRef 单入口（每个源/集仅一次）。
+ * episodeUrl === url（PlayerPage 传入 episodeUrl={currentSrc.url}），url 变化时主 effect
+ * 会重建并重置 progressRestoredRef，因此 canplay 入口天然覆盖切集场景。
+ */
 
   const play = useCallback(async () => {
     try {
@@ -663,7 +663,7 @@ useEffect(() => {
       usePlayerStore.getState().setUserPlayRequested(true);
       play();
     } else {
-      // P0-7（2026-08-31）：缓冲中允许暂停。原实现为防「缓冲锁死」在暂停分支
+      //-7：缓冲中允许暂停。原实现为防「缓冲锁死」在暂停分支
       // `if (isBuffering) return`，反而让 handlePause 里的 setBuffering(false) 解锁
       // 逻辑永远走不到，形成「暂停入口自锁」。暂停本身即解锁缓冲态（见 handlePause）。
       // 用户手动点击暂停 → 标记来源，ToastTrigger 据此显示「暂停」提示
@@ -697,10 +697,10 @@ useEffect(() => {
     if (seekToastRef.current) seekToastRef.current.cleanup();
 
     /**
-     * 拖拽类连续 seek（`silent`）不弹提示：拖拽过程中目标时间已经由进度条上的圆点 +
-     * 时间浮层实时反馈，seeked 之后再弹一条「已跳转 xx:xx」属重复打扰（2026-09-30 用户要求）。
-     * 键盘 ←/→ · Home/End · 单击定位等单次 seek 仍保留提示，作为操作反馈。
-     */
+ * 拖拽类连续 seek（`silent`）不弹提示：拖拽过程中目标时间已经由进度条上的圆点 +
+ * 时间浮层实时反馈，seeked 之后再弹一条「已跳转 xx:xx」属重复打扰。
+ * 键盘 ←/→ · Home/End · 单击定位等单次 seek 仍保留提示，作为操作反馈。
+ */
     if (!opts?.silent) {
       const msg = `已跳转 ${formatSeekTime(time)}`;
       let notified = false;
@@ -750,7 +750,7 @@ useEffect(() => {
   const setVideoVolume = useCallback((vol: number) => {
     const video = videoRef.current;
     if (!video) return;
-    // 用户主动调节音量 = 明确想听到声音：解除自动静音兜底（审查报告 3.1）
+    // 用户主动调节音量 = 明确想听到声音：解除自动静音兜底
     if (autoMutedRef.current) {
       video.muted = false;
       autoMutedRef.current = false;
@@ -759,11 +759,11 @@ useEffect(() => {
   }, []);
 
   /**
-   * 统一的静音切换（C2：VolumeControl 喇叭 / 键盘 M 共用，消除「0↔1 满音量」与
-   * 「0↔记忆值」两条路径的语义不一致）：
-   * - 当前有声 → 记住当前音量（mutedVolume），静音
-   * - 当前静音 → 恢复记忆值（非满音量；无记忆时兜底 1）
-   */
+ * 统一的静音切换（C2：VolumeControl 喇叭 / 键盘 M 共用，消除「0↔1 满音量」与
+ * 「0↔记忆值」两条路径的语义不一致）：
+ * - 当前有声 → 记住当前音量（mutedVolume），静音
+ * - 当前静音 → 恢复记忆值（非满音量；无记忆时兜底 1）
+ */
   const toggleMute = useCallback(() => {
     const { volume, mutedVolume } = usePlayerStore.getState();
     if (volume > 0) {
@@ -796,7 +796,7 @@ useEffect(() => {
     if (adapterRef.current) {
       adapterRef.current.setCurrentLevel(level);
       setCurrentLevel(level);
-      // P1-8 清晰度记忆：显式选择写入 localStorage，避免热切换 setCurrentLevel(-1)
+      //-8 清晰度记忆：显式选择写入 localStorage，避免热切换 setCurrentLevel(-1)
       // 覆盖 zustand persist 里的记忆（每集冷加载时由 handleLoadedMetadata 恢复）
       try { localStorage.setItem('kinotv-remembered-level', String(level)); } catch { /* 私有模式忽略 */ }
       // G4 清晰度切换反馈：与倍速/循环/镜像/比例提示一致（R3 复用 getResolutionLabel）
@@ -824,7 +824,7 @@ useEffect(() => {
     return adapterRef.current?.getCurrentAudioTrack() ?? -1;
   }, []);
 
-  // P2-5：卸载清理 hook 级定时器引用（seek 提示 toast / togglePlay 双击去抖）
+  //-5：卸载清理 hook 级定时器引用（seek 提示 toast / togglePlay 双击去抖）
   useEffect(() => () => {
     seekToastRef.current?.cleanup();
     seekToastRef.current = null;
