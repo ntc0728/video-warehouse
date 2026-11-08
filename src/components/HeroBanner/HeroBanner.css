@@ -358,15 +358,19 @@
 
 .hero-banner__cta {
   display: inline-flex;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   align-items: center;
   width: fit-content;
-  padding: var(--space-sm) var(--space-lg);
+  /* 尺寸与 Detail hero .detail-btn 对齐（2026-11-08 用户要求两处 hero 按钮一致）：
+     min-height --comp-tab-height 档 + padding 0 --space-md + --text-sm，
+     由「padding 撑高」改为 detail 同款「min-height 撑高」。 */
+  min-height: var(--comp-tab-height);
+  padding: 0 var(--space-md);
   border: none;
   border-radius: var(--radius-full);
   background: var(--color-surface-elevated);
   color: var(--color-text);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -470,14 +474,19 @@
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
   }
 
-  /* CTA 按钮（查看详情/继续播放）移动端缩档（2026-11-08 用户反馈「按钮看上去很大」）：
-     桌面档 font-size --text-base(14px) + padding sm/lg 在 390px 矮 banner 上占比过大，
-     与全站移动端 11–13px 文字档不协调。收一档：字号 --text-sm、内边距 xs/md、图标间距 2xs。
-     桌面端保持原值不动。 */
+  /* CTA 按钮（查看详情/继续播放）移动端 = Detail hero .detail-btn 移动档
+     （2026-11-08 用户要求两处 hero 按钮一致）：
+     min-height --space-2xl + padding 0 --space-sm + --text-xs + 图标 --icon-sm。 */
   .hero-banner__cta {
     gap: var(--space-2xs);
-    padding: var(--space-xs) var(--space-md);
-    font-size: var(--text-sm);
+    min-height: var(--space-2xl);
+    padding: 0 var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  .hero-banner__cta svg {
+    width: var(--icon-sm);
+    height: var(--icon-sm);
   }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
@@ -501,11 +510,17 @@
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
   }
 
-  /* 9.1 app 恒移动副本：CTA 按钮移动端缩档（与上方 ≤767 块同步） */
+  /* 9.1 app 恒移动副本：CTA 按钮 = Detail hero .detail-btn 移动档（与上方 ≤767 块同步） */
   html[data-device="app"] .hero-banner__cta {
     gap: var(--space-2xs);
-    padding: var(--space-xs) var(--space-md);
-    font-size: var(--text-sm);
+    min-height: var(--space-2xl);
+    padding: 0 var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  html[data-device="app"] .hero-banner__cta svg {
+    width: var(--icon-sm);
+    height: var(--icon-sm);
   }
 
 
