@@ -93,6 +93,17 @@ export default function BrowseMobileBar({
     (value.region ? 1 : 0) +
     (value.year || value.olderThan2015 ? 1 : 0)
 
+  // 已选筛选摘要（命令栏「筛选」按钮右侧的单行简报）：口径与 activeCount / 下方已选轨一致，
+  // 空筛选不渲染（保持「筛选按钮 — 结果数」两端对齐的原布局）
+  const filterSummary = [
+    ...visibleGenres.map((id) => genreName(id, allGenres)),
+    ...(value.region ? [regionLabel(value.region, filterBarProps.regionOptions ?? [])] : []),
+    ...(value.year ? [String(value.year)] : []),
+    ...(value.olderThan2015 ? [YEAR_OLDER_LABEL] : []),
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
   // 已选轨（mediaType 由分类决定，不再作为可移除的筛选项）
   const chips: { key: string; label: string; onRemove: () => void }[] = []
   visibleGenres.forEach((id) => {
@@ -161,6 +172,7 @@ export default function BrowseMobileBar({
               筛选
               <span className={`bmb-badge${activeCount === 0 ? ' zero' : ''}`}>{activeCount}</span>
             </button>
+            {filterSummary && <span className="bmb-filter-summary">{filterSummary}</span>}
             <span className="bmb-result-count">共 12,345 条</span>
           </div>
         )}
