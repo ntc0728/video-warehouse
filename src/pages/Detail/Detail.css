@@ -1103,8 +1103,9 @@
   position: relative;
   flex-shrink: 0;
   align-self: flex-start;
+  /* 桌面宽度 56→72 封顶（2026-11-08 用户要求提升视觉分量，仍 2:3 竖图） */
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  width: clamp(36px, 24px + 2.5vw, 56px);
+  width: clamp(40px, 28px + 2.5vw, 72px);
   aspect-ratio: 2 / 3;
   max-height: 5.5rem;
   border-radius: var(--radius-sm);
@@ -1112,6 +1113,7 @@
   overflow: hidden;
 }
 
+/* 年份角标仅桌面显示；移动端/app 年份并入 meta 行（detail-source-meta-year） */
 .detail-source-thumb-year {
   position: absolute;
   right: var(--space-2xs);
@@ -1172,6 +1174,26 @@
 .detail-source-meta {
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
+}
+
+/* 移动端/app：年份并入 meta 行；桌面隐藏（角标承担） */
+.detail-source-meta-year {
+  display: none;
+}
+
+@media (width <= 767px) {
+  .detail-source-meta-year {
+    display: inline;
+  }
+  .detail-source-thumb-year {
+    display: none;
+  }
+}
+html[data-device="app"] .detail-source-meta-year {
+  display: inline;
+}
+html[data-device="app"] .detail-source-thumb-year {
+  display: none;
 }
 
 .detail-source-actions {
@@ -1611,6 +1633,8 @@ html:not([data-device="tv"]) .detail-hero-body > * {
    margin-bottom:auto 吸收全部剩余空间，把其余元素压向底部；
    长简介撑满时簇整体抬升，topline 自然仍在顶 */
 html:not([data-device="tv"]) .detail-hero-topline {
+  /* 再往上移一点（2026-11-08 用户要求）：负 margin 吃掉 info 顶部 padding 的一部分 */
+  margin-top: calc(-1 * var(--space-sm));
   margin-bottom: auto;
 }
 /* CTA 原以 margin-top:auto 钉底（内容顶堆叠时代的产物）——内容簇贴底后它会把

@@ -1182,6 +1182,9 @@ export default function DetailPage() {
                               <span className="detail-source-title" title={groupTitle}>{groupTitle}</span>
                             </div>
                             <span className="detail-source-meta">
+                              {thumbYear && (
+                                <span className="detail-source-meta-year">{thumbYear} · </span>
+                              )}
                               {isSeries
                                 ? `共 ${result.seasons.length} 季`
                                 : lineCount > 0

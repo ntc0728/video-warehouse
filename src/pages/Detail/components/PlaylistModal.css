@@ -249,6 +249,16 @@
   outline: none;
 }
 
+/* 聚焦指示移交给外层胶囊（2026-11-08）：全局 :focus-visible 黑色 2px outline
+   （亮主题 primary=纯黑）在胶囊外形成粗黑框，观感差；改为胶囊自身 border 变色承担
+   键盘焦点指示（WCAG 2.4.7 仍有可见指示）。!important + 更高特异性压过全局规则 */
+.playlist-search:focus-within {
+  border-color: var(--color-primary);
+}
+:root:not([data-device="tv"]):not([data-device="projector"]) .playlist-search .playlist-search-input:focus-visible {
+  outline: none !important;
+}
+
 .playlist-count {
   flex: 0 0 auto;
   color: var(--color-text-tertiary);
