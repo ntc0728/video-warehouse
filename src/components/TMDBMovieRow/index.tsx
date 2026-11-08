@@ -152,23 +152,19 @@ export function SkeletonCards({ count, landscape = false }: { count?: number; la
         >
           <div className="tmdb-movierow-skeleton-img">
             {landscape ? (
-              /* 横版（继续观看，2026-11-04 同步真实卡）：左上源徽章 + 底部左标题条
-                 + 右侧年份块 + 底部进度条占位（真实卡为「标题在进度条上方」） */
+              /* 横版（2026-11-08 对齐真实加载态）：真实卡封面加载期源徽章被
+                 :has 门控隐藏，标题/年份/进度不隐藏 → 骨架只保留这三样；
+                 年份块宽度含进度时间（真实右下同行「年份 + 时间」） */
               <>
-                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tl" />
                 <span className="tmdb-movierow-skeleton-land-title" />
                 <span className="tmdb-movierow-skeleton-land-year" />
                 <span className="tmdb-movierow-skeleton-land-progress" />
               </>
             ) : (
-              /* 竖版（2026-11-04 二次定稿：封面内标题方案已回滚）：
-                 左上评分 / 右上收藏 / 左下年份 / 右下类型，标题在下方 info 区 */
-              <>
-                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tl" />
-                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--tr" />
-                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--bl" />
-                <span className="tmdb-movierow-skeleton-badge tmdb-movierow-skeleton-badge--br" />
-              </>
+              /* 竖版（2026-11-08 用户反馈「骨架角标与真实元素不一致」）：
+                 真实卡封面加载期角标全部被 :has 门控隐藏（VideoCard.css），
+                 骨架对齐加载态 = 纯封面渐变，标题在下方 info 区 */
+              <></>
             )}
           </div>
           {/* 竖版：封面下方 info 区标题占位。

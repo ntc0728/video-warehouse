@@ -183,45 +183,9 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   aspect-ratio: 2 / 3;
 }
 
-/* 四角标：对齐 .video-card-rating（左上）/ .video-card-fav-btn（右上）/
-   .video-card-year-badge（左下）/ .video-card-type（右下）位置 */
-.tmdb-movierow-skeleton-badge {
-  position: absolute;
-  display: block;
-  border-radius: var(--radius-sm);
-  background: var(--color-skeleton, rgba(255, 255, 255, 0.16));
-  animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
-}
-
-.tmdb-movierow-skeleton-badge--tl {
-  top: var(--space-3xs);
-  left: var(--space-3xs);
-  width: var(--space-2xl);
-  height: var(--icon-xs);
-}
-
-.tmdb-movierow-skeleton-badge--tr {
-  top: var(--space-3xs);
-  right: var(--space-3xs);
-  width: var(--icon-md);
-  height: var(--icon-md);
-  border-radius: 50%;
-}
-
-.tmdb-movierow-skeleton-badge--bl {
-  bottom: var(--space-3xs);
-  left: var(--space-3xs);
-  width: var(--space-lg);
-  height: var(--icon-2xs);
-}
-
-.tmdb-movierow-skeleton-badge--br {
-  right: var(--space-3xs);
-  bottom: var(--space-3xs);
-  width: var(--space-xl);
-  height: var(--icon-2xs);
-}
-
+/* 2026-11-08：竖版四角标已删（真实卡封面加载期角标被 :has 门控隐藏，
+   且收藏钮 hover 才显形 —— 骨架对齐真实加载态，见 index.tsx 同日注释）。
+   标题占位（封面下方 info 区，位置仍与真实 .video-card-title 一致） */
 .tmdb-movierow-skeleton-title {
   width: var(--layout-channel-num-w);
   height: var(--icon-md);
@@ -230,15 +194,10 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
-/* 横版骨架（继续观看行，2026-11-04 同步真实卡）：16:9 封面 + 左上源徽章
-   + 底部左标题条 / 右侧年份块 / 底部进度条占位 */
+/* 横版骨架（继续观看行）：16:9 封面 + 底部左标题条 / 右侧年份+时间块 / 底部进度条
+   （2026-11-08：左上源徽章占位已删 —— 真实卡加载期源徽章被 :has 门控隐藏） */
 .tmdb-movierow-skeleton--landscape .tmdb-movierow-skeleton-img {
   aspect-ratio: 16 / 9;
-}
-
-.tmdb-movierow-skeleton--landscape .tmdb-movierow-skeleton-badge--tl {
-  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
-  width: clamp(40px, 6vw, 80px);
 }
 
 /* 底部左标题条：与真实 .video-card-landscape__title 同位置（进度条上方一行） */
@@ -253,12 +212,13 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
-/* 右下年份块：与标题同一行、右对齐 */
+/* 右下年份+时间块：与标题同一行、右对齐（2026-11-08 加宽：
+   真实右下同行 = 「年份 + 进度时间」，单年份宽度不足以镜像） */
 .tmdb-movierow-skeleton-land-year {
   position: absolute;
   right: var(--space-xs);
   bottom: calc(var(--space-xs) * 2);
-  width: 2.2em;
+  width: 4.6em;
   height: var(--text-xs);
   border-radius: var(--radius-sm);
   background: var(--color-skeleton, rgba(255, 255, 255, 0.16));

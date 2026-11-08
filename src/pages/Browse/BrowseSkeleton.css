@@ -22,47 +22,15 @@
   padding: var(--space-md) 0;
 }
 
-/* 封面：铺满真实 .video-card-cover（2:3 由真实类给出） */
+/* 封面：铺满真实 .video-card-cover（2:3 由真实类给出）。
+   2026-11-08：四角标占位已删 —— 真实卡封面加载期角标全部被
+   .video-card-cover:has(.lazy-image-placeholder) 门控隐藏（VideoCard.css），
+   且收藏钮 hover 才显形；骨架对齐真实加载态（纯封面渐变）。
+   红线#4：本文件无 display:none/visibility:hidden 规则残留。 */
 .browse-skeleton__cover {
   position: absolute;
   inset: 0;
   border-radius: 0;
-}
-
-/* 四角标：位置与真实 .video-card-rating / -fav-btn / -year-badge / -type 同为 --space-xs 内缩 */
-.browse-skeleton__badge {
-  position: absolute;
-  z-index: 4;
-  border-radius: var(--radius-sm);
-}
-
-.browse-skeleton__badge--tl {
-  top: var(--space-xs);
-  left: var(--space-xs);
-  width: 2.5em;
-  height: 1.4em;
-}
-
-.browse-skeleton__badge--tr {
-  top: var(--space-xs);
-  right: var(--space-xs);
-  width: var(--icon-lg);
-  height: var(--icon-lg);
-  border-radius: var(--radius-full);
-}
-
-.browse-skeleton__badge--bl {
-  bottom: var(--space-xs);
-  left: var(--space-xs);
-  width: 2.2em;
-  height: 1.4em;
-}
-
-.browse-skeleton__badge--br {
-  right: var(--space-xs);
-  bottom: var(--space-xs);
-  width: 2.2em;
-  height: 1.4em;
 }
 
 /* 标题行：与真实 .video-card-title 同字体档与行高（--text-sm × 1.5），

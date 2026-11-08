@@ -452,8 +452,10 @@ html[data-device="app"] .home-disclaimer {
     display: block;
   }
 
-  /* 右卡标题占位（2026-11-04 角标重排后）：封面底部左侧灰条（约 58% 宽），
-     镜像「左标题 + 右类型/年份竖排」的真实结构。 */
+  /* 右卡标题占位：封面底部左侧灰条（约 58% 宽）。
+     2026-11-08：真实侧卡封面加载期标题可见、meta 角标被 :has 门控隐藏
+     （HeroBili.css「右卡封面加载门控」）→ 骨架只保留标题条，
+     右下 meta 占位块已删（对齐真实加载态）。 */
   .home-skeleton .hero-side-card__title-skeleton-bar {
     position: absolute;
     bottom: var(--space-xs);
@@ -461,19 +463,6 @@ html[data-device="app"] .home-disclaimer {
     display: block;
     width: 58%;
     height: var(--text-xs);
-    border-radius: var(--radius-sm);
-    background: var(--color-skeleton);
-    opacity: 0.72;
-  }
-
-  /* 右卡右下 meta 占位（2026-11-04）：竖排两条灰块，镜像类型 + 年份胶囊 */
-  .home-skeleton .hero-side-card__meta-skeleton {
-    position: absolute;
-    right: var(--space-xs);
-    bottom: var(--space-xs);
-    display: block;
-    width: 2.2em;
-    height: 2.8em;
     border-radius: var(--radius-sm);
     background: var(--color-skeleton);
     opacity: 0.72;

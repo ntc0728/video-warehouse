@@ -466,13 +466,15 @@ export default function HomePage() {
             <div className="hero-bili__cards">
               {/* 张数 = useHeroSideCols() × useHeroSideRows()，与真实 HeroBili 右栏同源。
                   2026-11-04：≥1024 全档 2 列 × 3 行 = 6 张（双 16:9 精确解）。
-                  卡结构同步「封面出血」+ 角标重排：封面底部左标题条 + 右侧竖排 meta 灰块，
-                  卡高 = 纯封面 16:9（标题/meta 均为浮层，不占布局流）。 */}
+                  卡结构同步「封面出血」：封面底部左标题条（真实卡加载期标题可见），
+                  卡高 = 纯封面 16:9（标题为浮层，不占布局流）。
+                  2026-11-08 用户反馈「骨架角标与真实元素不一致」：真实侧卡加载期
+                  meta 角标被 :has 门控隐藏（HeroBili.css 右卡封面加载门控），
+                  骨架对齐加载态 → meta 占位块删除，只保留标题条。 */}
               {Array.from({ length: heroSideCols * heroSideRows }).map((_, i) => (
                 <div key={i} className="hero-side-card">
                   <span className="hero-side-card__cover hero-side-card__cover--skeleton thumbnail-skeleton-bg">
                     <span className="hero-side-card__title-skeleton-bar" />
-                    <span className="hero-side-card__meta-skeleton" />
                   </span>
                 </div>
               ))}

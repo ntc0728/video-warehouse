@@ -2,8 +2,7 @@
  * Browse 结果区专属骨架 — 与真实结果区逐层同构。
  *
  * 结构镜像（对应 Browse/index.tsx 结果区与 VideoCard，2026-11-04 角标统一后）：
- *   卡片网格 → 每格 = a.video-card（.video-card-cover 2:3 + 顶部两角标
- *   + 封面底部 .video-card-portrait__bottom > 左标题条 / 右竖排 meta 灰块）
+ *   卡片网格 → 每格 = a.video-card（.video-card-cover 2:3 + info 区标题行）
  *
  * ⚠️ 排序条/左栏筛选的**首屏 chrome 骨架**由 BrowseChromeSkeleton 单独负责
  *   （2026-09-23：首次进入、接口未响应前，真实 sort-bar / FilterBar 不渲染）。
@@ -35,12 +34,10 @@ export default function BrowseSkeleton() {
           <div key={i} className="video-card browse-skeleton__card">
             <div className="video-card-cover">
               <Skeleton className="browse-skeleton__cover" />
-              {/* 镜像真实 VideoCard（2026-11-04 二次定稿：封面内标题方案已回滚）：
-                  左上评分 / 右上收藏 / 左下年份 / 右下类型 + info 区标题行 */}
-              <span className="browse-skeleton__badge browse-skeleton__badge--tl" />
-              <span className="browse-skeleton__badge browse-skeleton__badge--tr" />
-              <span className="browse-skeleton__badge browse-skeleton__badge--bl" />
-              <span className="browse-skeleton__badge browse-skeleton__badge--br" />
+              {/* 2026-11-08 用户反馈「骨架角标与真实元素不一致」：
+                  真实卡封面加载期角标全部被 .video-card-cover:has(.lazy-image-placeholder)
+                  门控隐藏（VideoCard.css），且静态态的收藏钮 hover 才显形 ——
+                  骨架对齐真实**加载态**：纯封面渐变，无任何角标；标题在 info 区 */}
             </div>
             <div className="video-card-info">
               <div className="video-card-title-wrap">
