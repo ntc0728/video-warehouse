@@ -971,9 +971,11 @@
   gap: var(--space-md);
 }
 
+/* header 不换行（2026-11-08 用户要求）：关键词过长时收缩省略，
+   toolbar（重新匹配 + 源检测 pill）恒与标题同一行 */
 .detail-sources-header {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--space-sm) var(--space-md);
   justify-content: space-between;
   align-items: flex-end;
@@ -983,19 +985,26 @@
 
 .detail-sources-header-left {
   display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: var(--space-2xs);
 }
 
 .detail-sources-header h3 {
   margin: 0;
+  flex-shrink: 0;
   font-size: var(--text-lg);
   font-weight: 700;
 }
 
 .detail-sources-keyword {
+  min-width: 0;
+  overflow: hidden;
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .detail-sources-toolbar {
