@@ -259,16 +259,14 @@
   pointer-events: none;
 }
 
-/* ── 滚动中隐藏（2026-09-11 用户拍板）：滚动进行时淡出，停止 800ms 后淡入；
-      停止后的常态本身也是半透明化显示（见两枚按钮的 background）。
-      ⚠️ 必须 .fab-stack.fab-stack--scrolling 双类（0,2,0）压过 --visible（0,1,0）：
-      单类写法会被 CSS 压缩器按「声明子集」合并进基础 .fab-stack 规则
-      （实测变成 `.fab-stack, .fab-stack--scrolling`，永远排在 --visible 之前），
-      源码顺序调整无效 —— 「滚动中隐藏」此前从未真正生效（2026-11-08 修）。 ── */
-.fab-stack.fab-stack--scrolling {
-  opacity: 0;
-  pointer-events: none;
-}
+/* ── 滚动中隐藏：已按用户要求关闭（2026-11-08）──
+   原设计（2026-09-11 拍板）：滚动进行时淡出、停止 800ms 后淡入；2026-11-08 修复
+   优先级使其真正生效后，用户反馈「800ms 太长」且不要滚动中淡出 → 本规则整体停用：
+   TSX 的 isScrolling/--scrolling class 照常切换（逻辑零改动），但不再有任何视觉效果，
+   fab-stack 挂载期间恒显。若将来要恢复：加回
+   `.fab-stack.fab-stack--scrolling { opacity: 0; pointer-events: none; }`
+   ⚠️ 必须双类写法（0,2,0）压过 --visible——单类会被 cssnano 按声明子集合并进
+   基础规则（变成 `.fab-stack, .fab-stack--scrolling`，恒排在 --visible 之前）失效。 */
 
 @keyframes fab-stack-slide-in {
   0% {
