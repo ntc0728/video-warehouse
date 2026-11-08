@@ -35,13 +35,24 @@
   background: none;
 }
 
-/* 骨架 hero-info：影院深底（2026-11-08 用户要求去边框；真实 hero 全设备均为
-   深色媒体面，骨架同底色无缝过渡，灰块在深底上可见） */
-.detail-skeleton__hero-info {
+/* 骨架 hero-info 底色分设备：
+   - <768 / app：影院深底（移动端真实 hero 为深色媒体面，灰块在深底上可见）；
+   - ≥768 非 app：surface 白卡 + 边框/投影（用户定稿，与资料区骨架卡观感一致） */
+@media (width <= 767px) {
+  .detail-skeleton__hero-info {
+    background: var(--color-media-surface);
+  }
+}
+html[data-device="app"] .detail-skeleton__hero-info {
   background: var(--color-media-surface);
 }
 
 @media (width >= 768px) {
+  html:not([data-device="app"]) .detail-skeleton__hero-info {
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+  }
 
   /* 内容簇贴底镜像真实页（2026-11-08：真实 hero 内容簇 flex-end 靠近 CTA，
      空区上浮；骨架同步 flex-end，灰块簇不再垂直居中）。
@@ -132,6 +143,26 @@
 .detail-skeleton__btn--play {
   width: 9.5em;
 }
+
+/* 移动端/app 镜像真实按钮尺寸（2026-11-08 实测：真实 .detail-btn 为 ~78×24，
+   text-xs 12px；骨架桌面档 8em/9.5em + comp-tab-height ≈36px 明显偏大） */
+@media (width <= 767px) {
+  .detail-skeleton__btn {
+    width: 5.5em;
+    height: var(--space-2xl);
+  }
+  .detail-skeleton__btn--play {
+    width: 5.75em;
+  }
+}
+html[data-device="app"] .detail-skeleton__btn {
+  width: 5.5em;
+  height: var(--space-2xl);
+}
+html[data-device="app"] .detail-skeleton__btn--play {
+  width: 5.75em;
+}
+
 
 /* ── 资料区：chips / 基础信息表格 ── */
 .detail-skeleton__chip {
