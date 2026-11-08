@@ -36,7 +36,8 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 const argToken = process.argv.find((a) => a.startsWith('--tmdb-token='))?.split('=')[1];
 const TMDB_TOKEN = argToken || process.env.TMDB_TOKEN || process.env.VITE_TMDB_ACCESS_TOKEN || '';
 
-const OUTPUT_PATH = resolve(ROOT, 'docs/page-diagrams/diagram-data.json');
+// 原理图数据仅本地维护（不入版本控制），输出到 gitignore 的 output/ 目录
+const OUTPUT_PATH = resolve(ROOT, 'output/page-diagrams/diagram-data.json');
 
 // ── 工具函数 ──────────────────────────────────────
 

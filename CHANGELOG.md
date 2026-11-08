@@ -5,1084 +5,1084 @@
 
 ### Features
 
-* **player:** CMS 源面板过滤+并行探测追加、跨源顺延兜底、弹窗选集 epn/季集线回显（routePlayUrl 首帧最高优先） ([7683918](https://github.com/ntc0728/video-warehouse/commit/768391808a013c3a39f68897b3fb707b6e00d62a))
-* **settings:** 错误日志收集与查看（localStorage 上限300/指纹去重、接口与全局捕获、个人设置独立组+时间轴弹窗） ([10e88ca](https://github.com/ntc0728/video-warehouse/commit/10e88ca5a98471089388eb88879cad1230938b28))
+* **player:** CMS 源面板过滤+并行探测追加、跨源顺延兜底、弹窗选集 epn/季集线回显（routePlayUrl 首帧最高优先） (`7683918`)
+* **settings:** 错误日志收集与查看（localStorage 上限300/指纹去重、接口与全局捕获、个人设置独立组+时间轴弹窗） (`10e88ca`)
 
 
 ### Bug Fixes
 
-* **deps:** 重生成合法 vite patch（pnpm patch-commit）并同步 pnpm-lock patchedDependencies——修复 Cloudflare CI frozen install 的 ERR_PNPM_LOCKFILE_CONFIG_MISMATCH/INVALID_PATCH ([d3abb92](https://github.com/ntc0728/video-warehouse/commit/d3abb92aab6c8205fa5d45cc120043f4f7dbb010))
-* **lazy-image:** 图片加载兜底超时 8s 放宽至 10s（慢源防盗链挂起误判失败） ([41f5a68](https://github.com/ntc0728/video-warehouse/commit/41f5a683b3bc52b6ca4c71fcd8a016fe2fb98358))
-* **ui:** 浅色主题纸白分层（页面底升白/占位骨架微冷灰阶/暗色冻结）+ 浮层按钮改内容右缘基准（--content-edge-gutter/--fab-breath/--shuffle-left 四版定稿）+ Detail 转圈轨道可见 + 选集下拉黑框抑制与尺寸收小 ([c1a7ed3](https://github.com/ntc0728/video-warehouse/commit/c1a7ed37fdb92c2162d1e6e6cb755bd7d6c56600))
-* **vite:** patch listen order — bind port before init, not after ([e5a1e20](https://github.com/ntc0728/video-warehouse/commit/e5a1e20955b29fec62e3295002c8362e08fec7ef))
+* **deps:** 重生成合法 vite patch（pnpm patch-commit）并同步 pnpm-lock patchedDependencies——修复 Cloudflare CI frozen install 的 ERR_PNPM_LOCKFILE_CONFIG_MISMATCH/INVALID_PATCH (`d3abb92`)
+* **lazy-image:** 图片加载兜底超时 8s 放宽至 10s（慢源防盗链挂起误判失败） (`41f5a68`)
+* **ui:** 浅色主题纸白分层（页面底升白/占位骨架微冷灰阶/暗色冻结）+ 浮层按钮改内容右缘基准（--content-edge-gutter/--fab-breath/--shuffle-left 四版定稿）+ Detail 转圈轨道可见 + 选集下拉黑框抑制与尺寸收小 (`c1a7ed3`)
+* **vite:** patch listen order — bind port before init, not after (`e5a1e20`)
 
 
 ### Performance Improvements
 
-* **dev:** vite eager-pretransform 插件——首个请求触发后台并发预变换全部 src 模块，冷启动模块请求由波浪式 50-100ms/个降至 &lt;5ms ([3c2965e](https://github.com/ntc0728/video-warehouse/commit/3c2965e9dcea01f3be52ed85589b4640c6f83c8a))
+* **dev:** vite eager-pretransform 插件——首个请求触发后台并发预变换全部 src 模块，冷启动模块请求由波浪式 50-100ms/个降至 &lt;5ms (`3c2965e`)
 
 ## [1.30.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.29.0...kinotv-v1.30.0) (2026-10-10)
 
 
 ### Features
 
-* **demo-e:** 分类 chip 面板方案 B — chip 行 + 子分类列表（CategoryQuickAccess 降级） ([ba989d8](https://github.com/ntc0728/video-warehouse/commit/ba989d8e6c90b265a31f9f368e1bfbf016bdfd66))
-* **demo-e:** 移动端报头重设计 + 趋势榜 5 条横图 + 删演示值提示 ([22fcb4e](https://github.com/ntc0728/video-warehouse/commit/22fcb4ebe356464a629713956760893cd87cbbae))
-* **detail:** 方案 A 海报对开布局落地（tab 居中资料区 + 两列等比等高） ([5fe9e54](https://github.com/ntc0728/video-warehouse/commit/5fe9e5418b8368bd68eb98cb4a780c219bdd97ce))
-* **home:** 今日热度趋势 topstrip 卡片化 + 简介 ([051506a](https://github.com/ntc0728/video-warehouse/commit/051506a374943ea4bd00dd2e72530a2058633a5c))
-* **layout:** 源检测/代理配置接入 2200 封顶 + --page-pad-x 侧距 ([636042d](https://github.com/ntc0728/video-warehouse/commit/636042d09bff705fb94cf2816d983b0381fc6faa))
-* **source-checker,proxy-setup:** 全面对齐监控台 demo + 标签整改 ([9a9c615](https://github.com/ntc0728/video-warehouse/commit/9a9c6151065ed22581282dfc0f6829ad3a265dc0))
-* **source-checker,proxy-setup:** 监控台改版落地真实页面 ([465fc7d](https://github.com/ntc0728/video-warehouse/commit/465fc7d44e0f58fa678b73ae2feb1ff555b22be3))
-* **source-checker,proxy-setup:** 落地己·三栏+健康带布局并加单源重测 ([8fe5eb1](https://github.com/ntc0728/video-warehouse/commit/8fe5eb177d2068a6af10c80e673bd682b341854e))
-* **style:** 桌面端全站去卡片化 + 封面三态背景与页底色区分 ([cb2636b](https://github.com/ntc0728/video-warehouse/commit/cb2636b32a53863580da0d67f8f8d657affefc20))
-* **style:** 页面级去卡片化第二批（Chart/Person/Detail/SourceChecker/SourceManager 条目） ([d2bdd96](https://github.com/ntc0728/video-warehouse/commit/d2bdd9611f392ed0f138d00ad3d62df2ad3bbe10))
+* **demo-e:** 分类 chip 面板方案 B — chip 行 + 子分类列表（CategoryQuickAccess 降级） (`ba989d8`)
+* **demo-e:** 移动端报头重设计 + 趋势榜 5 条横图 + 删演示值提示 (`22fcb4e`)
+* **detail:** 方案 A 海报对开布局落地（tab 居中资料区 + 两列等比等高） (`5fe9e54`)
+* **home:** 今日热度趋势 topstrip 卡片化 + 简介 (`051506a`)
+* **layout:** 源检测/代理配置接入 2200 封顶 + --page-pad-x 侧距 (`636042d`)
+* **source-checker,proxy-setup:** 全面对齐监控台 demo + 标签整改 (`9a9c615`)
+* **source-checker,proxy-setup:** 监控台改版落地真实页面 (`465fc7d`)
+* **source-checker,proxy-setup:** 落地己·三栏+健康带布局并加单源重测 (`8fe5eb1`)
+* **style:** 桌面端全站去卡片化 + 封面三态背景与页底色区分 (`cb2636b`)
+* **style:** 页面级去卡片化第二批（Chart/Person/Detail/SourceChecker/SourceManager 条目） (`d2bdd96`)
 
 
 ### Bug Fixes
 
-* **batch:** UI 细节整改六批收口——首页左栏清理/热度轮播公告/骨架镜像/Browse 收尾 ([ff5930f](https://github.com/ntc0728/video-warehouse/commit/ff5930fe14a3c774a619e94bf6d839e909bad4f4))
-* **demo-e:** 删公告带 / 搜索可点击按 SearchBox 链路 / 换一换对齐 HeroBili ([0ae3003](https://github.com/ntc0728/video-warehouse/commit/0ae30036071c17c99cc8d9892fedec027e0af567))
-* **demo-e:** 方案C — FAB 外扩与 hover 修正 / 主体留白对齐项目 / 小视口·移动端适配 ([220ea83](https://github.com/ntc0728/video-warehouse/commit/220ea83304ef58095b22375c5bdcffe9057ee26a))
-* **demo-e:** 方案C 收口 — cqa 回滚静态链接 / FAB 恒显 / 继续观看单行 / 删 data-badge / 移动端 banner 图上文下 ([5be2e2e](https://github.com/ntc0728/video-warehouse/commit/5be2e2e18820aeb384752598f9806306b008ebaa))
-* **demo-e:** 继续播放语义 / 骨架期横条禁点 / 搜索就地展开 / 去导航底线 / 封面四角标 ([b712017](https://github.com/ntc0728/video-warehouse/commit/b7120176319daeaeea16ff16b3ade285ab00cd0b))
-* **history:** 卡片标题对齐全站口径（--text-sm/500/1.5），修「历史页标题大一号」 ([d5c6666](https://github.com/ntc0728/video-warehouse/commit/d5c66663f69eb52acaa81318d1e5895de8a1ebec))
-* **history:** 时间轴贴底测量修复单条数据假滚动条 ([7620c07](https://github.com/ntc0728/video-warehouse/commit/7620c07eff930790d315306f4c5492f19a2c963b))
-* **searchbox:** iOS web 点搜索框聚焦局部放大——mobile-web 字号抬回 16px ([78ce6e2](https://github.com/ntc0728/video-warehouse/commit/78ce6e2639c517d60fdda398336cb9944bcd37fe))
-* **settings:** source-manager 面板去卡+条目保留卡片；设置页字号图标缩档 ×0.93；SET-050 改 web-first 断言 ([f59967d](https://github.com/ntc0728/video-warehouse/commit/f59967d67dc6dd02dcf230f167b0ca64c397e93e))
-* **settings:** 三源面板恢复卡片、设置项间距收紧、消子项标题黑点（含移动端）、hover 不再变背景 ([604611e](https://github.com/ntc0728/video-warehouse/commit/604611eba31e7b834e5bac5216401b75b9d0a868))
-* **settings:** 个人页一键按钮方框再降至 29.5px 对齐 Select trigger；同步 testing.md 生成块 ([6643fad](https://github.com/ntc0728/video-warehouse/commit/6643fad8b755b72123cbd264efa789603cc635b8))
-* **settings:** 左栏字号/内边距豁免回原值，仅右侧内容区缩档；按钮族系数 0.93→0.8 ([d7b437a](https://github.com/ntc0728/video-warehouse/commit/d7b437a47e0f4d60bc6f867ba742697cb8b3f7cf))
-* **settings:** 界面缩放换 Select 组件对齐 TMDB 下拉；个人设置行标题字号对齐；一键按钮方框缩至 40px ([26a9e1e](https://github.com/ntc0728/video-warehouse/commit/26a9e1e12a952a1896c9a4e8df8de5295e270af4))
-* **test:** SKEL-014 chip 期望 22 → 73 补同步 ff5930f 漏改 ([6bf6d6e](https://github.com/ntc0728/video-warehouse/commit/6bf6d6ed54350b7b24a2e617cd19ee32f35e2420))
-* **ui:** 首页/详情/播放/搜索零散修复批次（hero对齐与胶囊·detail veil与检测胶囊·play侧栏·搜索防抖动） ([c529f74](https://github.com/ntc0728/video-warehouse/commit/c529f743104c19b91eb5533ea252c434895f3624))
+* **batch:** UI 细节整改六批收口——首页左栏清理/热度轮播公告/骨架镜像/Browse 收尾 (`ff5930f`)
+* **demo-e:** 删公告带 / 搜索可点击按 SearchBox 链路 / 换一换对齐 HeroBili (`0ae3003`)
+* **demo-e:** 方案C — FAB 外扩与 hover 修正 / 主体留白对齐项目 / 小视口·移动端适配 (`220ea83`)
+* **demo-e:** 方案C 收口 — cqa 回滚静态链接 / FAB 恒显 / 继续观看单行 / 删 data-badge / 移动端 banner 图上文下 (`5be2e2e`)
+* **demo-e:** 继续播放语义 / 骨架期横条禁点 / 搜索就地展开 / 去导航底线 / 封面四角标 (`b712017`)
+* **history:** 卡片标题对齐全站口径（--text-sm/500/1.5），修「历史页标题大一号」 (`d5c6666`)
+* **history:** 时间轴贴底测量修复单条数据假滚动条 (`7620c07`)
+* **searchbox:** iOS web 点搜索框聚焦局部放大——mobile-web 字号抬回 16px (`78ce6e2`)
+* **settings:** source-manager 面板去卡+条目保留卡片；设置页字号图标缩档 ×0.93；SET-050 改 web-first 断言 (`f59967d`)
+* **settings:** 三源面板恢复卡片、设置项间距收紧、消子项标题黑点（含移动端）、hover 不再变背景 (`604611e`)
+* **settings:** 个人页一键按钮方框再降至 29.5px 对齐 Select trigger；同步 testing.md 生成块 (`6643fad`)
+* **settings:** 左栏字号/内边距豁免回原值，仅右侧内容区缩档；按钮族系数 0.93→0.8 (`d7b437a`)
+* **settings:** 界面缩放换 Select 组件对齐 TMDB 下拉；个人设置行标题字号对齐；一键按钮方框缩至 40px (`26a9e1e`)
+* **test:** SKEL-014 chip 期望 22 → 73 补同步 ff5930f 漏改 (`6bf6d6e`)
+* **ui:** 首页/详情/播放/搜索零散修复批次（hero对齐与胶囊·detail veil与检测胶囊·play侧栏·搜索防抖动） (`c529f74`)
 
 
 ### Performance Improvements
 
-* **vite:** dev 冷启动 early-HTML — document hold 2.1s/8.6s → ~1s ([4a49d44](https://github.com/ntc0728/video-warehouse/commit/4a49d445844f7fd90c6a080f37375a3d33945e5f))
+* **vite:** dev 冷启动 early-HTML — document hold 2.1s/8.6s → ~1s (`4a49d44`)
 
 ## [1.29.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.28.0...kinotv-v1.29.0) (2026-09-24)
 
 
 ### Features
 
-* **cqa:** 分类面板改锚定 popover（对齐触发 chip） ([c5f3b83](https://github.com/ntc0728/video-warehouse/commit/c5f3b83709ea639281238f5dd34632eef2d47341))
-* **nav:** hero-bili 右卡与热度榜入口改 Link 支持右键新标签页 ([af4211d](https://github.com/ntc0728/video-warehouse/commit/af4211d52c019a362a0d9a5290cc4de861876d33))
-* **nav:** 播放/详情入口改 Link 支持新开页签 + Player query 兜底 ([4ba1e7f](https://github.com/ntc0728/video-warehouse/commit/4ba1e7fd391a6e04e6f24fdf9e399704b6a330d3))
-* **tmdb:** TMDB token 未配置全站门控 ([ddea17f](https://github.com/ntc0728/video-warehouse/commit/ddea17f782cf3bba9c06b92a3966a3739c4536fe))
+* **cqa:** 分类面板改锚定 popover（对齐触发 chip） (`c5f3b83`)
+* **nav:** hero-bili 右卡与热度榜入口改 Link 支持右键新标签页 (`af4211d`)
+* **nav:** 播放/详情入口改 Link 支持新开页签 + Player query 兜底 (`4ba1e7f`)
+* **tmdb:** TMDB token 未配置全站门控 (`ddea17f`)
 
 
 ### Bug Fixes
 
-* **browse:** 左栏骨架 chip 尺寸对齐真实 tab + 失败态去重试 ([8609147](https://github.com/ntc0728/video-warehouse/commit/8609147fa95c7dd4b75b57693445f4b88ebebd43))
-* **cqa:** 面板顶角直角 + 热度值移入年份下方 ([84e7737](https://github.com/ntc0728/video-warehouse/commit/84e773783c95887d490344893672f731dd47402d))
-* **detail:** 骨架 tab 改方框 + info-card 对齐真实行高 ([ec10d68](https://github.com/ntc0728/video-warehouse/commit/ec10d681aa60a3a97b976f8356c1618e9d9d15fa))
-* **lint:** 修 stylelint 属性顺序/0px 回退 + 同步 Android 版本至 1.28.0 ([d5bbc71](https://github.com/ntc0728/video-warehouse/commit/d5bbc71aa48b19289b4109e17bc7a8a994555c6c))
-* **searchbox:** 顶栏搜索框聚焦黑框——排除规则抬特异性压过全局 focus outline ([fb64534](https://github.com/ntc0728/video-warehouse/commit/fb64534a8080d4c1a83c3a77cde1ec390cbe1605))
-* **search:** 搜索框去全局粗焦点框 + 移动端 16px 字号排除 + 虚拟键盘 inset ([6e2b245](https://github.com/ntc0728/video-warehouse/commit/6e2b24584409129105141f849da62915e5e50cec))
+* **browse:** 左栏骨架 chip 尺寸对齐真实 tab + 失败态去重试 (`8609147`)
+* **cqa:** 面板顶角直角 + 热度值移入年份下方 (`84e7737`)
+* **detail:** 骨架 tab 改方框 + info-card 对齐真实行高 (`ec10d68`)
+* **lint:** 修 stylelint 属性顺序/0px 回退 + 同步 Android 版本至 1.28.0 (`d5bbc71`)
+* **searchbox:** 顶栏搜索框聚焦黑框——排除规则抬特异性压过全局 focus outline (`fb64534`)
+* **search:** 搜索框去全局粗焦点框 + 移动端 16px 字号排除 + 虚拟键盘 inset (`6e2b245`)
 
 ## [1.28.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.27.2...kinotv-v1.28.0) (2026-09-23)
 
 
 ### Features
 
-* **browse:** 顶栏四方案 Demo + 左栏去滚动条 + 分类行壳 ([7918340](https://github.com/ntc0728/video-warehouse/commit/7918340a0c51d7ab7e3c694a81617755adb08948))
-* **browse:** 顶栏方案A落地 — 排序tab改types分段 + 总数右对齐 ([9fc52f5](https://github.com/ntc0728/video-warehouse/commit/9fc52f5562750892f3df29fffd6fa2b36638f541))
-* **browse:** 首屏接口未返回时左栏/顶栏筛选项渲染骨架 ([3240ea4](https://github.com/ntc0728/video-warehouse/commit/3240ea44fca8fc00d66b4cc727e4371e5bf97091))
-* **cards:** 四卡封面角标/收藏/进度按 LazyImage 加载态 CSS 门控 ([dcb481c](https://github.com/ntc0728/video-warehouse/commit/dcb481cf700e5d624db3fc1933ae3015361ba50d))
-* **detail:** 右栏基础信息同行布局 + 国家/发行末尾全宽 + 演员头像调小 ([71a2de0](https://github.com/ntc0728/video-warehouse/commit/71a2de0b4d01f62f59655f13b52731d3523d0dcd))
-* **detail:** 基础信息三轮 — 行距 gap 同源（grid 内外一致）+ 发行时间到日 ([f1bd689](https://github.com/ntc0728/video-warehouse/commit/f1bd6899a6c33ee7fb2030ac8a28905acbe7ce2a))
-* **detail:** 基础信息二轮 — 评分全宽 + 半宽自动 span + 行距同源 + 时长0不显示 ([9004040](https://github.com/ntc0728/video-warehouse/commit/9004040e011f20b40e1892a361ecd524332f0639))
-* **detail:** 基础信息标题卡之间 gap 改为 var(--space-md) ([13ebb1d](https://github.com/ntc0728/video-warehouse/commit/13ebb1dd8ae8e8e1f9256f260995bcac605179a9))
+* **browse:** 顶栏四方案 Demo + 左栏去滚动条 + 分类行壳 (`7918340`)
+* **browse:** 顶栏方案A落地 — 排序tab改types分段 + 总数右对齐 (`9fc52f5`)
+* **browse:** 首屏接口未返回时左栏/顶栏筛选项渲染骨架 (`3240ea4`)
+* **cards:** 四卡封面角标/收藏/进度按 LazyImage 加载态 CSS 门控 (`dcb481c`)
+* **detail:** 右栏基础信息同行布局 + 国家/发行末尾全宽 + 演员头像调小 (`71a2de0`)
+* **detail:** 基础信息三轮 — 行距 gap 同源（grid 内外一致）+ 发行时间到日 (`f1bd689`)
+* **detail:** 基础信息二轮 — 评分全宽 + 半宽自动 span + 行距同源 + 时长0不显示 (`9004040`)
+* **detail:** 基础信息标题卡之间 gap 改为 var(--space-md) (`13ebb1d`)
 
 
 ### Bug Fixes
 
-* **hero-bili:** banner 撑满行高 + 桌面文案收档 + 右卡角标间距收窄 ([822dd26](https://github.com/ntc0728/video-warehouse/commit/822dd26c5d3fc27d4db339ea4ba69cfc6734fe5d))
-* **hero-bili:** CTA 纵向 padding 2xs→xs 修按钮压扁 ([49270fa](https://github.com/ntc0728/video-warehouse/commit/49270fa328e78633a4aeffb724e473d195cdd206))
+* **hero-bili:** banner 撑满行高 + 桌面文案收档 + 右卡角标间距收窄 (`822dd26`)
+* **hero-bili:** CTA 纵向 padding 2xs→xs 修按钮压扁 (`49270fa`)
 
 ## [1.27.2](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.27.1...kinotv-v1.27.2) (2026-09-22)
 
 
 ### Bug Fixes
 
-* **browse:** 修复清空再搜无结果词时空态不渲染 + E2E 断言漂移 ([0f7d1b2](https://github.com/ntc0728/video-warehouse/commit/0f7d1b2ad125cfd60a2621e1eab62f49dffa0dcb))
-* **changelog-collect:** 解析 front-matter 兼容 CRLF 并合并剩余 10 篇片段 ([70a6552](https://github.com/ntc0728/video-warehouse/commit/70a655272cba2c9cfd78398e2d1701393b2b2a87))
-* **e2e:** 动态端口多进程不一致导致全量 CONNECTION_REFUSED ([1199f9e](https://github.com/ntc0728/video-warehouse/commit/1199f9ec73795f80d276ca4fe32537854fd54928))
-* **testing:** 修复 run-tests.ps1 Home 段 grep 映射漂移 ([a0903c4](https://github.com/ntc0728/video-warehouse/commit/a0903c466451d18fb6ff8076742479cf22ca941a))
-* **versioning:** 修复 sync-capacitor-version 断链引用 ([7d699c2](https://github.com/ntc0728/video-warehouse/commit/7d699c2eccc7a5feb8344886b5eace410ad593db))
+* **browse:** 修复清空再搜无结果词时空态不渲染 + E2E 断言漂移 (`0f7d1b2`)
+* **changelog-collect:** 解析 front-matter 兼容 CRLF 并合并剩余 10 篇片段 (`70a6552`)
+* **e2e:** 动态端口多进程不一致导致全量 CONNECTION_REFUSED (`1199f9e`)
+* **testing:** 修复 run-tests.ps1 Home 段 grep 映射漂移 (`a0903c4`)
+* **versioning:** 修复 sync-capacitor-version 断链引用 (`7d699c2`)
 
 ## [1.27.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.27.0...kinotv-v1.27.1) (2026-09-21)
 
 
 ### Bug Fixes
 
-* **boot-splash:** 骨架 5 处与真实页错构修正 + 深色换一换白底 ([f02bf4d](https://github.com/ntc0728/video-warehouse/commit/f02bf4d28b7ca28bd8a80897fbfa335514301216))
-* **browse:** 搜索态不再误命中 discover 缓存回显，store.search 正常触发 ([99de6b3](https://github.com/ntc0728/video-warehouse/commit/99de6b36e0727b38d2fd943a776e6490dfd20c48))
-* **e2e:** 根治卡死——端口/进程安全红线 + hermetic 网络 + 5 分钟硬预算 ([14bfcfb](https://github.com/ntc0728/video-warehouse/commit/14bfcfb0f6f8661d6b0230d92d656fa9b245a93b))
+* **boot-splash:** 骨架 5 处与真实页错构修正 + 深色换一换白底 (`f02bf4d`)
+* **browse:** 搜索态不再误命中 discover 缓存回显，store.search 正常触发 (`99de6b3`)
+* **e2e:** 根治卡死——端口/进程安全红线 + hermetic 网络 + 5 分钟硬预算 (`14bfcfb`)
 
 ## [1.27.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.5...kinotv-v1.27.0) (2026-09-18)
 
 
 ### Features
 
-* **githooks:** git 写操作后自动仓库健康自检 ([f5f3d67](https://github.com/ntc0728/video-warehouse/commit/f5f3d67938ccc243f0afd100e07f00ce7e238201))
-* **githooks:** repo-health-check 增加 transport-probe 写前传输预检 ([09d564d](https://github.com/ntc0728/video-warehouse/commit/09d564d890d0eb51f182484deccd37f38f30852b))
-* **githooks:** 引用未落盘自愈补写 + 预检默认 HTTPS ([521e1dd](https://github.com/ntc0728/video-warehouse/commit/521e1dd741dde5f76fdfba7bd1187c71b4983a67))
+* **githooks:** git 写操作后自动仓库健康自检 (`f5f3d67`)
+* **githooks:** repo-health-check 增加 transport-probe 写前传输预检 (`09d564d`)
+* **githooks:** 引用未落盘自愈补写 + 预检默认 HTTPS (`521e1dd`)
 
 ## [1.26.5](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.4...kinotv-v1.26.5) (2026-09-18)
 
 
 ### Bug Fixes
 
-* **android:** 移除 MediaService 中类型不兼容的 MediaStyle 死代码 ([879763a](https://github.com/ntc0728/video-warehouse/commit/879763a78e04a62f05bd5748265c20a56bb91c30))
+* **android:** 移除 MediaService 中类型不兼容的 MediaStyle 死代码 (`879763a`)
 
 ## [1.26.4](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.3...kinotv-v1.26.4) (2026-09-18)
 
 
 ### Bug Fixes
 
-* **android:** MediaService 改用 framework MediaSession 修复 APK 构建 ([49eb39c](https://github.com/ntc0728/video-warehouse/commit/49eb39c6e9219b686870dffb6f997372449a3684))
+* **android:** MediaService 改用 framework MediaSession 修复 APK 构建 (`49eb39c`)
 
 ## [1.26.3](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.2...kinotv-v1.26.3) (2026-09-17)
 
 
 ### Bug Fixes
 
-* **android:** 修复 MediaService 引用废弃 support.v4.media 致 APK 构建失败 ([81861c0](https://github.com/ntc0728/video-warehouse/commit/81861c0a19fe9b7e788f7aa7d79d4382205a8103))
+* **android:** 修复 MediaService 引用废弃 support.v4.media 致 APK 构建失败 (`81861c0`)
 
 ## [1.26.2](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.1...kinotv-v1.26.2) (2026-09-16)
 
 
 ### Bug Fixes
 
-* **ci:** setup-android v4 显式 packages + 双 workflow 一致性补齐 ([a30002f](https://github.com/ntc0728/video-warehouse/commit/a30002f94bb1d836dd20aae1ce6bd484a2375899))
-* 页面接口调用审查整改（刷新反馈 / 视口懒加载 / 竞态与并发） ([b4cfe83](https://github.com/ntc0728/video-warehouse/commit/b4cfe837422e1ea22ee2d4478e217b606e3cad63))
+* **ci:** setup-android v4 显式 packages + 双 workflow 一致性补齐 (`a30002f`)
+* 页面接口调用审查整改（刷新反馈 / 视口懒加载 / 竞态与并发） (`b4cfe83`)
 
 ## [1.26.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.26.0...kinotv-v1.26.1) (2026-09-16)
 
 
 ### Bug Fixes
 
-* **ci:** bump android-actions/setup-android to v4 ([544f820](https://github.com/ntc0728/video-warehouse/commit/544f820497d86afee5aec6c8e4816d92abb5197d))
+* **ci:** bump android-actions/setup-android to v4 (`544f820`)
 
 ## [1.26.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.25.0...kinotv-v1.26.0) (2026-09-15)
 
 
 ### Features
 
-* **design:** B1 色彩四档 + 状态色双档 + 角标统一口径 ([bfa295e](https://github.com/ntc0728/video-warehouse/commit/bfa295e8c43aa102e892b3ee99c8427afa6b0e9f))
-* **design:** B3 字号阶梯重构（取消段2 逆视口递减） ([65b0ada](https://github.com/ntc0728/video-warehouse/commit/65b0ada35636699d9b7cd628f94d9b91b9a66fc1))
-* **design:** B5 TV 字号对齐 10-foot UI 基线 ([023b8e6](https://github.com/ntc0728/video-warehouse/commit/023b8e6cbd11a53e19c4914cbda359a333d3ce75))
-* **design:** B6 移动端触摸目标 / 视口安全区 / 缩放合规 ([efed48b](https://github.com/ntc0728/video-warehouse/commit/efed48bd30ea016c7b4734b973021ef3f7ec94e5))
-* **design:** B7 工程化收口（z-index 阶梯 / 设计护栏 / 一致性修复） ([bfcb237](https://github.com/ntc0728/video-warehouse/commit/bfcb237a900170712be63a9cba3ecae69abcaec8))
-* **skeleton:** 启动骨架全 shape 按视口填满首屏 + 页级骨架测量式续行 ([c51aab8](https://github.com/ntc0728/video-warehouse/commit/c51aab822b53eef69775aff87f50b1ae70e9243f))
-* **skeleton:** 骨架张数改为「列数 x 行数」派生 + 页级骨架延迟 150ms 淡入 ([c00d9d1](https://github.com/ntc0728/video-warehouse/commit/c00d9d1744d21bfc2ebfe7dd2c6a64c1c2022687))
+* **design:** B1 色彩四档 + 状态色双档 + 角标统一口径 (`bfa295e`)
+* **design:** B3 字号阶梯重构（取消段2 逆视口递减） (`65b0ada`)
+* **design:** B5 TV 字号对齐 10-foot UI 基线 (`023b8e6`)
+* **design:** B6 移动端触摸目标 / 视口安全区 / 缩放合规 (`efed48b`)
+* **design:** B7 工程化收口（z-index 阶梯 / 设计护栏 / 一致性修复） (`bfcb237`)
+* **skeleton:** 启动骨架全 shape 按视口填满首屏 + 页级骨架测量式续行 (`c51aab8`)
+* **skeleton:** 骨架张数改为「列数 x 行数」派生 + 页级骨架延迟 150ms 淡入 (`c00d9d1`)
 
 
 ### Bug Fixes
 
-* **a11y:** B2 恢复非 TV 键盘焦点环（WCAG 2.4.7 AA） ([feb9da3](https://github.com/ntc0728/video-warehouse/commit/feb9da3b175309c4e95c336f2f2524f3250a3473))
-* **boot-splash:** 历史页列数对齐 .history-grid 真源 + 骨架底色统一为 #f0f0f0 ([f78c0ce](https://github.com/ntc0728/video-warehouse/commit/f78c0ce4644af4b3a6ac3aba4e61914e9652f740))
-* **build:** vite root 规范化到磁盘真实盘符大小写，修复 Bash 环境确定性构建失败 ([7251759](https://github.com/ntc0728/video-warehouse/commit/7251759f243b199fb05b3b4dc6d0044a8f3d4d8d))
-* **build:** 修复 @types/node 污染导致 setTimeout 类型不匹配（TS2322） ([00662e4](https://github.com/ntc0728/video-warehouse/commit/00662e4b310cbd0cbe711dec5264f240bdffe66b))
-* **e2e:** 切换 Playwright 浏览器通道，修复会话内 E2E 完全不可执行 ([cdbea81](https://github.com/ntc0728/video-warehouse/commit/cdbea816400426535706e7b8fa9dc69f49b24cdb))
+* **a11y:** B2 恢复非 TV 键盘焦点环（WCAG 2.4.7 AA） (`feb9da3`)
+* **boot-splash:** 历史页列数对齐 .history-grid 真源 + 骨架底色统一为 #f0f0f0 (`f78c0ce`)
+* **build:** vite root 规范化到磁盘真实盘符大小写，修复 Bash 环境确定性构建失败 (`7251759`)
+* **build:** 修复 @types/node 污染导致 setTimeout 类型不匹配（TS2322） (`00662e4`)
+* **e2e:** 切换 Playwright 浏览器通道，修复会话内 E2E 完全不可执行 (`cdbea81`)
 
 ## [1.25.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.24.0...kinotv-v1.25.0) (2026-09-14)
 
 
 ### Features
 
-* **browse:** 慢取页反馈 A′ + 取页出口收拢到逻辑分页层 ([29f7fbc](https://github.com/ntc0728/video-warehouse/commit/29f7fbc0d2a67df50e108f03adfdcf45aa1f51bc))
+* **browse:** 慢取页反馈 A′ + 取页出口收拢到逻辑分页层 (`29f7fbc`)
 
 
 ### Bug Fixes
 
-* **browse:** 取页直连 store——慢网下搜索被初始 discover 覆盖；补 BROWSE-094/095 门控护栏 ([540840d](https://github.com/ntc0728/video-warehouse/commit/540840dfb021c2d56a8d3adcb71bdc21376eb590))
-* **browse:** 左栏 chips 恒两列——auto-fill 随 rail 增宽多排列（1920 档 3 列/2560 档 4 列）改固定 2 列 ([c21674c](https://github.com/ntc0728/video-warehouse/commit/c21674cd4b96f3a5388cf5133aacf347b1611cda))
-* **browse:** 慢网互斥渲染——空态/骨架/分页器不再同帧叠加；数据不足一页隐藏分页器 ([8f4c826](https://github.com/ntc0728/video-warehouse/commit/8f4c826ff8acd62d412b3b03e60818f8ade4b82d))
-* **detail:** 剧照 +N 遮罩被 LazyImage 图片层压住（z-index 回归） ([b613405](https://github.com/ntc0728/video-warehouse/commit/b6134050a4ede1b43d5b20dc8227a91ce913f03d))
-* **home:** 首页骨架行补「卡片模块」外壳——骨架/真实切换不再纵向跳 27px ([4d0d176](https://github.com/ntc0728/video-warehouse/commit/4d0d17616a5bd343326f27d7013b5419bb895fb0))
-* **layout:** 修复收藏/历史页空状态在 ≥1024 断点贴顶不居中 ([99d55fd](https://github.com/ntc0728/video-warehouse/commit/99d55fd49ff30d56a43fe3fb8511fc8d1a7fd577))
-* **tooling:** changelog-collect 不再让残留片段永久阻断 push，并防重复合并 ([55f0461](https://github.com/ntc0728/video-warehouse/commit/55f04613c0152b92af5e4da06164edfe8ec46aa2))
+* **browse:** 取页直连 store——慢网下搜索被初始 discover 覆盖；补 BROWSE-094/095 门控护栏 (`540840d`)
+* **browse:** 左栏 chips 恒两列——auto-fill 随 rail 增宽多排列（1920 档 3 列/2560 档 4 列）改固定 2 列 (`c21674c`)
+* **browse:** 慢网互斥渲染——空态/骨架/分页器不再同帧叠加；数据不足一页隐藏分页器 (`8f4c826`)
+* **detail:** 剧照 +N 遮罩被 LazyImage 图片层压住（z-index 回归） (`b613405`)
+* **home:** 首页骨架行补「卡片模块」外壳——骨架/真实切换不再纵向跳 27px (`4d0d176`)
+* **layout:** 修复收藏/历史页空状态在 ≥1024 断点贴顶不居中 (`99d55fd`)
+* **tooling:** changelog-collect 不再让残留片段永久阻断 push，并防重复合并 (`55f0461`)
 
 
 ### Performance Improvements
 
-* **images:** Detail 剧照 / Person 头像改用 LazyImage，只加载进入视口的图片 ([d8bf86a](https://github.com/ntc0728/video-warehouse/commit/d8bf86a6d5c55b283846e37fd0339a0c96da1689))
+* **images:** Detail 剧照 / Person 头像改用 LazyImage，只加载进入视口的图片 (`d8bf86a`)
 
 ## [1.24.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.23.0...kinotv-v1.24.0) (2026-09-11)
 
 
 ### Features
 
-* **browse,home:** 代并行会话入库——分页制/左栏骨架/首页视口骨架/FAB 软刷新等 + 本会话增补 ([bd9101c](https://github.com/ntc0728/video-warehouse/commit/bd9101c9cef00753278301634d0643dcf6e2a26f))
-* **browse:** 逻辑分页组装层——每页恒定 cols×5 行、总页数按每页条数折算 ([3882ab2](https://github.com/ntc0728/video-warehouse/commit/3882ab203906a30c7ca0e625ea2901ff5feaff51))
-* **loading:** 五页专属视口自适应骨架替换统一 AppLoading + 首页≥2560 banner 收窄加高 ([3dd091f](https://github.com/ntc0728/video-warehouse/commit/3dd091f5f8ad1c302d99601bd93752623c655738))
+* **browse,home:** 代并行会话入库——分页制/左栏骨架/首页视口骨架/FAB 软刷新等 + 本会话增补 (`bd9101c`)
+* **browse:** 逻辑分页组装层——每页恒定 cols×5 行、总页数按每页条数折算 (`3882ab2`)
+* **loading:** 五页专属视口自适应骨架替换统一 AppLoading + 首页≥2560 banner 收窄加高 (`3dd091f`)
 
 
 ### Bug Fixes
 
-* **browse:** 切筛选空页/重复 key + 转圈同行 + 直链搜索恢复滚动追加 ([625140c](https://github.com/ntc0728/video-warehouse/commit/625140c06204778e81f06e549cbdb5da8c77a704))
-* **detail:** 加载骨架与顶栏间 ~166px 空隙——loading 宿主沿用菊花时代垂直居中，改顶对齐 ([f60f398](https://github.com/ntc0728/video-warehouse/commit/f60f39830da7282cccae898ea8c4cc490ddb4670))
+* **browse:** 切筛选空页/重复 key + 转圈同行 + 直链搜索恢复滚动追加 (`625140c`)
+* **detail:** 加载骨架与顶栏间 ~166px 空隙——loading 宿主沿用菊花时代垂直居中，改顶对齐 (`f60f398`)
 
 
 ### Performance Improvements
 
-* **drawer:** modal={false} 绕开 react-remove-scroll 的 document 级非 passive 监听 ([a8bd1de](https://github.com/ntc0728/video-warehouse/commit/a8bd1defe64d468cb24cbb0f86d254ab812a1772))
+* **drawer:** modal={false} 绕开 react-remove-scroll 的 document 级非 passive 监听 (`a8bd1de`)
 
 ## [1.23.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.22.1...kinotv-v1.23.0) (2026-09-10)
 
 
 ### Features
 
-* **detail:** 上半部两栏（C1）+ 演员折叠裁切修复 + 剧照缩放控件 ([f561f56](https://github.com/ntc0728/video-warehouse/commit/f561f56467c83366e0bdff175ba0a228556f79b4))
-* **home:** 大屏两栏布局（方案 C）+ 顶栏对齐 + 顶部过渡带 ([8fa3646](https://github.com/ntc0728/video-warehouse/commit/8fa36465b6f58981c429857045a70e7bb8eb8bf0))
-* **home:** 宽屏起点 1024 + 首页 rail 改「今日趋势」榜（落地并行会话在途工作） ([d3a5d69](https://github.com/ntc0728/video-warehouse/commit/d3a5d69ef960b78d51b209d728f9dc1d057bc6a7))
-* **home:** 宽屏起点改为 ≥1280 + 热度榜左栏 6 项调整 ([aaaf1b2](https://github.com/ntc0728/video-warehouse/commit/aaaf1b257482ce624d3f263327d21a94defa7a54))
-* **iptv:** 频道列表一/二级宽度改内容派生 + OSD 宽度单曲线 + OSD 内部布局 v1 ([450dd3d](https://github.com/ntc0728/video-warehouse/commit/450dd3d825a27701429400571274df87fcf55c6c))
-* **person:** Hero 改左右布局（方案 C） ([fc99aaf](https://github.com/ntc0728/video-warehouse/commit/fc99aafa784f9b08323f5458e4fccd6ccd1b21e5))
+* **detail:** 上半部两栏（C1）+ 演员折叠裁切修复 + 剧照缩放控件 (`f561f56`)
+* **home:** 大屏两栏布局（方案 C）+ 顶栏对齐 + 顶部过渡带 (`8fa3646`)
+* **home:** 宽屏起点 1024 + 首页 rail 改「今日趋势」榜（落地并行会话在途工作） (`d3a5d69`)
+* **home:** 宽屏起点改为 ≥1280 + 热度榜左栏 6 项调整 (`aaaf1b2`)
+* **iptv:** 频道列表一/二级宽度改内容派生 + OSD 宽度单曲线 + OSD 内部布局 v1 (`450dd3d`)
+* **person:** Hero 改左右布局（方案 C） (`fc99aaf`)
 
 
 ### Bug Fixes
 
-* **badges:** 评分角标星标收到字号同档 + hero-bili 右栏角标收 10%；附 IPTV chrome 提案 demo ([3580e49](https://github.com/ntc0728/video-warehouse/commit/3580e49d04ee60a87801436d82587660b34c935f))
-* **browse:** 筛选面板底部按钮改为 Drawer footer 插槽（真固定）+ 层级 token 化 + 滚动/模糊开销收敛 ([443a827](https://github.com/ntc0728/video-warehouse/commit/443a827644b82a8c85c94057cc982feb220442ce))
-* **detail:** 两栏 banner 重叠修复（aspect-ratio 反算宽度）+ 右栏信息改一行两列；测试断言同步 ([610ed09](https://github.com/ntc0728/video-warehouse/commit/610ed092f85cb86dc047437a9316de8b3ece3b74))
-* **detail:** 剧照灯箱缩放控件改为主图正下方一行（三行流式布局），修移动端与缩略图条重叠 ([61895d3](https://github.com/ntc0728/video-warehouse/commit/61895d399d9e8ea930dbac86511bb17b595fb74e))
-* **detail:** 右栏分行+简介上提 / 剧照缩放迁入灯箱 / 线路数取值修复 / Person 返回键上移 ([f40f0b1](https://github.com/ntc0728/video-warehouse/commit/f40f0b19ac211eac0062ad0e664fad9989f5ce0d))
-* **detail:** 右栏高度强制与 banner 一致 + 简介移回 info tab 原位 ([74a9718](https://github.com/ntc0728/video-warehouse/commit/74a9718b68103dbd5cd69248a2818ca5fdc4fb23))
-* **home:** Hero banner 主图/缩略图加载失败改走公共 LazyImage 品牌兜底 ([3102aca](https://github.com/ntc0728/video-warehouse/commit/3102acab29b8c0fa6913f63bd0a235137dd35ad3))
-* **iptv:** mergeOrgWithLocal 按勾选状态决定是否替换本地流 ([a628d6c](https://github.com/ntc0728/video-warehouse/commit/a628d6cde036cd5b45418cb5ebf5d7858e5be081))
-* **iptv:** 修复 IPTV 播放逻辑 13 项问题 ([5c9d132](https://github.com/ntc0728/video-warehouse/commit/5c9d13223a3425eca2eeeebbdd686bcc63adca64))
-* **iptv:** 修复缓存过滤/更多台勾选/IP域名代理/iptv-org直连 4 项问题 ([2034933](https://github.com/ntc0728/video-warehouse/commit/2034933dec789d4842281f88bcff52cf9a2a9420))
-* **iptv:** 收藏按钮去掉台标加载态门控 + 台标改 contain + 失败记忆 6h 复试 + 触屏常显兜底 ([b134cea](https://github.com/ntc0728/video-warehouse/commit/b134cea20b27ea5518a990a2c8141a0fd25b52ae))
-* **iptv:** 本地独有频道不进主干，iptv-org 失败显示空状态而非回退本地 ([a496fd2](https://github.com/ntc0728/video-warehouse/commit/a496fd238ad3372c04a1fb26e4451da74a52e3f3))
-* **player:** HLS 加载路径改为 hls.js 优先，修复原生分支 + zstd 响应必然失败 ([8d843f6](https://github.com/ntc0728/video-warehouse/commit/8d843f605b7f6d291548251447d56f7f43553b7f))
-* **player:** 切源在 hls.js 初始化未落定时不得落回原生分支 ([54eb1ee](https://github.com/ntc0728/video-warehouse/commit/54eb1eec2740b59b97ba438470a45efe44f038c4))
-* **player:** 播放器作用域内覆写 primary 家族，修活跃态与填充按钮不可见（KNOWN-ISSUES [#14](https://github.com/ntc0728/video-warehouse/issues/14)） ([154bcb3](https://github.com/ntc0728/video-warehouse/commit/154bcb31bd25bac69671324e97daae8caa69b5ce))
-* **player:** 清晰度过滤非法档位/灰条跟随播放位置/暂停态 seek 落位/单集隐藏上下集/去掉播放暂停提示/移动端提示跟随播放器 ([45bea2b](https://github.com/ntc0728/video-warehouse/commit/45bea2bff801f3b7672ea530aaa40af1d478f2b4))
-* **ui:** 左栏视觉语言统一（方案 B）+ Browse 左栏紧凑化（B+C）+ 暗色选中态修复 ([91dbf0a](https://github.com/ntc0728/video-warehouse/commit/91dbf0a10ae4e5e3e5a0e893dea0b8d7547369a9))
+* **badges:** 评分角标星标收到字号同档 + hero-bili 右栏角标收 10%；附 IPTV chrome 提案 demo (`3580e49`)
+* **browse:** 筛选面板底部按钮改为 Drawer footer 插槽（真固定）+ 层级 token 化 + 滚动/模糊开销收敛 (`443a827`)
+* **detail:** 两栏 banner 重叠修复（aspect-ratio 反算宽度）+ 右栏信息改一行两列；测试断言同步 (`610ed09`)
+* **detail:** 剧照灯箱缩放控件改为主图正下方一行（三行流式布局），修移动端与缩略图条重叠 (`61895d3`)
+* **detail:** 右栏分行+简介上提 / 剧照缩放迁入灯箱 / 线路数取值修复 / Person 返回键上移 (`f40f0b1`)
+* **detail:** 右栏高度强制与 banner 一致 + 简介移回 info tab 原位 (`74a9718`)
+* **home:** Hero banner 主图/缩略图加载失败改走公共 LazyImage 品牌兜底 (`3102aca`)
+* **iptv:** mergeOrgWithLocal 按勾选状态决定是否替换本地流 (`a628d6c`)
+* **iptv:** 修复 IPTV 播放逻辑 13 项问题 (`5c9d132`)
+* **iptv:** 修复缓存过滤/更多台勾选/IP域名代理/iptv-org直连 4 项问题 (`2034933`)
+* **iptv:** 收藏按钮去掉台标加载态门控 + 台标改 contain + 失败记忆 6h 复试 + 触屏常显兜底 (`b134cea`)
+* **iptv:** 本地独有频道不进主干，iptv-org 失败显示空状态而非回退本地 (`a496fd2`)
+* **player:** HLS 加载路径改为 hls.js 优先，修复原生分支 + zstd 响应必然失败 (`8d843f6`)
+* **player:** 切源在 hls.js 初始化未落定时不得落回原生分支 (`54eb1ee`)
+* **player:** 播放器作用域内覆写 primary 家族，修活跃态与填充按钮不可见（KNOWN-ISSUES [#14](https://github.com/ntc0728/video-warehouse/issues/14)） (`154bcb3`)
+* **player:** 清晰度过滤非法档位/灰条跟随播放位置/暂停态 seek 落位/单集隐藏上下集/去掉播放暂停提示/移动端提示跟随播放器 (`45bea2b`)
+* **ui:** 左栏视觉语言统一（方案 B）+ Browse 左栏紧凑化（B+C）+ 暗色选中态修复 (`91dbf0a`)
 
 
 ### Performance Improvements
 
-* **home:** 移动端 banner 拖拽 rAF 合并 + 主图候选封顶 w780 + 标题阴影收窄；fix(player): 居中提示区分视口兜底锚定 ([fa90a60](https://github.com/ntc0728/video-warehouse/commit/fa90a60c4bdc17a1137c29a96284397a6c9f8efa))
+* **home:** 移动端 banner 拖拽 rAF 合并 + 主图候选封顶 w780 + 标题阴影收窄；fix(player): 居中提示区分视口兜底锚定 (`fa90a60`)
 
 ## [1.22.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.22.0...kinotv-v1.22.1) (2026-09-09)
 
 
 ### Bug Fixes
 
-* **player:** 三面板折叠动画重做 + CMS 源管理失败态治理 ([4dcfa7c](https://github.com/ntc0728/video-warehouse/commit/4dcfa7c10acc533c048eb3fd68b425f1cd319b8e))
+* **player:** 三面板折叠动画重做 + CMS 源管理失败态治理 (`4dcfa7c`)
 
 ## [1.22.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.21.0...kinotv-v1.22.0) (2026-09-08)
 
 
 ### Features
 
-* **iptv:** IPTV 页大改（iptv-org 主干化 + 左栏 rail）+ 播放器能力矩阵 P3/P4 + 断点 token 整改 ([71e2d4c](https://github.com/ntc0728/video-warehouse/commit/71e2d4c2bc11982cf8e43666b941eb83b7e42854))
-* **record:** 收藏/历史页桌面 rail 布局整改 + &lt;1024 面板只包 card ([020614a](https://github.com/ntc0728/video-warehouse/commit/020614a5ea294cbd7b782cf9bb43ba735888a1f8))
+* **iptv:** IPTV 页大改（iptv-org 主干化 + 左栏 rail）+ 播放器能力矩阵 P3/P4 + 断点 token 整改 (`71e2d4c`)
+* **record:** 收藏/历史页桌面 rail 布局整改 + &lt;1024 面板只包 card (`020614a`)
 
 ## [1.21.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.20.0...kinotv-v1.21.0) (2026-09-07)
 
 
 ### Features
 
-* **browse:** BR-C 二次定稿——类型分段移至结果区头部、面板去 sticky/240px/3 列网格、模式 tabs 通栏、直链搜索单列 ([f50c4c8](https://github.com/ntc0728/video-warehouse/commit/f50c4c835edcac422e5064cf432ee39999eec844))
-* **browse:** CMS 本地筛选面板（直链搜索不调接口纯前端过滤）+ --full 左对齐；demos V3/V4 入库 ([2665514](https://github.com/ntc0728/video-warehouse/commit/2665514516ccedf52972e272a15e262d9c53f09b))
-* **browse:** 直链搜索源状态双态重构——搜索中折叠 pill 右置结果数旁 + 结束态 demo 同款逐源 badge 卡片行 + 删悬浮弹层 + 未搜索不渲染 badges + 新增语义底色 token(success/warning/error-bg) ([f120c0b](https://github.com/ntc0728/video-warehouse/commit/f120c0b596ff68d136a3760d388543a00d024e5e))
-* **browse:** 类型行升级为分类级 7 档（全部/电影/剧集/综艺/动漫/纪录片/排行榜），点击注入 CATEGORY_CONFIG 的 mediaType+默认genreIds ([ae3d502](https://github.com/ntc0728/video-warehouse/commit/ae3d5024ba7ff67bf3a9ac23368d42ed725ec6ac))
-* **history:** 记录卡网格 1280-&gt;5 列 / 1920-&gt;6 列独立分档 ([f197407](https://github.com/ntc0728/video-warehouse/commit/f1974076c19f9886cbd55feaf820a61a8c21432d))
-* **styles:** card-cols 梯度细化 5-6-7-8 + page-pad 渐进 32/48/80 ([76d8b09](https://github.com/ntc0728/video-warehouse/commit/76d8b0907989bd1f3d73095d4c5746d8f87be2e2))
-* **styles:** 大屏 UI 断点起点 1280 → 1440 统一右移（播放页除外） ([8be907d](https://github.com/ntc0728/video-warehouse/commit/8be907d9cb5cba913022d1551c37c64dac8ef430))
-* **styles:** 大屏 ui-scale 连续化 + 卡片列数阈值对齐内容区封顶 2200 ([4cf1c84](https://github.com/ntc0728/video-warehouse/commit/4cf1c84ea87ae7df375ed562b829737a26da621f))
-* **ultrawide:** BR-C Browse 侧栏筛选 @≥1440（search 卡 display:contents + grid-areas 重排 + filter-bar 面板化） ([ad3dd66](https://github.com/ntc0728/video-warehouse/commit/ad3dd66002df6139628fa783d3eb873797281f03))
-* **ultrawide:** G1 content-shell 统一根级宽度（IPTV/Detail/Chart 接入 2200 壳 + Detail hero ≥2200 全出血 break-out） ([fad98cd](https://github.com/ntc0728/video-warehouse/commit/fad98cd6e5204ad4dd83a050d90bb49f1e6d5972))
-* **ultrawide:** G2-A --ui-scale 1.08 字号补偿档 @≥2560 (variables.css U-1) ([ee62d66](https://github.com/ntc0728/video-warehouse/commit/ee62d664b39542df145c17d1c2d370ec1ce2f0b9))
-* **ultrawide:** G3 边框/文字对比度提档 @≥2560（U-2 浅色边框 token + U-3 tab-underline 未激活文字） ([020c89b](https://github.com/ntc0728/video-warehouse/commit/020c89bc3e9a7461e5170584716b27c5a8fc3ad0))
-* **ultrawide:** P-A 播放器封顶 1920 · 16:9 @≥2560 ([99ef3ce](https://github.com/ntc0728/video-warehouse/commit/99ef3ce289f70109cbae5943ecd760d3e81a0be3))
+* **browse:** BR-C 二次定稿——类型分段移至结果区头部、面板去 sticky/240px/3 列网格、模式 tabs 通栏、直链搜索单列 (`f50c4c8`)
+* **browse:** CMS 本地筛选面板（直链搜索不调接口纯前端过滤）+ --full 左对齐；demos V3/V4 入库 (`2665514`)
+* **browse:** 直链搜索源状态双态重构——搜索中折叠 pill 右置结果数旁 + 结束态 demo 同款逐源 badge 卡片行 + 删悬浮弹层 + 未搜索不渲染 badges + 新增语义底色 token(success/warning/error-bg) (`f120c0b`)
+* **browse:** 类型行升级为分类级 7 档（全部/电影/剧集/综艺/动漫/纪录片/排行榜），点击注入 CATEGORY_CONFIG 的 mediaType+默认genreIds (`ae3d502`)
+* **history:** 记录卡网格 1280-&gt;5 列 / 1920-&gt;6 列独立分档 (`f197407`)
+* **styles:** card-cols 梯度细化 5-6-7-8 + page-pad 渐进 32/48/80 (`76d8b09`)
+* **styles:** 大屏 UI 断点起点 1280 → 1440 统一右移（播放页除外） (`8be907d`)
+* **styles:** 大屏 ui-scale 连续化 + 卡片列数阈值对齐内容区封顶 2200 (`4cf1c84`)
+* **ultrawide:** BR-C Browse 侧栏筛选 @≥1440（search 卡 display:contents + grid-areas 重排 + filter-bar 面板化） (`ad3dd66`)
+* **ultrawide:** G1 content-shell 统一根级宽度（IPTV/Detail/Chart 接入 2200 壳 + Detail hero ≥2200 全出血 break-out） (`fad98cd`)
+* **ultrawide:** G2-A --ui-scale 1.08 字号补偿档 @≥2560 (variables.css U-1) (`ee62d66`)
+* **ultrawide:** G3 边框/文字对比度提档 @≥2560（U-2 浅色边框 token + U-3 tab-underline 未激活文字） (`020c89b`)
+* **ultrawide:** P-A 播放器封顶 1920 · 16:9 @≥2560 (`99ef3ce`)
 
 
 ### Bug Fixes
 
-* **breakpoint:** 修 CQA 上移扁平化 CSS 漏改(&gt;1440→&gt;1280, 与 JS 门控/HeroBili 对齐) + 清注释矛盾 + 修正命名误导注释 ([8b37442](https://github.com/ntc0728/video-warehouse/commit/8b37442d1e6af40c2eb7a981a36ff2228da96dc4))
-* **breakpoint:** 回退 HeroBili + CQA 导航/mega/热度榜断点 1440 → 1280（useIsWideDesktop 回 1281 + 3 处 CSS + 调用方注释同步） ([b5658a1](https://github.com/ntc0728/video-warehouse/commit/b5658a12c1674953b5ed17db8b48dbac9db72267))
-* **browse:** --full 阈值改为 &gt;4 字宽（FilterBar.tsx）+ 规则移至 chip 系列末尾（Browse.css） ([bc67495](https://github.com/ntc0728/video-warehouse/commit/bc674955fa1bebbf5736d1390f3828e1be5e3fc6))
-* **browse:** tabs 补分隔线/padding 对齐 demo + 新增对称柔影 token --shadow-soft 修选中态上下厚左右薄 + results 卡 align-self:stretch 占满剩余高度 ([0a051ba](https://github.com/ntc0728/video-warehouse/commit/0a051ba8e36459ef5aafef5e17aa9fb039196f21))
-* **card-cols:** 回退右移副作用——card-cols 保留 1280→6 / 1440→7，清理首页 4 处 &gt;1280 过期注释 ([388abaf](https://github.com/ntc0728/video-warehouse/commit/388abafe0655759733bb405427faee3f5119c565))
-* **home:** 超宽屏 hero/骨架收口 2200 与内容同宽对齐；cqa 封面 150×85 + overlay 宽度基准修复记录 ([5496f46](https://github.com/ntc0728/video-warehouse/commit/5496f46db3947b2053ff568859b65a2f2020db6a))
-* **ultrawide:** BR-C 间距修复（grid rows 1fr 吸收跨行剩余高度）+ 面板内选项去胶囊化改安静菜单样式 ([9f604eb](https://github.com/ntc0728/video-warehouse/commit/9f604ebf1959ea697f262a35e7c3b827c425b8de))
+* **breakpoint:** 修 CQA 上移扁平化 CSS 漏改(&gt;1440→&gt;1280, 与 JS 门控/HeroBili 对齐) + 清注释矛盾 + 修正命名误导注释 (`8b37442`)
+* **breakpoint:** 回退 HeroBili + CQA 导航/mega/热度榜断点 1440 → 1280（useIsWideDesktop 回 1281 + 3 处 CSS + 调用方注释同步） (`b5658a1`)
+* **browse:** --full 阈值改为 &gt;4 字宽（FilterBar.tsx）+ 规则移至 chip 系列末尾（Browse.css） (`bc67495`)
+* **browse:** tabs 补分隔线/padding 对齐 demo + 新增对称柔影 token --shadow-soft 修选中态上下厚左右薄 + results 卡 align-self:stretch 占满剩余高度 (`0a051ba`)
+* **card-cols:** 回退右移副作用——card-cols 保留 1280→6 / 1440→7，清理首页 4 处 &gt;1280 过期注释 (`388abaf`)
+* **home:** 超宽屏 hero/骨架收口 2200 与内容同宽对齐；cqa 封面 150×85 + overlay 宽度基准修复记录 (`5496f46`)
+* **ultrawide:** BR-C 间距修复（grid rows 1fr 吸收跨行剩余高度）+ 面板内选项去胶囊化改安静菜单样式 (`9f604eb`)
 
 ## [1.20.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.19.0...kinotv-v1.20.0) (2026-09-06)
 
 
 ### Features
 
-* **chart:** 新增 /chart 热度榜页——排名/热度/无缝滚动/去重翻页 + 品牌兜底 demo 修正 ([ee9c725](https://github.com/ntc0728/video-warehouse/commit/ee9c7259dae0f0ba06d068a0d8a50ffab2886914))
-* **detail:** 推荐网格对齐首页 --card-cols 等分——撤销 ≥1280 auto-fill 290px 固定轨道，gap 并入全站 --hero-side-gap 统一 ([8a00409](https://github.com/ntc0728/video-warehouse/commit/8a0040921c3ba02c35471f66a6ca07c4aef541cc))
-* **fluid:** comp-input-height 桌面契约 40-&gt;48（旧 MAX 58 为 R2 遗留，桌面渲染过大） ([0f7a8d3](https://github.com/ntc0728/video-warehouse/commit/0f7a8d3bfa7506edae847cd3494c4159adbc4a44))
-* **fluid:** 内容区契约改 min(100%,2200px)——桌面满屏仅超宽封顶（用户拍板） ([1ce4cef](https://github.com/ntc0728/video-warehouse/commit/1ce4cef2226f4ce8881e5c6ebdc4cb2c269db728))
-* **fluid:** 阶段A 三段式token重定义+TV漏斗补钉+gap跳变删除 ([868f4cb](https://github.com/ntc0728/video-warehouse/commit/868f4cb5a48fc9fa46c904e6b8fe5787af0a2374))
-* **fluid:** 阶段B R7组件clamp内rem转px防二次流动+lint豁免 ([c89fd74](https://github.com/ntc0728/video-warehouse/commit/c89fd7415ba8dbe981ad308a8cdf95de2e580282))
-* **history:** 超宽视口(&gt;=2560px)列数封顶 5 列 + 容器锁宽 (2560-&gt;1600px/3440-&gt;1500px) ([8f2249c](https://github.com/ntc0728/video-warehouse/commit/8f2249cc6716409ca6e7d3cad586e5943b6d8e46))
-* **home:** 「首页」chip 其他页特殊处理——收起面板并跳转回首页 ([0ec305f](https://github.com/ntc0728/video-warehouse/commit/0ec305f1d3bc4989bb57e1aacc4501e68d797004))
-* **home:** &gt;1280 全站去卡片化 + 卡片间距统一 --hero-side-gap + 分类入口上移 ([d231752](https://github.com/ntc0728/video-warehouse/commit/d231752d435c7a0940b966b24ad0f0bd7ec6a188))
-* **home:** CategoryQuickAccess &gt;1280 方案 A2——频道导航+热门分类面板（真实 TMDB 数据） ([1a1f3bc](https://github.com/ntc0728/video-warehouse/commit/1a1f3bce77883431b65189b429ae0cbb6d965361))
-* **home:** cqa-nav 融合顶栏 + hover 面板语义 + 跨页常驻导航 ([3aefc66](https://github.com/ntc0728/video-warehouse/commit/3aefc661a66dc0c52b9add1ec08fbf08e06f5e84))
-* **home:** Hero B 站风落地（HeroBili &gt;1280 分支）+ 全局 --page-pad-x 三档 padding ([5d4ee0e](https://github.com/ntc0728/video-warehouse/commit/5d4ee0ea61ffec5c1758f07af3740140dcbf43e5))
-* **home:** 宽屏面板客户端分页 9/页 + 末页查看更多跳 browse ([a45e950](https://github.com/ntc0728/video-warehouse/commit/a45e950fc2c1e02438cd2d78d53c25e98d4ea59c))
-* **home:** 融合方案甲——分类导航带并入 HeroBili 卡、chip overlay 面板、热度榜常驻行 ([13cc3c6](https://github.com/ntc0728/video-warehouse/commit/13cc3c633e74e68abef7bbad1d03a5b4cc62a426))
-* **home:** 面板全局挂载——chips 全端统一 hover 语义（跨页 mega-menu） ([0762fe6](https://github.com/ntc0728/video-warehouse/commit/0762fe6b1536a427396ff14146c96bee599d1a63))
-* **home:** 面板分页（右下角+末页查看更多跳browse）+ hotgrid 竖向排列 ([0e700e1](https://github.com/ntc0728/video-warehouse/commit/0e700e126567f7974e49734520907ab6ac011a4a))
-* **home:** 首页卡片&gt;768每档列数-1 + 行内gap改--space-md（含骨架/宽度公式联动） ([56479cb](https://github.com/ntc0728/video-warehouse/commit/56479cb54828ef8df78f39178170ab42ffb1fa76))
-* **large-screen:** 阶段C 大屏机制落地-内容区2200/卡片封顶auto-fill/列数重算/自动档默认1.0/手动档uiScale ([40864e9](https://github.com/ntc0728/video-warehouse/commit/40864e9b40769641d61713b6f29976cdc6f0baa7))
-* **record-shell:** 顶栏方案 C+E——状态 chips 常驻+排序弹层+清空降级+IPTV 隐藏无效筛选 ([a74e83e](https://github.com/ntc0728/video-warehouse/commit/a74e83e496650aa9ead2ae5dd44c6ce76605d64f))
-* **settings:** 桌面端改方案 B——topbar 移左栏竖排导航，内容满宽自适应 ([7b8cadc](https://github.com/ntc0728/video-warehouse/commit/7b8cadc3eb2d23d61ffdd9fb20b4f552f9ce3786))
-* **settings:** 桌面端设置项下滑加回到顶部按钮（复用 BackToTopButton） ([f0fecdd](https://github.com/ntc0728/video-warehouse/commit/f0fecdd6560e0913c7364c3d4eac24f145f43378))
-* **styles:** 密度契约 v2.1——段2 字号改递减曲线，1440 命中 E2/B站锚点 ([d5e554b](https://github.com/ntc0728/video-warehouse/commit/d5e554b2044c57c04ba4f4c41ac2a44d5dae40fd))
-* **styles:** 密度契约 v2.2——控件族段2 按 ×0.8835 同字号比例递减校准 ([6ab01ea](https://github.com/ntc0728/video-warehouse/commit/6ab01ea13c66f40839c633f717c54491cf3b82d8))
-* **styles:** 流体 token 密度契约 v2——E2 间距端点 + 字号段2 微降 ([ef2d902](https://github.com/ntc0728/video-warehouse/commit/ef2d9022ce1fba4954585c4927033e32a2027af6))
+* **chart:** 新增 /chart 热度榜页——排名/热度/无缝滚动/去重翻页 + 品牌兜底 demo 修正 (`ee9c725`)
+* **detail:** 推荐网格对齐首页 --card-cols 等分——撤销 ≥1280 auto-fill 290px 固定轨道，gap 并入全站 --hero-side-gap 统一 (`8a00409`)
+* **fluid:** comp-input-height 桌面契约 40-&gt;48（旧 MAX 58 为 R2 遗留，桌面渲染过大） (`0f7a8d3`)
+* **fluid:** 内容区契约改 min(100%,2200px)——桌面满屏仅超宽封顶（用户拍板） (`1ce4cef`)
+* **fluid:** 阶段A 三段式token重定义+TV漏斗补钉+gap跳变删除 (`868f4cb`)
+* **fluid:** 阶段B R7组件clamp内rem转px防二次流动+lint豁免 (`c89fd74`)
+* **history:** 超宽视口(&gt;=2560px)列数封顶 5 列 + 容器锁宽 (2560-&gt;1600px/3440-&gt;1500px) (`8f2249c`)
+* **home:** 「首页」chip 其他页特殊处理——收起面板并跳转回首页 (`0ec305f`)
+* **home:** &gt;1280 全站去卡片化 + 卡片间距统一 --hero-side-gap + 分类入口上移 (`d231752`)
+* **home:** CategoryQuickAccess &gt;1280 方案 A2——频道导航+热门分类面板（真实 TMDB 数据） (`1a1f3bc`)
+* **home:** cqa-nav 融合顶栏 + hover 面板语义 + 跨页常驻导航 (`3aefc66`)
+* **home:** Hero B 站风落地（HeroBili &gt;1280 分支）+ 全局 --page-pad-x 三档 padding (`5d4ee0e`)
+* **home:** 宽屏面板客户端分页 9/页 + 末页查看更多跳 browse (`a45e950`)
+* **home:** 融合方案甲——分类导航带并入 HeroBili 卡、chip overlay 面板、热度榜常驻行 (`13cc3c6`)
+* **home:** 面板全局挂载——chips 全端统一 hover 语义（跨页 mega-menu） (`0762fe6`)
+* **home:** 面板分页（右下角+末页查看更多跳browse）+ hotgrid 竖向排列 (`0e700e1`)
+* **home:** 首页卡片&gt;768每档列数-1 + 行内gap改--space-md（含骨架/宽度公式联动） (`56479cb`)
+* **large-screen:** 阶段C 大屏机制落地-内容区2200/卡片封顶auto-fill/列数重算/自动档默认1.0/手动档uiScale (`40864e9`)
+* **record-shell:** 顶栏方案 C+E——状态 chips 常驻+排序弹层+清空降级+IPTV 隐藏无效筛选 (`a74e83e`)
+* **settings:** 桌面端改方案 B——topbar 移左栏竖排导航，内容满宽自适应 (`7b8cadc`)
+* **settings:** 桌面端设置项下滑加回到顶部按钮（复用 BackToTopButton） (`f0fecdd`)
+* **styles:** 密度契约 v2.1——段2 字号改递减曲线，1440 命中 E2/B站锚点 (`d5e554b`)
+* **styles:** 密度契约 v2.2——控件族段2 按 ×0.8835 同字号比例递减校准 (`6ab01ea`)
+* **styles:** 流体 token 密度契约 v2——E2 间距端点 + 字号段2 微降 (`ef2d902`)
 
 
 ### Bug Fixes
 
-* **detail:** hero 海报恢复 868f4cb 前旧尺寸曲线 clamp(8rem,2rem+8vw,22rem)——三段式重定义误将 277→352px 抬高约 2 倍 ([7b58305](https://github.com/ntc0728/video-warehouse/commit/7b58305f3696de88fdae64e2646af387221524fd))
-* **fluid:** 核查修正 E1 text-base 段2 跳变 + E2a R6 回退 + E3 注释 + E4 tv 前缀 ([b3de5f8](https://github.com/ntc0728/video-warehouse/commit/b3de5f8ef719ae5d663ab2cfc0b453098a745a41))
-* **header:** 密度契约 v2 补瑕——桌面顶栏右侧图标间距与选中态胶囊回归校准 ([bc0223c](https://github.com/ntc0728/video-warehouse/commit/bc0223cce081a642dda10e44d1e7587bdfb04717))
-* **header:** 顶栏右侧间距三调——胶囊 padding-x md→sm（视觉 ≈18px）、right gap →xs ([43afa2f](https://github.com/ntc0728/video-warehouse/commit/43afa2fb7c6e40d5d69ac0bfdae923b0e5881ece))
-* **header:** 顶栏右侧间距二调——gap 回 2xs 恢复「小 gap+大内边距」组合，right 区取 xs-plus ([3e927aa](https://github.com/ntc0728/video-warehouse/commit/3e927aafc2f592be5b469e6bd65d555085452311))
-* **home:** browse 页 chips 双向关联——选中态跟随 URL 分类、重复点击不压栈 ([94f506c](https://github.com/ntc0728/video-warehouse/commit/94f506cef015260521f4cf7146f605d33509004a))
-* **home:** CategoryQuickAccessPanel hooks 顺序崩溃——goBrowseMore useCallback 移到提前 return 之前 ([fc902ea](https://github.com/ntc0728/video-warehouse/commit/fc902eaacfb0a40710c1b71a1f7d81d65ed6a8ca))
-* **home:** HeroBili 六项验收修复——banner池6张/右卡横图/圆点归位/按钮缩小/跑马灯时机 ([784fc49](https://github.com/ntc0728/video-warehouse/commit/784fc4929cc70b264e18eec0d2745c7d02b1cdec))
-* **home:** HeroBili 换一换整批替换+池首补位 / hover 浅灰 / 继续观看行公式重算 ([5250ea3](https://github.com/ntc0728/video-warehouse/commit/5250ea31d3ebef357e63b7f1b3d6cebe9e4e1cb5))
-* **home:** 分类面板切 chip 高度恒定——子分类单行滚动、加载态定高、head 不折行、panel min-height 兜底 ([e4a4cc5](https://github.com/ntc0728/video-warehouse/commit/e4a4cc5bb4ceb68c56294bd7cf81a0c742140715))
-* **home:** 分类面板数据统一按 popularity 倒序——/trending 趋势序不再直出 ([1d3e58b](https://github.com/ntc0728/video-warehouse/commit/1d3e58b38a704c65722cc968d808b03a3826db2b))
-* **home:** 继续观看行 768-1279 档 2-&gt;3 列（用户反馈稀疏回调） ([0e1d764](https://github.com/ntc0728/video-warehouse/commit/0e1d76455e4ea711a86940faae1f31bc555ab7e0))
-* **home:** 非首页 chips 与页面完全解耦——点分类不改 URL、无高亮 ([0603303](https://github.com/ntc0728/video-warehouse/commit/0603303b007829414204dc3a9f25b9ca5debd508))
-* **iptv:** ≥1440 列数恒 5 + 收藏按钮先于卡片出场修复——animate-fade-in-up 上移 wrap ([aabee95](https://github.com/ntc0728/video-warehouse/commit/aabee95941eb48e37f59d7173933b0f9eefc02f8))
-* **record-grid:** 历史网格单列塌缩修复 + 收藏/Browse 网格回归 --card-cols 等分 ([f963406](https://github.com/ntc0728/video-warehouse/commit/f9634064fa1e0f76a5a964ba717a111817d45d50))
-* **record-shell:** 清空按钮响应式降级——&gt;1280 直显、768-1280 收进「⋯」（断点与间距块同款） ([d3e2da1](https://github.com/ntc0728/video-warehouse/commit/d3e2da1ca825b0a54a8ffcaacf1a0bba7fb486b4))
-* **ui:** category-quick-access__inner flex均分改grid紧凑居中；还原icon-wrap误改 ([a232097](https://github.com/ntc0728/video-warehouse/commit/a2320977d92d407d9c37dab2c7522220fdd262c2))
-* **ui:** cqa 子分类chip选中hover掉底色+Chart满高/切tab遮罩胶囊+hero卡边框与封面品牌兜底 ([94e25c4](https://github.com/ntc0728/video-warehouse/commit/94e25c4b46bfe5a257988bc4e51947f05874b66b))
-* **ui:** 首页验收反馈三修——导航搜索框高度/热搜徽标/内容区曲线移至段2 ([03f5f37](https://github.com/ntc0728/video-warehouse/commit/03f5f370a4610483de57baa66bab793c4813b1a9))
+* **detail:** hero 海报恢复 868f4cb 前旧尺寸曲线 clamp(8rem,2rem+8vw,22rem)——三段式重定义误将 277→352px 抬高约 2 倍 (`7b58305`)
+* **fluid:** 核查修正 E1 text-base 段2 跳变 + E2a R6 回退 + E3 注释 + E4 tv 前缀 (`b3de5f8`)
+* **header:** 密度契约 v2 补瑕——桌面顶栏右侧图标间距与选中态胶囊回归校准 (`bc0223c`)
+* **header:** 顶栏右侧间距三调——胶囊 padding-x md→sm（视觉 ≈18px）、right gap →xs (`43afa2f`)
+* **header:** 顶栏右侧间距二调——gap 回 2xs 恢复「小 gap+大内边距」组合，right 区取 xs-plus (`3e927aa`)
+* **home:** browse 页 chips 双向关联——选中态跟随 URL 分类、重复点击不压栈 (`94f506c`)
+* **home:** CategoryQuickAccessPanel hooks 顺序崩溃——goBrowseMore useCallback 移到提前 return 之前 (`fc902ea`)
+* **home:** HeroBili 六项验收修复——banner池6张/右卡横图/圆点归位/按钮缩小/跑马灯时机 (`784fc49`)
+* **home:** HeroBili 换一换整批替换+池首补位 / hover 浅灰 / 继续观看行公式重算 (`5250ea3`)
+* **home:** 分类面板切 chip 高度恒定——子分类单行滚动、加载态定高、head 不折行、panel min-height 兜底 (`e4a4cc5`)
+* **home:** 分类面板数据统一按 popularity 倒序——/trending 趋势序不再直出 (`1d3e58b`)
+* **home:** 继续观看行 768-1279 档 2-&gt;3 列（用户反馈稀疏回调） (`0e1d764`)
+* **home:** 非首页 chips 与页面完全解耦——点分类不改 URL、无高亮 (`0603303`)
+* **iptv:** ≥1440 列数恒 5 + 收藏按钮先于卡片出场修复——animate-fade-in-up 上移 wrap (`aabee95`)
+* **record-grid:** 历史网格单列塌缩修复 + 收藏/Browse 网格回归 --card-cols 等分 (`f963406`)
+* **record-shell:** 清空按钮响应式降级——&gt;1280 直显、768-1280 收进「⋯」（断点与间距块同款） (`d3e2da1`)
+* **ui:** category-quick-access__inner flex均分改grid紧凑居中；还原icon-wrap误改 (`a232097`)
+* **ui:** cqa 子分类chip选中hover掉底色+Chart满高/切tab遮罩胶囊+hero卡边框与封面品牌兜底 (`94e25c4`)
+* **ui:** 首页验收反馈三修——导航搜索框高度/热搜徽标/内容区曲线移至段2 (`03f5f37`)
 
 ## [1.19.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.18.0...kinotv-v1.19.0) (2026-09-03)
 
 
 ### Features
 
-* **history:** 记录卡整改收尾——桌面 grid ≥1024 每档 +1 列、进度字号调档、&lt;480 横版、IPTV 可看性角标 ([8f1115a](https://github.com/ntc0728/video-warehouse/commit/8f1115a42c5a48b77da92eaa6f0042106cf01a50))
+* **history:** 记录卡整改收尾——桌面 grid ≥1024 每档 +1 列、进度字号调档、&lt;480 横版、IPTV 可看性角标 (`8f1115a`)
 
 
 ### Bug Fixes
 
-* **history:** grid 断点补 768 档——768–1023 三列（用户抓漏） ([0b7adaf](https://github.com/ntc0728/video-warehouse/commit/0b7adaf0922f88fa2ca43f5e41e2cee870c86a94))
-* **home:** 移动端 hero 文本距图左/下过远——双收 slide padding 与 text margin ([b2ada48](https://github.com/ntc0728/video-warehouse/commit/b2ada4803cd0e0717fa6b1dc428af743c72a2c83))
-* **iptv/history:** 频道可用性角标单源化 + 历史页 iptv 卡恒显 LIVE 修复 ([ad36d79](https://github.com/ntc0728/video-warehouse/commit/ad36d79a44fca2304a81953632d55971d63ac467))
+* **history:** grid 断点补 768 档——768–1023 三列（用户抓漏） (`0b7adaf`)
+* **home:** 移动端 hero 文本距图左/下过远——双收 slide padding 与 text margin (`b2ada48`)
+* **iptv/history:** 频道可用性角标单源化 + 历史页 iptv 卡恒显 LIVE 修复 (`ad36d79`)
 
 
 ### Performance Improvements
 
-* **home:** hero logo 改窗口预取+空闲补齐, 消除滑动期请求与闪变 ([01666e0](https://github.com/ntc0728/video-warehouse/commit/01666e01536ee4723cdfd99d20696af44970cde6))
-* **home:** 空闲补齐改缓慢递进——滑动静默+固定间隔, 不再密集拉取剩余 logo ([b21771f](https://github.com/ntc0728/video-warehouse/commit/b21771f24b1bd510fbece374db8b7f97f30c5517))
+* **home:** hero logo 改窗口预取+空闲补齐, 消除滑动期请求与闪变 (`01666e0`)
+* **home:** 空闲补齐改缓慢递进——滑动静默+固定间隔, 不再密集拉取剩余 logo (`b21771f`)
 
 ## [1.18.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.17.0...kinotv-v1.18.0) (2026-09-02)
 
 
 ### Features
 
-* **iptv-store:** 补跨页签实时同步（storage 事件 → rehydrate + isFavorite 重派生） ([f012aae](https://github.com/ntc0728/video-warehouse/commit/f012aaeded2ef1d16d297dc6c4187ece3e7425bf))
-* **player:** 实施 HLS 缓冲优化与 MPEGTS 点播/重连/预检测 ([2eeaa16](https://github.com/ntc0728/video-warehouse/commit/2eeaa16cb28ea0c0e93d373eeff7f6df7c86442c))
-* **settings-store:** 设置静态配置跨页签实时同步（storage 事件白名单受控合并） ([801c179](https://github.com/ntc0728/video-warehouse/commit/801c1795cc6371af71626110a124419bebf03a92))
-* **user-store:** 跨页签内存快照实时同步——BroadcastChannel 广播 + 静默 reload ([7ec0223](https://github.com/ntc0728/video-warehouse/commit/7ec02233214b72f2d6d5b23cd0e4f4811de3d80e))
-* 删除 IPTV 代理调试日志 + 可用性角标下移 + 历史/收藏 CMS 源未启用拦截 ([691807e](https://github.com/ntc0728/video-warehouse/commit/691807e19f9584c7f2129cb70d65546b8d7a9458))
+* **iptv-store:** 补跨页签实时同步（storage 事件 → rehydrate + isFavorite 重派生） (`f012aae`)
+* **player:** 实施 HLS 缓冲优化与 MPEGTS 点播/重连/预检测 (`2eeaa16`)
+* **settings-store:** 设置静态配置跨页签实时同步（storage 事件白名单受控合并） (`801c179`)
+* **user-store:** 跨页签内存快照实时同步——BroadcastChannel 广播 + 静默 reload (`7ec0223`)
+* 删除 IPTV 代理调试日志 + 可用性角标下移 + 历史/收藏 CMS 源未启用拦截 (`691807e`)
 
 
 ### Bug Fixes
 
-* **db:** 跨页签 IDB 一致性——收藏主键收敛 + 历史 flush 守卫 + openDB 单飞与阻塞让路 ([178387b](https://github.com/ntc0728/video-warehouse/commit/178387b4cf7e13352cfe4c6932ca574cc512bf3b))
-* **player+proxy:** CMS wd 双重编码 + 后台返回播放冻结/意外暂停 ([4eb252b](https://github.com/ntc0728/video-warehouse/commit/4eb252b3dde847131058a5531be7a90c34edf631))
-* **player:** VOD 源不可用自动故障转移（同源切线路→跨源重搜） ([1f86d02](https://github.com/ntc0728/video-warehouse/commit/1f86d022a30f3e08718c0a72abc167b46296c4e7))
-* **player:** 侧栏骨架 variant 不再随 TMDB 异步数据突变 ([8d188de](https://github.com/ntc0728/video-warehouse/commit/8d188de1c8984ba7b500d0fe35fa494358843421))
-* **player:** 侧栏骨架行数与真实面板对齐 ([999a5d6](https://github.com/ntc0728/video-warehouse/commit/999a5d635d2a57ab2431bc55d21a42c50d3acfe4))
-* **player:** 桌面播放页高度 100dvh → calc(100dvh - header-height) ([eabf6d1](https://github.com/ntc0728/video-warehouse/commit/eabf6d1a3e46b03cefe22835088b45bf7060e821))
-* **player:** 桌面端播放页预留滚动条槽位，消除骨架到详情的横向跳动 ([ae295ab](https://github.com/ntc0728/video-warehouse/commit/ae295ab26d64c5a312e70cb59a69e5af1befe3a5))
-* **player:** 浏览器窗口失焦（切其他软件）返回后画面冻结/误报错误 ([925f3f2](https://github.com/ntc0728/video-warehouse/commit/925f3f291dc512ba6800f231b43696d0e258ef6a))
-* **player:** 选季面板骨架行数 3→6，与 CMS 面板 2 行对齐调整 ([ae04bf5](https://github.com/ntc0728/video-warehouse/commit/ae04bf5c9056f01b2b79bb93a4b661cddd598a7d))
-* **user-store:** reload 合并脏集合，防广播回退本页节流窗口内的进度 ([8b9a53f](https://github.com/ntc0728/video-warehouse/commit/8b9a53f72f664bd2130aafad43d0052b7f1c087d))
+* **db:** 跨页签 IDB 一致性——收藏主键收敛 + 历史 flush 守卫 + openDB 单飞与阻塞让路 (`178387b`)
+* **player+proxy:** CMS wd 双重编码 + 后台返回播放冻结/意外暂停 (`4eb252b`)
+* **player:** VOD 源不可用自动故障转移（同源切线路→跨源重搜） (`1f86d02`)
+* **player:** 侧栏骨架 variant 不再随 TMDB 异步数据突变 (`8d188de`)
+* **player:** 侧栏骨架行数与真实面板对齐 (`999a5d6`)
+* **player:** 桌面播放页高度 100dvh → calc(100dvh - header-height) (`eabf6d1`)
+* **player:** 桌面端播放页预留滚动条槽位，消除骨架到详情的横向跳动 (`ae295ab`)
+* **player:** 浏览器窗口失焦（切其他软件）返回后画面冻结/误报错误 (`925f3f2`)
+* **player:** 选季面板骨架行数 3→6，与 CMS 面板 2 行对齐调整 (`ae04bf5`)
+* **user-store:** reload 合并脏集合，防广播回退本页节流窗口内的进度 (`8b9a53f`)
 
 ## [1.17.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.16.0...kinotv-v1.17.0) (2026-09-01)
 
 
 ### Features
 
-* **player:** 新增移动端横屏/全屏/画中画多端兼容整改 demo ([ecf6fee](https://github.com/ntc0728/video-warehouse/commit/ecf6fee4c156db8aedaff54c72b571585c30da7c))
-* **player:** 桌面端面板高度动态调整 + 播放器最小高度 ([577d5cf](https://github.com/ntc0728/video-warehouse/commit/577d5cf026323df3be39c877eb582aa019454238))
+* **player:** 新增移动端横屏/全屏/画中画多端兼容整改 demo (`ecf6fee`)
+* **player:** 桌面端面板高度动态调整 + 播放器最小高度 (`577d5cf`)
 
 
 ### Bug Fixes
 
-* **player:** 8 项 UI 整改 + 播放器父级不脱标 + pipController 错误文案可读 ([91c9d3a](https://github.com/ntc0728/video-warehouse/commit/91c9d3abb2e1380167d884e83d3b5ee85924da19))
-* **player:** usePlayerCore 补齐 5 处 sonner → playerToast（全屏可达路径清零） ([db39c60](https://github.com/ntc0728/video-warehouse/commit/db39c604272d334365512dd649e63b13509609bb))
-* **player:** 全屏可达提示统一走 playerToast，center-toast 滚出视口夹取兜底 ([3070aa4](https://github.com/ntc0728/video-warehouse/commit/3070aa4453aa7c4fd07cddc60e4b2ee737c993a2))
-* **player:** 提示避让 header + 抽屉改子项即关 + 非桌面全屏默认横屏 ([4e9ba96](https://github.com/ntc0728/video-warehouse/commit/4e9ba969d47cf43c143e3c04fe98f9b8decdd918))
-* **player:** 更多设置抽屉 + 字幕弹窗 portal 进播放器容器（全屏不再被盖） ([0614b36](https://github.com/ntc0728/video-warehouse/commit/0614b367796ce905c864f32bb57d118334464207))
-* **player:** 浮层 portal 目标穷尽修复——全屏下菜单/弹窗同样被盖 ([f260bca](https://github.com/ntc0728/video-warehouse/commit/f260bca81a2e129979521009d959e3c86e645b5f))
-* **player:** 续播卡片避让 header + 全屏返回仅退全屏 + 全屏提示可visible修复 ([67622d3](https://github.com/ntc0728/video-warehouse/commit/67622d3cc774888f174e19244983903aea00853e))
-* **playwright:** 修复 player.spec.ts 沙箱 flake + 清理根目录调试脚本 ([d48d637](https://github.com/ntc0728/video-warehouse/commit/d48d637ce0941ffe5606f51a14b4b576590e4c35))
-* **UniversalPlayer:** 全屏控制栏改造 + 右侧更多设置抽屉 + 竖版弹窗占满宽度 ([6c0a1e8](https://github.com/ntc0728/video-warehouse/commit/6c0a1e87cd62bd639dc3f0577c21f29ca242ad79))
-* **UniversalPlayer:** 自测整改 —— 全屏整改仅限真机移动端 + 抽屉对齐右键菜单 + 交互细节 ([f02eb23](https://github.com/ntc0728/video-warehouse/commit/f02eb23e38f8a49b513984f7b4b26fd3dddaecc4))
-* **UniversalPlayer:** 落地画中画防卡死 + 全屏三级降级策略 ([cc8d45b](https://github.com/ntc0728/video-warehouse/commit/cc8d45b1833d46b56d99a5b6e7b1d1bc5908e980))
-* 恢复 5.1-5.5 丢失的改动（hover/骨架/CMS tab/meta/收藏动画） ([f67e94d](https://github.com/ntc0728/video-warehouse/commit/f67e94dd2ae6fbde99613a230f18bd7f8e2f0b1f))
+* **player:** 8 项 UI 整改 + 播放器父级不脱标 + pipController 错误文案可读 (`91c9d3a`)
+* **player:** usePlayerCore 补齐 5 处 sonner → playerToast（全屏可达路径清零） (`db39c60`)
+* **player:** 全屏可达提示统一走 playerToast，center-toast 滚出视口夹取兜底 (`3070aa4`)
+* **player:** 提示避让 header + 抽屉改子项即关 + 非桌面全屏默认横屏 (`4e9ba96`)
+* **player:** 更多设置抽屉 + 字幕弹窗 portal 进播放器容器（全屏不再被盖） (`0614b36`)
+* **player:** 浮层 portal 目标穷尽修复——全屏下菜单/弹窗同样被盖 (`f260bca`)
+* **player:** 续播卡片避让 header + 全屏返回仅退全屏 + 全屏提示可visible修复 (`67622d3`)
+* **playwright:** 修复 player.spec.ts 沙箱 flake + 清理根目录调试脚本 (`d48d637`)
+* **UniversalPlayer:** 全屏控制栏改造 + 右侧更多设置抽屉 + 竖版弹窗占满宽度 (`6c0a1e8`)
+* **UniversalPlayer:** 自测整改 —— 全屏整改仅限真机移动端 + 抽屉对齐右键菜单 + 交互细节 (`f02eb23`)
+* **UniversalPlayer:** 落地画中画防卡死 + 全屏三级降级策略 (`cc8d45b`)
+* 恢复 5.1-5.5 丢失的改动（hover/骨架/CMS tab/meta/收藏动画） (`f67e94d`)
 
 ## [1.16.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.15.0...kinotv-v1.16.0) (2026-08-31)
 
 
 ### Features
 
-* **player:** P0-1 移动端横向滑动 seek 手势 ([3d880fd](https://github.com/ntc0728/video-warehouse/commit/3d880fd0ef78885a1020a10f047729cd080f11b2))
-* **player:** P0-2/P0-3/P1-11 进度条无障碍 + 重渲染治理 + 缓冲拖拽钳制 ([9fdb579](https://github.com/ntc0728/video-warehouse/commit/9fdb579eb18359284350f75634748df3b587131a))
-* **player:** 后台听视频 MediaSession + 冻结修复 + CMS自适应 + Switch改完即关 + 画面比例重构 ([631c802](https://github.com/ntc0728/video-warehouse/commit/631c8020f49157448b20312c355299547936055a))
-* **player:** 后台听视频 P2 iOS检测 + P3 Android原生前台媒体服务 ([bd6fbb6](https://github.com/ntc0728/video-warehouse/commit/bd6fbb68cf0fff3f306c550bdb92be58ebf5e2cd))
-* **player:** 批次4 P1快捷键重写/单击即时响应/清晰度记忆/字幕track渲染/定时器清理 ([4d93c2d](https://github.com/ntc0728/video-warehouse/commit/4d93c2d4f7babde9d004bde13b1b0ee9b35ffdfb))
-* **player:** 批次5 P1-3错误文案透传/P1-4续播卡片/P1-10进度展示解耦/P2-6安全区/P2-7移动端toast上移 ([bc35506](https://github.com/ntc0728/video-warehouse/commit/bc355069c88d832b955853b2e371632a19534987))
-* **player:** 批次6 P1-6桌面右键菜单/P2-3控制栏对比度/P2-4移动端触摸目标 ([0fe34dd](https://github.com/ntc0728/video-warehouse/commit/0fe34dd343066c669c5c41cefbd10bd99ef944c0))
-* **player:** 播放器整改交互 Demo（/player-lab 路由） ([80d37b3](https://github.com/ntc0728/video-warehouse/commit/80d37b38cb84a26faf890dffb8ac5346b2ae3dc8))
+* **player:** P0-1 移动端横向滑动 seek 手势 (`3d880fd`)
+* **player:** P0-2/P0-3/P1-11 进度条无障碍 + 重渲染治理 + 缓冲拖拽钳制 (`9fdb579`)
+* **player:** 后台听视频 MediaSession + 冻结修复 + CMS自适应 + Switch改完即关 + 画面比例重构 (`631c802`)
+* **player:** 后台听视频 P2 iOS检测 + P3 Android原生前台媒体服务 (`bd6fbb6`)
+* **player:** 批次4 P1快捷键重写/单击即时响应/清晰度记忆/字幕track渲染/定时器清理 (`4d93c2d`)
+* **player:** 批次5 P1-3错误文案透传/P1-4续播卡片/P1-10进度展示解耦/P2-6安全区/P2-7移动端toast上移 (`bc35506`)
+* **player:** 批次6 P1-6桌面右键菜单/P2-3控制栏对比度/P2-4移动端触摸目标 (`0fe34dd`)
+* **player:** 播放器整改交互 Demo（/player-lab 路由） (`80d37b3`)
 
 
 ### Bug Fixes
 
-* **player:** iOS后台提示仅真实设备显示(三层检测) + 删除移动端更多设置音量调节项 ([8c44db9](https://github.com/ntc0728/video-warehouse/commit/8c44db951c5fd2b6441e56cd53da5ea241c18497))
-* **player:** Issue2 冻结解冻重写为分级策略（translateZ 方案实测无效） ([da44c86](https://github.com/ntc0728/video-warehouse/commit/da44c86988e63d167fa02365565c60e3284eb616))
-* **player:** P0 止血——缓冲中可暂停、手势音量初值/滚动/UI 区三修复 (P0-7/4/5/6) ([d6371e1](https://github.com/ntc0728/video-warehouse/commit/d6371e1c8af0306aac8481e6d91e9adafcb212e3))
-* **player:** 修正更多设置弹窗未贴在图标正上方 ([91d8a1c](https://github.com/ntc0728/video-warehouse/commit/91d8a1c24588d6511936008a7e0a3694c3e6cc13))
-* **player:** 居中提示退出闪烁(单元素切换类名) + 清理reviveFrozenVideo重复定义 ([2d97962](https://github.com/ntc0728/video-warehouse/commit/2d9796275ac089213260f5227ff17985e47ebce6))
-* **player:** 弹窗/右键菜单/更多设置 UI 微调 ([1f6e30f](https://github.com/ntc0728/video-warehouse/commit/1f6e30f475f1aee8b487f7d24f2df86f528afd2b))
-* **player:** 弹窗关闭不影响提示语(去重) + 更多弹窗移动一次根因修复(offsetWidth) + 补全reviveFrozenVideo ([7f2da1b](https://github.com/ntc0728/video-warehouse/commit/7f2da1be82d317086187db93df0be1d0132627a3))
-* **player:** 截图提示居中靠上并避让移动端header + 修复更多弹窗悬浮跳变 ([192edd8](https://github.com/ntc0728/video-warehouse/commit/192edd846f2a94c39aa0764556038ec2fc5e7ef0))
-* **player:** 截图提示改为播放器内屏幕居中 toast ([345421a](https://github.com/ntc0728/video-warehouse/commit/345421af24967743f8386e8a6b2e74590c034564))
-* **player:** 截图提示改为播放器容器居中 + 更多弹窗居中于图标 ([ce000c6](https://github.com/ntc0728/video-warehouse/commit/ce000c6a029efd292490a5e57a7096d796cdb7dd))
-* **player:** 更多设置弹窗容器内定位 + 右键菜单文本尺寸 ([93d35ff](https://github.com/ntc0728/video-warehouse/commit/93d35ffc039e0ed971279f0cb088b532a4ccb14d))
-* **player:** 自测修复 Issue1/2/3 桌面手势条/切后台冻结/缓冲中进度条 ([95c36a1](https://github.com/ntc0728/video-warehouse/commit/95c36a107b2f54f048d9f4def0be7fd2323099a8))
-* **player:** 自测修复 Issue4 右键菜单改版/色彩调整/音效调节 ([0d8390f](https://github.com/ntc0728/video-warehouse/commit/0d8390fbea1a4228175990b8c48036def2d10359))
+* **player:** iOS后台提示仅真实设备显示(三层检测) + 删除移动端更多设置音量调节项 (`8c44db9`)
+* **player:** Issue2 冻结解冻重写为分级策略（translateZ 方案实测无效） (`da44c86`)
+* **player:** P0 止血——缓冲中可暂停、手势音量初值/滚动/UI 区三修复 (P0-7/4/5/6) (`d6371e1`)
+* **player:** 修正更多设置弹窗未贴在图标正上方 (`91d8a1c`)
+* **player:** 居中提示退出闪烁(单元素切换类名) + 清理reviveFrozenVideo重复定义 (`2d97962`)
+* **player:** 弹窗/右键菜单/更多设置 UI 微调 (`1f6e30f`)
+* **player:** 弹窗关闭不影响提示语(去重) + 更多弹窗移动一次根因修复(offsetWidth) + 补全reviveFrozenVideo (`7f2da1b`)
+* **player:** 截图提示居中靠上并避让移动端header + 修复更多弹窗悬浮跳变 (`192edd8`)
+* **player:** 截图提示改为播放器内屏幕居中 toast (`345421a`)
+* **player:** 截图提示改为播放器容器居中 + 更多弹窗居中于图标 (`ce000c6`)
+* **player:** 更多设置弹窗容器内定位 + 右键菜单文本尺寸 (`93d35ff`)
+* **player:** 自测修复 Issue1/2/3 桌面手势条/切后台冻结/缓冲中进度条 (`95c36a1`)
+* **player:** 自测修复 Issue4 右键菜单改版/色彩调整/音效调节 (`0d8390f`)
 
 ## [1.15.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.14.1...kinotv-v1.15.0) (2026-08-30)
 
 
 ### Features
 
-* **player/settings:** 入场骨架+小电视加载态 / 设置移动端子页过渡方案1 ([c6a55b6](https://github.com/ntc0728/video-warehouse/commit/c6a55b698f297f1d4f56714481d72bf388d23902))
-* **pull-to-refresh:** 桌面端禁止下拉刷新浮层 ([cb9f0d3](https://github.com/ntc0728/video-warehouse/commit/cb9f0d3f819e06c2df1e30a07810b0cf7b25430d))
-* **settings:** 桌面端 topbar 改头部条样式 + 进入过渡对齐卡片页 ([4c96126](https://github.com/ntc0728/video-warehouse/commit/4c96126b120b8fa6608269a013910910dd5defa2))
-* **transition:** 统一页面进入过渡到容器层并适配播放页 ([3b99cd6](https://github.com/ntc0728/video-warehouse/commit/3b99cd63e43df61dfa15d1b28a0c98f706ea70f4))
+* **player/settings:** 入场骨架+小电视加载态 / 设置移动端子页过渡方案1 (`c6a55b6`)
+* **pull-to-refresh:** 桌面端禁止下拉刷新浮层 (`cb9f0d3`)
+* **settings:** 桌面端 topbar 改头部条样式 + 进入过渡对齐卡片页 (`4c96126`)
+* **transition:** 统一页面进入过渡到容器层并适配播放页 (`3b99cd6`)
 
 
 ### Bug Fixes
 
-* **player:** 移除覆盖播放器的全屏 AppLoading，入场直接渲染完整布局 ([ecc197c](https://github.com/ntc0728/video-warehouse/commit/ecc197c347bcdd2760ad6f40afb4ec8009512c8c))
-* **pull-to-refresh:** settings 变体文本在浅色主题下白字压白底不可见 ([2e0ca40](https://github.com/ntc0728/video-warehouse/commit/2e0ca40aedfb09003bf655df57c009385b405f3d))
-* **tv-loader:** 修正黑场小电视五官不可见 + 消除裸电视加载态 ([bfdaacf](https://github.com/ntc0728/video-warehouse/commit/bfdaacfd4583764c0dc74f1fd8987e9a2c4bb8f9))
+* **player:** 移除覆盖播放器的全屏 AppLoading，入场直接渲染完整布局 (`ecc197c`)
+* **pull-to-refresh:** settings 变体文本在浅色主题下白字压白底不可见 (`2e0ca40`)
+* **tv-loader:** 修正黑场小电视五官不可见 + 消除裸电视加载态 (`bfdaacf`)
 
 ## [1.14.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.14.0...kinotv-v1.14.1) (2026-08-29)
 
 
 ### Bug Fixes
 
-* **e2e:** 修复 23 个失败用例并补全真实断言 ([297e576](https://github.com/ntc0728/video-warehouse/commit/297e576119e5676983f0a2987494abe196d18fa7))
-* **home:** 修复 HomePage hook 在提前 return 后调用导致整页崩溃 ([00284cf](https://github.com/ntc0728/video-warehouse/commit/00284cfa3b1083210fb98519843b3a4ff56e2c93))
+* **e2e:** 修复 23 个失败用例并补全真实断言 (`297e576`)
+* **home:** 修复 HomePage hook 在提前 return 后调用导致整页崩溃 (`00284cf`)
 
 ## [1.14.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.13.0...kinotv-v1.14.0) (2026-08-28)
 
 
 ### Features
 
-* 本地 PullToRefresh 黑白配色+方案C光晕、设备调试修复、免责声明左对齐及全站样式/组件重构 ([f46c36b](https://github.com/ntc0728/video-warehouse/commit/f46c36ba57c74e47192aa4146b1bb4b46d4fcf4b))
+* 本地 PullToRefresh 黑白配色+方案C光晕、设备调试修复、免责声明左对齐及全站样式/组件重构 (`f46c36b`)
 
 ## [1.13.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.12.0...kinotv-v1.13.0) (2026-08-27)
 
 
 ### Features
 
-* 设置页/首页/Banner/历史页一系列体验修复与样式重构 ([8e156be](https://github.com/ntc0728/video-warehouse/commit/8e156be30264581db978d1063e331e5fef6aca04))
+* 设置页/首页/Banner/历史页一系列体验修复与样式重构 (`8e156be`)
 
 
 ### Bug Fixes
 
-* **hero-banner:** 16:9 几何改 aspect-ratio 驱动 + 切分类白隙修复 ([5ed1cc1](https://github.com/ntc0728/video-warehouse/commit/5ed1cc1950b72fe6abfd78f3c039ed02893e2bb5))
-* **hero-banner:** banner/缩略图无缝拼接 + 外框圆角重排 + 首/尾缩略图常显标题 + 切换旧图闪现修复 ([80a95a4](https://github.com/ntc0728/video-warehouse/commit/80a95a47a4a4f7102ea6226464e9e52137fbf8e1))
-* **HeroBanner:** 文本跟随 banner 滑动、回弹隐藏下一张文本、切换改为垂直 6px 位移 ([dd6b05e](https://github.com/ntc0728/video-warehouse/commit/dd6b05efc7fd68b605f8d343e3c2556e3a597c61))
-* **HeroBanner:** 静止入场位移 16px→6px，避免文字压到图片外(容器)再浮入 ([557b896](https://github.com/ntc0728/video-warehouse/commit/557b89622b1969ed9efd649d85fb838e71596c93))
-* 快速连续切换分类时缩略图/卡片封面闪烁修复 ([151c230](https://github.com/ntc0728/video-warehouse/commit/151c2302f2f6f54b16eb7683fbb569093dd4ca58))
+* **hero-banner:** 16:9 几何改 aspect-ratio 驱动 + 切分类白隙修复 (`5ed1cc1`)
+* **hero-banner:** banner/缩略图无缝拼接 + 外框圆角重排 + 首/尾缩略图常显标题 + 切换旧图闪现修复 (`80a95a4`)
+* **HeroBanner:** 文本跟随 banner 滑动、回弹隐藏下一张文本、切换改为垂直 6px 位移 (`dd6b05e`)
+* **HeroBanner:** 静止入场位移 16px→6px，避免文字压到图片外(容器)再浮入 (`557b896`)
+* 快速连续切换分类时缩略图/卡片封面闪烁修复 (`151c230`)
 
 ## [1.12.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.11.0...kinotv-v1.12.0) (2026-08-23)
 
 
 ### Features
 
-* **home:** 卡片封面滚动触发加载 + LazyImage placeholder 露白修复 ([ef00395](https://github.com/ntc0728/video-warehouse/commit/ef00395e4fa29c8e11beaa39baffad1d6e874293))
+* **home:** 卡片封面滚动触发加载 + LazyImage placeholder 露白修复 (`ef00395`)
 
 
 ### Bug Fixes
 
-* banner在768-1023px断点退回16:9，清理app端冗余height/aspect-ratio副本 ([d0a464f](https://github.com/ntc0728/video-warehouse/commit/d0a464f60aa229754afcae4d3f8d997bec31d5fa))
-* banner缩略图间距改2px，卡片底部与分类区保持space-sm间隔 ([096f702](https://github.com/ntc0728/video-warehouse/commit/096f70211f78ab5d1da218107f81d03ced038128))
-* container-type size 移到卡片层，缩略图列宽正确锚定 banner 高度 ([5877281](https://github.com/ntc0728/video-warehouse/commit/5877281971daa961f76c431b6c3b163194565837))
-* HeroBanner 最小高度改 40rem，确保 banner/缩略图真实 16:9 ([1b89a66](https://github.com/ntc0728/video-warehouse/commit/1b89a66f0cb69a6053047d278f3f1da1646e44b2))
-* lazy-image placeholder 加载时不露白（transition:none + solid背景兜底） ([f859046](https://github.com/ntc0728/video-warehouse/commit/f859046b029c2158387953c721ae60ac8f912532))
-* 用 JS 实测 banner 高度注入 --hero-banner-h，彻底去掉 container-type 依赖 ([0446076](https://github.com/ntc0728/video-warehouse/commit/0446076b5d6f8204db199bccb400bfcafa25bb78))
+* banner在768-1023px断点退回16:9，清理app端冗余height/aspect-ratio副本 (`d0a464f`)
+* banner缩略图间距改2px，卡片底部与分类区保持space-sm间隔 (`096f702`)
+* container-type size 移到卡片层，缩略图列宽正确锚定 banner 高度 (`5877281`)
+* HeroBanner 最小高度改 40rem，确保 banner/缩略图真实 16:9 (`1b89a66`)
+* lazy-image placeholder 加载时不露白（transition:none + solid背景兜底） (`f859046`)
+* 用 JS 实测 banner 高度注入 --hero-banner-h，彻底去掉 container-type 依赖 (`0446076`)
 
 ## [1.11.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.10.0...kinotv-v1.11.0) (2026-08-20)
 
 
 ### Features
 
-* apply source-section spacing to all settings sections ([4e6afd2](https://github.com/ntc0728/video-warehouse/commit/4e6afd271d7b5e97c8ca0420198895e151c3c954))
-* **home:** 进入过渡覆盖层 + HeroBanner 初始淡入延迟 + VideoCard skipAnimations ([ad7e511](https://github.com/ntc0728/video-warehouse/commit/ad7e51169d71f83cd16be58dc676e0e934770732))
+* apply source-section spacing to all settings sections (`4e6afd2`)
+* **home:** 进入过渡覆盖层 + HeroBanner 初始淡入延迟 + VideoCard skipAnimations (`ad7e511`)
 
 
 ### Bug Fixes
 
-* **home:** 分类切换过渡与滚动复位时序重做——单树渲染+卡片交叉淡入+内容先切后复位 ([6b6a9ce](https://github.com/ntc0728/video-warehouse/commit/6b6a9ce4d8c040336910c97591aa0ff98e55a997))
-* settings personal section titles moved outside cards with consistent border/hover styling ([ae342c8](https://github.com/ntc0728/video-warehouse/commit/ae342c8df5c16e854dab5a15f38b33cdee43643f))
-* settings-profile-card border now visible on all screen sizes ([c25ff6e](https://github.com/ntc0728/video-warehouse/commit/c25ff6e3ab784e0f1e563637788986f89a5197c6))
-* **ui:** 角标配色统一+收藏卡移动端布局+首页年份+暗色chip文字可读性+六项零散UI修复（进度条/季卡海报/bio展开/设置深链闪烁/停用源延迟/设置标题图标） ([232bfa8](https://github.com/ntc0728/video-warehouse/commit/232bfa8f830cb407168ff405bef9596e2cb9125d))
+* **home:** 分类切换过渡与滚动复位时序重做——单树渲染+卡片交叉淡入+内容先切后复位 (`6b6a9ce`)
+* settings personal section titles moved outside cards with consistent border/hover styling (`ae342c8`)
+* settings-profile-card border now visible on all screen sizes (`c25ff6e`)
+* **ui:** 角标配色统一+收藏卡移动端布局+首页年份+暗色chip文字可读性+六项零散UI修复（进度条/季卡海报/bio展开/设置深链闪烁/停用源延迟/设置标题图标） (`232bfa8`)
 
 ## [1.10.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.9.0...kinotv-v1.10.0) (2026-08-20)
 
 
 ### Features
 
-* **cards:** 卡片四项细节调整——角标统一/历史卡动画/IPTV封面失败样式/LIVE角标 ([6fe9f7d](https://github.com/ntc0728/video-warehouse/commit/6fe9f7d71dd891f45006251fc91ed0fdb4ef328f))
-* **collections:** 收藏页融合 Tab + 分区整改（方案 B）+ VideoCard 角标重组 ([95573d4](https://github.com/ntc0728/video-warehouse/commit/95573d4d828850098e01db8f9fbd1e407f5936f3))
+* **cards:** 卡片四项细节调整——角标统一/历史卡动画/IPTV封面失败样式/LIVE角标 (`6fe9f7d`)
+* **collections:** 收藏页融合 Tab + 分区整改（方案 B）+ VideoCard 角标重组 (`95573d4`)
 
 
 ### Bug Fixes
 
-* **collections:** 「更多筛选」排序去掉下拉框，恒显示 chips，空间不足自动换行 ([853e482](https://github.com/ntc0728/video-warehouse/commit/853e482a7ab0e0bebe9463881b3fc1e1ddf69d43))
-* **player:** 播放器交互修复计划落地（C1-C5 冲突 · G1-G10 缺口 · R1-R6 冗余） ([5d18a2e](https://github.com/ntc0728/video-warehouse/commit/5d18a2e783602ebee1825d28e8045cdcc395a358))
-* **scrollbar:** OverlayScrollbar thumb 直接 DOM 写入，消除主线程繁忙时「滚动条卡顶不跟手」 ([1a89705](https://github.com/ntc0728/video-warehouse/commit/1a89705ea72dd95dd8104ef51f74879e439cb98e))
-* **scrollbar:** 彻底移除 rAF 节流——监听器直接调用 updateThumb，根治滚动条卡顶 ([e970b65](https://github.com/ntc0728/video-warehouse/commit/e970b6531718eddcb59465abe700536e266b4319))
+* **collections:** 「更多筛选」排序去掉下拉框，恒显示 chips，空间不足自动换行 (`853e482`)
+* **player:** 播放器交互修复计划落地（C1-C5 冲突 · G1-G10 缺口 · R1-R6 冗余） (`5d18a2e`)
+* **scrollbar:** OverlayScrollbar thumb 直接 DOM 写入，消除主线程繁忙时「滚动条卡顶不跟手」 (`1a89705`)
+* **scrollbar:** 彻底移除 rAF 节流——监听器直接调用 updateThumb，根治滚动条卡顶 (`e970b65`)
 
 ## [1.9.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.8.0...kinotv-v1.9.0) (2026-08-17)
 
 
 ### Features
 
-* **cast:** Android 原生 DLNA 投屏模块（SSDP 发现 + UPnP AVTransport 推送） ([115be2f](https://github.com/ntc0728/video-warehouse/commit/115be2f6b0891bbe421876877083c72e21b010d4))
-* **cast:** Web 端投屏分端实现 - iOS 隐藏按钮，安卓 Web 走 Google Cast SDK ([b1e27fb](https://github.com/ntc0728/video-warehouse/commit/b1e27fb77affa9721412410cde6dbaab943aeb7a))
-* **history:** 历史页桌面端左侧算珠时间轴 + StickyHeader 清理 ([0727c42](https://github.com/ntc0728/video-warehouse/commit/0727c429697cf06e65097447dd0124a8089016ed))
+* **cast:** Android 原生 DLNA 投屏模块（SSDP 发现 + UPnP AVTransport 推送） (`115be2f`)
+* **cast:** Web 端投屏分端实现 - iOS 隐藏按钮，安卓 Web 走 Google Cast SDK (`b1e27fb`)
+* **history:** 历史页桌面端左侧算珠时间轴 + StickyHeader 清理 (`0727c42`)
 
 
 ### Bug Fixes
 
-* **home:** Keep-Alive 首页切走再切回 banner 不闪烁 ([4b9bfa1](https://github.com/ntc0728/video-warehouse/commit/4b9bfa12d09575e5aa6fcd5e26d5ae61a2249b6b))
-* **home:** 解除分类切换时 banner/缩略图/video card 三者绑定 ([8ac0dca](https://github.com/ntc0728/video-warehouse/commit/8ac0dca17c145a8d136ffd9d5c319119853f0004))
-* **player:** buffering/loading logic conflicts fix (13 items per review) ([8a1c213](https://github.com/ntc0728/video-warehouse/commit/8a1c213703593d3ce38b5028b977097e4e614505))
+* **home:** Keep-Alive 首页切走再切回 banner 不闪烁 (`4b9bfa1`)
+* **home:** 解除分类切换时 banner/缩略图/video card 三者绑定 (`8ac0dca`)
+* **player:** buffering/loading logic conflicts fix (13 items per review) (`8a1c213`)
 
 
 ### Performance Improvements
 
-* **cast:** 投屏按需加载打包 + 部署性能优化 ([270a886](https://github.com/ntc0728/video-warehouse/commit/270a886afa17958e939e8f6aca22c365d20bd42a))
+* **cast:** 投屏按需加载打包 + 部署性能优化 (`270a886`)
 
 ## [1.8.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.6...kinotv-v1.8.0) (2026-08-15)
 
 
 ### Features
 
-* **player:** 播放器移动端设置——控制栏精简 + 右上角操作组（画中画/投屏/更多）+ 底部卡片弹层 + 字幕二级弹窗 + 投屏服务 ([cf5e65a](https://github.com/ntc0728/video-warehouse/commit/cf5e65ae012fc8d370812ec35fa94c6b1958da5f))
+* **player:** 播放器移动端设置——控制栏精简 + 右上角操作组（画中画/投屏/更多）+ 底部卡片弹层 + 字幕二级弹窗 + 投屏服务 (`cf5e65a`)
 
 
 ### Bug Fixes
 
-* **home:** ???????????????????????? ([875e651](https://github.com/ntc0728/video-warehouse/commit/875e6510190f56b4b2efe9c3bde38e54495c8382))
-* **home:** 分类切换快速完成（移除预加载阻塞门控）+ 彻底删除 CardCoverLoading 浅白遮罩 ([2e64db1](https://github.com/ntc0728/video-warehouse/commit/2e64db13cd01d50473a6afdf83e52f8046ee8bf2))
-* **home:** 无缓存时分类切换跳过旧图滞留动画（直接渲染新层，骨架占位自然加载） ([c6fafe0](https://github.com/ntc0728/video-warehouse/commit/c6fafe0384401219e860fc701d68386fe026c377))
-* **player:** data-mobile-layout 全局标记驱动播放器 toast 定位（App 恒移动/手机桌面模式不再按视口误判桌面端）+ IPTV 全屏按钮右下角 ([d87ff21](https://github.com/ntc0728/video-warehouse/commit/d87ff21fecd4e88d6f67eda0a1cc208b0cd70594))
-* **player:** 修复窄窗桌面 toast 叠在头部图标上——CSS 锚点规则不再受 data-mobile-layout 拦截 ([1da8e91](https://github.com/ntc0728/video-warehouse/commit/1da8e91fa61d06ef2a6ae4cf669f306188bfa68c))
-* **player:** 区分移动端布局与真实移动设备（toast 居中仅手机）+ 弹窗全宽 ([15ba25e](https://github.com/ntc0728/video-warehouse/commit/15ba25ecf53aebbb0279d0d9cc9f9fc6a6200c64))
-* **player:** 播放页桌面端修复——vodParser 源 id 去重与 isDefault 全局化、CMS 面板空初始化、play 错误分类、进度恢复竞态守卫 ([5a8392f](https://github.com/ntc0728/video-warehouse/commit/5a8392f5d8bf4018bd983f34d955f28c389d99a3))
-* **player:** 桌面 toast 锚定头部右控件（data-player-header-controls）+ 移动端布局判定用例（4.12 M09/M10） ([fb23144](https://github.com/ntc0728/video-warehouse/commit/fb231446fe7714fb4dcfa1f589bd4da18382cf4e))
-* **player:** 补充 data-player-header-controls 全局标记（桌面 toast 锚定头部右控件） ([e180e24](https://github.com/ntc0728/video-warehouse/commit/e180e24e9e3d532c2e04b7b831c7bd19fb26ab0d))
+* **home:** ???????????????????????? (`875e651`)
+* **home:** 分类切换快速完成（移除预加载阻塞门控）+ 彻底删除 CardCoverLoading 浅白遮罩 (`2e64db1`)
+* **home:** 无缓存时分类切换跳过旧图滞留动画（直接渲染新层，骨架占位自然加载） (`c6fafe0`)
+* **player:** data-mobile-layout 全局标记驱动播放器 toast 定位（App 恒移动/手机桌面模式不再按视口误判桌面端）+ IPTV 全屏按钮右下角 (`d87ff21`)
+* **player:** 修复窄窗桌面 toast 叠在头部图标上——CSS 锚点规则不再受 data-mobile-layout 拦截 (`1da8e91`)
+* **player:** 区分移动端布局与真实移动设备（toast 居中仅手机）+ 弹窗全宽 (`15ba25e`)
+* **player:** 播放页桌面端修复——vodParser 源 id 去重与 isDefault 全局化、CMS 面板空初始化、play 错误分类、进度恢复竞态守卫 (`5a8392f`)
+* **player:** 桌面 toast 锚定头部右控件（data-player-header-controls）+ 移动端布局判定用例（4.12 M09/M10） (`fb23144`)
+* **player:** 补充 data-player-header-controls 全局标记（桌面 toast 锚定头部右控件） (`e180e24`)
 
 ## [1.7.6](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.5...kinotv-v1.7.6) (2026-08-14)
 
 
 ### Bug Fixes
 
-* **ci:** 包管理器迁移 npm→pnpm 并适配构建链路（workflows/scripts 换 pnpm 语法、sharp 常驻、新增 pnpm-lock.yaml/.npmrc） ([b19ecf9](https://github.com/ntc0728/video-warehouse/commit/b19ecf905c676e30e93720b05e1b3878d5fe7841))
+* **ci:** 包管理器迁移 npm→pnpm 并适配构建链路（workflows/scripts 换 pnpm 语法、sharp 常驻、新增 pnpm-lock.yaml/.npmrc） (`b19ecf9`)
 
 ## [1.7.5](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.4...kinotv-v1.7.5) (2026-08-14)
 
 
 ### Bug Fixes
 
-* **ci:** build-apk 门控改为 release PR merge commit 判定（release_created 恒 false 与 API 探测竞态均不可靠，零探测终版） ([0a43a73](https://github.com/ntc0728/video-warehouse/commit/0a43a73385af748ace50671e6b840b45b80ab0db))
+* **ci:** build-apk 门控改为 release PR merge commit 判定（release_created 恒 false 与 API 探测竞态均不可靠，零探测终版） (`0a43a73`)
 
 ## [1.7.4](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.3...kinotv-v1.7.4) (2026-08-14)
 
 
 ### Bug Fixes
 
-* **ci:** release 门控改用 API 匹配 target_commitish==GITHUB_SHA（release-please-action 运行后工作区 HEAD 漂移，读 package.json 不可靠） ([76ec1c7](https://github.com/ntc0728/video-warehouse/commit/76ec1c75962ac36e81eb4450951ad098d62e422c))
+* **ci:** release 门控改用 API 匹配 target_commitish==GITHUB_SHA（release-please-action 运行后工作区 HEAD 漂移，读 package.json 不可靠） (`76ec1c7`)
 
 ## [1.7.3](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.2...kinotv-v1.7.3) (2026-08-14)
 
 
 ### Bug Fixes
 
-* **ci:** release-please.yml 门控改为 release 存在性探测（release_created 恒跳过根因修复）+ 双 workflow 版本号提取兼容 kinotv-v 前缀 ([c9373e7](https://github.com/ntc0728/video-warehouse/commit/c9373e76b483783317703be6bb7074b87d01c643))
+* **ci:** release-please.yml 门控改为 release 存在性探测（release_created 恒跳过根因修复）+ 双 workflow 版本号提取兼容 kinotv-v 前缀 (`c9373e7`)
 
 ## [1.7.2](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.1...kinotv-v1.7.2) (2026-08-14)
 
 
 ### Bug Fixes
 
-* **ci:** APK 构建恢复 release 事件主通道 + 修复手动补传 tag 前缀 ([7b54c7d](https://github.com/ntc0728/video-warehouse/commit/7b54c7dbb715cd17c76b415f346f16d276be54dd))
+* **ci:** APK 构建恢复 release 事件主通道 + 修复手动补传 tag 前缀 (`7b54c7d`)
 
 ## [1.7.1](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.7.0...kinotv-v1.7.1) (2026-08-13)
 
 
 ### Bug Fixes
 
-* **ci:** APK 构建移入 release-please 工作流根治 Release 缺 assets ([70e9953](https://github.com/ntc0728/video-warehouse/commit/70e9953bc0c92bd957897e1401948f99e6a5a41f))
-* **hero-banner:** 分类切换主图旧图垫底→新图就绪淡入，消除硬切 ([3474500](https://github.com/ntc0728/video-warehouse/commit/34745006e95374104fba80b3ead2eaabf12d3102))
-* **home:** 分类切换交叉淡出/淡入过渡，消除直白瞬间替换 ([0f1e40f](https://github.com/ntc0728/video-warehouse/commit/0f1e40fa86f6175fccccf2bb4ee07c231186c968))
-* **home:** 分类切换内容无透明空窗 + 修复轮播回归 + 缩略图交叉淡入 ([455c8ce](https://github.com/ntc0728/video-warehouse/commit/455c8cefd1481acf557cc704008c3b05b93b41d2))
-* **home:** 分类切换改渲染层 SWR 根治白屏闪烁 ([0154816](https://github.com/ntc0728/video-warehouse/commit/01548164e0f78e05b18a3b3d2225b1b04475a046))
-* **settings:** tab 常驻挂载消除切 tab 抖动 + OverlayScrollbar 补内容变化监听 ([4e08cb6](https://github.com/ntc0728/video-warehouse/commit/4e08cb612a4c989a9319689a4922e4e9714ac07e))
-* **settings:** 关于页免责声明贴底 + 点击项左右平移改文本缩放 ([d69dbd7](https://github.com/ntc0728/video-warehouse/commit/d69dbd7a05f3f7be5faddf4705d68ff91409d133))
+* **ci:** APK 构建移入 release-please 工作流根治 Release 缺 assets (`70e9953`)
+* **hero-banner:** 分类切换主图旧图垫底→新图就绪淡入，消除硬切 (`3474500`)
+* **home:** 分类切换交叉淡出/淡入过渡，消除直白瞬间替换 (`0f1e40f`)
+* **home:** 分类切换内容无透明空窗 + 修复轮播回归 + 缩略图交叉淡入 (`455c8ce`)
+* **home:** 分类切换改渲染层 SWR 根治白屏闪烁 (`0154816`)
+* **settings:** tab 常驻挂载消除切 tab 抖动 + OverlayScrollbar 补内容变化监听 (`4e08cb6`)
+* **settings:** 关于页免责声明贴底 + 点击项左右平移改文本缩放 (`d69dbd7`)
 
 
 ### Performance Improvements
 
-* 页面走读问题整改（源JSON按需加载/分类请求取消与去重/封面失败重试/IP层动画统一/收藏历史页卡顿优化） ([8748f30](https://github.com/ntc0728/video-warehouse/commit/8748f3093b3ddfe4adcc2a45f20aa72b5a31d8d6))
+* 页面走读问题整改（源JSON按需加载/分类请求取消与去重/封面失败重试/IP层动画统一/收藏历史页卡顿优化） (`8748f30`)
 
 ## [1.7.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.6.0...kinotv-v1.7.0) (2026-08-12)
 
 
 ### Features
 
-* **iptv:** app 端播放页自动横屏 + 隐藏全屏按钮 ([62cd8a5](https://github.com/ntc0728/video-warehouse/commit/62cd8a50ba3b374eda19b76b0d4c6457a3dc91aa))
-* **nav:** 桌面侧边栏底部新增设置入口+版本号，顶栏设置项迁出 ([ff24bcb](https://github.com/ntc0728/video-warehouse/commit/ff24bcb35c1be266f1f017bdaf44e364f33e77a5))
-* **nav:** 桌面顶栏最右侧新增个人头像+用户名入口 ([7104d94](https://github.com/ntc0728/video-warehouse/commit/7104d948f52c2ed05f5850eaeaf8ff4736295f53))
-* **nav:** 移动 web 顶栏新增个人头像+用户名入口，抽屉设置项移到底部 ([cfc3a51](https://github.com/ntc0728/video-warehouse/commit/cfc3a51d061d6f7d7e9066e3485053d4a2052b3c))
-* **settings:** 移动端子页增加进入/退出过渡动画 ([99b9fbd](https://github.com/ntc0728/video-warehouse/commit/99b9fbd6b0cd816826c3830c85c537b782b372e7))
-* **skin:** 皮肤字体自托管（public/fonts/），替换不可达的 Google gstatic ([9b7bfc3](https://github.com/ntc0728/video-warehouse/commit/9b7bfc36021f02a59e1d5038ad24b70773670cfd))
-* **ui:** 顶栏/侧边栏/设置页细节统一（hover-scale 全局方法等 4 项） ([c67aab9](https://github.com/ntc0728/video-warehouse/commit/c67aab93d1a399980a9b51a30d1da4b8f391150e))
+* **iptv:** app 端播放页自动横屏 + 隐藏全屏按钮 (`62cd8a5`)
+* **nav:** 桌面侧边栏底部新增设置入口+版本号，顶栏设置项迁出 (`ff24bcb`)
+* **nav:** 桌面顶栏最右侧新增个人头像+用户名入口 (`7104d94`)
+* **nav:** 移动 web 顶栏新增个人头像+用户名入口，抽屉设置项移到底部 (`cfc3a51`)
+* **settings:** 移动端子页增加进入/退出过渡动画 (`99b9fbd`)
+* **skin:** 皮肤字体自托管（public/fonts/），替换不可达的 Google gstatic (`9b7bfc3`)
+* **ui:** 顶栏/侧边栏/设置页细节统一（hover-scale 全局方法等 4 项） (`c67aab9`)
 
 
 ### Bug Fixes
 
-* **base:** 字体基准显式化 14px + 移除 App 端无效 root 缩放 ([5da795f](https://github.com/ntc0728/video-warehouse/commit/5da795ffd1a7448b02dda9894e023194b8e0b7a4))
-* **boot:** 消除冷启动白屏 + app 端汉堡隐藏 + 布局判断统一移动 ([345690a](https://github.com/ntc0728/video-warehouse/commit/345690a4356147722e554856c180581e2decb884))
-* **browse:** 分类导航进入清空搜索词 + 立即刷新，消除旧数据闪现 ([d78ef85](https://github.com/ntc0728/video-warehouse/commit/d78ef858afdd431bce3dd9ed7b72ecdab351d71f))
-* **cover:** 封面占位品牌化（加载中+失败兜底主题自适应） ([82f7d7d](https://github.com/ntc0728/video-warehouse/commit/82f7d7d26eef75bb39d9fac5f3c2b0374f85ca40))
-* **home:** 实施时发现 50vh 移动端规则冲突，取消以让 token flex:1 撑满 ([d5c4b3f](https://github.com/ntc0728/video-warehouse/commit/d5c4b3f3aa1632e10830fe840372e5df964ae98d))
-* **iptv/settings/ci:** 源接口走IPTV代理+源管理拖拽+卡片动画+Android CI 补SDK ([dd7e718](https://github.com/ntc0728/video-warehouse/commit/dd7e718efb14dceffbbbae61bb50f140f350167a))
-* **iptv/settings/epg:** 4 项自测问题修复 ([e0ee1a3](https://github.com/ntc0728/video-warehouse/commit/e0ee1a3412e76475820abb9d55b67a851370b010))
-* **iptv:** 频道封面失败占位统一为 KinoTV fallback 图（与 VideoCard 一致） ([e854c55](https://github.com/ntc0728/video-warehouse/commit/e854c55f41729a84c8b3ac7f856a0c5496fb3f1b))
-* **layout:** app 端横屏恒为移动布局（CSS 断点双前缀） ([174433a](https://github.com/ntc0728/video-warehouse/commit/174433a325d7c37ab82f704ce493aa3f1ce9a463))
-* **records:** 收藏/历史页容器改为数据就绪后挂载，IPTV tab 切换动画正常播放 ([07f0d13](https://github.com/ntc0728/video-warehouse/commit/07f0d13684e784a355f68fb847733de700630bd2))
-* **settings/iptv:** 设置页返回按钮加文字 + IPTV 横向 cover 失败占位特殊处理 ([52cad60](https://github.com/ntc0728/video-warehouse/commit/52cad604eddd1c18285af0d3d3b2494978f0ae40))
-* **typography:** 全局字体栈显式声明中文字体 + 移除无条件 Google Fonts [@import](https://github.com/import) ([e820eab](https://github.com/ntc0728/video-warehouse/commit/e820eabd09746aad53bf22691a3023ee8afd687c))
-* **ui:** source-modal 移动端改为底部滑出全宽，消除两侧间隙 ([847ce7d](https://github.com/ntc0728/video-warehouse/commit/847ce7dfa43a8f317d544106e842aa301cd66df7))
-* **ui:** VideoCard 加载占位统一纯色背景 + HeroBanner 缩略图无间隙 ([1406613](https://github.com/ntc0728/video-warehouse/commit/14066130817639274ddbdacf2c1137acced48b91))
-* **ui:** 分类卡片 hover 上移/缩放仅限精指针设备，触摸端不再越界 ([f225262](https://github.com/ntc0728/video-warehouse/commit/f225262f700f5555e9e3c486314be731b8e9c664))
-* **ui:** 桌面端隐藏 category-quick-access + 全端移除选中高亮 ([e00fba1](https://github.com/ntc0728/video-warehouse/commit/e00fba1ef7aafccde47224cf0d159faa5bb42b70))
-* **ui:** 设置页padding对齐全局 + TabBar间距+安全区 + 免责声明贴底 ([a038443](https://github.com/ntc0728/video-warehouse/commit/a0384431c0ca58775eff6a8dcd00d854fd5a8044))
+* **base:** 字体基准显式化 14px + 移除 App 端无效 root 缩放 (`5da795f`)
+* **boot:** 消除冷启动白屏 + app 端汉堡隐藏 + 布局判断统一移动 (`345690a`)
+* **browse:** 分类导航进入清空搜索词 + 立即刷新，消除旧数据闪现 (`d78ef85`)
+* **cover:** 封面占位品牌化（加载中+失败兜底主题自适应） (`82f7d7d`)
+* **home:** 实施时发现 50vh 移动端规则冲突，取消以让 token flex:1 撑满 (`d5c4b3f`)
+* **iptv/settings/ci:** 源接口走IPTV代理+源管理拖拽+卡片动画+Android CI 补SDK (`dd7e718`)
+* **iptv/settings/epg:** 4 项自测问题修复 (`e0ee1a3`)
+* **iptv:** 频道封面失败占位统一为 KinoTV fallback 图（与 VideoCard 一致） (`e854c55`)
+* **layout:** app 端横屏恒为移动布局（CSS 断点双前缀） (`174433a`)
+* **records:** 收藏/历史页容器改为数据就绪后挂载，IPTV tab 切换动画正常播放 (`07f0d13`)
+* **settings/iptv:** 设置页返回按钮加文字 + IPTV 横向 cover 失败占位特殊处理 (`52cad60`)
+* **typography:** 全局字体栈显式声明中文字体 + 移除无条件 Google Fonts [@import](https://github.com/import) (`e820eab`)
+* **ui:** source-modal 移动端改为底部滑出全宽，消除两侧间隙 (`847ce7d`)
+* **ui:** VideoCard 加载占位统一纯色背景 + HeroBanner 缩略图无间隙 (`1406613`)
+* **ui:** 分类卡片 hover 上移/缩放仅限精指针设备，触摸端不再越界 (`f225262`)
+* **ui:** 桌面端隐藏 category-quick-access + 全端移除选中高亮 (`e00fba1`)
+* **ui:** 设置页padding对齐全局 + TabBar间距+安全区 + 免责声明贴底 (`a038443`)
 
 ## [1.6.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.5.0...kinotv-v1.6.0) (2026-08-11)
 
 
 ### Features
 
-* **iptv:** 台标三级回退优化（库清单预判+成败持久化+字母占位）与 sources 并发去重 ([81c55bd](https://github.com/ntc0728/video-warehouse/commit/81c55bd6286dc62f91103319d09a7cc2a0fa7cea))
-* **iptv:** 新增 3 个国内稳定源 + catchup/UA 属性解析（预留默认关闭） ([720df28](https://github.com/ntc0728/video-warehouse/commit/720df28dfb8fe4394a19ad65a877634e147fd96c))
+* **iptv:** 台标三级回退优化（库清单预判+成败持久化+字母占位）与 sources 并发去重 (`81c55bd`)
+* **iptv:** 新增 3 个国内稳定源 + catchup/UA 属性解析（预留默认关闭） (`720df28`)
 
 
 ### Bug Fixes
 
-* **iptv:** EPG/IPTV 服务重构与页面清理，修复加载慢与泄漏 ([ebb4f8a](https://github.com/ntc0728/video-warehouse/commit/ebb4f8a1f6883ca4253cfcfc673f27c83f87b419))
-* **iptv:** 修复台标串台——成功记忆仅对当前频道候选链内排序 ([5f15dd2](https://github.com/ntc0728/video-warehouse/commit/5f15dd28bbb12946e6ccece05db1ea64c6ff5e30))
-* IPTV台标占位重叠/移动端搜索框自适应/Android启动页与APK发布链 ([b4bc035](https://github.com/ntc0728/video-warehouse/commit/b4bc03593b37d952e02058fbc7b57b60bc3737ea))
-* **settings:** 离开设置页时卸载移动端子页 portal，修复从子页跳转 source-checker/proxy-setup 被遮挡问题 ([9fef6c3](https://github.com/ntc0728/video-warehouse/commit/9fef6c33ab18f179f5db4e640cce5324a2b120a2))
-* 源增量合并/子页顶栏/占位封面/首页后台刷新 4 项优化 ([549ba18](https://github.com/ntc0728/video-warehouse/commit/549ba181ab4595d755ecf06ba4f6230acd5f5143))
+* **iptv:** EPG/IPTV 服务重构与页面清理，修复加载慢与泄漏 (`ebb4f8a`)
+* **iptv:** 修复台标串台——成功记忆仅对当前频道候选链内排序 (`5f15dd2`)
+* IPTV台标占位重叠/移动端搜索框自适应/Android启动页与APK发布链 (`b4bc035`)
+* **settings:** 离开设置页时卸载移动端子页 portal，修复从子页跳转 source-checker/proxy-setup 被遮挡问题 (`9fef6c3`)
+* 源增量合并/子页顶栏/占位封面/首页后台刷新 4 项优化 (`549ba18`)
 
 ## [1.5.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.4.0...kinotv-v1.5.0) (2026-08-10)
 
 
 ### Features
 
-* **browse:** 移动端筛选区改两行命令栏 + 全屏筛选面板 ([c7ebaca](https://github.com/ntc0728/video-warehouse/commit/c7ebacab5785bf5e974bd987db15dc94d76bfcaf))
-* **settings:** 移动端设置页采用 iOS 分组圆角卡 + 子页全屏顶栏替代导航栏 + 双行卡对齐桌面 ([9331b05](https://github.com/ntc0728/video-warehouse/commit/9331b05d34ad07295a9e67d730c6b5f8d5ce8d1e))
+* **browse:** 移动端筛选区改两行命令栏 + 全屏筛选面板 (`c7ebaca`)
+* **settings:** 移动端设置页采用 iOS 分组圆角卡 + 子页全屏顶栏替代导航栏 + 双行卡对齐桌面 (`9331b05`)
 
 
 ### Bug Fixes
 
-* **browse:** bmb-presets 与弹窗布局精确对齐 S3 HTML 示例（无偏差） ([0108703](https://github.com/ntc0728/video-warehouse/commit/01087031fe201218524652368a00c9199866c29b))
-* **browse:** 筛选面板完成制应用 + 命令栏/弹窗细节对齐 ([151f61f](https://github.com/ntc0728/video-warehouse/commit/151f61f00e1326e19a2d08de745af21a2c3c8d6c))
-* **browse:** 筛选面板对齐 S3 示例（删预设卡/返回箭头顶栏/pgIn 动画/chip 尺寸） ([98f7603](https://github.com/ntc0728/video-warehouse/commit/98f76038b1f501ea3fcddba8b2d637c2451c5093))
-* **settings:** 子页用 createPortal 挂到 body 脱离 contain:layout ([7fc13e2](https://github.com/ntc0728/video-warehouse/commit/7fc13e2326730f748d45c89550212c19ab6c8965))
-* **settings:** 子页顶栏对齐导航栏高度 + 移除淡入动画 + 个人设置/源管理卡片化对齐桌面 ([805aa73](https://github.com/ntc0728/video-warehouse/commit/805aa7336cb9325e6b6e89c1f8c4fe72b7b47456))
-* **ui:** 弹窗按钮胶囊化修复 + ProfileEditModal 按钮补宽 ([da1749d](https://github.com/ntc0728/video-warehouse/commit/da1749dfbefa59d0cfca0e65fa573f654076fe9f))
+* **browse:** bmb-presets 与弹窗布局精确对齐 S3 HTML 示例（无偏差） (`0108703`)
+* **browse:** 筛选面板完成制应用 + 命令栏/弹窗细节对齐 (`151f61f`)
+* **browse:** 筛选面板对齐 S3 示例（删预设卡/返回箭头顶栏/pgIn 动画/chip 尺寸） (`98f7603`)
+* **settings:** 子页用 createPortal 挂到 body 脱离 contain:layout (`7fc13e2`)
+* **settings:** 子页顶栏对齐导航栏高度 + 移除淡入动画 + 个人设置/源管理卡片化对齐桌面 (`805aa73`)
+* **ui:** 弹窗按钮胶囊化修复 + ProfileEditModal 按钮补宽 (`da1749d`)
 
 
 ### Performance Improvements
 
-* **dev:** dev 模式跳过 preloadAllRoutes 消除白屏 ([2586c45](https://github.com/ntc0728/video-warehouse/commit/2586c45f7818a7ab77c98e1963d602a9e11b8c65))
-* **dev:** vite server.warmup 预热核心模块，缓解首次打开慢 ([9fe8f57](https://github.com/ntc0728/video-warehouse/commit/9fe8f577a4f379683f08aab5d4ec21a4ffcb615c))
+* **dev:** dev 模式跳过 preloadAllRoutes 消除白屏 (`2586c45`)
+* **dev:** vite server.warmup 预热核心模块，缓解首次打开慢 (`9fe8f57`)
 
 ## [1.4.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.3.0...kinotv-v1.4.0) (2026-08-09)
 
 
 ### Features
 
-* **settings:** 新增状态标签 SettingsStatusTag + List 双行布局 + 设置项 description 补全 ([2f9223b](https://github.com/ntc0728/video-warehouse/commit/2f9223b695374002ee90a58588b22ac6bcee5a83))
+* **settings:** 新增状态标签 SettingsStatusTag + List 双行布局 + 设置项 description 补全 (`2f9223b`)
 
 
 ### Bug Fixes
 
-* **settings:** desc 移入 header 与按钮两端对齐，单行截断+title 显示全文 ([72c684e](https://github.com/ntc0728/video-warehouse/commit/72c684e7f6b74af118ad77d420a526c6e4a3d049))
-* **settings:** title 单独拆出卡片 + header/desc/badge 移入卡片 + profile-card 左右对齐 ([665e5c0](https://github.com/ntc0728/video-warehouse/commit/665e5c0ba6a31976c2bca8657cdab84ae886f838))
-* **settings:** TMDB Token 按需解密 + 源折叠面板底部空隙 + 卡片化 ([95ec6f3](https://github.com/ntc0728/video-warehouse/commit/95ec6f3d57d7962ed0999b71be26828d21e4c909))
-* **settings:** 个人设置 section 去 padding，标题上下间距对齐其他 tab ([9c19409](https://github.com/ntc0728/video-warehouse/commit/9c1940990d44a891ca3a5508165d6e82e942bd77))
-* **settings:** 恢复个人设置 section 左右 12px 缩进 ([fa933d1](https://github.com/ntc0728/video-warehouse/commit/fa933d11680299409b80d02367ca58985119563a))
-* **settings:** 标题单独移出卡片 + source-manager 加 padding + 个人设置大卡片化 ([d08dccd](https://github.com/ntc0728/video-warehouse/commit/d08dccdfcddb501f18197232489be836b9a64b08))
-* **settings:** 桌面端设置项之间去分割线 + tabbar 文本图标稍大 ([fc426ac](https://github.com/ntc0728/video-warehouse/commit/fc426acb83db98c231fc6197a2f4c1057e42c06e))
-* **source-manager:** toolbar 与 list 间距 8px，折叠时无残留 ([1744ba9](https://github.com/ntc0728/video-warehouse/commit/1744ba98f3ce86946111d5b691fdebdbbdd6517e))
-* **source-manager:** 折叠时 gap 与 body 收缩同步过渡，消除按钮移动和收起延迟 ([b176a3a](https://github.com/ntc0728/video-warehouse/commit/b176a3a9a072224e56358f052f1abf4bdcbc124f))
+* **settings:** desc 移入 header 与按钮两端对齐，单行截断+title 显示全文 (`72c684e`)
+* **settings:** title 单独拆出卡片 + header/desc/badge 移入卡片 + profile-card 左右对齐 (`665e5c0`)
+* **settings:** TMDB Token 按需解密 + 源折叠面板底部空隙 + 卡片化 (`95ec6f3`)
+* **settings:** 个人设置 section 去 padding，标题上下间距对齐其他 tab (`9c19409`)
+* **settings:** 恢复个人设置 section 左右 12px 缩进 (`fa933d1`)
+* **settings:** 标题单独移出卡片 + source-manager 加 padding + 个人设置大卡片化 (`d08dccd`)
+* **settings:** 桌面端设置项之间去分割线 + tabbar 文本图标稍大 (`fc426ac`)
+* **source-manager:** toolbar 与 list 间距 8px，折叠时无残留 (`1744ba9`)
+* **source-manager:** 折叠时 gap 与 body 收缩同步过渡，消除按钮移动和收起延迟 (`b176a3a`)
 
 ## [1.3.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.2.0...kinotv-v1.3.0) (2026-08-07)
 
 
 ### Features
 
-* 三源统一管理收敛 + IPTV 检测按组隔离 + proxy-setup ([0b1e20a](https://github.com/ntc0728/video-warehouse/commit/0b1e20a932a7c574725282b1db1e5c2e1c590689))
+* 三源统一管理收敛 + IPTV 检测按组隔离 + proxy-setup (`0b1e20a`)
 
 
 ### Bug Fixes
 
-* **IPTV:** GroupPicker 折叠高度改用相对容器偏移计算 ([ba5cad4](https://github.com/ntc0728/video-warehouse/commit/ba5cad46ed827494b06c6a516529f67a7a5d9dd3))
+* **IPTV:** GroupPicker 折叠高度改用相对容器偏移计算 (`ba5cad4`)
 
 
 ### Reverts
 
-* **ci:** 删除多余的 Pages 部署 workflow（GitHub 集成已自动部署） ([24e567d](https://github.com/ntc0728/video-warehouse/commit/24e567d321d7b64398e00c5631b68a6ba0e05622))
+* **ci:** 删除多余的 Pages 部署 workflow（GitHub 集成已自动部署） (`24e567d`)
 
 ## [1.2.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.1.0...kinotv-v1.2.0) (2026-08-06)
 
 
 ### Features
 
-* CMS按钮6列均分 + 拖拽进度条提示 + Hero骨架位置修正 + 免责声明 ([978c243](https://github.com/ntc0728/video-warehouse/commit/978c243085bd20dae9809a289b94270c9755e62c))
-* **detail:** 海报图 CMS 优先并支持 TMDB 失败兜底 ([b88f9e9](https://github.com/ntc0728/video-warehouse/commit/b88f9e90d9fd6804712ca527bfac64fb4798fbc2))
-* **iptv:** C1 仅含音频时自动切线路（每频道名仅切 1 次防循环） ([f8d2885](https://github.com/ntc0728/video-warehouse/commit/f8d2885bf1a126e7acd8483219e424c9430fd07f))
-* **iptv:** D1 裸流降级识别（fail-and-retry，零额外请求） ([3fcaafb](https://github.com/ntc0728/video-warehouse/commit/3fcaafb77509bfb04e997e12a24b3d79d19c8e26))
-* **iptv:** 代理规则内置直连白名单默认值（降低 worker 请求量） ([cbe4a9a](https://github.com/ntc0728/video-warehouse/commit/cbe4a9aa61565d286c7cdd587f8ac9f9fa4d830a))
-* **iptv:** 播放器操作提示独立右上角 + TV 端 IPTV 交互 ([79f276f](https://github.com/ntc0728/video-warehouse/commit/79f276ff963cec111ef905e20801ffcb2aa4bd75))
-* **iptv:** 类型探测增强 + worker CORS 智能路由（分片直连省请求量） ([ac8bd21](https://github.com/ntc0728/video-warehouse/commit/ac8bd2189ed66a03e810cb7a0e79a00a5e89ff6d))
-* **player:** IPTV 播放链路增强 - 视频轨检测 + FLV/TS 兜底 + 自动切代理 ([38f1c7a](https://github.com/ntc0728/video-warehouse/commit/38f1c7a0fd80a45ca6680a436381cd4f93f57bfb))
-* **player:** toast 全局系统整改 + 播放器交互修复 ([aad7911](https://github.com/ntc0728/video-warehouse/commit/aad79119e395a3ac0a72a9360c355c09f617f644))
-* **player:** 提示统一右上角 + 预加载①点播首分片预取 ([12b9db4](https://github.com/ntc0728/video-warehouse/commit/12b9db49883b72193ac3ff0bb619c0dfbd3bacbb))
-* **player:** 预加载②剧集连播预加载（方案C，仅Wi-Fi） ([468bdc4](https://github.com/ntc0728/video-warehouse/commit/468bdc4ec3c079738e1461e8de7d21d04ea54182))
-* **searchbox:** 搜索框输入词实时搜索建议 ([ad35f9c](https://github.com/ntc0728/video-warehouse/commit/ad35f9cc012e4f7e2b870501f3e31f60e8287baf))
-* **ui:** 页面体验修复与侧边栏折叠重构 ([ea97ca9](https://github.com/ntc0728/video-warehouse/commit/ea97ca963696d3c62335ac9863a43bd2df8ca21a))
-* 免责声明样式优化 + 移动端头像进入个人设置 ([c0d8876](https://github.com/ntc0728/video-warehouse/commit/c0d887676f45e9f77fdaf68b950385a0d36774a6))
-* 播放页交互优化 + 首页继续观看行 2/3/5 + 测试 fixtures 纳入版本控制 ([a4a3732](https://github.com/ntc0728/video-warehouse/commit/a4a37326342d76cdebc430926a8ec1448704e42a))
-* 继续观看行骨架与响应式 + 非手机web小视口箭头 + 骨架占位精细化 ([38df989](https://github.com/ntc0728/video-warehouse/commit/38df98904c34e9a3472b059a0839220a5a363277))
-* 设置/首页 UI 优化 7 项 ([76796c2](https://github.com/ntc0728/video-warehouse/commit/76796c2c6752e28d5ed4db2460072dd85b117efa))
+* CMS按钮6列均分 + 拖拽进度条提示 + Hero骨架位置修正 + 免责声明 (`978c243`)
+* **detail:** 海报图 CMS 优先并支持 TMDB 失败兜底 (`b88f9e9`)
+* **iptv:** C1 仅含音频时自动切线路（每频道名仅切 1 次防循环） (`f8d2885`)
+* **iptv:** D1 裸流降级识别（fail-and-retry，零额外请求） (`3fcaafb`)
+* **iptv:** 代理规则内置直连白名单默认值（降低 worker 请求量） (`cbe4a9a`)
+* **iptv:** 播放器操作提示独立右上角 + TV 端 IPTV 交互 (`79f276f`)
+* **iptv:** 类型探测增强 + worker CORS 智能路由（分片直连省请求量） (`ac8bd21`)
+* **player:** IPTV 播放链路增强 - 视频轨检测 + FLV/TS 兜底 + 自动切代理 (`38f1c7a`)
+* **player:** toast 全局系统整改 + 播放器交互修复 (`aad7911`)
+* **player:** 提示统一右上角 + 预加载①点播首分片预取 (`12b9db4`)
+* **player:** 预加载②剧集连播预加载（方案C，仅Wi-Fi） (`468bdc4`)
+* **searchbox:** 搜索框输入词实时搜索建议 (`ad35f9c`)
+* **ui:** 页面体验修复与侧边栏折叠重构 (`ea97ca9`)
+* 免责声明样式优化 + 移动端头像进入个人设置 (`c0d8876`)
+* 播放页交互优化 + 首页继续观看行 2/3/5 + 测试 fixtures 纳入版本控制 (`a4a3732`)
+* 继续观看行骨架与响应式 + 非手机web小视口箭头 + 骨架占位精细化 (`38df989`)
+* 设置/首页 UI 优化 7 项 (`76796c2`)
 
 
 ### Bug Fixes
 
-* **browse:** 修复移动端断言与 loading 捕获（BROWSE-075/076/077） ([6ba10f6](https://github.com/ntc0728/video-warehouse/commit/6ba10f6e8d3c7aeb4fc537f0599c9db864e41659))
-* **home,iptv:** 首页新增「继续观看」区块 + IPTV OSD 空回调按钮清除 ([efb85e2](https://github.com/ntc0728/video-warehouse/commit/efb85e29c27f7e674fa1c9598034b6dd6468031b))
-* **home:** token 提示区高度链逐层撑满，主提示真居中、免责声明贴底 ([7231dec](https://github.com/ntc0728/video-warehouse/commit/7231decd657b3bfa54de654ec0493fa56991d3a5))
-* **home:** 移动端 token 提示上移 + 骨架缩略图叠加暗底镜像真实加载态 ([7f252c6](https://github.com/ntc0728/video-warehouse/commit/7f252c6a67d0a6d44047180e2c7ce5a684ea1da4))
-* **iptv:** EPG 请求合并 + 节目单缓存优先 + 仅含音频停止加载动画 ([48ac9c9](https://github.com/ntc0728/video-warehouse/commit/48ac9c9526fddb66294194466f357613328bc6de))
-* **perf:** 主题/皮肤切换瞬切根治卡顿 + discover 流搜索竞态保护 ([a7dba22](https://github.com/ntc0728/video-warehouse/commit/a7dba2223cf06c485cb2865135d571ef306025d1))
-* **player:** 播放器 UI 细节修正 ([b078e92](https://github.com/ntc0728/video-warehouse/commit/b078e92d376399295eb5ab42ece6cded6f8dd84b))
-* **player:** 播放进度身份错位与历史记录展示修复 ([469a383](https://github.com/ntc0728/video-warehouse/commit/469a38363b961f2203c5fd9fe715fb940f8406ea))
-* **settings:** TMDB Token 加密覆盖内存致 401 修复 + E2E 排除 backup-specs ([672d0c5](https://github.com/ntc0728/video-warehouse/commit/672d0c5ef3f99b63a2cc0e49cf88a3724d4d2ba4))
-* sonner toast 宽度改为内容撑开（fit-content） ([4d62a43](https://github.com/ntc0728/video-warehouse/commit/4d62a43184244eba2cfe7e37b04d6913a5e958af))
-* sonner 选择器失效致 toast 压顶不居中 + 播放页中间按钮播放无提示 + 免责声明标题居中 ([87e7cd4](https://github.com/ntc0728/video-warehouse/commit/87e7cd4e88bc58c3c949a18cb7e685be4c054a6d))
-* Toast 系统统一 — 操作类右上角、警告/错误/成功类播放器内部中间靠上 ([87bcf12](https://github.com/ntc0728/video-warehouse/commit/87bcf12412ea06d2d6e93d7ae02a4a8acc7f5e6f))
-* 播放器 Toast 位置改回右上角 + 浏览器拦截提示统一到播放器内部 ([3f20164](https://github.com/ntc0728/video-warehouse/commit/3f2016446ffdcf327c485e2270cf2413a5b7cd62))
+* **browse:** 修复移动端断言与 loading 捕获（BROWSE-075/076/077） (`6ba10f6`)
+* **home,iptv:** 首页新增「继续观看」区块 + IPTV OSD 空回调按钮清除 (`efb85e2`)
+* **home:** token 提示区高度链逐层撑满，主提示真居中、免责声明贴底 (`7231dec`)
+* **home:** 移动端 token 提示上移 + 骨架缩略图叠加暗底镜像真实加载态 (`7f252c6`)
+* **iptv:** EPG 请求合并 + 节目单缓存优先 + 仅含音频停止加载动画 (`48ac9c9`)
+* **perf:** 主题/皮肤切换瞬切根治卡顿 + discover 流搜索竞态保护 (`a7dba22`)
+* **player:** 播放器 UI 细节修正 (`b078e92`)
+* **player:** 播放进度身份错位与历史记录展示修复 (`469a383`)
+* **settings:** TMDB Token 加密覆盖内存致 401 修复 + E2E 排除 backup-specs (`672d0c5`)
+* sonner toast 宽度改为内容撑开（fit-content） (`4d62a43`)
+* sonner 选择器失效致 toast 压顶不居中 + 播放页中间按钮播放无提示 + 免责声明标题居中 (`87e7cd4`)
+* Toast 系统统一 — 操作类右上角、警告/错误/成功类播放器内部中间靠上 (`87bcf12`)
+* 播放器 Toast 位置改回右上角 + 浏览器拦截提示统一到播放器内部 (`3f20164`)
 
 
 ### Performance Improvements
 
-* 接口滥用治理与播放页缓存优化 ([3729f78](https://github.com/ntc0728/video-warehouse/commit/3729f78c6529ff4c711208974d8331c521b6d065))
+* 接口滥用治理与播放页缓存优化 (`3729f78`)
 
 ## [1.1.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.0.0...kinotv-v1.1.0) (2026-07-30)
 
 
 ### Features
 
-* **browse:** 切换直链搜索tab跳过重复查询、双卡片相连、切换筛选触发搜索中 ([869dbf2](https://github.com/ntc0728/video-warehouse/commit/869dbf2496cf9becc79de3a39278a2551ecde2c4))
-* **browse:** 移动端整页以卡片式布局包裹（isPhone / 视口&lt;768px） ([940b4b2](https://github.com/ntc0728/video-warehouse/commit/940b4b2f511f69ea943b91726b368943b5673e9f))
-* **browse:** 移动端方案②命令栏+右滑全屏筛选面板，动态预设（trending+记忆），桌面移除更新中并全展开筛选tab ([63a102c](https://github.com/ntc0728/video-warehouse/commit/63a102cf9e3d4bd01a4dc77c4288cf1e64221cea))
-* DASH播放器支持 + 时移回看 + UI组件增强 + README更新 ([6418432](https://github.com/ntc0728/video-warehouse/commit/6418432e25836b391939e8eb238bafa82ce2b98f))
-* EPG 节目单 + UniversalPlayer OSD 与各页样式迭代 ([6923a65](https://github.com/ntc0728/video-warehouse/commit/6923a650ab52a3f7edec905cd7e5c443afde39a5))
-* HeroBanner UI 优化 + TMDB Mock 测试保护 + 全页面测试用例 + Bug 修复 ([3c31bc1](https://github.com/ntc0728/video-warehouse/commit/3c31bc1241aa959b4d0bd4edd4af7f54417c6040))
-* HeroBanner 滑动切换动画 + Capacitor 原生支持 + UI/播放器优化 ([2c1f09f](https://github.com/ntc0728/video-warehouse/commit/2c1f09ff167cd5e31120275a528f77150bdd7ddf))
-* IPTV 播放器优化 + 接口滥用修复 + UI 调整 + 构建优化 ([90f80f0](https://github.com/ntc0728/video-warehouse/commit/90f80f0e81767623ab2496034a250e12e17ff7db))
-* IPTV/设置页UI优化 + 播放器交互改进 + Loading居中修复 ([cd68289](https://github.com/ntc0728/video-warehouse/commit/cd6828909f4e62cdd8dcb8e8549c1e8a2caa5560))
-* **iptv:** 修复双层滚动冲突 + 修复懒加载 120 卡死 + 同步 UI 组件库 ([94aa6e2](https://github.com/ntc0728/video-warehouse/commit/94aa6e2f63bd378cf437978d594a0cd62a4b1841))
-* IPTV移动端OSD控制栏适配 + 播放器头部全屏按钮 + 页面左右padding统一 ([9223c60](https://github.com/ntc0728/video-warehouse/commit/9223c60f96e9baae4cad17f051738cc1022bf489))
-* migrate HeroBanner from Swiper to Embla Carousel ([3d3313b](https://github.com/ntc0728/video-warehouse/commit/3d3313ba0c66c3ccecfd707190082784ebf55903))
-* player UI improvements and Browse page cleanup ([7ac36fa](https://github.com/ntc0728/video-warehouse/commit/7ac36fa0ca5749b6eb44bdd9774f310b6e1a48fd))
-* Player 页 UI 整改 — 连播导航/overview展开/空态主题/超时重试/代码清理 ([4eb6fb2](https://github.com/ntc0728/video-warehouse/commit/4eb6fb2c1126a26e5228e20f044b1f748ea90223))
-* **Player:** 选季面板 + 选集排序/下拉 + 播放按钮/收藏样式优化 ([b9f2a77](https://github.com/ntc0728/video-warehouse/commit/b9f2a7773a931dc8af1c71400e22fd43743afd7b))
-* RecordShell 共用外壳 + Browse 懒加载修复 + 页面原理图与流程图 + AI Agent 指南 ([0e98ad6](https://github.com/ntc0728/video-warehouse/commit/0e98ad69099306f774d2e8d9da23578d815cebc7))
-* shadcn/ui迁移 + 动画增强 + 主题换肤系统 + Bug修复 ([da7fa05](https://github.com/ntc0728/video-warehouse/commit/da7fa05bfdf40578f423629f7d3f0bf6ebc25412))
-* TMDB 服务 — 类型扩展 + 接口增强 + Store 更新 ([8ea4139](https://github.com/ntc0728/video-warehouse/commit/8ea4139f22a897fbf9f6a4b7b7ad72f6da553714))
-* UI 交互优化 + 路由过渡动画 + Design Token 调整 + 移动端适配 ([7de343c](https://github.com/ntc0728/video-warehouse/commit/7de343cfca080f6ffbbc34f65a7f36bf41bcefe5))
-* UI优化 + IPTV修复 + README文档 + Playwright测试框架 ([0026d76](https://github.com/ntc0728/video-warehouse/commit/0026d766f4e49b753aeecb8f306b1e30fd2fbf83))
-* UI优化 + 播放器改进 + 测试基础设施 + 文档更新 + videoService编码修复 ([6612219](https://github.com/ntc0728/video-warehouse/commit/661221926aa003ffcd4d61923871ce61dfd3e7fd))
-* UI优化 + 滚动条重构 + 页面交互修复 ([cdad78a](https://github.com/ntc0728/video-warehouse/commit/cdad78a830c7976a73aeb93dcb6c6877f9d2e8d0))
-* UI重构 + IPTV代理修复 + 多项bug修复 ([12913f3](https://github.com/ntc0728/video-warehouse/commit/12913f3e1abb58650bca05fc3c181e0ecfba2e72))
-* UniversalPlayer 控制栏增强 + UI 组件优化 + 样式修复 ([8a1a7d7](https://github.com/ntc0728/video-warehouse/commit/8a1a7d7fae1e35bdc32a48f67761c926d7217047))
-* **version:** 引入 SemVer + release-please 自动版本与 Capacitor 双端同步 ([7226232](https://github.com/ntc0728/video-warehouse/commit/7226232015e5b4db30566e627cdd0634d3ad776b))
-* 主题/动画/Design Token 调优 + IPTV 源数据更新 + UI 组件增强 ([c9a53c3](https://github.com/ntc0728/video-warehouse/commit/c9a53c369409d45b5efdf49e462a3608744244e3))
-* 主题切换平滑过渡 + Browse 源状态弹层与详情页源检测一致 ([33a716d](https://github.com/ntc0728/video-warehouse/commit/33a716d2077e7abd287ce9ec6f2b27bd0db6c2b2))
-* 卡片式布局升级 + 多页面 UI 优化 ([6b0469a](https://github.com/ntc0728/video-warehouse/commit/6b0469a2fcedf7ac79b39506707e4f4fa2191f57))
-* 卡片模块 UI 风格（首页/侧边栏/顶栏/loading 卡片化，骨架扫光调速，仅桌面端生效） ([661e176](https://github.com/ntc0728/video-warehouse/commit/661e176d610ee705131e841be9a5a1085f1796b1))
-* 历史页时间轴重构 — 圆点内联到分组标题行，竖线贯穿各节点 ([9532813](https://github.com/ntc0728/video-warehouse/commit/953281370c095dc0cf138a10b78e7417900d0c23))
-* 批量修复 6 项 UI/行为问题 ([ebb453e](https://github.com/ntc0728/video-warehouse/commit/ebb453ee60b6cf1b077fa492d4e9195600166874))
-* 搜索中心 + CMS 直链搜索 + 播放器优化 + 5项Bug修复 ([29963f0](https://github.com/ntc0728/video-warehouse/commit/29963f02c7ddf08098a818f9c3d5dcf14374dc47))
-* 播放器交互优化 + IPTV 体验改进 + 设置项重构 ([ee90d2b](https://github.com/ntc0728/video-warehouse/commit/ee90d2b73f5355bfea6c60159a215294530f41c5))
-* 播放器全面优化 + 首页Banner继续播放 + CSS设计令牌统一 ([53639e6](https://github.com/ntc0728/video-warehouse/commit/53639e6e916ee4f19cd381d4004b2473ce4fef1f))
-* 播放流程入口测试 + 多页面 UI 优化 ([5129021](https://github.com/ntc0728/video-warehouse/commit/51290210c45ceee22735b1d399762bbb91f6845e))
-* 新增 ConfirmDialog 组件 + CORS Proxy Worker + 各页样式优化 ([d607b72](https://github.com/ntc0728/video-warehouse/commit/d607b72a8e3cda8b1084a4b019a9a10ebb8688f3))
-* 移动端UI优化 + 主题闪烁修复 + 设置页/首页/IPTV交互改进 ([3157f65](https://github.com/ntc0728/video-warehouse/commit/3157f6580478757a1e65e9a63d96ff49d68d391a))
-* 详情页/人物页优化 + 播放器控制栏增强 + 动态页签标题 ([1655ecc](https://github.com/ntc0728/video-warehouse/commit/1655ecce131c115bd0e6f2c59aac74b713a2161e))
-* 连接式导航布局 + Browse 双卡片重构 + 知识库同步 ([0d04981](https://github.com/ntc0728/video-warehouse/commit/0d049819b1b7ab0404255e8eaea2a257588dfa47))
-* 页面级KeepAlive + 播放器重构 + TypeScript错误修复 + 构建优化 ([47f82c2](https://github.com/ntc0728/video-warehouse/commit/47f82c2bb8640fec3d38bffb62405e7bf35e5715))
+* **browse:** 切换直链搜索tab跳过重复查询、双卡片相连、切换筛选触发搜索中 (`869dbf2`)
+* **browse:** 移动端整页以卡片式布局包裹（isPhone / 视口&lt;768px） (`940b4b2`)
+* **browse:** 移动端方案②命令栏+右滑全屏筛选面板，动态预设（trending+记忆），桌面移除更新中并全展开筛选tab (`63a102c`)
+* DASH播放器支持 + 时移回看 + UI组件增强 + README更新 (`6418432`)
+* EPG 节目单 + UniversalPlayer OSD 与各页样式迭代 (`6923a65`)
+* HeroBanner UI 优化 + TMDB Mock 测试保护 + 全页面测试用例 + Bug 修复 (`3c31bc1`)
+* HeroBanner 滑动切换动画 + Capacitor 原生支持 + UI/播放器优化 (`2c1f09f`)
+* IPTV 播放器优化 + 接口滥用修复 + UI 调整 + 构建优化 (`90f80f0`)
+* IPTV/设置页UI优化 + 播放器交互改进 + Loading居中修复 (`cd68289`)
+* **iptv:** 修复双层滚动冲突 + 修复懒加载 120 卡死 + 同步 UI 组件库 (`94aa6e2`)
+* IPTV移动端OSD控制栏适配 + 播放器头部全屏按钮 + 页面左右padding统一 (`9223c60`)
+* migrate HeroBanner from Swiper to Embla Carousel (`3d3313b`)
+* player UI improvements and Browse page cleanup (`7ac36fa`)
+* Player 页 UI 整改 — 连播导航/overview展开/空态主题/超时重试/代码清理 (`4eb6fb2`)
+* **Player:** 选季面板 + 选集排序/下拉 + 播放按钮/收藏样式优化 (`b9f2a77`)
+* RecordShell 共用外壳 + Browse 懒加载修复 + 页面原理图与流程图 + AI Agent 指南 (`0e98ad6`)
+* shadcn/ui迁移 + 动画增强 + 主题换肤系统 + Bug修复 (`da7fa05`)
+* TMDB 服务 — 类型扩展 + 接口增强 + Store 更新 (`8ea4139`)
+* UI 交互优化 + 路由过渡动画 + Design Token 调整 + 移动端适配 (`7de343c`)
+* UI优化 + IPTV修复 + README文档 + Playwright测试框架 (`0026d76`)
+* UI优化 + 播放器改进 + 测试基础设施 + 文档更新 + videoService编码修复 (`6612219`)
+* UI优化 + 滚动条重构 + 页面交互修复 (`cdad78a`)
+* UI重构 + IPTV代理修复 + 多项bug修复 (`12913f3`)
+* UniversalPlayer 控制栏增强 + UI 组件优化 + 样式修复 (`8a1a7d7`)
+* **version:** 引入 SemVer + release-please 自动版本与 Capacitor 双端同步 (`7226232`)
+* 主题/动画/Design Token 调优 + IPTV 源数据更新 + UI 组件增强 (`c9a53c3`)
+* 主题切换平滑过渡 + Browse 源状态弹层与详情页源检测一致 (`33a716d`)
+* 卡片式布局升级 + 多页面 UI 优化 (`6b0469a`)
+* 卡片模块 UI 风格（首页/侧边栏/顶栏/loading 卡片化，骨架扫光调速，仅桌面端生效） (`661e176`)
+* 历史页时间轴重构 — 圆点内联到分组标题行，竖线贯穿各节点 (`9532813`)
+* 批量修复 6 项 UI/行为问题 (`ebb453e`)
+* 搜索中心 + CMS 直链搜索 + 播放器优化 + 5项Bug修复 (`29963f0`)
+* 播放器交互优化 + IPTV 体验改进 + 设置项重构 (`ee90d2b`)
+* 播放器全面优化 + 首页Banner继续播放 + CSS设计令牌统一 (`53639e6`)
+* 播放流程入口测试 + 多页面 UI 优化 (`5129021`)
+* 新增 ConfirmDialog 组件 + CORS Proxy Worker + 各页样式优化 (`d607b72`)
+* 移动端UI优化 + 主题闪烁修复 + 设置页/首页/IPTV交互改进 (`3157f65`)
+* 详情页/人物页优化 + 播放器控制栏增强 + 动态页签标题 (`1655ecc`)
+* 连接式导航布局 + Browse 双卡片重构 + 知识库同步 (`0d04981`)
+* 页面级KeepAlive + 播放器重构 + TypeScript错误修复 + 构建优化 (`47f82c2`)
 
 
 ### Bug Fixes
 
-* **app-loading:** 移动端 AppLoading 全视口带卡片式布局，与桌面端一致 ([a22c8b5](https://github.com/ntc0728/video-warehouse/commit/a22c8b5259203dcabb3aa77e48ff626bf3e94ffc))
-* Browse 刷新清空搜索词 + 历史页 tab 切换去重 + FilterBar 重构 + SearchBox 右键拦截 ([671b1d5](https://github.com/ntc0728/video-warehouse/commit/671b1d5389f2db797a9c7ce6ef9fd415589b8f4e))
-* **browse:** useIsPhone 改为真实手机UA+App(非视口)，并补引入 BrowseMobileBar.css(此前未引入致移动端样式全失效)；移动端结果区去卡片外壳改全宽网格 ([cbc1998](https://github.com/ntc0728/video-warehouse/commit/cbc1998ed6503596624460da94a8070460349fd2))
-* **browse:** 修复懒加载失效 + 统一 VideoCard 网格样式 ([941fc4d](https://github.com/ntc0728/video-warehouse/commit/941fc4de0172bcdd7ee4826128103745f161ac4a))
-* **browse:** 切换筛选tab正确触发搜索中遮罩（换角度：快照hadData而非依赖discoverResults） ([f6c089c](https://github.com/ntc0728/video-warehouse/commit/f6c089cb31d8a346f79a03dba8e8581872e74906))
-* **browse:** 清空搜索词后切到直链搜索时清空 CMS 残留数据 ([8b99337](https://github.com/ntc0728/video-warehouse/commit/8b99337c5cef195a537722ecf4d70191430ec052))
-* **browse:** 移动端卡片布局改为镜像桌面端双卡片相连，整页随 app-shell 滚动 ([7a6f791](https://github.com/ntc0728/video-warehouse/commit/7a6f79199915a48d11978bd6c34316089593cef9))
-* **browse:** 移动端命令栏对齐桌面端——激活tab文本#fff、亮色去背景、chip选中实色primary、删除排序按钮 ([2747944](https://github.com/ntc0728/video-warehouse/commit/27479448e739ca0aafe3ce95549cf05ffd0a3d8a))
-* **browse:** 移动端布局仅真实手机web+App生效(useIsPhone)，命令栏对齐原型(模式段+排序+筛选入口+动态预设+说明+已选轨+面板为你推荐) ([b9de28e](https://github.com/ntc0728/video-warehouse/commit/b9de28e615e58702f98df539e4554edf11b58367))
-* **browse:** 移动端布局增加视口&lt;768px触发；按钮缩小、重置/完成改胶囊；主题适配(#fff-&gt;var(--color-text-inverse)修复暗色不可见) ([d0a2387](https://github.com/ntc0728/video-warehouse/commit/d0a2387397e489effbb52f8f2164a542ab1466e4))
-* **browse:** 移动端模式tab文本色对齐桌面端(secondary)，直链搜索隐藏bmb-rail ([81643b7](https://github.com/ntc0728/video-warehouse/commit/81643b769b9271a899bd7b479022c3b8fcc0da7c))
-* **browse:** 移动端模式分段容器背景/边框对齐桌面端（surface + color-border） ([1c547c2](https://github.com/ntc0728/video-warehouse/commit/1c547c207dc898b7c083c683dfd9deab9d2b9c9d))
-* **browse:** 移动端直链搜索模式隐藏排序/筛选入口与预设横滚 ([8c4d6b4](https://github.com/ntc0728/video-warehouse/commit/8c4d6b4b9f5f02db0ed2895b860ceb313cbfbdca))
-* **browse:** 移动端直链搜索隐藏预设 + 整页卡片布局修复（结果区内部滚动） ([54027d3](https://github.com/ntc0728/video-warehouse/commit/54027d344841292acdfd3bfd3058d8876b9aaa74))
-* **ci:** release-please 支持 PAT 绕过仓库 PR 创建权限限制 ([85e7f39](https://github.com/ntc0728/video-warehouse/commit/85e7f391e6159fe186bce87fa21595f68a215b6c))
-* **detail:** 剧照在 Keep-Alive 隐藏加载后正确截断为 2 行 ([e600bc1](https://github.com/ntc0728/video-warehouse/commit/e600bc12dd2ca655d908a2676e6ab1db06f941bb))
-* HeroBanner 缩略图 active 盒子缩放导致宽度不一致 + Detail 首次进入剧照截断/闪烁 ([eac50ad](https://github.com/ntc0728/video-warehouse/commit/eac50ad4fc9e0ecc99de185a3b1dbce2bbb3fd9b))
-* HeroBanner 缩略图撑满 banner 高度 + 消除首屏双重 AppLoading ([6b21abe](https://github.com/ntc0728/video-warehouse/commit/6b21abe19ca935a5c478aa96c158886d0fc55eb3))
-* **HeroBanner:** 修复 banner 切换后回退 crossfade 导致的闪烁 ([efe5865](https://github.com/ntc0728/video-warehouse/commit/efe5865ac7ac91398951e136ef8f434c152c1db3))
-* **HeroBanner:** 修复切换分类越界导致整页白屏；切换时缩略图回骨架占位 ([739e7e3](https://github.com/ntc0728/video-warehouse/commit/739e7e347a42ee3beb8ec891273661685da151a1))
-* **HeroBanner:** 修复右栏缩略图初始骨架宽度与真实不一致 ([56d6d4c](https://github.com/ntc0728/video-warehouse/commit/56d6d4c89d8b506922e427e441446515afdb1f33))
-* **HeroBanner:** 修复缩略图切换时最后一个（新露出）缩略图闪烁 ([e1b61ab](https://github.com/ntc0728/video-warehouse/commit/e1b61abebea567c7f7b76d1e8c4fff009afbf1b7))
-* **HeroBanner:** 彻底修复缩略图切换露白——改为预加载就绪后再换图 ([f607ed5](https://github.com/ntc0728/video-warehouse/commit/f607ed5d3eba4dcb8eafdd36026e6dbbf364ccf3))
-* **home:** 修复首页 TMDBMovieRow 不显示 + banner 缩略图骨架不同步 ([282174a](https://github.com/ntc0728/video-warehouse/commit/282174a2e6009885153714f8918fcb6f6c0cc01f))
-* IPTV 懒加载改边沿触发+隐藏期守卫，剧照 lightbox 用 Portal 修复高度与背景滚动锁定 ([4025a1d](https://github.com/ntc0728/video-warehouse/commit/4025a1da6a09bdef469906f98c6258fe92e1f910))
-* m3u8-proxy 添加 User-Agent 解决 403 + 启动时同步 IPTV aggregatorUrl 避免首进无数据 ([b4734e8](https://github.com/ntc0728/video-warehouse/commit/b4734e8872bc669f844d9513302e8037ba754141))
-* **record-shell:** 移动端 record-aside 用 space-md gap，对齐桌面端 edit-row 间距 ([ac75153](https://github.com/ntc0728/video-warehouse/commit/ac75153fa908db2057ef29164dd452d6e36d1bd7))
-* **record-shell:** 移动端 record-aside 移除卡片式包裹，对齐桌面端纯布局条 ([81dce42](https://github.com/ntc0728/video-warehouse/commit/81dce42396a6a0993f76d062469e6ab1187e19cb))
-* **record-shell:** 移动端 record-main 补 gap:space-sm，对齐桌面端内部间距 ([7cf3e18](https://github.com/ntc0728/video-warehouse/commit/7cf3e18e295bf5d21f0509ca27afe622c75a903b))
-* resolve TypeScript build errors for Cloudflare Pages deployment ([1a805ba](https://github.com/ntc0728/video-warehouse/commit/1a805ba844c967e53f57fe92442fa19f8abf3db8))
-* **Settings:** 补设置页进入过渡动画，消除进入僵硬感 ([223d5a2](https://github.com/ntc0728/video-warehouse/commit/223d5a28e37c2ced0f0519c336d14a5b6ee6f046))
-* **styles:** 关于页版本/更新日志项移除 hover/focus 背景变色 ([9ef2f70](https://github.com/ntc0728/video-warehouse/commit/9ef2f70e64620011d5f757bdce8500a7841088c3))
-* **styles:** 消除设置项按钮 active 时内部元素异常缩放/下沉 ([90c7c99](https://github.com/ntc0728/video-warehouse/commit/90c7c9920f175475a711c7f48d2243a95ae5f013))
-* **styles:** 设置页按钮按压仅缩放内部文字、按钮框保持静止 ([4d4b300](https://github.com/ntc0728/video-warehouse/commit/4d4b3001be61da067dbdc6c5302d81e6953f5c08))
-* **styles:** 设置页按钮改用 opacity 按压反馈（不缩放/不改背景） ([d0c8cd2](https://github.com/ntc0728/video-warehouse/commit/d0c8cd242c78fd9361732323291675c579ed27c4))
-* **styles:** 设置项按压仅缩放文本自身宽度（标题收缩到 fit-content） ([f59b488](https://github.com/ntc0728/video-warehouse/commit/f59b488127a061889239742325b674f91ececc71))
-* **style:** 方案6二次整改——缩放反馈一律不叠加 box-shadow；个人资料/导入导出/恢复默认仅文字缩放 ([7c22f08](https://github.com/ntc0728/video-warehouse/commit/7c22f0895dc90989737f9ebc6816ab3da9abd3dd))
-* **style:** 方案6弹性回弹整改——补全侧边栏/顶栏、收敛 box-shadow、排除设置页全宽行、清除旧方案残留 ([ca3dda9](https://github.com/ntc0728/video-warehouse/commit/ca3dda9556c91118bcaa69212515a88d2878dbb7))
-* **style:** 采用方案6弹性回弹替换全局按钮按压反馈 ([2af5c9a](https://github.com/ntc0728/video-warehouse/commit/2af5c9a025cd156371866be839f460584351a1bb))
-* TMDB错误处理、CMS loading状态、Settings placeholder字体、Browse数据覆盖 ([cf2c764](https://github.com/ntc0728/video-warehouse/commit/cf2c76426d338bfbbfffd8ee5635d72f27ec60bb))
-* **Transition:** 消除首页/分类页双重 AppLoading 并补全进入过渡动画 ([1d5654f](https://github.com/ntc0728/video-warehouse/commit/1d5654fac419c600982a2f6ec0f8b66b587cdbf6))
-* 修复 7/28 页面过渡与侧边栏遗留问题 ([eabe0be](https://github.com/ntc0728/video-warehouse/commit/eabe0be16173344cbddb9d84bb699abda07d88e4))
-* 修复 AppLayout.tsx 中 CustomScrollbar 拼写错误 ([4e92aa5](https://github.com/ntc0728/video-warehouse/commit/4e92aa5079e82ce59145ef9043e5dd8380949726))
-* 修复 CSS 属性顺序和媒体查询语法 ([16fe0a8](https://github.com/ntc0728/video-warehouse/commit/16fe0a8e76854cf332256b38e885fafa7e001d49))
-* 修复 DB 版本升级时整页卡在 loading 的问题 ([0439af6](https://github.com/ntc0728/video-warehouse/commit/0439af685922218c810a342da3fccd03c2bb29e5))
-* 修复 HeroBanner 缩略图宽度跳变与 Detail 首进剧照不截断的真根因 ([5b27bfa](https://github.com/ntc0728/video-warehouse/commit/5b27bfab72184ba6748678854801860181b13107))
-* 修复多重AppLoading闪烁/剧照分割/banner滑动/设置卡片/非首页trending ([28f2dab](https://github.com/ntc0728/video-warehouse/commit/28f2dabfd9305c9ec257d06af6315765d7a291b1))
-* 修复播放列表立即播放的选集/线路回显与详情页 keep-alive ([0e4e713](https://github.com/ntc0728/video-warehouse/commit/0e4e71376d91563fc321db55ee5472e0c5f8894a))
-* 修复缩略图骨架宽度与真实不一致（真实根因，非 HeroBanner） ([e16ec5a](https://github.com/ntc0728/video-warehouse/commit/e16ec5a28f491838a3541566834dadfcb7f612d4))
-* 修复返回顶部/设置深链/Detail滚动恢复与标题/Browse标题 ([#1](https://github.com/ntc0728/video-warehouse/issues/1) [#3](https://github.com/ntc0728/video-warehouse/issues/3) [#4](https://github.com/ntc0728/video-warehouse/issues/4) [#5](https://github.com/ntc0728/video-warehouse/issues/5) [#6](https://github.com/ntc0728/video-warehouse/issues/6) [#7](https://github.com/ntc0728/video-warehouse/issues/7)) ([a91e4c0](https://github.com/ntc0728/video-warehouse/commit/a91e4c01babd81ffc22b951bd9b96749a82b7e8c))
-* 全部弹窗实时订阅观看历史，修正返回后进度/百分比滞后 ([28fd59e](https://github.com/ntc0728/video-warehouse/commit/28fd59e77882393dfb662c55c87711bb9f63bb41))
-* 引入分层 z-index 层级体系修复下拉框被侧边栏遮挡，合并页面进入动画统一、首页骨架一致性及 keep-alive store 等累积修复 ([5a9d24e](https://github.com/ntc0728/video-warehouse/commit/5a9d24eca1635d159d6fe22df19443e18c8736f0))
-* 播放列表弹窗「播放中」标记按季隔离 ([c19f144](https://github.com/ntc0728/video-warehouse/commit/c19f1448bb07d32bb01b3fb55a59cb02d1598814))
-* 播放列表弹窗抽屉层级与选季布局 ([846eb9d](https://github.com/ntc0728/video-warehouse/commit/846eb9ddd074d89e951313bd710e9c5287596b0f))
-* 播放器核心逻辑修复 + UI优化 + 请求取消支持 ([02147e4](https://github.com/ntc0728/video-warehouse/commit/02147e4a6079c434a30d2cc3085bc52d6299ea6c))
-* 播放进度按内容身份跨源共享（电影=videoId，剧集=videoId+季+集） ([fcf008f](https://github.com/ntc0728/video-warehouse/commit/fcf008f0e07c89f38843e8a0a72cebc1e372f08c))
-* 播放页按历史进度恢复选集/线路（点击源卡片立即播放场景） ([6d04149](https://github.com/ntc0728/video-warehouse/commit/6d041491dee670efba50bfee018b2024c2771a79))
-* 移除 StickyHeader 未使用的 isBrowse 变量，修复 TS6133 编译错误 ([cda1067](https://github.com/ntc0728/video-warehouse/commit/cda106746db6927ec76255130436c2237bccf63d))
-* 移除 useTMDBStore 中未使用的 _totalResults 变量，修复 tsc -b 构建失败 ([f4b7601](https://github.com/ntc0728/video-warehouse/commit/f4b76014ce5b4a7ee113895597dcde5f408d8742))
-* 移除详情页hero item多余背景色 ([4352391](https://github.com/ntc0728/video-warehouse/commit/435239117e8192f063eca3521100a49ea8800512))
-* 返回后浏览器页签标题停留在旧页（Keep-Alive 多页竞态） ([44a6f06](https://github.com/ntc0728/video-warehouse/commit/44a6f064a4200d457c103500aa095d355c57165f))
-* 还原 7/28 误删的 Browse 页面样式（e4514b4 过度删除） ([0d53286](https://github.com/ntc0728/video-warehouse/commit/0d532860e0b832941f3edd34ffa3834aa4bf4956))
-* 选源优先级修正——routeSourceIndex 优先于历史记录，点哪个源播哪个源 ([c73fe1e](https://github.com/ntc0728/video-warehouse/commit/c73fe1eb70ac140226c761e8e1301c6c9f6947fc))
-* 首页分类跳转 Browse 页搜索筛选联动 ([9ba1be5](https://github.com/ntc0728/video-warehouse/commit/9ba1be5172332765d1f4de0abac583452e842e84))
+* **app-loading:** 移动端 AppLoading 全视口带卡片式布局，与桌面端一致 (`a22c8b5`)
+* Browse 刷新清空搜索词 + 历史页 tab 切换去重 + FilterBar 重构 + SearchBox 右键拦截 (`671b1d5`)
+* **browse:** useIsPhone 改为真实手机UA+App(非视口)，并补引入 BrowseMobileBar.css(此前未引入致移动端样式全失效)；移动端结果区去卡片外壳改全宽网格 (`cbc1998`)
+* **browse:** 修复懒加载失效 + 统一 VideoCard 网格样式 (`941fc4d`)
+* **browse:** 切换筛选tab正确触发搜索中遮罩（换角度：快照hadData而非依赖discoverResults） (`f6c089c`)
+* **browse:** 清空搜索词后切到直链搜索时清空 CMS 残留数据 (`8b99337`)
+* **browse:** 移动端卡片布局改为镜像桌面端双卡片相连，整页随 app-shell 滚动 (`7a6f791`)
+* **browse:** 移动端命令栏对齐桌面端——激活tab文本#fff、亮色去背景、chip选中实色primary、删除排序按钮 (`2747944`)
+* **browse:** 移动端布局仅真实手机web+App生效(useIsPhone)，命令栏对齐原型(模式段+排序+筛选入口+动态预设+说明+已选轨+面板为你推荐) (`b9de28e`)
+* **browse:** 移动端布局增加视口&lt;768px触发；按钮缩小、重置/完成改胶囊；主题适配(#fff-&gt;var(--color-text-inverse)修复暗色不可见) (`d0a2387`)
+* **browse:** 移动端模式tab文本色对齐桌面端(secondary)，直链搜索隐藏bmb-rail (`81643b7`)
+* **browse:** 移动端模式分段容器背景/边框对齐桌面端（surface + color-border） (`1c547c2`)
+* **browse:** 移动端直链搜索模式隐藏排序/筛选入口与预设横滚 (`8c4d6b4`)
+* **browse:** 移动端直链搜索隐藏预设 + 整页卡片布局修复（结果区内部滚动） (`54027d3`)
+* **ci:** release-please 支持 PAT 绕过仓库 PR 创建权限限制 (`85e7f39`)
+* **detail:** 剧照在 Keep-Alive 隐藏加载后正确截断为 2 行 (`e600bc1`)
+* HeroBanner 缩略图 active 盒子缩放导致宽度不一致 + Detail 首次进入剧照截断/闪烁 (`eac50ad`)
+* HeroBanner 缩略图撑满 banner 高度 + 消除首屏双重 AppLoading (`6b21abe`)
+* **HeroBanner:** 修复 banner 切换后回退 crossfade 导致的闪烁 (`efe5865`)
+* **HeroBanner:** 修复切换分类越界导致整页白屏；切换时缩略图回骨架占位 (`739e7e3`)
+* **HeroBanner:** 修复右栏缩略图初始骨架宽度与真实不一致 (`56d6d4c`)
+* **HeroBanner:** 修复缩略图切换时最后一个（新露出）缩略图闪烁 (`e1b61ab`)
+* **HeroBanner:** 彻底修复缩略图切换露白——改为预加载就绪后再换图 (`f607ed5`)
+* **home:** 修复首页 TMDBMovieRow 不显示 + banner 缩略图骨架不同步 (`282174a`)
+* IPTV 懒加载改边沿触发+隐藏期守卫，剧照 lightbox 用 Portal 修复高度与背景滚动锁定 (`4025a1d`)
+* m3u8-proxy 添加 User-Agent 解决 403 + 启动时同步 IPTV aggregatorUrl 避免首进无数据 (`b4734e8`)
+* **record-shell:** 移动端 record-aside 用 space-md gap，对齐桌面端 edit-row 间距 (`ac75153`)
+* **record-shell:** 移动端 record-aside 移除卡片式包裹，对齐桌面端纯布局条 (`81dce42`)
+* **record-shell:** 移动端 record-main 补 gap:space-sm，对齐桌面端内部间距 (`7cf3e18`)
+* resolve TypeScript build errors for Cloudflare Pages deployment (`1a805ba`)
+* **Settings:** 补设置页进入过渡动画，消除进入僵硬感 (`223d5a2`)
+* **styles:** 关于页版本/更新日志项移除 hover/focus 背景变色 (`9ef2f70`)
+* **styles:** 消除设置项按钮 active 时内部元素异常缩放/下沉 (`90c7c99`)
+* **styles:** 设置页按钮按压仅缩放内部文字、按钮框保持静止 (`4d4b300`)
+* **styles:** 设置页按钮改用 opacity 按压反馈（不缩放/不改背景） (`d0c8cd2`)
+* **styles:** 设置项按压仅缩放文本自身宽度（标题收缩到 fit-content） (`f59b488`)
+* **style:** 方案6二次整改——缩放反馈一律不叠加 box-shadow；个人资料/导入导出/恢复默认仅文字缩放 (`7c22f08`)
+* **style:** 方案6弹性回弹整改——补全侧边栏/顶栏、收敛 box-shadow、排除设置页全宽行、清除旧方案残留 (`ca3dda9`)
+* **style:** 采用方案6弹性回弹替换全局按钮按压反馈 (`2af5c9a`)
+* TMDB错误处理、CMS loading状态、Settings placeholder字体、Browse数据覆盖 (`cf2c764`)
+* **Transition:** 消除首页/分类页双重 AppLoading 并补全进入过渡动画 (`1d5654f`)
+* 修复 7/28 页面过渡与侧边栏遗留问题 (`eabe0be`)
+* 修复 AppLayout.tsx 中 CustomScrollbar 拼写错误 (`4e92aa5`)
+* 修复 CSS 属性顺序和媒体查询语法 (`16fe0a8`)
+* 修复 DB 版本升级时整页卡在 loading 的问题 (`0439af6`)
+* 修复 HeroBanner 缩略图宽度跳变与 Detail 首进剧照不截断的真根因 (`5b27bfa`)
+* 修复多重AppLoading闪烁/剧照分割/banner滑动/设置卡片/非首页trending (`28f2dab`)
+* 修复播放列表立即播放的选集/线路回显与详情页 keep-alive (`0e4e713`)
+* 修复缩略图骨架宽度与真实不一致（真实根因，非 HeroBanner） (`e16ec5a`)
+* 修复返回顶部/设置深链/Detail滚动恢复与标题/Browse标题 ([#1](https://github.com/ntc0728/video-warehouse/issues/1) [#3](https://github.com/ntc0728/video-warehouse/issues/3) [#4](https://github.com/ntc0728/video-warehouse/issues/4) [#5](https://github.com/ntc0728/video-warehouse/issues/5) [#6](https://github.com/ntc0728/video-warehouse/issues/6) [#7](https://github.com/ntc0728/video-warehouse/issues/7)) (`a91e4c0`)
+* 全部弹窗实时订阅观看历史，修正返回后进度/百分比滞后 (`28fd59e`)
+* 引入分层 z-index 层级体系修复下拉框被侧边栏遮挡，合并页面进入动画统一、首页骨架一致性及 keep-alive store 等累积修复 (`5a9d24e`)
+* 播放列表弹窗「播放中」标记按季隔离 (`c19f144`)
+* 播放列表弹窗抽屉层级与选季布局 (`846eb9d`)
+* 播放器核心逻辑修复 + UI优化 + 请求取消支持 (`02147e4`)
+* 播放进度按内容身份跨源共享（电影=videoId，剧集=videoId+季+集） (`fcf008f`)
+* 播放页按历史进度恢复选集/线路（点击源卡片立即播放场景） (`6d04149`)
+* 移除 StickyHeader 未使用的 isBrowse 变量，修复 TS6133 编译错误 (`cda1067`)
+* 移除 useTMDBStore 中未使用的 _totalResults 变量，修复 tsc -b 构建失败 (`f4b7601`)
+* 移除详情页hero item多余背景色 (`4352391`)
+* 返回后浏览器页签标题停留在旧页（Keep-Alive 多页竞态） (`44a6f06`)
+* 还原 7/28 误删的 Browse 页面样式（e4514b4 过度删除） (`0d53286`)
+* 选源优先级修正——routeSourceIndex 优先于历史记录，点哪个源播哪个源 (`c73fe1e`)
+* 首页分类跳转 Browse 页搜索筛选联动 (`9ba1be5`)
 
 
 ### Performance Improvements
 
-* AppLayout 侧边栏折叠 WAAPI transform 补偿（方案 B）+ Keep-Alive 进入动画重放选择器收敛 ([d811da0](https://github.com/ntc0728/video-warehouse/commit/d811da081846e4f002e30c35713fb4322c79b6a7))
-* AppLayout 侧边栏折叠改用 WAAPI transform 补偿（方案 B）+ Keep-Alive 进入动画重放选择器收敛 ([76a656a](https://github.com/ntc0728/video-warehouse/commit/76a656a1eecbdb383b10ffbd1c31f44f5324e368))
-* Browse.css 去掉废弃的 browse-fade-in 进入动画（统一用 stagger） ([e4514b4](https://github.com/ntc0728/video-warehouse/commit/e4514b4b45989e8067b8af65e1245a109b38e0c2))
-* HeroBanner 轮播图性能优化 — 使用 Swiper 替换自定义实现 ([8c2901e](https://github.com/ntc0728/video-warehouse/commit/8c2901e985da0a8a15d45bccb8337971cb96b0f6))
-* HomeSidebar.css 同步方案 B 改造（去掉 width transition） ([25764b9](https://github.com/ntc0728/video-warehouse/commit/25764b9152db2121352624fe098258e1f1581738))
-* HomeSidebar.tsx 注释同步 + RecordShell 统一用 stagger 变体 ([3aff037](https://github.com/ntc0728/video-warehouse/commit/3aff037cc724fa513191e144dec44610271a5022))
-* **Home:** 用 useDeferredValue 解耦侧边栏分类切换的高亮与重内容渲染 ([a2af678](https://github.com/ntc0728/video-warehouse/commit/a2af678756e89bde8bd534bf20fe2c096e26890e))
-* Layout.css + HomeSidebar.css 方案 B 改造（变量驱动 width，去 transition） ([bf9ba58](https://github.com/ntc0728/video-warehouse/commit/bf9ba58236254c6f3df7671ad681708c59754af2))
-* **Layout:** 移除 View Transitions API + 优化 Keep-Alive 容器渲染 ([a567107](https://github.com/ntc0728/video-warehouse/commit/a5671073bfd66b0b0dd40fee0f1186e64346d91f))
-* 侧边栏折叠 transform 补偿 + 统一页面进入过渡动画（核心样式/布局） ([6e373c2](https://github.com/ntc0728/video-warehouse/commit/6e373c21df8b4f4fab7d5d86965b69c1335235b5))
-* 侧边栏折叠改用 transform 补偿 + 统一页面进入过渡动画（三套变体） ([678e58c](https://github.com/ntc0728/video-warehouse/commit/678e58c060d1c65909dccf085f9a1342ea30ee16))
-* 侧边栏折叠改用 transform 补偿方案 + 统一页面进入过渡动画（1/2：核心样式） ([b48a153](https://github.com/ntc0728/video-warehouse/commit/b48a153f944749fb21fe7d942cb9ad844a191572))
+* AppLayout 侧边栏折叠 WAAPI transform 补偿（方案 B）+ Keep-Alive 进入动画重放选择器收敛 (`d811da0`)
+* AppLayout 侧边栏折叠改用 WAAPI transform 补偿（方案 B）+ Keep-Alive 进入动画重放选择器收敛 (`76a656a`)
+* Browse.css 去掉废弃的 browse-fade-in 进入动画（统一用 stagger） (`e4514b4`)
+* HeroBanner 轮播图性能优化 — 使用 Swiper 替换自定义实现 (`8c2901e`)
+* HomeSidebar.css 同步方案 B 改造（去掉 width transition） (`25764b9`)
+* HomeSidebar.tsx 注释同步 + RecordShell 统一用 stagger 变体 (`3aff037`)
+* **Home:** 用 useDeferredValue 解耦侧边栏分类切换的高亮与重内容渲染 (`a2af678`)
+* Layout.css + HomeSidebar.css 方案 B 改造（变量驱动 width，去 transition） (`bf9ba58`)
+* **Layout:** 移除 View Transitions API + 优化 Keep-Alive 容器渲染 (`a567107`)
+* 侧边栏折叠 transform 补偿 + 统一页面进入过渡动画（核心样式/布局） (`6e373c2`)
+* 侧边栏折叠改用 transform 补偿 + 统一页面进入过渡动画（三套变体） (`678e58c`)
+* 侧边栏折叠改用 transform 补偿方案 + 统一页面进入过渡动画（1/2：核心样式） (`b48a153`)
 
 
 ### Reverts
 
-* 撤销 play 页选源回归改动（恢复原始 routeSourceIndex 判断） ([585ef0c](https://github.com/ntc0728/video-warehouse/commit/585ef0c1c28d82912e261e9a7abd87400fb8f748))
+* 撤销 play 页选源回归改动（恢复原始 routeSourceIndex 判断） (`585ef0c`)
 
 ## 1.0.0 (2026-07-30)
 
 
 ### Features
 
-* **browse:** 切换直链搜索tab跳过重复查询、双卡片相连、切换筛选触发搜索中 ([869dbf2](https://github.com/ntc0728/video-warehouse/commit/869dbf2496cf9becc79de3a39278a2551ecde2c4))
-* **browse:** 移动端整页以卡片式布局包裹（isPhone / 视口&lt;768px） ([940b4b2](https://github.com/ntc0728/video-warehouse/commit/940b4b2f511f69ea943b91726b368943b5673e9f))
-* **browse:** 移动端方案②命令栏+右滑全屏筛选面板，动态预设（trending+记忆），桌面移除更新中并全展开筛选tab ([63a102c](https://github.com/ntc0728/video-warehouse/commit/63a102cf9e3d4bd01a4dc77c4288cf1e64221cea))
-* DASH播放器支持 + 时移回看 + UI组件增强 + README更新 ([6418432](https://github.com/ntc0728/video-warehouse/commit/6418432e25836b391939e8eb238bafa82ce2b98f))
-* EPG 节目单 + UniversalPlayer OSD 与各页样式迭代 ([6923a65](https://github.com/ntc0728/video-warehouse/commit/6923a650ab52a3f7edec905cd7e5c443afde39a5))
-* HeroBanner UI 优化 + TMDB Mock 测试保护 + 全页面测试用例 + Bug 修复 ([3c31bc1](https://github.com/ntc0728/video-warehouse/commit/3c31bc1241aa959b4d0bd4edd4af7f54417c6040))
-* HeroBanner 滑动切换动画 + Capacitor 原生支持 + UI/播放器优化 ([2c1f09f](https://github.com/ntc0728/video-warehouse/commit/2c1f09ff167cd5e31120275a528f77150bdd7ddf))
-* IPTV 播放器优化 + 接口滥用修复 + UI 调整 + 构建优化 ([90f80f0](https://github.com/ntc0728/video-warehouse/commit/90f80f0e81767623ab2496034a250e12e17ff7db))
-* IPTV/设置页UI优化 + 播放器交互改进 + Loading居中修复 ([cd68289](https://github.com/ntc0728/video-warehouse/commit/cd6828909f4e62cdd8dcb8e8549c1e8a2caa5560))
-* **iptv:** 修复双层滚动冲突 + 修复懒加载 120 卡死 + 同步 UI 组件库 ([94aa6e2](https://github.com/ntc0728/video-warehouse/commit/94aa6e2f63bd378cf437978d594a0cd62a4b1841))
-* IPTV移动端OSD控制栏适配 + 播放器头部全屏按钮 + 页面左右padding统一 ([9223c60](https://github.com/ntc0728/video-warehouse/commit/9223c60f96e9baae4cad17f051738cc1022bf489))
-* migrate HeroBanner from Swiper to Embla Carousel ([3d3313b](https://github.com/ntc0728/video-warehouse/commit/3d3313ba0c66c3ccecfd707190082784ebf55903))
-* player UI improvements and Browse page cleanup ([7ac36fa](https://github.com/ntc0728/video-warehouse/commit/7ac36fa0ca5749b6eb44bdd9774f310b6e1a48fd))
-* Player 页 UI 整改 — 连播导航/overview展开/空态主题/超时重试/代码清理 ([4eb6fb2](https://github.com/ntc0728/video-warehouse/commit/4eb6fb2c1126a26e5228e20f044b1f748ea90223))
-* **Player:** 选季面板 + 选集排序/下拉 + 播放按钮/收藏样式优化 ([b9f2a77](https://github.com/ntc0728/video-warehouse/commit/b9f2a7773a931dc8af1c71400e22fd43743afd7b))
-* RecordShell 共用外壳 + Browse 懒加载修复 + 页面原理图与流程图 + AI Agent 指南 ([0e98ad6](https://github.com/ntc0728/video-warehouse/commit/0e98ad69099306f774d2e8d9da23578d815cebc7))
-* shadcn/ui迁移 + 动画增强 + 主题换肤系统 + Bug修复 ([da7fa05](https://github.com/ntc0728/video-warehouse/commit/da7fa05bfdf40578f423629f7d3f0bf6ebc25412))
-* TMDB 服务 — 类型扩展 + 接口增强 + Store 更新 ([8ea4139](https://github.com/ntc0728/video-warehouse/commit/8ea4139f22a897fbf9f6a4b7b7ad72f6da553714))
-* UI 交互优化 + 路由过渡动画 + Design Token 调整 + 移动端适配 ([7de343c](https://github.com/ntc0728/video-warehouse/commit/7de343cfca080f6ffbbc34f65a7f36bf41bcefe5))
-* UI优化 + IPTV修复 + README文档 + Playwright测试框架 ([0026d76](https://github.com/ntc0728/video-warehouse/commit/0026d766f4e49b753aeecb8f306b1e30fd2fbf83))
-* UI优化 + 播放器改进 + 测试基础设施 + 文档更新 + videoService编码修复 ([6612219](https://github.com/ntc0728/video-warehouse/commit/661221926aa003ffcd4d61923871ce61dfd3e7fd))
-* UI优化 + 滚动条重构 + 页面交互修复 ([cdad78a](https://github.com/ntc0728/video-warehouse/commit/cdad78a830c7976a73aeb93dcb6c6877f9d2e8d0))
-* UI重构 + IPTV代理修复 + 多项bug修复 ([12913f3](https://github.com/ntc0728/video-warehouse/commit/12913f3e1abb58650bca05fc3c181e0ecfba2e72))
-* UniversalPlayer 控制栏增强 + UI 组件优化 + 样式修复 ([8a1a7d7](https://github.com/ntc0728/video-warehouse/commit/8a1a7d7fae1e35bdc32a48f67761c926d7217047))
-* **version:** 引入 SemVer + release-please 自动版本与 Capacitor 双端同步 ([7226232](https://github.com/ntc0728/video-warehouse/commit/7226232015e5b4db30566e627cdd0634d3ad776b))
-* 主题/动画/Design Token 调优 + IPTV 源数据更新 + UI 组件增强 ([c9a53c3](https://github.com/ntc0728/video-warehouse/commit/c9a53c369409d45b5efdf49e462a3608744244e3))
-* 主题切换平滑过渡 + Browse 源状态弹层与详情页源检测一致 ([33a716d](https://github.com/ntc0728/video-warehouse/commit/33a716d2077e7abd287ce9ec6f2b27bd0db6c2b2))
-* 卡片式布局升级 + 多页面 UI 优化 ([6b0469a](https://github.com/ntc0728/video-warehouse/commit/6b0469a2fcedf7ac79b39506707e4f4fa2191f57))
-* 卡片模块 UI 风格（首页/侧边栏/顶栏/loading 卡片化，骨架扫光调速，仅桌面端生效） ([661e176](https://github.com/ntc0728/video-warehouse/commit/661e176d610ee705131e841be9a5a1085f1796b1))
-* 历史页时间轴重构 — 圆点内联到分组标题行，竖线贯穿各节点 ([9532813](https://github.com/ntc0728/video-warehouse/commit/953281370c095dc0cf138a10b78e7417900d0c23))
-* 批量修复 6 项 UI/行为问题 ([ebb453e](https://github.com/ntc0728/video-warehouse/commit/ebb453ee60b6cf1b077fa492d4e9195600166874))
-* 搜索中心 + CMS 直链搜索 + 播放器优化 + 5项Bug修复 ([29963f0](https://github.com/ntc0728/video-warehouse/commit/29963f02c7ddf08098a818f9c3d5dcf14374dc47))
-* 播放器交互优化 + IPTV 体验改进 + 设置项重构 ([ee90d2b](https://github.com/ntc0728/video-warehouse/commit/ee90d2b73f5355bfea6c60159a215294530f41c5))
-* 播放器全面优化 + 首页Banner继续播放 + CSS设计令牌统一 ([53639e6](https://github.com/ntc0728/video-warehouse/commit/53639e6e916ee4f19cd381d4004b2473ce4fef1f))
-* 播放流程入口测试 + 多页面 UI 优化 ([5129021](https://github.com/ntc0728/video-warehouse/commit/51290210c45ceee22735b1d399762bbb91f6845e))
-* 新增 ConfirmDialog 组件 + CORS Proxy Worker + 各页样式优化 ([d607b72](https://github.com/ntc0728/video-warehouse/commit/d607b72a8e3cda8b1084a4b019a9a10ebb8688f3))
-* 移动端UI优化 + 主题闪烁修复 + 设置页/首页/IPTV交互改进 ([3157f65](https://github.com/ntc0728/video-warehouse/commit/3157f6580478757a1e65e9a63d96ff49d68d391a))
-* 详情页/人物页优化 + 播放器控制栏增强 + 动态页签标题 ([1655ecc](https://github.com/ntc0728/video-warehouse/commit/1655ecce131c115bd0e6f2c59aac74b713a2161e))
-* 连接式导航布局 + Browse 双卡片重构 + 知识库同步 ([0d04981](https://github.com/ntc0728/video-warehouse/commit/0d049819b1b7ab0404255e8eaea2a257588dfa47))
-* 页面级KeepAlive + 播放器重构 + TypeScript错误修复 + 构建优化 ([47f82c2](https://github.com/ntc0728/video-warehouse/commit/47f82c2bb8640fec3d38bffb62405e7bf35e5715))
+* **browse:** 切换直链搜索tab跳过重复查询、双卡片相连、切换筛选触发搜索中 (`869dbf2`)
+* **browse:** 移动端整页以卡片式布局包裹（isPhone / 视口&lt;768px） (`940b4b2`)
+* **browse:** 移动端方案②命令栏+右滑全屏筛选面板，动态预设（trending+记忆），桌面移除更新中并全展开筛选tab (`63a102c`)
+* DASH播放器支持 + 时移回看 + UI组件增强 + README更新 (`6418432`)
+* EPG 节目单 + UniversalPlayer OSD 与各页样式迭代 (`6923a65`)
+* HeroBanner UI 优化 + TMDB Mock 测试保护 + 全页面测试用例 + Bug 修复 (`3c31bc1`)
+* HeroBanner 滑动切换动画 + Capacitor 原生支持 + UI/播放器优化 (`2c1f09f`)
+* IPTV 播放器优化 + 接口滥用修复 + UI 调整 + 构建优化 (`90f80f0`)
+* IPTV/设置页UI优化 + 播放器交互改进 + Loading居中修复 (`cd68289`)
+* **iptv:** 修复双层滚动冲突 + 修复懒加载 120 卡死 + 同步 UI 组件库 (`94aa6e2`)
+* IPTV移动端OSD控制栏适配 + 播放器头部全屏按钮 + 页面左右padding统一 (`9223c60`)
+* migrate HeroBanner from Swiper to Embla Carousel (`3d3313b`)
+* player UI improvements and Browse page cleanup (`7ac36fa`)
+* Player 页 UI 整改 — 连播导航/overview展开/空态主题/超时重试/代码清理 (`4eb6fb2`)
+* **Player:** 选季面板 + 选集排序/下拉 + 播放按钮/收藏样式优化 (`b9f2a77`)
+* RecordShell 共用外壳 + Browse 懒加载修复 + 页面原理图与流程图 + AI Agent 指南 (`0e98ad6`)
+* shadcn/ui迁移 + 动画增强 + 主题换肤系统 + Bug修复 (`da7fa05`)
+* TMDB 服务 — 类型扩展 + 接口增强 + Store 更新 (`8ea4139`)
+* UI 交互优化 + 路由过渡动画 + Design Token 调整 + 移动端适配 (`7de343c`)
+* UI优化 + IPTV修复 + README文档 + Playwright测试框架 (`0026d76`)
+* UI优化 + 播放器改进 + 测试基础设施 + 文档更新 + videoService编码修复 (`6612219`)
+* UI优化 + 滚动条重构 + 页面交互修复 (`cdad78a`)
+* UI重构 + IPTV代理修复 + 多项bug修复 (`12913f3`)
+* UniversalPlayer 控制栏增强 + UI 组件优化 + 样式修复 (`8a1a7d7`)
+* **version:** 引入 SemVer + release-please 自动版本与 Capacitor 双端同步 (`7226232`)
+* 主题/动画/Design Token 调优 + IPTV 源数据更新 + UI 组件增强 (`c9a53c3`)
+* 主题切换平滑过渡 + Browse 源状态弹层与详情页源检测一致 (`33a716d`)
+* 卡片式布局升级 + 多页面 UI 优化 (`6b0469a`)
+* 卡片模块 UI 风格（首页/侧边栏/顶栏/loading 卡片化，骨架扫光调速，仅桌面端生效） (`661e176`)
+* 历史页时间轴重构 — 圆点内联到分组标题行，竖线贯穿各节点 (`9532813`)
+* 批量修复 6 项 UI/行为问题 (`ebb453e`)
+* 搜索中心 + CMS 直链搜索 + 播放器优化 + 5项Bug修复 (`29963f0`)
+* 播放器交互优化 + IPTV 体验改进 + 设置项重构 (`ee90d2b`)
+* 播放器全面优化 + 首页Banner继续播放 + CSS设计令牌统一 (`53639e6`)
+* 播放流程入口测试 + 多页面 UI 优化 (`5129021`)
+* 新增 ConfirmDialog 组件 + CORS Proxy Worker + 各页样式优化 (`d607b72`)
+* 移动端UI优化 + 主题闪烁修复 + 设置页/首页/IPTV交互改进 (`3157f65`)
+* 详情页/人物页优化 + 播放器控制栏增强 + 动态页签标题 (`1655ecc`)
+* 连接式导航布局 + Browse 双卡片重构 + 知识库同步 (`0d04981`)
+* 页面级KeepAlive + 播放器重构 + TypeScript错误修复 + 构建优化 (`47f82c2`)
 
 
 ### Bug Fixes
 
-* **app-loading:** 移动端 AppLoading 全视口带卡片式布局，与桌面端一致 ([a22c8b5](https://github.com/ntc0728/video-warehouse/commit/a22c8b5259203dcabb3aa77e48ff626bf3e94ffc))
-* Browse 刷新清空搜索词 + 历史页 tab 切换去重 + FilterBar 重构 + SearchBox 右键拦截 ([671b1d5](https://github.com/ntc0728/video-warehouse/commit/671b1d5389f2db797a9c7ce6ef9fd415589b8f4e))
-* **browse:** useIsPhone 改为真实手机UA+App(非视口)，并补引入 BrowseMobileBar.css(此前未引入致移动端样式全失效)；移动端结果区去卡片外壳改全宽网格 ([cbc1998](https://github.com/ntc0728/video-warehouse/commit/cbc1998ed6503596624460da94a8070460349fd2))
-* **browse:** 修复懒加载失效 + 统一 VideoCard 网格样式 ([941fc4d](https://github.com/ntc0728/video-warehouse/commit/941fc4de0172bcdd7ee4826128103745f161ac4a))
-* **browse:** 切换筛选tab正确触发搜索中遮罩（换角度：快照hadData而非依赖discoverResults） ([f6c089c](https://github.com/ntc0728/video-warehouse/commit/f6c089cb31d8a346f79a03dba8e8581872e74906))
-* **browse:** 清空搜索词后切到直链搜索时清空 CMS 残留数据 ([8b99337](https://github.com/ntc0728/video-warehouse/commit/8b99337c5cef195a537722ecf4d70191430ec052))
-* **browse:** 移动端卡片布局改为镜像桌面端双卡片相连，整页随 app-shell 滚动 ([7a6f791](https://github.com/ntc0728/video-warehouse/commit/7a6f79199915a48d11978bd6c34316089593cef9))
-* **browse:** 移动端命令栏对齐桌面端——激活tab文本#fff、亮色去背景、chip选中实色primary、删除排序按钮 ([2747944](https://github.com/ntc0728/video-warehouse/commit/27479448e739ca0aafe3ce95549cf05ffd0a3d8a))
-* **browse:** 移动端布局仅真实手机web+App生效(useIsPhone)，命令栏对齐原型(模式段+排序+筛选入口+动态预设+说明+已选轨+面板为你推荐) ([b9de28e](https://github.com/ntc0728/video-warehouse/commit/b9de28e615e58702f98df539e4554edf11b58367))
-* **browse:** 移动端布局增加视口&lt;768px触发；按钮缩小、重置/完成改胶囊；主题适配(#fff-&gt;var(--color-text-inverse)修复暗色不可见) ([d0a2387](https://github.com/ntc0728/video-warehouse/commit/d0a2387397e489effbb52f8f2164a542ab1466e4))
-* **browse:** 移动端模式tab文本色对齐桌面端(secondary)，直链搜索隐藏bmb-rail ([81643b7](https://github.com/ntc0728/video-warehouse/commit/81643b769b9271a899bd7b479022c3b8fcc0da7c))
-* **browse:** 移动端模式分段容器背景/边框对齐桌面端（surface + color-border） ([1c547c2](https://github.com/ntc0728/video-warehouse/commit/1c547c207dc898b7c083c683dfd9deab9d2b9c9d))
-* **browse:** 移动端直链搜索模式隐藏排序/筛选入口与预设横滚 ([8c4d6b4](https://github.com/ntc0728/video-warehouse/commit/8c4d6b4b9f5f02db0ed2895b860ceb313cbfbdca))
-* **browse:** 移动端直链搜索隐藏预设 + 整页卡片布局修复（结果区内部滚动） ([54027d3](https://github.com/ntc0728/video-warehouse/commit/54027d344841292acdfd3bfd3058d8876b9aaa74))
-* **detail:** 剧照在 Keep-Alive 隐藏加载后正确截断为 2 行 ([e600bc1](https://github.com/ntc0728/video-warehouse/commit/e600bc12dd2ca655d908a2676e6ab1db06f941bb))
-* HeroBanner 缩略图 active 盒子缩放导致宽度不一致 + Detail 首次进入剧照截断/闪烁 ([eac50ad](https://github.com/ntc0728/video-warehouse/commit/eac50ad4fc9e0ecc99de185a3b1dbce2bbb3fd9b))
-* HeroBanner 缩略图撑满 banner 高度 + 消除首屏双重 AppLoading ([6b21abe](https://github.com/ntc0728/video-warehouse/commit/6b21abe19ca935a5c478aa96c158886d0fc55eb3))
-* **HeroBanner:** 修复 banner 切换后回退 crossfade 导致的闪烁 ([efe5865](https://github.com/ntc0728/video-warehouse/commit/efe5865ac7ac91398951e136ef8f434c152c1db3))
-* **HeroBanner:** 修复切换分类越界导致整页白屏；切换时缩略图回骨架占位 ([739e7e3](https://github.com/ntc0728/video-warehouse/commit/739e7e347a42ee3beb8ec891273661685da151a1))
-* **HeroBanner:** 修复右栏缩略图初始骨架宽度与真实不一致 ([56d6d4c](https://github.com/ntc0728/video-warehouse/commit/56d6d4c89d8b506922e427e441446515afdb1f33))
-* **HeroBanner:** 修复缩略图切换时最后一个（新露出）缩略图闪烁 ([e1b61ab](https://github.com/ntc0728/video-warehouse/commit/e1b61abebea567c7f7b76d1e8c4fff009afbf1b7))
-* **HeroBanner:** 彻底修复缩略图切换露白——改为预加载就绪后再换图 ([f607ed5](https://github.com/ntc0728/video-warehouse/commit/f607ed5d3eba4dcb8eafdd36026e6dbbf364ccf3))
-* **home:** 修复首页 TMDBMovieRow 不显示 + banner 缩略图骨架不同步 ([282174a](https://github.com/ntc0728/video-warehouse/commit/282174a2e6009885153714f8918fcb6f6c0cc01f))
-* IPTV 懒加载改边沿触发+隐藏期守卫，剧照 lightbox 用 Portal 修复高度与背景滚动锁定 ([4025a1d](https://github.com/ntc0728/video-warehouse/commit/4025a1da6a09bdef469906f98c6258fe92e1f910))
-* m3u8-proxy 添加 User-Agent 解决 403 + 启动时同步 IPTV aggregatorUrl 避免首进无数据 ([b4734e8](https://github.com/ntc0728/video-warehouse/commit/b4734e8872bc669f844d9513302e8037ba754141))
-* **record-shell:** 移动端 record-aside 用 space-md gap，对齐桌面端 edit-row 间距 ([ac75153](https://github.com/ntc0728/video-warehouse/commit/ac75153fa908db2057ef29164dd452d6e36d1bd7))
-* **record-shell:** 移动端 record-aside 移除卡片式包裹，对齐桌面端纯布局条 ([81dce42](https://github.com/ntc0728/video-warehouse/commit/81dce42396a6a0993f76d062469e6ab1187e19cb))
-* **record-shell:** 移动端 record-main 补 gap:space-sm，对齐桌面端内部间距 ([7cf3e18](https://github.com/ntc0728/video-warehouse/commit/7cf3e18e295bf5d21f0509ca27afe622c75a903b))
-* resolve TypeScript build errors for Cloudflare Pages deployment ([1a805ba](https://github.com/ntc0728/video-warehouse/commit/1a805ba844c967e53f57fe92442fa19f8abf3db8))
-* **Settings:** 补设置页进入过渡动画，消除进入僵硬感 ([223d5a2](https://github.com/ntc0728/video-warehouse/commit/223d5a28e37c2ced0f0519c336d14a5b6ee6f046))
-* **styles:** 关于页版本/更新日志项移除 hover/focus 背景变色 ([9ef2f70](https://github.com/ntc0728/video-warehouse/commit/9ef2f70e64620011d5f757bdce8500a7841088c3))
-* **styles:** 消除设置项按钮 active 时内部元素异常缩放/下沉 ([90c7c99](https://github.com/ntc0728/video-warehouse/commit/90c7c9920f175475a711c7f48d2243a95ae5f013))
-* **styles:** 设置页按钮按压仅缩放内部文字、按钮框保持静止 ([4d4b300](https://github.com/ntc0728/video-warehouse/commit/4d4b3001be61da067dbdc6c5302d81e6953f5c08))
-* **styles:** 设置页按钮改用 opacity 按压反馈（不缩放/不改背景） ([d0c8cd2](https://github.com/ntc0728/video-warehouse/commit/d0c8cd242c78fd9361732323291675c579ed27c4))
-* **styles:** 设置项按压仅缩放文本自身宽度（标题收缩到 fit-content） ([f59b488](https://github.com/ntc0728/video-warehouse/commit/f59b488127a061889239742325b674f91ececc71))
-* **style:** 方案6二次整改——缩放反馈一律不叠加 box-shadow；个人资料/导入导出/恢复默认仅文字缩放 ([7c22f08](https://github.com/ntc0728/video-warehouse/commit/7c22f0895dc90989737f9ebc6816ab3da9abd3dd))
-* **style:** 方案6弹性回弹整改——补全侧边栏/顶栏、收敛 box-shadow、排除设置页全宽行、清除旧方案残留 ([ca3dda9](https://github.com/ntc0728/video-warehouse/commit/ca3dda9556c91118bcaa69212515a88d2878dbb7))
-* **style:** 采用方案6弹性回弹替换全局按钮按压反馈 ([2af5c9a](https://github.com/ntc0728/video-warehouse/commit/2af5c9a025cd156371866be839f460584351a1bb))
-* TMDB错误处理、CMS loading状态、Settings placeholder字体、Browse数据覆盖 ([cf2c764](https://github.com/ntc0728/video-warehouse/commit/cf2c76426d338bfbbfffd8ee5635d72f27ec60bb))
-* **Transition:** 消除首页/分类页双重 AppLoading 并补全进入过渡动画 ([1d5654f](https://github.com/ntc0728/video-warehouse/commit/1d5654fac419c600982a2f6ec0f8b66b587cdbf6))
-* 修复 7/28 页面过渡与侧边栏遗留问题 ([eabe0be](https://github.com/ntc0728/video-warehouse/commit/eabe0be16173344cbddb9d84bb699abda07d88e4))
-* 修复 AppLayout.tsx 中 CustomScrollbar 拼写错误 ([4e92aa5](https://github.com/ntc0728/video-warehouse/commit/4e92aa5079e82ce59145ef9043e5dd8380949726))
-* 修复 CSS 属性顺序和媒体查询语法 ([16fe0a8](https://github.com/ntc0728/video-warehouse/commit/16fe0a8e76854cf332256b38e885fafa7e001d49))
-* 修复 DB 版本升级时整页卡在 loading 的问题 ([0439af6](https://github.com/ntc0728/video-warehouse/commit/0439af685922218c810a342da3fccd03c2bb29e5))
-* 修复 HeroBanner 缩略图宽度跳变与 Detail 首进剧照不截断的真根因 ([5b27bfa](https://github.com/ntc0728/video-warehouse/commit/5b27bfab72184ba6748678854801860181b13107))
-* 修复多重AppLoading闪烁/剧照分割/banner滑动/设置卡片/非首页trending ([28f2dab](https://github.com/ntc0728/video-warehouse/commit/28f2dabfd9305c9ec257d06af6315765d7a291b1))
-* 修复播放列表立即播放的选集/线路回显与详情页 keep-alive ([0e4e713](https://github.com/ntc0728/video-warehouse/commit/0e4e71376d91563fc321db55ee5472e0c5f8894a))
-* 修复缩略图骨架宽度与真实不一致（真实根因，非 HeroBanner） ([e16ec5a](https://github.com/ntc0728/video-warehouse/commit/e16ec5a28f491838a3541566834dadfcb7f612d4))
-* 修复返回顶部/设置深链/Detail滚动恢复与标题/Browse标题 ([#1](https://github.com/ntc0728/video-warehouse/issues/1) [#3](https://github.com/ntc0728/video-warehouse/issues/3) [#4](https://github.com/ntc0728/video-warehouse/issues/4) [#5](https://github.com/ntc0728/video-warehouse/issues/5) [#6](https://github.com/ntc0728/video-warehouse/issues/6) [#7](https://github.com/ntc0728/video-warehouse/issues/7)) ([a91e4c0](https://github.com/ntc0728/video-warehouse/commit/a91e4c01babd81ffc22b951bd9b96749a82b7e8c))
-* 全部弹窗实时订阅观看历史，修正返回后进度/百分比滞后 ([28fd59e](https://github.com/ntc0728/video-warehouse/commit/28fd59e77882393dfb662c55c87711bb9f63bb41))
-* 引入分层 z-index 层级体系修复下拉框被侧边栏遮挡，合并页面进入动画统一、首页骨架一致性及 keep-alive store 等累积修复 ([5a9d24e](https://github.com/ntc0728/video-warehouse/commit/5a9d24eca1635d159d6fe22df19443e18c8736f0))
-* 播放列表弹窗「播放中」标记按季隔离 ([c19f144](https://github.com/ntc0728/video-warehouse/commit/c19f1448bb07d32bb01b3fb55a59cb02d1598814))
-* 播放列表弹窗抽屉层级与选季布局 ([846eb9d](https://github.com/ntc0728/video-warehouse/commit/846eb9ddd074d89e951313bd710e9c5287596b0f))
-* 播放器核心逻辑修复 + UI优化 + 请求取消支持 ([02147e4](https://github.com/ntc0728/video-warehouse/commit/02147e4a6079c434a30d2cc3085bc52d6299ea6c))
-* 播放进度按内容身份跨源共享（电影=videoId，剧集=videoId+季+集） ([fcf008f](https://github.com/ntc0728/video-warehouse/commit/fcf008f0e07c89f38843e8a0a72cebc1e372f08c))
-* 播放页按历史进度恢复选集/线路（点击源卡片立即播放场景） ([6d04149](https://github.com/ntc0728/video-warehouse/commit/6d041491dee670efba50bfee018b2024c2771a79))
-* 移除 StickyHeader 未使用的 isBrowse 变量，修复 TS6133 编译错误 ([cda1067](https://github.com/ntc0728/video-warehouse/commit/cda106746db6927ec76255130436c2237bccf63d))
-* 移除 useTMDBStore 中未使用的 _totalResults 变量，修复 tsc -b 构建失败 ([f4b7601](https://github.com/ntc0728/video-warehouse/commit/f4b76014ce5b4a7ee113895597dcde5f408d8742))
-* 移除详情页hero item多余背景色 ([4352391](https://github.com/ntc0728/video-warehouse/commit/435239117e8192f063eca3521100a49ea8800512))
-* 返回后浏览器页签标题停留在旧页（Keep-Alive 多页竞态） ([44a6f06](https://github.com/ntc0728/video-warehouse/commit/44a6f064a4200d457c103500aa095d355c57165f))
-* 还原 7/28 误删的 Browse 页面样式（e4514b4 过度删除） ([0d53286](https://github.com/ntc0728/video-warehouse/commit/0d532860e0b832941f3edd34ffa3834aa4bf4956))
-* 选源优先级修正——routeSourceIndex 优先于历史记录，点哪个源播哪个源 ([c73fe1e](https://github.com/ntc0728/video-warehouse/commit/c73fe1eb70ac140226c761e8e1301c6c9f6947fc))
-* 首页分类跳转 Browse 页搜索筛选联动 ([9ba1be5](https://github.com/ntc0728/video-warehouse/commit/9ba1be5172332765d1f4de0abac583452e842e84))
+* **app-loading:** 移动端 AppLoading 全视口带卡片式布局，与桌面端一致 (`a22c8b5`)
+* Browse 刷新清空搜索词 + 历史页 tab 切换去重 + FilterBar 重构 + SearchBox 右键拦截 (`671b1d5`)
+* **browse:** useIsPhone 改为真实手机UA+App(非视口)，并补引入 BrowseMobileBar.css(此前未引入致移动端样式全失效)；移动端结果区去卡片外壳改全宽网格 (`cbc1998`)
+* **browse:** 修复懒加载失效 + 统一 VideoCard 网格样式 (`941fc4d`)
+* **browse:** 切换筛选tab正确触发搜索中遮罩（换角度：快照hadData而非依赖discoverResults） (`f6c089c`)
+* **browse:** 清空搜索词后切到直链搜索时清空 CMS 残留数据 (`8b99337`)
+* **browse:** 移动端卡片布局改为镜像桌面端双卡片相连，整页随 app-shell 滚动 (`7a6f791`)
+* **browse:** 移动端命令栏对齐桌面端——激活tab文本#fff、亮色去背景、chip选中实色primary、删除排序按钮 (`2747944`)
+* **browse:** 移动端布局仅真实手机web+App生效(useIsPhone)，命令栏对齐原型(模式段+排序+筛选入口+动态预设+说明+已选轨+面板为你推荐) (`b9de28e`)
+* **browse:** 移动端布局增加视口&lt;768px触发；按钮缩小、重置/完成改胶囊；主题适配(#fff-&gt;var(--color-text-inverse)修复暗色不可见) (`d0a2387`)
+* **browse:** 移动端模式tab文本色对齐桌面端(secondary)，直链搜索隐藏bmb-rail (`81643b7`)
+* **browse:** 移动端模式分段容器背景/边框对齐桌面端（surface + color-border） (`1c547c2`)
+* **browse:** 移动端直链搜索模式隐藏排序/筛选入口与预设横滚 (`8c4d6b4`)
+* **browse:** 移动端直链搜索隐藏预设 + 整页卡片布局修复（结果区内部滚动） (`54027d3`)
+* **detail:** 剧照在 Keep-Alive 隐藏加载后正确截断为 2 行 (`e600bc1`)
+* HeroBanner 缩略图 active 盒子缩放导致宽度不一致 + Detail 首次进入剧照截断/闪烁 (`eac50ad`)
+* HeroBanner 缩略图撑满 banner 高度 + 消除首屏双重 AppLoading (`6b21abe`)
+* **HeroBanner:** 修复 banner 切换后回退 crossfade 导致的闪烁 (`efe5865`)
+* **HeroBanner:** 修复切换分类越界导致整页白屏；切换时缩略图回骨架占位 (`739e7e3`)
+* **HeroBanner:** 修复右栏缩略图初始骨架宽度与真实不一致 (`56d6d4c`)
+* **HeroBanner:** 修复缩略图切换时最后一个（新露出）缩略图闪烁 (`e1b61ab`)
+* **HeroBanner:** 彻底修复缩略图切换露白——改为预加载就绪后再换图 (`f607ed5`)
+* **home:** 修复首页 TMDBMovieRow 不显示 + banner 缩略图骨架不同步 (`282174a`)
+* IPTV 懒加载改边沿触发+隐藏期守卫，剧照 lightbox 用 Portal 修复高度与背景滚动锁定 (`4025a1d`)
+* m3u8-proxy 添加 User-Agent 解决 403 + 启动时同步 IPTV aggregatorUrl 避免首进无数据 (`b4734e8`)
+* **record-shell:** 移动端 record-aside 用 space-md gap，对齐桌面端 edit-row 间距 (`ac75153`)
+* **record-shell:** 移动端 record-aside 移除卡片式包裹，对齐桌面端纯布局条 (`81dce42`)
+* **record-shell:** 移动端 record-main 补 gap:space-sm，对齐桌面端内部间距 (`7cf3e18`)
+* resolve TypeScript build errors for Cloudflare Pages deployment (`1a805ba`)
+* **Settings:** 补设置页进入过渡动画，消除进入僵硬感 (`223d5a2`)
+* **styles:** 关于页版本/更新日志项移除 hover/focus 背景变色 (`9ef2f70`)
+* **styles:** 消除设置项按钮 active 时内部元素异常缩放/下沉 (`90c7c99`)
+* **styles:** 设置页按钮按压仅缩放内部文字、按钮框保持静止 (`4d4b300`)
+* **styles:** 设置页按钮改用 opacity 按压反馈（不缩放/不改背景） (`d0c8cd2`)
+* **styles:** 设置项按压仅缩放文本自身宽度（标题收缩到 fit-content） (`f59b488`)
+* **style:** 方案6二次整改——缩放反馈一律不叠加 box-shadow；个人资料/导入导出/恢复默认仅文字缩放 (`7c22f08`)
+* **style:** 方案6弹性回弹整改——补全侧边栏/顶栏、收敛 box-shadow、排除设置页全宽行、清除旧方案残留 (`ca3dda9`)
+* **style:** 采用方案6弹性回弹替换全局按钮按压反馈 (`2af5c9a`)
+* TMDB错误处理、CMS loading状态、Settings placeholder字体、Browse数据覆盖 (`cf2c764`)
+* **Transition:** 消除首页/分类页双重 AppLoading 并补全进入过渡动画 (`1d5654f`)
+* 修复 7/28 页面过渡与侧边栏遗留问题 (`eabe0be`)
+* 修复 AppLayout.tsx 中 CustomScrollbar 拼写错误 (`4e92aa5`)
+* 修复 CSS 属性顺序和媒体查询语法 (`16fe0a8`)
+* 修复 DB 版本升级时整页卡在 loading 的问题 (`0439af6`)
+* 修复 HeroBanner 缩略图宽度跳变与 Detail 首进剧照不截断的真根因 (`5b27bfa`)
+* 修复多重AppLoading闪烁/剧照分割/banner滑动/设置卡片/非首页trending (`28f2dab`)
+* 修复播放列表立即播放的选集/线路回显与详情页 keep-alive (`0e4e713`)
+* 修复缩略图骨架宽度与真实不一致（真实根因，非 HeroBanner） (`e16ec5a`)
+* 修复返回顶部/设置深链/Detail滚动恢复与标题/Browse标题 ([#1](https://github.com/ntc0728/video-warehouse/issues/1) [#3](https://github.com/ntc0728/video-warehouse/issues/3) [#4](https://github.com/ntc0728/video-warehouse/issues/4) [#5](https://github.com/ntc0728/video-warehouse/issues/5) [#6](https://github.com/ntc0728/video-warehouse/issues/6) [#7](https://github.com/ntc0728/video-warehouse/issues/7)) (`a91e4c0`)
+* 全部弹窗实时订阅观看历史，修正返回后进度/百分比滞后 (`28fd59e`)
+* 引入分层 z-index 层级体系修复下拉框被侧边栏遮挡，合并页面进入动画统一、首页骨架一致性及 keep-alive store 等累积修复 (`5a9d24e`)
+* 播放列表弹窗「播放中」标记按季隔离 (`c19f144`)
+* 播放列表弹窗抽屉层级与选季布局 (`846eb9d`)
+* 播放器核心逻辑修复 + UI优化 + 请求取消支持 (`02147e4`)
+* 播放进度按内容身份跨源共享（电影=videoId，剧集=videoId+季+集） (`fcf008f`)
+* 播放页按历史进度恢复选集/线路（点击源卡片立即播放场景） (`6d04149`)
+* 移除 StickyHeader 未使用的 isBrowse 变量，修复 TS6133 编译错误 (`cda1067`)
+* 移除 useTMDBStore 中未使用的 _totalResults 变量，修复 tsc -b 构建失败 (`f4b7601`)
+* 移除详情页hero item多余背景色 (`4352391`)
+* 返回后浏览器页签标题停留在旧页（Keep-Alive 多页竞态） (`44a6f06`)
+* 还原 7/28 误删的 Browse 页面样式（e4514b4 过度删除） (`0d53286`)
+* 选源优先级修正——routeSourceIndex 优先于历史记录，点哪个源播哪个源 (`c73fe1e`)
+* 首页分类跳转 Browse 页搜索筛选联动 (`9ba1be5`)
 
 
 ### Performance Improvements
 
-* AppLayout 侧边栏折叠 WAAPI transform 补偿（方案 B）+ Keep-Alive 进入动画重放选择器收敛 ([d811da0](https://github.com/ntc0728/video-warehouse/commit/d811da081846e4f002e30c35713fb4322c79b6a7))
-* AppLayout 侧边栏折叠改用 WAAPI transform 补偿（方案 B）+ Keep-Alive 进入动画重放选择器收敛 ([76a656a](https://github.com/ntc0728/video-warehouse/commit/76a656a1eecbdb383b10ffbd1c31f44f5324e368))
-* Browse.css 去掉废弃的 browse-fade-in 进入动画（统一用 stagger） ([e4514b4](https://github.com/ntc0728/video-warehouse/commit/e4514b4b45989e8067b8af65e1245a109b38e0c2))
-* HeroBanner 轮播图性能优化 — 使用 Swiper 替换自定义实现 ([8c2901e](https://github.com/ntc0728/video-warehouse/commit/8c2901e985da0a8a15d45bccb8337971cb96b0f6))
-* HomeSidebar.css 同步方案 B 改造（去掉 width transition） ([25764b9](https://github.com/ntc0728/video-warehouse/commit/25764b9152db2121352624fe098258e1f1581738))
-* HomeSidebar.tsx 注释同步 + RecordShell 统一用 stagger 变体 ([3aff037](https://github.com/ntc0728/video-warehouse/commit/3aff037cc724fa513191e144dec44610271a5022))
-* **Home:** 用 useDeferredValue 解耦侧边栏分类切换的高亮与重内容渲染 ([a2af678](https://github.com/ntc0728/video-warehouse/commit/a2af678756e89bde8bd534bf20fe2c096e26890e))
-* Layout.css + HomeSidebar.css 方案 B 改造（变量驱动 width，去 transition） ([bf9ba58](https://github.com/ntc0728/video-warehouse/commit/bf9ba58236254c6f3df7671ad681708c59754af2))
-* **Layout:** 移除 View Transitions API + 优化 Keep-Alive 容器渲染 ([a567107](https://github.com/ntc0728/video-warehouse/commit/a5671073bfd66b0b0dd40fee0f1186e64346d91f))
-* 侧边栏折叠 transform 补偿 + 统一页面进入过渡动画（核心样式/布局） ([6e373c2](https://github.com/ntc0728/video-warehouse/commit/6e373c21df8b4f4fab7d5d86965b69c1335235b5))
-* 侧边栏折叠改用 transform 补偿 + 统一页面进入过渡动画（三套变体） ([678e58c](https://github.com/ntc0728/video-warehouse/commit/678e58c060d1c65909dccf085f9a1342ea30ee16))
-* 侧边栏折叠改用 transform 补偿方案 + 统一页面进入过渡动画（1/2：核心样式） ([b48a153](https://github.com/ntc0728/video-warehouse/commit/b48a153f944749fb21fe7d942cb9ad844a191572))
+* AppLayout 侧边栏折叠 WAAPI transform 补偿（方案 B）+ Keep-Alive 进入动画重放选择器收敛 (`d811da0`)
+* AppLayout 侧边栏折叠改用 WAAPI transform 补偿（方案 B）+ Keep-Alive 进入动画重放选择器收敛 (`76a656a`)
+* Browse.css 去掉废弃的 browse-fade-in 进入动画（统一用 stagger） (`e4514b4`)
+* HeroBanner 轮播图性能优化 — 使用 Swiper 替换自定义实现 (`8c2901e`)
+* HomeSidebar.css 同步方案 B 改造（去掉 width transition） (`25764b9`)
+* HomeSidebar.tsx 注释同步 + RecordShell 统一用 stagger 变体 (`3aff037`)
+* **Home:** 用 useDeferredValue 解耦侧边栏分类切换的高亮与重内容渲染 (`a2af678`)
+* Layout.css + HomeSidebar.css 方案 B 改造（变量驱动 width，去 transition） (`bf9ba58`)
+* **Layout:** 移除 View Transitions API + 优化 Keep-Alive 容器渲染 (`a567107`)
+* 侧边栏折叠 transform 补偿 + 统一页面进入过渡动画（核心样式/布局） (`6e373c2`)
+* 侧边栏折叠改用 transform 补偿 + 统一页面进入过渡动画（三套变体） (`678e58c`)
+* 侧边栏折叠改用 transform 补偿方案 + 统一页面进入过渡动画（1/2：核心样式） (`b48a153`)
 
 
 ### Reverts
 
-* 撤销 play 页选源回归改动（恢复原始 routeSourceIndex 判断） ([585ef0c](https://github.com/ntc0728/video-warehouse/commit/585ef0c1c28d82912e261e9a7abd87400fb8f748))
+* 撤销 play 页选源回归改动（恢复原始 routeSourceIndex 判断） (`585ef0c`)
 
 ## Changelog
 

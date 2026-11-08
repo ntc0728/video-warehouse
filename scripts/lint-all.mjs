@@ -36,9 +36,11 @@
  */
 import { spawn } from 'node:child_process';
 
-/** 沙箱删除护栏是否生效（生效才需要给 build 关闭，避免无谓改动子进程环境） */
+/** 沙箱删除护栏是否生效（生效才需要给 build 关闭，避免无谓改动子进程环境）。
+ *  沙箱会话 ID 有 CODEBUDDY_/CODEBBUDDY_ 两种拼写并存，统一双检测。 */
 const SANDBOX_SHIM_ACTIVE =
-  Boolean(process.env.CODEBUDDY_SESSION_ID) && process.env.CODEBUDDY_SAFE_DELETE_ENABLED !== '0';
+  Boolean(process.env.CODEBUDDY_SESSION_ID || process.env.CODEBBUDDY_SESSION_ID) &&
+  process.env.CODEBUDDY_SAFE_DELETE_ENABLED !== '0';
 
 const steps = [
   { name: 'lint:design', cmd: 'pnpm run lint:design' },

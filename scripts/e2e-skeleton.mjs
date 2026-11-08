@@ -320,7 +320,7 @@ const outDir = process.env.E2E_SUITE_STAGE ? `.pw-out-${process.env.E2E_SUITE_ST
 const pwArgs = [
   resolve(ROOT, 'node_modules/@playwright/test/cli.js'),
   'test',
-  // 全量档：跑全部 spec 且不覆盖 reporter（保留 config 的 html，供 localize-report 用）；
+  // 全量档：跑全部 spec 且不覆盖 reporter（保留 config 的 html 报告，供 test:e2e:report 查看）；
   // ad-hoc：指定文件（无则默认骨架 spec）+ list 拿即时输出
   ...(FULL ? [] : [...(SPEC_FILES.length ? SPEC_FILES : ['scripts/skeleton.spec.ts']), '--reporter=list']),
   `--workers=${WORKERS}`,
