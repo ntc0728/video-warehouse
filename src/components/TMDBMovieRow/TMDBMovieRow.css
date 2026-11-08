@@ -183,9 +183,19 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   aspect-ratio: 2 / 3;
 }
 
-/* 2026-11-08：竖版四角标已删（真实卡封面加载期角标被 :has 门控隐藏，
-   且收藏钮 hover 才显形 —— 骨架对齐真实加载态，见 index.tsx 同日注释）。
-   标题占位（封面下方 info 区，位置仍与真实 .video-card-title 一致） */
+/* 角标皮肤（2026-11-08 方案B 二次定稿）：竖版三角标/横版源徽章直接复用真实类
+   （.video-card-rating / -year-badge / -type / -landscape__source-badge）+ 真实内容，
+   定位/尺寸全部由 VideoCard.css 唯一决定 → 与真实元素像素级一致；
+   皮肤层只换底色为骨架灰、文字/图标透明、去毛玻璃。
+   TR 收藏钮静态态不可见 → 骨架不画。 */
+.tmdb-movierow-skeleton-skin {
+  background: var(--color-skeleton);
+  color: transparent;
+  backdrop-filter: none;
+  opacity: 0.72;
+}
+
+/* 标题占位（封面下方 info 区，位置仍与真实 .video-card-title 一致） */
 .tmdb-movierow-skeleton-title {
   width: var(--layout-channel-num-w);
   height: var(--icon-md);
@@ -194,8 +204,8 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
-/* 横版骨架（继续观看行）：16:9 封面 + 底部左标题条 / 右侧年份+时间块 / 底部进度条
-   （2026-11-08：左上源徽章占位已删 —— 真实卡加载期源徽章被 :has 门控隐藏） */
+/* 横版骨架（继续观看行）：16:9 封面 + 左上源徽章（复用真实类）+ 底部左标题条 /
+   右侧年份+时间块 / 底部进度条占位（真实卡同位置） */
 .tmdb-movierow-skeleton--landscape .tmdb-movierow-skeleton-img {
   aspect-ratio: 16 / 9;
 }

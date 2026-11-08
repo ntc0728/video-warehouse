@@ -22,15 +22,24 @@
   padding: var(--space-md) 0;
 }
 
-/* 封面：铺满真实 .video-card-cover（2:3 由真实类给出）。
-   2026-11-08：四角标占位已删 —— 真实卡封面加载期角标全部被
-   .video-card-cover:has(.lazy-image-placeholder) 门控隐藏（VideoCard.css），
-   且收藏钮 hover 才显形；骨架对齐真实加载态（纯封面渐变）。
-   红线#4：本文件无 display:none/visibility:hidden 规则残留。 */
+/* 封面：铺满真实 .video-card-cover（2:3 由真实类给出） */
 .browse-skeleton__cover {
   position: absolute;
   inset: 0;
   border-radius: 0;
+}
+
+/* 三角标皮肤（2026-11-08 方案B 二次定稿）：角标复用真实类
+   （.video-card-rating / -year-badge / -type）+ 真实内容，
+   定位/内边距/字号/圆角全部由 VideoCard.css 唯一决定 → 与真实元素像素级一致，
+   TV 档（[data-device="tv"] 覆写 padding/字号）也自动同步；
+   皮肤层只做三件事：底色换骨架灰、文字/图标透明、去毛玻璃。
+   TR 收藏钮静态态不可见 → 骨架不画。 */
+.browse-skeleton__skin {
+  background: var(--color-skeleton);
+  color: transparent;
+  backdrop-filter: none;
+  opacity: 0.72;
 }
 
 /* 标题行：与真实 .video-card-title 同字体档与行高（--text-sm × 1.5），

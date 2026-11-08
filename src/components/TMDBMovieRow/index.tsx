@@ -13,14 +13,14 @@
  */
 import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { VideoCard } from '@/components/VideoCard';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import { useIsMobileLayout, useIsTVLike } from '@/hooks/useMediaQuery';
 import { useGridCols } from '@/hooks/useGridCols';
 import { buildImageSrcSet, POSTER_CARD_SIZES } from '@/services/tmdbService';
 import type { TMDBVideoItem } from '@/types';
 import type { Video, VideoType } from '@/types/video';
 import './TMDBMovieRow.css';
-import { Icon } from "@/components/ui/Icon";
 
 export interface ContinueWatchingItem {
   /** 视频 id（tmdb-xxx），用于跳转 /play/:id */
@@ -152,19 +152,28 @@ export function SkeletonCards({ count, landscape = false }: { count?: number; la
         >
           <div className="tmdb-movierow-skeleton-img">
             {landscape ? (
-              /* 横版（2026-11-08 对齐真实加载态）：真实卡封面加载期源徽章被
-                 :has 门控隐藏，标题/年份/进度不隐藏 → 骨架只保留这三样；
-                 年份块宽度含进度时间（真实右下同行「年份 + 时间」） */
+              /* 横版（2026-11-08 方案B 对齐真实静态态）：左上源徽章复用真实类+内容
+                 （像素级一致）+ 底部左标题条 / 右侧「年份+时间」宽块 / 底部进度条 */
               <>
+                <span className="video-card-landscape__source-badge tmdb-movierow-skeleton-skin" aria-hidden="true">
+                  源1 · 第3集
+                </span>
                 <span className="tmdb-movierow-skeleton-land-title" />
                 <span className="tmdb-movierow-skeleton-land-year" />
                 <span className="tmdb-movierow-skeleton-land-progress" />
               </>
             ) : (
-              /* 竖版（2026-11-08 用户反馈「骨架角标与真实元素不一致」）：
-                 真实卡封面加载期角标全部被 :has 门控隐藏（VideoCard.css），
-                 骨架对齐加载态 = 纯封面渐变，标题在下方 info 区 */
-              <></>
+              /* 竖版（2026-11-08 方案B 二次定稿）：三角标复用真实类+真实内容
+                 （评分/年份/类型）→ 与真实元素像素级一致（TV 档自动同步）；
+                 TR 收藏钮 hover 才显形 → 不画。标题在下方 info 区 */
+              <>
+                <span className="video-card-rating tmdb-movierow-skeleton-skin" aria-hidden="true">
+                  <Icon icon={Star} size="xs" fill="currentColor" />
+                  8.5
+                </span>
+                <span className="video-card-year-badge tmdb-movierow-skeleton-skin" aria-hidden="true">2024</span>
+                <span className="video-card-type tmdb-movierow-skeleton-skin" aria-hidden="true">电影</span>
+              </>
             )}
           </div>
           {/* 竖版：封面下方 info 区标题占位。

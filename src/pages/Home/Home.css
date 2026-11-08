@@ -452,10 +452,7 @@ html[data-device="app"] .home-disclaimer {
     display: block;
   }
 
-  /* 右卡标题占位：封面底部左侧灰条（约 58% 宽）。
-     2026-11-08：真实侧卡封面加载期标题可见、meta 角标被 :has 门控隐藏
-     （HeroBili.css「右卡封面加载门控」）→ 骨架只保留标题条，
-     右下 meta 占位块已删（对齐真实加载态）。 */
+  /* 右卡标题占位：封面底部左侧灰条（约 58% 宽），真实加载期标题可见 */
   .home-skeleton .hero-side-card__title-skeleton-bar {
     position: absolute;
     bottom: var(--space-xs);
@@ -465,6 +462,25 @@ html[data-device="app"] .home-disclaimer {
     height: var(--text-xs);
     border-radius: var(--radius-sm);
     background: var(--color-skeleton);
+    opacity: 0.72;
+  }
+
+  /* 右下 meta 占位（2026-11-08 方案B 二次定稿）：复用真实类
+     .hero-side-card__meta/__corner + 真实内容（剧集/2024）→ 像素级一致；
+     容器只补绝对定位（真实 meta 在 .hero-side-card__bottom flex 内，
+     骨架无 __bottom，故按真实视觉位置 right/bottom = space-xs 锚定）；
+     皮肤层换底色为骨架灰、文字透明、去毛玻璃。 */
+  .home-skeleton .hero-side-card__meta-skeleton {
+    position: absolute;
+    right: var(--space-xs);
+    bottom: var(--space-xs);
+    z-index: 2;
+  }
+
+  .home-skeleton .hero-side-card__skin {
+    background: var(--color-skeleton);
+    color: transparent;
+    backdrop-filter: none;
     opacity: 0.72;
   }
 
