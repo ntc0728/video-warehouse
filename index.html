@@ -102,19 +102,31 @@
       /* 汉堡菜单骨架：仅移动 web 显示（≤767 且非 app/tv，镜像真实 header 左组顺序），
          桌面 / App / TV 不渲染该元素（真实 header 同样无 menu-btn） */
       .bs-menu-btn { display: none; }
+      /* 搜索胶囊 / 右侧头像+主题按钮：仅移动 web 显示（真实 header 同位置元素） */
+      .bs-search, .bs-search-submit, .bs-icon-btn { display: none; }
       .bs-nav { display: flex; gap: 12px; align-items: center; margin-left: auto; }
       .bs-nav i { display: block; width: 3.5rem; height: 0.75rem; background: #f3f4f7; border-radius: 6px; }
       .bs-nav i:first-child { width: 9rem; }
 
       /* ── 移动 web 顶栏镜像（2026-11-08 用户要求）────────────────────────
-         真实移动 header 左组 = 汉堡 menu-btn + 圆形 logo。首帧骨架此前只有
-         logo 灰块 + nav 条，缺汉堡占位、logo 也呈骨架灰底。镜像两处：
-         ① .bs-menu-btn 补骨架色块（真实 --comp-btn-min-height ≈44-51px，
-            取 44px 轮廓级近似；token 不在 index.html 注入范围 → 硬编码）
-         ② .bs-logo 去灰底、48px 圆形（对齐真实 --layout-logo-size 圆形 logo-wrap），
-            直接呈现 logo 原图（img 失败时该处留白，符合「不要骨架底」要求）。
+         真实移动 header（≤767 web）：汉堡 menu-btn + 圆形 logo + 搜索胶囊(flex:1)
+         + 右侧头像/主题按钮；inner gap/padding = --space-sm（≈6px）。首帧骨架
+         此前只有「logo 灰块 + nav 条」，缺汉堡/搜索/右侧按钮且 padding 16px 偏移。
+         全部按真实几何镜像（token 不在 index.html 注入范围 → 硬编码近似值）：
+         ① .bs-menu-btn 补骨架色块（--comp-btn-min-height ≈44-51px，取 44px）
+         ② .bs-logo 去灰底、48px 圆形（--layout-logo-size 近似）直出 logo 原图
+         ③ .bs-search 搜索胶囊（--comp-input-height-header ≈36px，flex:1 占位）
+         ④ .bs-icon-btn 头像（圆形）+ 主题（radius-md）各 44px
+         ⑤ .bs-header 间距/内边距对齐真实 inner（gap 6px / padding 0 6px）、
+            .bs-nav 移动端不显示（真实 header 无导航条）
          仅 ≤767 且非 app/tv（App 端真实 header 无汉堡菜单，TV 走独立布局）。 */
       @media (max-width: 767px) {
+        html:not([data-device="app"]):not([data-device="tv"]) .bs-header {
+          gap: 6px;
+          height: 48px; /* 真实移动 header = --header-height-compact ≈48px（非 60px） */
+          padding: 0 6px;
+        }
+
         html:not([data-device="app"]):not([data-device="tv"]) .bs-menu-btn {
           display: block;
           flex-shrink: 0;
@@ -124,15 +136,51 @@
         }
 
         /* 底色按主题分流（浅灰 / 暗灰由暗色组提供），避免暗色下吃到浅灰 */
-        html:not([data-device="app"]):not([data-device="tv"]):not([data-theme="dark"]) .bs-menu-btn {
+        html:not([data-device="app"]):not([data-device="tv"]):not([data-theme="dark"]) .bs-menu-btn,
+        html:not([data-device="app"]):not([data-device="tv"]):not([data-theme="dark"]) .bs-search,
+        html:not([data-device="app"]):not([data-device="tv"]):not([data-theme="dark"]) .bs-icon-btn {
           background: #f3f4f7;
         }
 
         html:not([data-device="app"]):not([data-device="tv"]) .bs-logo {
-          width: 48px;
-          height: 48px;
+          width: 44px; /* 真实移动 logo-wrap 覆盖为 44px（--layout-logo-size 桌面值 48 不适用） */
+          height: 44px;
           background: transparent;
           border-radius: 50%;
+        }
+
+        html:not([data-device="app"]):not([data-device="tv"]) .bs-nav {
+          display: none;
+        }
+
+        html:not([data-device="app"]):not([data-device="tv"]) .bs-search {
+          display: block;
+          flex: 1 1 auto;
+          min-width: 0;
+          height: 36px;
+          border-radius: 999px 0 0 999px; /* 真实 search-box 只圆左侧，右侧由提交按钮拼合 */
+        }
+
+        html:not([data-device="app"]):not([data-device="tv"]) .bs-search-submit {
+          display: block;
+          flex: 0 0 48px;
+          height: 36px;
+          border-radius: 0 999px 999px 0; /* 「搜索」提交按钮占位 */
+        }
+
+        html:not([data-device="app"]):not([data-device="tv"]) .bs-icon-btn {
+          display: block;
+          flex-shrink: 0;
+          width: 44px;
+          height: 44px;
+        }
+
+        html:not([data-device="app"]):not([data-device="tv"]) .bs-icon-btn--avatar {
+          border-radius: 50%;
+        }
+
+        html:not([data-device="app"]):not([data-device="tv"]) .bs-icon-btn--theme {
+          border-radius: 8px;
         }
       }
 
@@ -560,6 +608,9 @@
       html[data-theme="dark"] .bs-header { background: #1f1f1f; }
       html[data-theme="dark"] .bs-filter { background: #1f1f1f; }
       html[data-theme="dark"] .bs-menu-btn,
+      html[data-theme="dark"] .bs-search,
+      html[data-theme="dark"] .bs-search-submit,
+      html[data-theme="dark"] .bs-icon-btn,
       html[data-theme="dark"] .bs-logo,
       html[data-theme="dark"] .bs-nav i,
       html[data-theme="dark"] .bs-hero,
@@ -610,6 +661,10 @@
         <div class="bs-logo">
           <img src="/src/assets/icon/KinoTV.webp" alt="" onerror="this.style.display='none'" />
         </div>
+        <div class="bs-search"></div>
+        <div class="bs-search-submit"></div>
+        <div class="bs-icon-btn bs-icon-btn--avatar"></div>
+        <div class="bs-icon-btn bs-icon-btn--theme"></div>
         <div class="bs-nav"><i></i><i></i><i></i><i></i></div>
       </div>
       <!-- 启动链两段式（2026-09-22 用户定稿：plain 在前、同构骨架在后，顺序不覆盖）：
