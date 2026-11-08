@@ -156,6 +156,14 @@ html[data-device="mobile-web"] .search-box__input {
   font-size: 16px;
 }
 
+/* 占位文本恢复设计字号（2026-11-08 用户反馈「placeholder 字体显示得很大」）：
+   上面的 16px 是 iOS Safari 聚焦防缩放护栏（input 计算字号 <16px 会放大视口），
+   只需要作用在 input 自身——::placeholder 允许独立字号，回到 --text-sm(13px)
+   与「搜索」按钮及全站 UI 同档；用户实际输入时仍是 16px，护栏不受影响。 */
+html[data-device="mobile-web"] .search-box__input::placeholder {
+  font-size: var(--text-sm);
+}
+
 html[data-device="app"] .search-box__input {
   font-size: inherit;
 }

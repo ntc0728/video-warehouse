@@ -469,6 +469,16 @@
   .hero-banner__title {
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
   }
+
+  /* CTA 按钮（查看详情/继续播放）移动端缩档（2026-11-08 用户反馈「按钮看上去很大」）：
+     桌面档 font-size --text-base(14px) + padding sm/lg 在 390px 矮 banner 上占比过大，
+     与全站移动端 11–13px 文字档不协调。收一档：字号 --text-sm、内边距 xs/md、图标间距 2xs。
+     桌面端保持原值不动。 */
+  .hero-banner__cta {
+    gap: var(--space-2xs);
+    padding: var(--space-xs) var(--space-md);
+    font-size: var(--text-sm);
+  }
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
@@ -489,6 +499,13 @@
 
   html[data-device="app"] .hero-banner__title {
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
+  }
+
+  /* 9.1 app 恒移动副本：CTA 按钮移动端缩档（与上方 ≤767 块同步） */
+  html[data-device="app"] .hero-banner__cta {
+    gap: var(--space-2xs);
+    padding: var(--space-xs) var(--space-md);
+    font-size: var(--text-sm);
   }
 
 
