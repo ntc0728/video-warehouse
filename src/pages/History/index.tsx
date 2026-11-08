@@ -959,30 +959,32 @@ export default function HistoryPage() {
 
       {currentList.length > 0 && <div ref={sentinelRef} aria-hidden="true" />}
 
-      {/* 批量模式胶囊浮动栏 */}
-      {(batchMode || batchIsExiting) && (
+      {/* 批量模式胶囊浮动栏（2026-11-08：无数据时不渲染——同收藏页，避免空态被浮动栏撑出滚动条） */}
+      {currentList.length > 0 && (batchMode || batchIsExiting) && (
         <div className={`batch-action-bar${batchIsExiting ? ' batch-action-bar--exiting' : ''}`}>
-          <button type="button" className="batch-action-btn" onClick={selectAll}>
-            {selected.size === currentList.length && currentList.length > 0
-              ? <Icon icon={CheckSquare} size="sm" />
-              : <Icon icon={Square} size="sm" />}
-            <span>全选</span>
-          </button>
-          <button
-            type="button"
-            className="batch-action-btn batch-action-btn--danger"
-            disabled={selected.size === 0}
-            onClick={handleBatchDelete}
-          >
-            <Icon icon={Trash2} size="sm" /> 删除{selected.size > 0 ? ` (${selected.size})` : ''}
-          </button>
-          <button
-            type="button"
-            className="batch-action-btn batch-action-btn--danger"
-            onClick={handleClearAll}
-          >
-            <Icon icon={Trash2} size="sm" /> 清除全部
-          </button>
+          <div className="batch-action-bar__inner">
+            <button type="button" className="batch-action-btn" onClick={selectAll}>
+              {selected.size === currentList.length && currentList.length > 0
+                ? <Icon icon={CheckSquare} size="sm" />
+                : <Icon icon={Square} size="sm" />}
+              <span>全选</span>
+            </button>
+            <button
+              type="button"
+              className="batch-action-btn batch-action-btn--danger"
+              disabled={selected.size === 0}
+              onClick={handleBatchDelete}
+            >
+              <Icon icon={Trash2} size="sm" /> 删除{selected.size > 0 ? ` (${selected.size})` : ''}
+            </button>
+            <button
+              type="button"
+              className="batch-action-btn batch-action-btn--danger"
+              onClick={handleClearAll}
+            >
+              <Icon icon={Trash2} size="sm" /> 清除全部
+            </button>
+          </div>
         </div>
       )}
 

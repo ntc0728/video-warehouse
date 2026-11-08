@@ -3,11 +3,23 @@
    悬浮栏渲染在全局滚动容器 .app-shell__scroll（contain:layout）内部，
    contain:layout 会使内部 fixed 子元素以滚动容器为包含块，滚动时悬浮栏
    随内容滚走（实测滚动 900px 时 top 变负）。sticky 在同样容器内全程
-   钉在滚动区底部上方 bottom 偏移处（实测任意 scrollTop 下 bottom 恒定）。 */
+   钉在滚动区底部上方 bottom 偏移处（实测任意 scrollTop 下 bottom 恒定）。
+
+   结构（2026-11-08 零占位改造）：外层 .batch-action-bar 只做 sticky 锚点 +
+   入场/退场动画载体，视觉胶囊全部迁到 .batch-action-bar__inner。
+   移动/app 端外层 height:0，内层 translateY(-100%) 上移渲染 —— 悬浮栏
+   完全不占文档流高度，无论视口高矮/数据多少都不可能把页面撑出滚动条
+   （实测：bar 出现前后 scrollHeight 恒等；动画首帧 transform 冻结的
+   环境下也不再产生 7px 溢出）。桌面端外层保持常规占位，视觉不变。 */
 .batch-action-bar {
   position: sticky;
   bottom: var(--space-xl);
   z-index: var(--z-fixed);
+  margin: var(--space-md) auto 0; /* 水平 auto = 居中；上边距与正文拉开 */
+  animation: batchBarSlideUp var(--dur-sm) var(--ease-standard);
+}
+
+.batch-action-bar__inner {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
@@ -15,11 +27,10 @@
   align-items: center;
   width: fit-content;
   max-width: 100%;
-  margin: var(--space-md) auto 0; /* 水平 auto = 居中；上边距与正文拉开 */
+  margin: 0 auto;
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-full);
   background: var(--color-surface);
-  animation: batchBarSlideUp var(--dur-sm) var(--ease-standard);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--color-border-light);
 }
 
@@ -47,6 +58,17 @@
     opacity: 0;
     transform: translateY(var(--space-md));
   }
+}
+
+/* 移动/app 端零占位结构的专用淡入淡出：外层 height:0，任何 translateY 都会给
+   滚动容器追加瞬时溢出（入场 200ms 内滚动条闪现），故移动端只动 opacity。 */
+@keyframes batchBarFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes batchBarFadeOut {
+  to { opacity: 0; }
 }
 
 /* 批量模式进入时：卡片选中标记同步淡入，避免与底部操作栏出现时间差造成闪烁感 */
@@ -109,9 +131,24 @@
 
 /* ── 移动端适配 ──────────────────────────────────────── */
 @media (width <= 767px) {
+  /* 零占位悬浮：外层只做 sticky 锚点（height:0 不占文档流），
+     视觉胶囊由内层 translateY(-100%) 渲染在外层上方；
+     入场/退场只动 opacity（见 batchBarFadeIn/Out 注释） */
   .batch-action-bar {
+    height: 0;
+    width: 100%;
+    margin: 0;
+    animation-name: batchBarFadeIn;
+  }
+
+  .batch-action-bar--exiting {
+    animation-name: batchBarFadeOut;
+  }
+
+  .batch-action-bar__inner {
     gap: var(--space-2xs);
     padding: var(--space-2xs) var(--space-xs);
+    transform: translateY(-100%);
   }
 
   .batch-action-btn {
@@ -128,8 +165,20 @@
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .batch-action-bar {
+    height: 0;
+    width: 100%;
+    margin: 0;
+    animation-name: batchBarFadeIn;
+  }
+
+  html[data-device="app"] .batch-action-bar--exiting {
+    animation-name: batchBarFadeOut;
+  }
+
+  html[data-device="app"] .batch-action-bar__inner {
     gap: var(--space-2xs);
     padding: var(--space-2xs) var(--space-xs);
+    transform: translateY(-100%);
   }
 
   html[data-device="app"] .batch-action-btn {

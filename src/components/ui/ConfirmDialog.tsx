@@ -66,12 +66,14 @@ export default function ConfirmDialog({
           )}
           <div className="flex justify-center gap-[var(--space-sm)]">
             <AlertDialog.Cancel asChild>
-              <Button size="sm" variant="outline" className="rounded-full px-[var(--space-lg)] min-h-[var(--comp-tab-height)]" onClick={handleCancel}>
+              {/* 2026-11-08：压掉 Button 基类的 min-h[--comp-btn-min-width]（移动端 ≈40px）
+                  与 px-lg，避免取消/删除按钮过「肥」 */}
+              <Button size="sm" variant="outline" className="rounded-full px-[var(--space-md)] min-h-[32px]" onClick={handleCancel}>
                 {cancelText}
               </Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action asChild>
-              <Button size="sm" variant={variant === 'danger' ? 'destructive' : 'default'} className="rounded-full px-[var(--space-lg)] min-h-[var(--comp-tab-height)]" onClick={handleConfirm}>
+              <Button size="sm" variant={variant === 'danger' ? 'destructive' : 'default'} className="rounded-full px-[var(--space-md)] min-h-[32px]" onClick={handleConfirm}>
                 {confirmText}
               </Button>
             </AlertDialog.Action>

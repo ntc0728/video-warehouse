@@ -6,7 +6,9 @@
    .record-search / .category-segmented / .record-shell 等样式见 RecordShell.css。 */
 
 .collection-content {
-  flex: 0 0 auto;
+  /* 2026-11-08：对齐历史页 .history-content 的 flex: 1 1 0 —— 内容少时撑满剩余高度，
+     把批量操作浮动栏（sticky bottom）推到滚动区底部，而不是悬在卡片正下方。 */
+  flex: 1 1 0;
   /* 阶段 C：列表型页面接入内容区 2200 硬上限，超宽居中 */
   width: 100%;
   max-width: var(--layout-content-max-width);
