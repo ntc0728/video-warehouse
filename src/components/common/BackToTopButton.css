@@ -229,23 +229,54 @@
   pointer-events: none;
 }
 
-/* ── 滚动中隐藏（2026-09-11 用户拍板）：滚动进行时淡出，停止 800ms 后淡入；
-      停止后的常态本身也是半透明化显示（见两枚按钮的 background） ── */
-.fab-stack--scrolling {
-  opacity: 0;
-  pointer-events: none;
-}
+/* ── 进出场状态类顺序即优先级（2026-11-08 修正）：
+      --scrolling 必须声明在 --visible 之后 —— 同特异性下后者胜，旧顺序下
+      --visible 的 opacity:1 一直压住 --scrolling 的 opacity:0，「滚动中隐藏」
+      从未生效（滚动时按钮钉死不动 = 僵硬感的另一半来源）。 ── */
 
 .fab-stack--visible {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
+  /* 入场动画（2026-11-08 用户反馈「显示/隐藏太僵硬」）：首次挂载时元素直接以
+     最终状态出现、无任何过渡（transition 只在已有渲染态之间生效，挂载帧不播）。
+     与圆形按钮 .back-to-top-button--visible 的 keyframe 入场同语言（上滑 + 淡入）。
+     ⚠️ fill 必须用 backwards 而非 both——both 会在动画结束后**永久持有** 100% 帧
+     （动画填充值优先级高于普通声明），把下方的 --scrolling opacity:0 压住，
+     「滚动中隐藏」直接失效；backwards 结束后交还级联，scrolling 态正常生效。 */
+  animation: fab-stack-slide-in var(--dur-md) var(--ease-spring) backwards;
 }
 
+/* 退场保持 transition（--exiting 由已渲染态过渡回默认态，本就平滑）；
+   不加 exit keyframe：若从 --scrolling（opacity 0）直接转 --exiting，
+   keyframe 会从 0% 的 opacity 1 起播，反而闪现一帧。 */
 .fab-stack--exiting {
   opacity: 0;
   transform: translateY(20px);
   pointer-events: none;
+}
+
+/* ── 滚动中隐藏（2026-09-11 用户拍板）：滚动进行时淡出，停止 800ms 后淡入；
+      停止后的常态本身也是半透明化显示（见两枚按钮的 background）。
+      ⚠️ 必须 .fab-stack.fab-stack--scrolling 双类（0,2,0）压过 --visible（0,1,0）：
+      单类写法会被 CSS 压缩器按「声明子集」合并进基础 .fab-stack 规则
+      （实测变成 `.fab-stack, .fab-stack--scrolling`，永远排在 --visible 之前），
+      源码顺序调整无效 —— 「滚动中隐藏」此前从未真正生效（2026-11-08 修）。 ── */
+.fab-stack.fab-stack--scrolling {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes fab-stack-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── 刷新：青蓝方形 + 白色图标（2026-09-11：加圆角 radius-md + 半透明玻璃化） ── */
@@ -350,6 +381,10 @@
   .fab-stack,
   .back-to-top-button--square {
     transition: none;
+  }
+
+  .fab-stack--visible {
+    animation: none;
   }
 
   .back-to-top-button--square:hover,
