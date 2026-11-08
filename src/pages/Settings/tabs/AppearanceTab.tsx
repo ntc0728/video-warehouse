@@ -1,6 +1,7 @@
 import { List, Switch, Slider, Select } from '@/components/ui';
 import { Sun, Moon, Monitor, Palette } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
+import { useIsTVDevice } from '@/hooks/useMediaQuery';
 
 interface AppearanceTabProps {
   theme: string;
@@ -16,6 +17,8 @@ interface AppearanceTabProps {
 }
 
 export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, setTvMode, tvOverscan, setTvOverscan, uiScale, setUiScale }: AppearanceTabProps) {
+  // TV 模式入口仅 TV/投影仪设备可见（原始设备判定，不含 tvMode 开关自身）
+  const isTVDevice = useIsTVDevice();
   return (
     <section>
       <List header={<span className="settings-section-header"><Icon icon={Palette} size="lg" /> 外观</span>}>
@@ -63,11 +66,14 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
             </div>
           }
         />
-        <List.Item
-          title="TV 模式"
-          description="启用方向键/数字键遥控器导航"
-          extra={<Switch checked={tvMode} onChange={setTvMode} />}
-        />
+        {/* TV 模式：仅 TV/投影仪设备显示 */}
+        {isTVDevice && (
+          <List.Item
+            title="TV 模式"
+            description="启用方向键/数字键遥控器导航"
+            extra={<Switch checked={tvMode} onChange={setTvMode} />}
+          />
+        )}
         {/* TV 过扫描安全区：仅 TV 模式生效时显示 */}
         {tvMode && (
           <List.Item
@@ -89,11 +95,10 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
             }
           />
         )}
-        {/* 界面缩放手动档（阶段 C）：仅非 TV 显示；TV 走独立 2× 曲线 */}
+        {/* 界面缩放手动档（阶段 C）：仅非 TV 显示；TV 走独立 2× 曲线；上限 120%（2026-11-08 用户定稿） */}
         {!tvMode && (
           <List.Item
             title="界面缩放"
-            description="大屏（≥1920px 且系统缩放 <150%）默认自动适配；可手动覆盖"
             extra={
               /* 2026-09-28：原生 <select> 样式突兀 → 换项目 Select 组件（与 TMDB 语言下拉一致） */
               <Select
@@ -102,8 +107,7 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
                   { value: '1', label: '100%（不缩放）' },
                   { value: '1.1', label: '110%' },
                   { value: '1.15', label: '115%' },
-                  { value: '1.3', label: '130%' },
-                  { value: '1.5', label: '150%' },
+                  { value: '1.2', label: '120%' },
                 ]}
                 value={String(uiScale)}
                 onChange={(v) => setUiScale(Number(v))}

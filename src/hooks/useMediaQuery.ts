@@ -119,6 +119,16 @@ export function useIsTV(): boolean {
 }
 
 /**
+ * 原始 TV 类设备判定（UA 自动检测 || 投影仪手动指定），**不含** tvMode 强制开关。
+ * 用于设置项显隐等「设备本身是否为 TV/投影仪」的判定 —— 不能用 useIsTV：
+ * 它已包含 tvMode 开关，会造成「开关让自己可见」的循环。
+ */
+export function useIsTVDevice(): boolean {
+  const projectorMode = useSettingsStore((s) => s.projectorMode);
+  return getIsTV() || projectorMode;
+}
+
+/**
  * 投影仪设备检测 Hook。
  * ⚠️ 投影仪 UA 无可靠特征（市面投影仪多伪装成普通浏览器 / Android TV UA，
  * 且部分投影仪直接跑标准 Chromium），自动检测不可行 —— 仅提供设置/存储层
