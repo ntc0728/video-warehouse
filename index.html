@@ -99,9 +99,42 @@
         border-radius: 8px;
       }
       .bs-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+      /* 汉堡菜单骨架：仅移动 web 显示（≤767 且非 app/tv，镜像真实 header 左组顺序），
+         桌面 / App / TV 不渲染该元素（真实 header 同样无 menu-btn） */
+      .bs-menu-btn { display: none; }
       .bs-nav { display: flex; gap: 12px; align-items: center; margin-left: auto; }
       .bs-nav i { display: block; width: 3.5rem; height: 0.75rem; background: #f3f4f7; border-radius: 6px; }
       .bs-nav i:first-child { width: 9rem; }
+
+      /* ── 移动 web 顶栏镜像（2026-11-08 用户要求）────────────────────────
+         真实移动 header 左组 = 汉堡 menu-btn + 圆形 logo。首帧骨架此前只有
+         logo 灰块 + nav 条，缺汉堡占位、logo 也呈骨架灰底。镜像两处：
+         ① .bs-menu-btn 补骨架色块（真实 --comp-btn-min-height ≈44-51px，
+            取 44px 轮廓级近似；token 不在 index.html 注入范围 → 硬编码）
+         ② .bs-logo 去灰底、48px 圆形（对齐真实 --layout-logo-size 圆形 logo-wrap），
+            直接呈现 logo 原图（img 失败时该处留白，符合「不要骨架底」要求）。
+         仅 ≤767 且非 app/tv（App 端真实 header 无汉堡菜单，TV 走独立布局）。 */
+      @media (max-width: 767px) {
+        html:not([data-device="app"]):not([data-device="tv"]) .bs-menu-btn {
+          display: block;
+          flex-shrink: 0;
+          width: 44px;
+          height: 44px;
+          border-radius: 8px;
+        }
+
+        /* 底色按主题分流（浅灰 / 暗灰由暗色组提供），避免暗色下吃到浅灰 */
+        html:not([data-device="app"]):not([data-device="tv"]):not([data-theme="dark"]) .bs-menu-btn {
+          background: #f3f4f7;
+        }
+
+        html:not([data-device="app"]):not([data-device="tv"]) .bs-logo {
+          width: 48px;
+          height: 48px;
+          background: transparent;
+          border-radius: 50%;
+        }
+      }
 
       /* 内容骨架。flex:1 + min-height:0 —— 撑满顶栏以下的剩余视口高（2026-09-20
          用户反馈「内容未撑满容器高度」）：填充行溢出由 overflow:hidden 裁剪。 */
@@ -526,6 +559,7 @@
       html[data-theme="dark"] #boot-splash { background: #141414; color: #666; }
       html[data-theme="dark"] .bs-header { background: #1f1f1f; }
       html[data-theme="dark"] .bs-filter { background: #1f1f1f; }
+      html[data-theme="dark"] .bs-menu-btn,
       html[data-theme="dark"] .bs-logo,
       html[data-theme="dark"] .bs-nav i,
       html[data-theme="dark"] .bs-hero,
@@ -572,6 +606,7 @@
   <body>
     <div id="boot-splash" aria-hidden="true" data-shape="plain">
       <div class="bs-header">
+        <div class="bs-menu-btn"></div>
         <div class="bs-logo">
           <img src="/src/assets/icon/KinoTV.webp" alt="" onerror="this.style.display='none'" />
         </div>
