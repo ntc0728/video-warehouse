@@ -300,6 +300,7 @@
   }
 
   .source-tag {
+    height: calc(30px * var(--ui-scale)); /* 移动端压低胶囊高度（默认 comp-tab-height 36-38px 显胖） */
     flex-shrink: 0;
     scroll-snap-align: start;
   }
@@ -352,6 +353,7 @@
   }
 
   html[data-device="app"] .source-tag {
+    height: calc(30px * var(--ui-scale)); /* 与上方 ≤767px 恒移动副本同步 */
     flex-shrink: 0;
     scroll-snap-align: start;
   }

@@ -105,6 +105,15 @@
   border-color: var(--color-primary);
 }
 
+/* 压掉全局键盘焦点黑环（index.css :focus-visible 2px solid --color-primary #000 !important）：
+   文本输入框聚焦（含 autoFocus / 移动端点按）必命中 :focus-visible，弹窗一开就是黑色粗环。
+   聚焦态已有 border-color 变化表达，无需 outline 环。TV 分支不覆盖（保留 TV 焦点框）。 */
+:root:not([data-device="tv"]):not([data-device="projector"]) .grouppicker__search:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
 .grouppicker__grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
