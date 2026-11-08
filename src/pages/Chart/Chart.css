@@ -502,8 +502,3 @@ html[data-device="app"] .chart-row__rank { flex-basis: var(--comp-chart-rank-w);
 html[data-device="app"] .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
 
 /* ── Reduced motion ── */
-@media (prefers-reduced-motion: reduce) {
-  .chart-list__skeleton i { animation: none; }
-  /* 标题跑马灯同步停用（reduced-motion 下不滚动） */
-  .chart-row:hover .chart-row__t-track { animation: none; }
-}

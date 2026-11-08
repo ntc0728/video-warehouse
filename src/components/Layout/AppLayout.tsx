@@ -22,7 +22,6 @@ import {
   getPageVariant,
   needsLeaveAnimation,
   raiseCurtain,
-  prefersReducedMotion,
   PT_DUR,
 } from '@/lib/pageTransition';
 
@@ -202,15 +201,15 @@ export default function AppLayout() {
   useEffect(() => {
     if (blocker.state !== 'blocked') return;
     const el = pageTransitionRef.current;
-    const reduced = prefersReducedMotion();
 
     // 幕布先升起：盖住来源页退场后的空档，也顺带盖住 IPTV 播放器首帧缓冲
     raiseCurtain();
-    if (el && !reduced) el.dataset.leaving = 'true';
+    if (el) el.dataset.leaving = 'true';
 
     // 用固定时长而不是 animationend：动画被 reduced-motion 关掉、或元素提前卸载时
     // animationend 不会触发，导航就被永久卡死。多等一帧的代价远小于卡死。
-    const timer = window.setTimeout(() => blocker.proceed(), reduced ? 0 : PT_DUR.leave);
+    // 2026-11-08 全局放开：离开过渡恒播（不再随系统 prefers-reduced-motion 瞬时放行）
+    const timer = window.setTimeout(() => blocker.proceed(), PT_DUR.leave);
     return () => {
       window.clearTimeout(timer);
       if (el) delete el.dataset.leaving;

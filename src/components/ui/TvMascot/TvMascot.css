@@ -113,15 +113,4 @@
 }
 
 /* 降低动效偏好：弱化眨眼/电波/摇摆 */
-@media (prefers-reduced-motion: reduce) {
-  .ptr-tv.is-shaking {
-    animation: none;
-  }
-  .ptr-tv__eyes.is-blink circle {
-    animation: none;
-  }
-  .ptr-tv__wave path {
-    opacity: 0.6;
-    animation: none;
-  }
-}
+

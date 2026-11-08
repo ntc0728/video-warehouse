@@ -54,11 +54,6 @@
 }
 
 /* 尊重系统「减少动态效果」偏好 */
-@media (prefers-reduced-motion: reduce) {
-  .page-transition-enter {
-    animation: none;
-  }
-}
 
 /* ============================================================
    统一容器层页面转场（2026-08-30）
@@ -185,16 +180,6 @@
   display: block;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .page-transition[data-variant="soft"] > *,
-  .page-transition[data-revisit="true"][data-variant="soft"] > *,
-  .page-transition[data-variant="player"] .pt-soft,
-  .page-transition[data-variant="player"] .player-sidebar,
-  .page-transition[data-variant="player"] .player-detail-section,
-  .page-transition[data-leaving="true"] {
-    animation: none !important;
-  }
-}
 
 @keyframes cardFadeIn {
   from {
@@ -420,55 +405,4 @@
       与①「禁用装饰性动画」的意图相反，故改为显式列举。
    ③ .app-loading__progress-bar 不在此列：AppLoading.tsx 自判 reduced-motion 并停在 90%，
       其 CSS 亦有独立 animation:none 分支，交由组件自理。 */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  /* 功能性无限旋转指示器白名单（显式设置时长，避免继承 0.01ms）
-     2026-11-03 补齐 3 项：这三个是「正在加载/正在测速」的唯一视觉信号，
-     此前未列入白名单 → 被上方 * 压成 0.01ms 后**停在 0° 不动**，
-     用户无法区分「加载中」与「卡死」。其中 .sdp-spin 另有组件级兜底
-     （SourceDetectPill.css 减速到 1.4s 仍在转），补齐后两处口径一致。 */
-  .spinning,
-  .checking-spinner,
-  .browse-loadmore-spinner,
-  .player-loading-spinner,
-  .playlist-query-spinner,
-  .up-channel-loading-icon,
-  .browse-count-spin,
-  .source-manager__toolbar-btn .spin,
-  .source-manager__icon-btn .spin,
-  .sdp-spin {
-    animation-duration: 1s !important;
-    animation-iteration-count: infinite !important;
-  }
 
-  /* ── 关键操作反馈动画白名单（2026-11-08 用户拍板）──────────────────
-     用户系统开着 Windows「动画效果关闭」→ 上面 * 规则把 fab 进出场/
-     换一换转圈全压成 0.01ms（用户报「图标不转动了」「fab 僵硬」「点顶部跳变」）。
-     这三类属**点击/出现反馈**而非装饰，应用侧刻意无视系统减少动态，显式还原因子：
-     时长全部 token 派生（calc/var），不再引入 timing-literal。
-     若要恢复 a11y 全禁行为：删掉本段即可。 */
-  .hero-bili__shuffle.is-spinning .hero-bili__shuffle-icon {
-    animation-duration: calc(var(--dur-md) * 2.4) !important; /* = 600ms，方案 C */
-  }
-
-  .fab-stack--visible {
-    animation-duration: calc(var(--dur-md) * 2.4) !important; /* 入场方案 C */
-    transition-duration: var(--dur-md) !important;            /* 退场淡出 */
-  }
-
-  .fab-stack {
-    transition-duration: var(--dur-md) !important; /* scrolling/出场过渡 */
-  }
-
-  .back-to-top-button,
-  .back-to-top-button--visible,
-  .back-to-top-button--exiting {
-    animation-duration: var(--dur-md) !important;
-    transition-duration: var(--dur-md) !important;
-  }
-}

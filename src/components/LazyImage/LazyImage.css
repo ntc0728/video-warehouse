@@ -208,13 +208,4 @@
 
 
 
-@media (prefers-reduced-motion: reduce) {
-  .lazy-image,
-  .lazy-image-placeholder,
-  .lazy-image-bg-loading {
-    transform: none !important;
-    filter: none !important;
-    transition: opacity var(--dur-2xs) linear;
-    animation: none;
-  }
-}
+

@@ -695,14 +695,4 @@
 }
 
 /* 减弱动画 */
-@media (prefers-reduced-motion: reduce) {
-  .playlist-grid,
-  .playlist-drawer,
-  .playlist-modal.playlist-modal--sheet {
-    animation: none !important;
-  }
 
-  .playlist-cell {
-    transition: none;
-  }
-}

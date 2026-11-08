@@ -156,8 +156,4 @@
 
 /* 降低动效偏好：关闭指示器入场/位移动画（仅去过渡，保留 translate 定位）；
    mascot 的眨眼/电波/摇摆减弱已迁移到 TvMascot.css */
-@media (prefers-reduced-motion: reduce) {
-  .ptr-overlay__indicator {
-    transition: none;
-  }
-}
+

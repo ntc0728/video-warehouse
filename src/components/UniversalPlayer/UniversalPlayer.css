@@ -1775,17 +1775,6 @@
 }
 
 /* ===== Reduced motion: 在低端设备/用户偏好减少动画时降级 backdrop-filter ===== */
-@media (prefers-reduced-motion: reduce) {
-  .up-player-error,
-  .up-channel-list,
-  .up-popover,
-  .up-error-actions,
-  .up-seek-indicator,
-  .up-program-guide-overlay {
-    backdrop-filter: none !important;
-    animation: none !important;
-  }
-}
 
 /* ── Player Toast（播放器内部操作提示，独立于全局 sonner） ──────────────
    位置：播放器内部右上角（距顶/右各 space-lg，避开顶部控制栏左侧区域）；
@@ -2837,6 +2826,4 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   .up-fs-drawer-head { padding-top: var(--space-xs); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .up-fs-drawer { animation: none; }
-}
+

@@ -129,12 +129,6 @@ body:has(.drawer-content) .back-to-top-button {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .drawer-content,
-  .drawer-overlay {
-    animation: none;
-  }
-}
 
 /* ── fullscreen 变体：全屏覆盖整个视口（含顶部导航栏） ──
    顶栏与全局导航栏同高（移动端紧凑高度），三栏布局：
@@ -340,8 +334,4 @@ body:has(.drawer-content) .back-to-top-button {
   display: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .drawer-content--fullscreen {
-    animation: none;
-  }
-}
+

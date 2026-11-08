@@ -15,7 +15,6 @@ import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { VideoCard } from '@/components/VideoCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsMobileLayout, useIsTVLike } from '@/hooks/useMediaQuery';
-import { prefersReducedMotion } from '@/lib/pageTransition';
 import { useGridCols } from '@/hooks/useGridCols';
 import { buildImageSrcSet, POSTER_CARD_SIZES } from '@/services/tmdbService';
 import type { TMDBVideoItem } from '@/types';
@@ -273,8 +272,8 @@ function TMDBMovieRow({
       const row = rowRef.current;
       const cardRect = cardEl.getBoundingClientRect();
       const rowRect = row.getBoundingClientRect();
-      // prefers-reduced-motion 下滚动降级为即时跳转（对齐全站 reduced-motion 口径）
-      const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
+      // 2026-11-08 全局放开：TV 焦点滚动恒 smooth（不再随系统减少动态降级为即时跳转）
+      const behavior: ScrollBehavior = 'smooth';
 
       // 卡片超出右侧 → 向右滚动
       if (cardRect.right > rowRect.right - 20) {

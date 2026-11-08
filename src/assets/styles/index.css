@@ -490,22 +490,6 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   transition: scale var(--dur-xs) var(--ease-out-expo, ease-out);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  button:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
-  a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
-  [role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
-  [role="tab"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button),
-  .sidebar-nav-item:active,
-  .sticky-header__nav-item:active,
-  button:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
-  a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
-  [role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
-  [role="tab"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
-  .sidebar-nav-item:active:not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > *,
-  .sticky-header__nav-item:active:not(.no-press):not(.settings-page *):not(.back-to-top-button):has(> *) > * {
-    scale: none;
-  }
-}
 
 /* 不应用弹性按压的元素（整改清单）：
    ① 已有自身 transform:scale 反馈 → 避免与全局 scale 叠加成双重缩放；

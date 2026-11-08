@@ -737,12 +737,6 @@ html[data-device="app"] .home-disclaimer {
 
 /* ── Reduced motion ──────────────────────────────────── */
 
-@media (prefers-reduced-motion: reduce) {
-  .home-page * {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
 
 /* ── 进入过渡覆盖层：缓存数据场景下的骨架→淡出过渡 ── */
 .home-enter-skeleton {

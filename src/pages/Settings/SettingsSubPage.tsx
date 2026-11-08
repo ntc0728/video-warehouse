@@ -39,12 +39,6 @@ export default function SettingsSubPage({ tab, onBack, children }: SettingsSubPa
   const leave = useCallback(() => {
     if (leavingRef.current) return;
     leavingRef.current = true;
-    // prefers-reduced-motion 下离场动画被 CSS 关成 none（Settings.css 守卫块），
-    // animationend 永不触发，只能干等 500ms 兜底定时器 —— 直接短路返回。
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      onBack();
-      return;
-    }
     // 标记 body：触发下方菜单视差归位（与子页右滑同步），强化「返回」层级感
     document.body.classList.add('settings-subpage--closing');
     setLeaving(true);

@@ -596,12 +596,4 @@ html[data-device="app"] .proxy-setup__grid {
   to { transform: rotate(360deg); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .proxy-setup__btn,
-  .proxy-setup__card,
-  .proxy-setup__stepnav-item,
-  .proxy-setup__btn .spin {
-    transition: none;
-    animation: none;
-  }
-}
+

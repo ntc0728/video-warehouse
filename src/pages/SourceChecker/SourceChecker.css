@@ -812,15 +812,4 @@ html[data-device="app"] .source-checker-stats {
 }
 
 /* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .tab-btn,
-  .vrow,
-  .band-bar,
-  .stat-card,
-  .vlist.is-scanning .vrow,
-  .source-checker-rail,
-  .checking-spinner {
-    transition: none;
-    animation: none;
-  }
-}
+

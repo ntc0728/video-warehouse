@@ -489,12 +489,6 @@
 
 
 /* ── Reduced motion ──────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .browse-loadmore-spinner,
-  .browse-loadmore-hint {
-    animation: none !important;
-  }
-}
 
 /* ═════════════════════════════════════════════════════════════════════
    BR-C（2026-09-07 定稿 T5 / 2026-09-08 阈值下移）：≥1024 侧栏筛选（用户拍板阈值）

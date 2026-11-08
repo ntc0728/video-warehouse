@@ -55,12 +55,6 @@ const CURTAIN_ROUTES: readonly string[] = ['/iptv/play'];
 /** 视频播放页路由（播放器区域豁免进场动画） */
 const PLAYER_ROUTES: readonly string[] = ['/play', '/player'];
 
-/** 系统「减少动态效果」偏好：开启时一切转场从简（幕布仍可用，但瞬时） */
-export function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined' || !window.matchMedia) return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
 /** 目标路径是否为黑场转场路由（用 pathname 判断，兼容带 query 的 /iptv/play?url=…） */
 export function isCurtainPath(pathname: string): boolean {
   return CURTAIN_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
@@ -121,7 +115,8 @@ function clearHoldTimer() {
 export function raiseCurtain(): number {
   if (typeof document === 'undefined') return 0;
   const el = ensureCurtain();
-  const duration = prefersReducedMotion() ? 0 : PT_DUR.curtainIn;
+  // 2026-11-08 全局放开：不再随系统 prefers-reduced-motion 瞬时化（用户拍板，全部动效始终播放）
+  const duration = PT_DUR.curtainIn;
 
   el.style.transitionDuration = `${duration}ms`;
   // 先确保处于可见层（移除 display:none），下一帧再改 opacity 才会触发 transition
@@ -145,7 +140,7 @@ export function dropCurtain(): void {
   const el = document.getElementById(CURTAIN_ID) as HTMLDivElement | null;
   if (!el || el.style.opacity !== '1') return;
 
-  const duration = prefersReducedMotion() ? 0 : PT_DUR.curtainOut;
+  const duration = PT_DUR.curtainOut;
   el.style.transitionDuration = `${duration}ms`;
   el.style.opacity = '0';
   window.setTimeout(() => el.classList.remove('pt-curtain--active'), duration);

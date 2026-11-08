@@ -650,21 +650,6 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
    豁免块把转圈整个禁掉（用户报「图标不转动了」）。转圈属点击反馈动画，应用侧
    刻意无视系统减少动态；若要恢复 a11y 行为，把该选择器加回下方列表即可。 */
 
-@media (prefers-reduced-motion: reduce) {
-  .hero-bili__banner-img,
-  .hero-side-card,
-  .hero-side-card__img,
-  .hero-side-card__title.is-marquee .hero-side-card__title-track {
-    transition: none !important;
-    animation: none !important;
-  }
-  /* 跑马灯降级为静态 ellipsis（2026-09-30 用户确认）：覆盖层不显示，
-     保留兜底层的单行 ellipsis。特异性与上方 is-marquee 开启规则相同，
-     靠本块后置源码顺序取胜。 */
-  .hero-side-card__title.is-marquee .hero-side-card__title-marquee {
-    display: none;
-  }
-}
 
 /* ── 右卡封面加载门控（2026-09-23）──────────────────────────────────
    扫光中隐藏四角标 + 收藏钮；成功/失败兜底/空封面（无 LazyImage placeholder）显示。

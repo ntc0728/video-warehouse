@@ -50,11 +50,6 @@ export default function AppLoading({
   const [progress, setProgress] = useState(0);
   useEffect(() => {
     if (!showProgress || typeof window === 'undefined') return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      // 减少动画：不做渐进动画，直接静止在封顶值（示意加载中）
-      setProgress(PROGRESS_CAP);
-      return;
-    }
     let raf = 0;
     let value = 0;
     const tick = () => {

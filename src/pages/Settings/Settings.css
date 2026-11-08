@@ -659,8 +659,7 @@ body.skin-transitioning .skin-btn.active {
 
 /* tab 切换过渡（2026-08-13 重做）：内容区 pane 常驻挂载（display 切换可见性），
    激活 pane 播放纯 opacity 淡入——去掉原 translateY(8px) 位移动画（重挂载 + 位移
-   是「切 tab 页面抖动」的根因之一）。内容常驻不卸载、无高度 0 突变；
-   prefers-reduced-motion 下被全局 * 动画压缩规则自动抑制。 */
+   是「切 tab 页面抖动」的根因之一）。内容常驻不卸载、无高度 0 突变。 */
 @keyframes settings-content-in {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -687,7 +686,7 @@ body.skin-transitioning .skin-btn.active {
      幅度是卡片的一半（6 vs 12px）、时长短 20%（320 vs 400ms），同语言、更轻口音；
      多块 tab（视频/IPTV/个人）享阶梯，单块 tab 自然成一块；切 tab 重放也不闹。
    前缀 .page-transition[data-variant="soft"] 保证只在进入路由（容器重挂载）时整播，
-   prefers-reduced-motion 由全局 * 规则压缩。 */
+（原 prefers-reduced-motion 压缩守卫随全局放开删除，2026-11-08）。 */
 @keyframes settings-topbar-in {
   from {
     opacity: 0;
@@ -822,7 +821,7 @@ body.skin-transitioning .skin-btn.active {
    过渡动画：进入从右侧推入（iOS 风格，与列表 → 子页的方向一致），
    退出向右滑出；--leaving 类由组件在返回/右滑时添加，animationend 后卸载。
    方案1（iOS 对称 push/pop）：进出统一 0.3s + cubic-bezier(.32,.72,0,1)，
-   父列表视差同曲线同时长、子页左缘投影、prefers-reduced-motion 守卫。 */
+   父列表视差同曲线同时长、子页左缘投影。 */
 @keyframes settings-subpage-in {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
@@ -1648,16 +1647,7 @@ body.skin-transitioning .skin-btn.active {
     filter: none;
   }
   /* 方案1：无障碍守卫 —— 关闭进出动画与父视差/压暗，直接显隐 */
-  @media (prefers-reduced-motion: reduce) {
-    .settings-subpage { animation: none; }
-    .settings-subpage--leaving { animation: none; }
-    body:has(.settings-subpage) .settings-page,
-    body.settings-subpage--closing .settings-page {
-      transform: none;
-      filter: none;
-      transition: none;
-    }
-  }
+  
 }
 /* 9.1 app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
@@ -1702,13 +1692,6 @@ body.skin-transitioning .skin-btn.active {
     background: transparent;
     overflow: visible;
     box-shadow: none;
-  }
-}
-
-/* 与页面切换过渡一致：尊重 prefers-reduced-motion，关闭子页面过渡动画 */
-@media (prefers-reduced-motion: reduce) {
-  .settings-subpage {
-    animation-duration: 0.01ms;
   }
 }
 

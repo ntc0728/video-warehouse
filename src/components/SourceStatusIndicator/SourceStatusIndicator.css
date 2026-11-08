@@ -62,11 +62,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ssb-spin {
-    animation-duration: 1.4s;
-  }
-}
 
 /* ── 搜索结束：逐源 badge（demo .srcbadge 同款：色块圆点 + 源名 + 结果数） ── */
 .ssb-badges {

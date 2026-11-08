@@ -12,11 +12,6 @@
   animation: shimmer var(--card-shimmer-duration) var(--ease-in-out-quart) infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .skeleton-block {
-    animation: none;
-  }
-}
 
 /* 骨架延迟淡入（2026-09-15）：页级骨架根容器加 .skeleton-scope 即生效。
    目的：过滤「请求 <150ms」的瞬时加载 —— 一置 loading 就挂骨架时，快请求下
@@ -44,11 +39,6 @@
 }
 
 /* 减少动画：不做延迟（否则前 150ms 空白失去意义），骨架立即可见 */
-@media (prefers-reduced-motion: reduce) {
-  .skeleton-scope {
-    animation: none;
-  }
-}
 
 /* ── 骨架内一律无描边（2026-11-05 用户要求）───────────────────────────────
    骨架（各页 *Skeleton、启动骨架 #boot-splash）只用「填充色块 + 圆角」表达轮廓，

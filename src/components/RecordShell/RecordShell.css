@@ -660,11 +660,6 @@ html[data-device="app"] .action-btn__label {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .record-pop {
-    animation: none;
-  }
-}
 
 .record-pop-item {
   display: flex;

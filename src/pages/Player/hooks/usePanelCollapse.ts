@@ -7,12 +7,6 @@ const EXPAND_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const COLLAPSE_MS = 200;
 const COLLAPSE_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
 
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined'
-    && typeof window.matchMedia === 'function'
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
 /**
  * 面板折叠/展开高度动画（Web Animations API，全端统一：桌面 ≥1024 / 窄屏 / App / TV）
  *
@@ -64,7 +58,8 @@ export function usePanelCollapse<T extends HTMLElement>(collapsed: boolean) {
     stableH.current = to;
 
     // 首次挂载 / 高度未变 / 用户要求减少动效 → 不动画
-    if (!from || Math.abs(to - from) < 2 || prefersReducedMotion()) return;
+    // 2026-11-08 全局放开：折叠动画不再随系统 prefers-reduced-motion 跳过
+    if (!from || Math.abs(to - from) < 2) return;
 
     const duration = collapsed ? COLLAPSE_MS : EXPAND_MS;
     const easing = collapsed ? COLLAPSE_EASE : EXPAND_EASE;

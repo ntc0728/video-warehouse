@@ -425,25 +425,6 @@ html[data-device="app"] .hero-banner__skeleton--btn {
 
 /* ── Reduced motion ──────────────────────────────────────────────────── */
 
-@media (prefers-reduced-motion: reduce) {
-  .hero-banner__bg-layer {
-    transition: none !important;
-    animation: none !important;
-  }
-
-  .hero-banner__text {
-    animation: none !important;
-  }
-
-  .hero-banner__main.slide-left,
-  .hero-banner__main.slide-right {
-    animation: none !important;
-  }
-
-  .hero-banner__bg-placeholder {
-    animation: none !important;
-  }
-}
 
 /* ── Mobile / 平板：banner 已是纯 16:9（几何随缩略图列删除而统一），
    此档只保留卡片自身的移动端外观（更小的圆角 + 底部间距）。 ─── */

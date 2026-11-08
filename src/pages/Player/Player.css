@@ -202,11 +202,6 @@
 }
 
 /* 用户要求减少动效：箭头不再旋转过渡（高度动画由 hook 内的同一媒体查询跳过） */
-@media (prefers-reduced-motion: reduce) {
-  .player-panel-arrow {
-    transition: none;
-  }
-}
 
 .player-panel-loading {
   display: flex;
@@ -591,14 +586,6 @@
   height: 12px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .player-tv-loader__icon,
-  .player-tv-loader__dots > span,
-  .player-skeleton-block,
-  .player-detail-fav-heart {
-    animation: none;
-  }
-}
 
 /* ── 播放器空状态 ──────────────────────────────────────────────────────
    当视频无数据时显示的占位状态，包含：

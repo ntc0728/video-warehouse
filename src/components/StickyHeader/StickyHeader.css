@@ -642,14 +642,6 @@
 /* ── Desktop/Tablet web (>=768px)：保留 logo + 折叠按钮 ──
    TV / 原生 App 保留 header logo（无侧边栏） */
 
-@media (prefers-reduced-motion: reduce) {
-  .sticky-header,
-  .sticky-header__nav-item,
-  .sticky-header__theme-btn,
-  .sticky-header__hdr-btn {
-  transition: none;
-}
-}
 
 /* ── 文字可读性增强 (玻璃态更透明后) ───────────────────
    浅色主题下文字位于半透明玻璃上,容易被下方页面背景干扰;

@@ -169,8 +169,4 @@
   border-radius: var(--radius-full);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .iptv-skeleton__channel-cover {
-    animation: none;
-  }
-}
+

@@ -611,13 +611,4 @@ html[data-device="app"] .search-box__input {
 
 /* ── Reduced motion ────────────────────────────────── */
 
-@media (prefers-reduced-motion: reduce) {
-  .search-box,
-  .search-box__clear,
-  .search-box__submit,
-  .search-box__icon,
-  .search-box-dropdown {
-    transition: none !important;
-    animation: none !important;
-  }
-}
+

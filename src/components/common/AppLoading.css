@@ -296,11 +296,4 @@ html.theme-transitioning .app-loading *:not(svg):not(path) {
 /* ═══════════════════════════════════════════════════════════════════
    可访问性：减少动画
    ═══════════════════════════════════════════════════════════════════ */
-@media (prefers-reduced-motion: reduce) {
-  .app-loading__brand-name,
-  .app-loading__brand-sub,
-  .app-loading__tip,
-  .app-loading__progress-bar {
-  animation: none;
-}
-}
+
