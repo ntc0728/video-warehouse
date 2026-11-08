@@ -529,8 +529,12 @@ export default function DetailPage() {
         );
       }
       if (ctrl.signal.aborted) return;
-      // 成功完成才写缓存（含部分源失败的 results 也算完成语义，重拉大概率同样结果）
-      writeDetailCache(id, { cms: { results: collected, sourceKey: indices.join(','), fetchedAt: Date.now() } });
+      // 全失败不写缓存（2026-11-08 用户拍板）：全源超时/断网属偶发瞬时故障，
+      // 写进去会让 10min TTL 内每次切 tab 都回显空结果，比重搜更差。
+      // 部分失败仍照写（单源偶发失败不否定其余源的结果，下拉刷新可强刷）。
+      if (collected.some((r) => r.video)) {
+        writeDetailCache(id, { cms: { results: collected, sourceKey: indices.join(','), fetchedAt: Date.now() } });
+      }
       setCmsLoaded(true);
     } catch (err) {
       // 每源已各自 catch，此处仅兜底整体异常（如 getEnabledVideoSourceIndices 失败）
