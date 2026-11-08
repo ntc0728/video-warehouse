@@ -277,10 +277,26 @@
   height: 0.875rem;
 }
 
+/* 尺寸镜像真实 .hero-banner__cta（2026-11-08 对齐 detail-btn 后）：
+   桌面 min-height --comp-tab-height 档；宽度按「icon-sm + gap-sm + 4 字 text-sm + 2×space-md」
+   ≈ 6rem 取近似（骨架宽度无需逐像素，高度/形状一致即可消除换行跳动）。 */
 .hero-banner__skeleton--btn {
-  width: 8rem;
-  height: 2.75rem;
+  width: 6rem;
+  height: var(--comp-tab-height);
   border-radius: var(--radius-full);
+}
+
+/* 移动端（≤767 / app 恒移动）：镜像真实 CTA 移动档 min-height --space-2xl + text-xs */
+@media (width <= 767px) {
+  .hero-banner__skeleton--btn {
+    width: 5rem;
+    height: var(--space-2xl);
+  }
+}
+
+html[data-device="app"] .hero-banner__skeleton--btn {
+  width: 5rem;
+  height: var(--space-2xl);
 }
 
 /* ── Title & Meta ────────────────────────────────────────────────────── */

@@ -517,6 +517,42 @@ function HeroBannerClassic({
   const slideAnimRef = useRef<'forward' | 'backward' | null>(null);
   const isDraggingRef = useRef(false);
 
+  // ── 切换收尾（transitionend 驱动，见 triggerSlide 内注释）──
+  const pendingSlideRef = useRef<{ newIdx: number } | null>(null);
+  const slideFallbackRef = useRef<number | null>(null);
+  const endSlideRef = useRef<() => void>(() => {});
+  const endSlide = useCallback(() => {
+    if (slideFallbackRef.current) {
+      window.clearTimeout(slideFallbackRef.current);
+      slideFallbackRef.current = null;
+    }
+    const pending = pendingSlideRef.current;
+    if (!pending) return; // 幂等：bg/text 两个 track 各发一次 transitionend
+    pendingSlideRef.current = null;
+    setActiveIndex(pending.newIdx);
+    setSlideAnim(null);
+    setTextRiseEnabled(false); // 落定一拍内关闭当前槽入场，避免新文字二次重播
+    setSuppressFadeInId(displayItems[pending.newIdx]?.id ?? null);
+  }, [displayItems]);
+  endSlideRef.current = endSlide;
+
+  // transitionend 监听挂在 .hero-banner__main（事件委托）：track/text-track 的
+  // transform 过渡结束即收尾。回弹（bounceBack）同样发 transitionend，但此时
+  // pendingSlideRef 为 null，空转无害。
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const onTransitionEnd = (e: TransitionEvent) => {
+      if (e.propertyName !== 'transform') return;
+      const t = e.target as HTMLElement | null;
+      if (!t || !t.classList) return;
+      if (!t.classList.contains('hero-banner__track') && !t.classList.contains('hero-banner__text-track')) return;
+      endSlideRef.current();
+    };
+    el.addEventListener('transitionend', onTransitionEnd);
+    return () => el.removeEventListener('transitionend', onTransitionEnd);
+  }, []);
+
   // ── 统一翻页（自动轮播 / 遥控器 / 手动拖拽翻页 三处共用同一套 track 滑动动画）──
   // 之前的实现里三处各自内联一份「setSwitchIndex + setSlideAnim + setTimeout 400ms」，
   // 一旦某处时长/冷却/抑制淡入标记不一致就会产生「自动轮播与手动滑动观感不同」的割裂。
@@ -536,12 +572,16 @@ function HeroBannerClassic({
     }
     swipeCooldownRef.current = Date.now();
     lastSlideTimeRef.current = Date.now();
-    window.setTimeout(() => {
-      setActiveIndex(newIdx);
-      setSlideAnim(null);
-      setTextRiseEnabled(false); // 落定一拍内关闭当前槽入场，避免新文字二次重播
-      setSuppressFadeInId(displayItems[newIdx]?.id ?? null);
-    }, SLIDE_MS);
+    // ── 切换收尾（2026-11-08 闪烁修复）──────────────────────────────
+    // 旧实现固定 setTimeout(SLIDE_MS) 收尾，但自动轮播档 track 有 2 帧引导帧
+    // （slideBoot，≈16-33ms），过渡实际比定时器晚开始 → 定时器到点时动画还差
+    // 几个百分点没走完，收尾把 track 从 -196% 硬切回 -100%，整条文字（按钮）
+    // 肉眼可见「跳一下」（用户报「切换 banner 按钮快速闪烁」）；低端机 jank
+    // 下偏差更大。改为 transitionend 驱动（bg/text 两个 track 都挂 SLIDE_MS
+    // transform 过渡，任一结束即收尾，后者空转），SLIDE_MS+120ms 仅作兜底。
+    pendingSlideRef.current = { newIdx };
+    if (slideFallbackRef.current) window.clearTimeout(slideFallbackRef.current);
+    slideFallbackRef.current = window.setTimeout(endSlideRef.current, SLIDE_MS + 120);
   }, [displayItems]);
 
   // 分类切换 / 首屏数据就绪：重置「当前文字入场」开关，让新分类文字播一次自下而上出场
@@ -888,7 +928,11 @@ function HeroBannerClassic({
   const trackNext = trackTotal > 1 ? ((safeActiveIndex + 1) % trackTotal) : 0;
   const trackIndices = [trackPrev, safeActiveIndex, trackNext];
   // track 是否激活（拖拽中或滑动动画中）——用于背景图 track
-  const trackActive = isDragging || slideAnim !== null || bounceBack;
+  // 2026-11-08 闪烁修复：加 dragMoved 门控——轻点（<12px，无 dragOffset）不再挂载/
+  // 卸载三联 track 与 is-dragging 类（合成层反复创建销毁 + active 层 animation:none
+  // 打断恢复，是用户报「点击 banner 图片闪烁」的抖动源）。真实拖动首帧起才进 track。
+  const dragMoved = isDragging && dragOffset !== 0;
+  const trackActive = dragMoved || slideAnim !== null || bounceBack;
 
   // 文字 track 变换：
   //  - 拖拽中：与背景图 track 同构，文字跟随 banner 一起水平位移（问题 #2，任何距离都跟随）
@@ -946,7 +990,7 @@ function HeroBannerClassic({
           B) crossfade 模式（默认/分类切换）：absolute 堆叠 + stale 滞留层。 */}
       <div
         ref={mainRef}
-        className={`hero-banner__main${isDragging ? ' is-dragging' : ''}`}
+        className={`hero-banner__main${dragMoved ? ' is-dragging' : ''}`}
       >
         {/* crossfade 背景层：始终渲染（track 模式期间被 .hero-banner__track 绝对层盖住）。
             关键修复：track→crossfade 切换时当前图 <img> 不再重挂载，移动端/App（Capacitor
