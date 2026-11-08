@@ -1112,6 +1112,21 @@ body.skin-transitioning .skin-btn.active {
   width: min(94vw, calc(var(--layout-modal-max-width) + 280px));
 }
 
+/* 更新日志弹窗移动端全宽：内容长、面板占满整页时不需要圆角（区别于其它设置弹窗的底部上滑圆角样式） */
+@media (width <= 767px) {
+  .modal-content-animate.changelog-modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+  }
+}
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+html[data-device="app"] .modal-content-animate.changelog-modal {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 0;
+}
+
 /* 复用播放列表弹窗（PlaylistModal，flex:1 1 auto + min-height:0 + overflow-y:auto）的滚动隔离策略，
  保证弹窗内容可滚动且不溢出裁剪。注：旧类 .source-all-modal 已从 Detail.css 清除 */
 .settings-modal > .custom-scrollbar-container {
