@@ -68,6 +68,19 @@ const SENSITIVE_FIELDS = ['tmdbAccessToken', 'translationApiKey'] as const;
 /** zustand persist 落 localStorage 的键名（persist name / 跨页签 storage 监听共用） */
 const APP_SETTINGS_PERSIST_KEY = 'app-settings';
 
+/**
+ * uiScale 合法档位上限：120%（2026-11-08 用户定稿，选项 90%–120% + 自动/默认）。
+ * 旧档位 130% / 150% 已删除 —— 落盘值超限时钳到上限，避免下拉无匹配项显示空值。
+ */
+const UI_SCALE_MAX = 1.2;
+
+function normalizeUiScale(value: unknown): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_SETTINGS.uiScale;
+  if (n > UI_SCALE_MAX) return UI_SCALE_MAX;
+  return n; // 0（自动）与 0.9–1.2 各档原样保留
+}
+
 /** 设置项默认值（用于"恢复默认配置"） */
 export const DEFAULT_SETTINGS = {
   videoSourceIds: [] as string[],
@@ -271,6 +284,7 @@ export const useSettingsStore = create<SettingsState>()(
         return {
           ...currentState,
           ...persisted,
+          uiScale: normalizeUiScale(persisted?.uiScale), // 旧档 130%/150% → 钳到 120% 上限
           translationAppId: migratedTranslation.translationAppId || (persisted?.translationAppId as string) || '',
           translationApiKey: migratedTranslation.translationApiKey || (persisted?.translationApiKey as string) || '',
           autoTranslate: migratedTranslation.autoTranslate ?? ((persisted?.autoTranslate as boolean) ?? true),
@@ -347,7 +361,8 @@ export async function mergeSettingsFromCrossTab(raw: string): Promise<void> {
     }
     const cur = useSettingsStore.getState()[key as keyof SettingsState] as unknown;
     // JSON 比对兼容数组（epgUrls 等）：同内容不同引用不触发无谓写盘
-    if (JSON.stringify(cur) !== JSON.stringify(rawValue)) patch[key] = rawValue;
+    const nextValue = key === 'uiScale' ? normalizeUiScale(rawValue) : rawValue; // 旧档 130%/150% → 钳到 120% 上限
+    if (JSON.stringify(cur) !== JSON.stringify(nextValue)) patch[key] = nextValue;
   }
 
   if (Object.keys(patch).length > 0) {

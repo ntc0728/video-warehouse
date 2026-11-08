@@ -95,7 +95,8 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
             }
           />
         )}
-        {/* 界面缩放手动档（阶段 C）：仅非 TV 显示；TV 走独立 2× 曲线；上限 120%（2026-11-08 用户定稿） */}
+        {/* 界面缩放手动档（阶段 C）：仅非 TV 显示；TV 走独立 2× 曲线；
+            100% 为默认档，范围 90%–120%（2026-11-08 用户定稿，旧 130%/150% 档已在 store 层钳到 1.2） */}
         {!tvMode && (
           <List.Item
             title="界面缩放"
@@ -104,7 +105,9 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
               <Select
                 options={[
                   { value: '0', label: '自动' },
-                  { value: '1', label: '100%（不缩放）' },
+                  { value: '1', label: '默认' },
+                  { value: '0.9', label: '90%' },
+                  { value: '0.95', label: '95%' },
                   { value: '1.1', label: '110%' },
                   { value: '1.15', label: '115%' },
                   { value: '1.2', label: '120%' },
