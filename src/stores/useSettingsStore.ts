@@ -92,7 +92,7 @@ export const DEFAULT_SETTINGS = {
   tvMode: false,
   projectorMode: false,
   tvOverscan: 5,
-  uiScale: 0,
+  uiScale: 1, // 2026-11-08 默认改为 100%（不缩放）；「自动」仍为可选项
   username: '',
   avatar: '',
 };
@@ -195,7 +195,7 @@ export const useSettingsStore = create<SettingsState>()(
   tvMode: false,
   projectorMode: false,
   tvOverscan: 5,
-  uiScale: 0,
+  uiScale: 1,
   username: '',
   avatar: '',
 
