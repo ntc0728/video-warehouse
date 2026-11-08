@@ -101,6 +101,18 @@
   aspect-ratio: 3 / 2;
 }
 
+/* 2026-11-08 封面临界态画框（与 VideoCard 同批，用户拍板「方案一加深 + 方案二画框」）：
+   加载/重试期间 1px 内描边锚定边界（IPTV 封面 3:2，台标图小、占位裸露时间更长）。
+   :has 门控与失败态衔接逻辑见 VideoCard.css 同名注释。 */
+.iptv-card-cover:has(.lazy-image-placeholder) {
+  box-shadow: inset 0 0 0 1px var(--color-placeholder-border);
+}
+
+html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
+  box-shadow: inset 0 0 0 1px var(--color-placeholder-border),
+              0 1px 3px rgba(0, 0, 0, 0.07);
+}
+
 /* 横向 cover 失败/缺失兜底由 LazyImage fallbackVariant="tv" 渲染 lucide Tv 图标
    + kinoTV 品牌字，不再使用内联 Tv 图标占位 */
 

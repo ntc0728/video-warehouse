@@ -68,6 +68,17 @@
   height: 100%;
 }
 
+/* 2026-11-08 封面临界态画框（与 VideoCard 同批，用户拍板「方案一加深 + 方案二画框」）：
+   加载/重试期间 1px 内描边锚定边界；门控与失败态衔接逻辑见 VideoCard.css 同名注释。 */
+:is(.history-page, .collection-page) .record-card__media:has(.lazy-image-placeholder) {
+  box-shadow: inset 0 0 0 1px var(--color-placeholder-border);
+}
+
+html:not([data-theme="dark"]) :is(.history-page, .collection-page) .record-card__media:has(.lazy-image-placeholder) {
+  box-shadow: inset 0 0 0 1px var(--color-placeholder-border),
+              0 1px 3px rgba(0, 0, 0, 0.07);
+}
+
 /* 视频封面：图片铺满（16:9 源图按 cover 裁切，保持容器严格 16:9）
    2026-11-04：hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
 :is(.history-page, .collection-page) .record-card__media--video .lazy-image,

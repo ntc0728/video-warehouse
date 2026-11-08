@@ -157,6 +157,21 @@
   aspect-ratio: 2 / 3;
 }
 
+/* 2026-11-08 封面临界态画框（用户拍板「方案一加深 + 方案二画框」）：
+   加载/重试期间（占位层存在）给封面容器加 1px 内描边 + 浅投影，锚定卡片边界，
+   解决占位底与页面底过近「隐形」问题（尤其「继续观看」横版行与 hover 扫光临界态）。
+   :has 门控占位存在：图片揭示后描边消失；失败终态占位卸载，由
+   .lazy-image-fallback--brand 自带描边接管，两态无缝衔接不叠加。
+   暗档投影不可见故仅浅色加投影；描边色随 --color-placeholder-border 翻主题。 */
+.video-card-cover:has(.lazy-image-placeholder) {
+  box-shadow: inset 0 0 0 1px var(--color-placeholder-border);
+}
+
+html:not([data-theme="dark"]) .video-card-cover:has(.lazy-image-placeholder) {
+  box-shadow: inset 0 0 0 1px var(--color-placeholder-border),
+              0 1px 3px rgba(0, 0, 0, 0.07);
+}
+
 .video-card-cover-img {
   width: 100%;
   height: 100%;
