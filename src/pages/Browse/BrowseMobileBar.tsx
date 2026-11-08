@@ -17,6 +17,8 @@ interface BrowseMobileBarProps {
   /** 全量 genre（面板内切换分类时按 draft.category 重新解析，见下方 panelCategory） */
   movieGenres: TMDBGenre[]
   tvGenres: TMDBGenre[]
+  /** 结果数：与桌面结果头同口径的钉定值（pinnedReachable || pinnedTotal || totalResults） */
+  resultCount: number
 }
 
 function genreName(id: number, all: { id: number; name: string }[]): string {
@@ -33,6 +35,7 @@ export default function BrowseMobileBar({
   allGenres,
   movieGenres,
   tvGenres,
+  resultCount,
 }: BrowseMobileBarProps) {
   const { value, onChange, excludedGenreIds = [] } = filterBarProps
   const [open, setOpen] = useState(false)
@@ -161,14 +164,17 @@ export default function BrowseMobileBar({
               筛选
               <span className={`bmb-badge${activeCount === 0 ? ' zero' : ''}`}>{activeCount}</span>
             </button>
-            <span className="bmb-result-count">共 12,345 条</span>
+            <span className="bmb-result-count">共 {resultCount.toLocaleString('zh-CN')} 条</span>
           </div>
         )}
       </div>
 
-      {/* 已选轨（仅智能检索模式展示：直链搜索无 FilterBar，不渲染已选轨） */}
+      {/* 已选轨（仅智能检索模式展示：直链搜索无 FilterBar，不渲染已选轨）。
+          轨首常驻「类型」chip（不可移除，2026-11-08 用户要求补上）；轨仍是
+          「有已选筛选才出现」，零筛选时类型由结果头类型行承担。 */}
       {searchMode === 'smart' && chips.length > 0 && (
         <div className="bmb-rail">
+          <span className="bmb-chip">{filterBarProps.categoryLabel}</span>
           {chips.map((c) => (
             <span key={c.key} className="bmb-chip">
               <span>{c.label}</span>

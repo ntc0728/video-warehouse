@@ -793,6 +793,7 @@ export default function BrowsePage() {
           allGenres={[...movieGenres, ...tvGenres]}
           movieGenres={movieGenres}
           tvGenres={tvGenres}
+          resultCount={pinnedReachable || pinnedTotal || discoverPagination.totalResults}
         />
       )}
 
