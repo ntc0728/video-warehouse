@@ -187,11 +187,7 @@ export default function SettingsPage() {
 
   return (
     <div ref={pageRef} className="page-padding settings-page">
-      {mobileSubPage ? (
-        <SettingsSubPage key={mobileSubPage} tab={mobileSubPage} onBack={handleSubPageBack}>
-          {renderTab(mobileSubPage)}
-        </SettingsSubPage>
-      ) : isDesktop ? (
+      {isDesktop ? (
         <>
         <div className="settings-desktop-card">
           {/* 桌面端左侧竖排导航（方案 B，2026-09-06 拍板）：标题 + 竖排 TabBar 常驻左栏
@@ -237,8 +233,17 @@ export default function SettingsPage() {
         </>
       ) : (
         <>
+          {/* 移动端菜单常驻挂载：子页（全屏 portal 覆盖层）叠加其上而非替换。
+              原三元渲染在子页打开时卸载菜单 → 返回滑出动画揭示的是空白背景、
+              动画结束后菜单才重新挂载弹入（用户反馈「返回明显延迟/卡顿」的根因），
+              且 Settings.css 的父页视差（body:has(.settings-subpage)）因菜单不在 DOM 而全程空转。 */}
           <SettingsMobileProfile onProfileClick={() => handleSelectMenu('personal')} />
           <SettingsMenuList onSelect={handleSelectMenu} query={searchQuery} />
+          {mobileSubPage && (
+            <SettingsSubPage key={mobileSubPage} tab={mobileSubPage} onBack={handleSubPageBack}>
+              {renderTab(mobileSubPage)}
+            </SettingsSubPage>
+          )}
         </>
       )}
 
