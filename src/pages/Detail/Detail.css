@@ -980,7 +980,6 @@
   justify-content: space-between;
   align-items: flex-end;
   padding-bottom: var(--space-sm);
-  border-bottom: 1px solid var(--color-border-light);
 }
 
 .detail-sources-header-left {

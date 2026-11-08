@@ -35,22 +35,13 @@
   background: none;
 }
 
-/* 骨架 hero-info 底色分设备：
-   - <768 / app：影院深底（移动端真实 hero 为深色媒体面，灰块在深底上可见）；
-   - ≥768 非 app：surface 白卡 + 边框/投影（用户定稿，与资料区骨架卡观感一致） */
-@media (width <= 767px) {
-  .detail-skeleton__hero-info {
-    background: var(--color-media-surface);
-  }
-}
-html[data-device="app"] .detail-skeleton__hero-info {
-  background: var(--color-media-surface);
+/* 骨架 hero-info 底色：全设备统一 surface 白底（2026-11-08 用户要求：
+   移动端不再黑色，与桌面同一处理；无边框） */
+.detail-skeleton__hero-info {
+  background: var(--color-surface);
 }
 
 @media (width >= 768px) {
-  html:not([data-device="app"]) .detail-skeleton__hero-info {
-    background: var(--color-surface);
-  }
 
   /* 内容簇贴底镜像真实页（2026-11-08：真实 hero 内容簇 flex-end 靠近 CTA，
      空区上浮；骨架同步 flex-end，灰块簇不再垂直居中）。
