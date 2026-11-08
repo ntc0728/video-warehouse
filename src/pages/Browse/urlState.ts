@@ -13,7 +13,7 @@
  * - page         : 数字（懒加载进度；非必填）
  */
 import type { FilterBarValue } from '@/components/FilterBar';
-import type { CategoryKey } from '@/components/CategoryQuickAccess';
+import type { CategoryKey } from '@/types/category';
 import { SORT_OPTIONS, MEDIA_TYPE_OPTIONS, VISIBLE_CATEGORY_KEYS } from './constants';
 
 const VALID_CATEGORIES = new Set<CategoryKey>([

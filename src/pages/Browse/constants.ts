@@ -4,7 +4,7 @@
  * 集中维护分类 / 媒体类型 / 排序等元信息，
  * 避免在 urlState / useBrowseData / BrowsePage 中重复定义导致漂移。
  */
-import type { CategoryKey } from '@/components/CategoryQuickAccess';
+import type { CategoryKey } from '@/types/category';
 
 // ── 分类显示标签 ────────────────────────────────────────
 export const CATEGORY_LABELS: Record<CategoryKey, string> = {

@@ -18,7 +18,7 @@ import type { TMDBGenre } from '@/types/tmdb';
 import Skeleton from '@/components/common/Skeleton';
 import { useTMDBStore } from '@/stores';
 import { VISIBLE_CATEGORY_KEYS, CATEGORY_CONFIG } from './constants';
-import type { CategoryKey } from '@/components/CategoryQuickAccess';
+import type { CategoryKey } from '@/types/category';
 import { SORT_OPTIONS, YEAR_OPTIONS, YEAR_OLDER_LABEL, FILTER_COLLAPSE_LIMIT, type RegionOption } from '@/components/FilterBar/constants';
 import './BrowseChromeSkeleton.css';
 

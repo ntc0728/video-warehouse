@@ -19,7 +19,7 @@
   /* TV 红线：显示规则必须 :not(tv) 前缀（TV 走原 HeroBanner 路径，本组件不渲染） */
   html:not([data-device="tv"]) .hero-bili {
     /* 融合方案甲（2026-09-06）：hero 成为一个整体卡——首行分类导航带 +
-       banner/右栏网格；overlay 面板绝对定位锚定本卡（CategoryQuickAccess.css）
+       banner/右栏网格；overlay 面板绝对定位锚定本卡
        2026-09-28 去卡片化：本组件仅 >=1024 桌面渲染，四件套整体移除，
        banner/右栏直接铺页面底色（间距由 --hero-main-gap / grid padding 提供）。 */
     position: relative;

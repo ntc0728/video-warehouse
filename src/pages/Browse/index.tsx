@@ -72,7 +72,7 @@ export default function BrowsePage() {
   // 仅在 PUSH 导航（从顶部 SearchBox 搜索进入）时读取搜索词；POP 时直接清空。
   const stateQ = (location.state as { q?: string } | null)?.q?.trim() ?? '';
   const urlQ = searchParams.get('q')?.trim() ?? '';
-  // 从首页分类导航进入（Home CategoryQuickAccess → /browse?category=...）：
+  // 从首页分类导航进入（首页 → /browse?category=...）：
   // 顶部搜索框应清空（query state 常驻，若不处理会残留旧搜索词）
   const fromCategory = (location.state as { fromCategory?: boolean } | null)?.fromCategory === true;
   const [query, setQuery] = useState(() => {

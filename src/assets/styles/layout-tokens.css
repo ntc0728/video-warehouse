@@ -127,7 +127,7 @@
    流体（15.2–16.5px）放不下换一换浮层（按钮 ~30px + 呼吸），且该档 hero 卡
    已全档进留白区（见 HeroBili.css），统一按 60px 与 1440 档连续衔接（零跳变）。
    影响面：该档所有页面内容宽左右各收窄 ~45px（.page-padding / Player /
-   CategoryQuickAccess / Browse 弹层，见各消费方）。
+   Browse 弹层，见各消费方）。
    TV 红线：分档用 html:not(tv)，TV 恒 space-lg。 */
 @media (width >= 1024px) and (width < 1920px) {
   html:not([data-device="tv"]) { --page-pad-x: 60px; }

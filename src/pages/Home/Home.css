@@ -112,15 +112,7 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
   margin-inline: auto;
 }
 
-/* 分类快捷入口 → 卡片模块 */
-.home-page .category-quick-access {
-  margin-bottom: var(--space-sm);
-  padding: var(--space-sm) 0;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background-color: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-}
+/* 分类快捷入口卡片规则已随组件删除（2026-11-08） */
 
 /* 每个 TMDB 行 → 卡片模块，行与行之间间距 var(--space-sm) */
 .home-page .tmdb-movierow {
@@ -145,7 +137,6 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
    <=767 与 html[data-device=app]（恒移动）不吃本块 → 卡片原样保留；
    TV 走独立布局，按 TV 红线 :not(tv) 隔离。 */
 @media (width >= 768px) {
-  html:not([data-device="app"]):not([data-device="tv"]) .home-page .category-quick-access,
   html:not([data-device="app"]):not([data-device="tv"]) .home-page .tmdb-movierow,
   html:not([data-device="app"]):not([data-device="tv"]) .home-page .hero-banner__card,
   html:not([data-device="app"]):not([data-device="tv"]) .home-page .home-topstrip,
@@ -394,10 +385,10 @@ html[data-device="app"] .home-disclaimer {
 
 /* ═══════════════════════════════════════════════════════════════════════
    大屏骨架（≥1024，2026-09-11 用户要求「不同视口显示相应的 UI 骨架」）
-   与真实大屏布局同构：顶部过渡带 + HeroBili + CQA 合并体 + 7 行卡片。
+   与真实大屏布局同构：顶部过渡带 + HeroBili + 7 行卡片。
    （2026-09-29 左栏「今日趋势 TOP 20」删除，两栏改单列纵向流，
    .home-two-col 系列样式随之移除。）
-   ⚠️ 骨架**直接复用真实布局的类名**（.hero-bili / .cqa-board /
+   ⚠️ 骨架**直接复用真实布局的类名**（.hero-bili /
    .hero-side-card），几何全部由既有 token 派生 —— 这里只补「真实元素没有的
    骨架填充块」，避免出现第二套几何模型（历史上骨架/真实两套尺寸漂移过）。
    ═══════════════════════════════════════════════════════════════════════ */

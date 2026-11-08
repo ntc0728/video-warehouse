@@ -132,7 +132,7 @@ async function fetchChartPage(
   );
 }
 
-/** 口径说明 tooltip（与 CategoryQuickAccess InfoTip 同款：radix Tooltip + Portal + pointer-events:none） */
+/** 口径说明 tooltip（radix Tooltip + Portal + pointer-events:none，防误关 overlay） */
 function InfoTip({ label, text }: { label: string; text: string }) {
   return (
     <Tooltip.Root>
@@ -397,8 +397,7 @@ export default function ChartPage() {
 }
 
 /** 榜单行标题：溢出检测 + 悬浮该行时跑马灯展示全标题。
- *  范式与历史页 `RecordCard`（`src/components/RecordCard`）一致、也与
- *  CategoryQuickAccess 的 HotCardTitle / TrendTitle 统一（用户 2026-09-10 指定参考）：
+ *  范式与历史页 `RecordCard`（`src/components/RecordCard`）一致（用户 2026-09-10 指定参考）：
  *  ① 同一元素上测 `scrollWidth > clientWidth + 1`（自身 overflow:hidden + nowrap，
  *     注意**不能** `text-overflow:ellipsis` 之外的额外裁切干扰）；
  *  ② 溢出时渲染**双段轨道**（标题复制两份、各带尾间距），动画平移 `-50%` 无缝循环。 */

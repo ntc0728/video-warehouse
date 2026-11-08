@@ -40,7 +40,7 @@
 }
 
 /* ── 「查看全部」文字链接（行标题右侧，首页 7 推荐行） ──────────────
-   样式口径对齐 .cqa-heat-row__more（CategoryQuickAccess.css）：text-xs +
+   样式口径：text-xs +
    text-secondary，hover 提亮 + surface-hover 底。可见性分档：
    · 桌面 ≥1024 非 TV（渲染侧已保证该档才传 onViewAll，故无需 media query）：
      默认低透明度，hover 行 / 行内获得焦点时显现；

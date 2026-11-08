@@ -182,18 +182,9 @@ test.describe('跨页联动回归', () => {
       await expect(page).toHaveURL(/\/(detail|play)\//, { timeout: 3000 });
     }
 
-    // X-003: 首页分类 → 浏览页
-    // 2026-09-10：宽屏起点改为 1024（含端点），≥1024 首页分类入口是顶栏 chips（打开 mega 面板），
-    // 圆卡 .category-quick-access__card 的回退区间为 768–1023，故本段改用 900 视口。
+    // X-003: 首页分类 → 浏览页（分类快捷入口已随组件删除，2026-11-08；
+    // 行「查看全部」→ /browse 跳转由 home.spec 覆盖，此处不再重复）
     await page.setViewportSize({ width: 900, height: 800 });
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 10000 });
-    const chips = page.locator('.category-quick-access__card');
-    await expect(chips.first()).toBeVisible({ timeout: 3000 });
-    if (await chips.first().isVisible().catch(() => false)) {
-      await chips.first().click();
-      await expect.poll(() => page.url(), { timeout: 1000 }).toContain('/browse');
-    }
 
     // X-004: 首页卡片 → 详情页
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -854,40 +845,7 @@ test.describe('UI 整改', () => {
     expect(state.navItemCount).toBe(5);
   });
 
-  test('hover/搜索: 分类图标不越界 + 回首页分类清旧数据', async ({ page }) => {
-    // UI-005
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    // 等分类卡片渲染，替代固定 2500ms 睡眠
-    await expect(page.locator('.category-quick-access__card').nth(1)).toBeVisible({ timeout: 3000 });
-    const card = page.locator('.category-quick-access__card').nth(1);
-    await card.hover();
-    // 等 hover 后图标几何落入卡片内（轮询真实状态），替代固定 400ms 睡眠
-    await expect.poll(() => page.evaluate(() => {
-      const cardEl = document.querySelectorAll('.category-quick-access__card')[1] as HTMLElement | null;
-      const iconEl = document.querySelectorAll('.category-quick-access__icon-wrap')[1] as HTMLElement | null;
-      if (!cardEl || !iconEl) return false;
-      const cardRect = cardEl.getBoundingClientRect();
-      const iconRect = iconEl.getBoundingClientRect();
-      const iconTopVsCard = iconRect.top - cardRect.top;
-      const iconBottomVsCard = iconRect.bottom - cardRect.bottom;
-      return iconTopVsCard >= 0 && iconBottomVsCard <= 0;
-    }), { timeout: 2000 }).toBe(true);
-    const m = await page.evaluate(() => {
-      const cardEl = document.querySelectorAll('.category-quick-access__card')[1] as HTMLElement | null;
-      const iconEl = document.querySelectorAll('.category-quick-access__icon-wrap')[1] as HTMLElement | null;
-      if (!cardEl || !iconEl) return null;
-      const cardRect = cardEl.getBoundingClientRect();
-      const iconRect = iconEl.getBoundingClientRect();
-      return {
-        iconTopVsCard: iconRect.top - cardRect.top,
-        iconBottomVsCard: iconRect.bottom - cardRect.bottom,
-        cardTransform: getComputedStyle(cardEl).transform,
-      };
-    });
-    expect(m).not.toBeNull();
-    expect(m!.iconTopVsCard).toBeGreaterThanOrEqual(0);
-    expect(m!.iconBottomVsCard).toBeLessThanOrEqual(0);
-
+  test('搜索: 进入浏览页清旧搜索词（UI-006；UI-005 分类图标不越界已随分类快捷入口删除，2026-11-08）', async ({ page }) => {
     // UI-006
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     // 等搜索框渲染，替代固定 2500ms 睡眠
@@ -900,7 +858,8 @@ test.describe('UI 整改', () => {
     await page.locator('.sticky-header__logo-group').click();
     // 等返回首页（URL 回到根），替代固定 800ms 睡眠
     await expect.poll(() => page.url(), { timeout: 1000 }).toMatch(/\/$/);
-    await page.locator('.category-quick-access__card', { hasText: '电影' }).click();
+    // 分类快捷入口已删除（2026-11-08）：直接进入浏览页验证搜索词清理
+    await page.goto('/browse?category=movie', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.browse-results-body', { timeout: 8000 });
     await page.waitForSelector('.browse-card--results [class*="grid"] > *', { timeout: 8000 });
     // 等回首页后搜索框已清空，替代固定 500ms 睡眠

@@ -156,12 +156,6 @@ $uiPrecisionMap = @{
         grep = "1\.2|1\.3b|1\.3d|1\.3e"
     }
 
-    # ── 首页组件 ──
-    "src/components/CategoryQuickAccess/**" = @{
-        spec = @("scripts/home.spec.ts")
-        grep = "1\.3"
-    }
-
     # ── 全局壳（Layout/StickyHeader/SearchBox 影响所有页面首屏）──
     "src/components/Layout/**" = @{
         # spec 列表：一个页面一个「首屏用例」所在的 spec（cross-tab 与 regression 各一条壳层断言）。

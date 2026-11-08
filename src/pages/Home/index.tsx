@@ -1,5 +1,7 @@
 /**
- * 首页 — HeroBanner + CategoryQuickAccess + 7 行横滚数据
+ * 首页 — HeroBanner + 继续观看 + 7 行横滚数据
+ * （分类快捷入口 CategoryQuickAccess 已于 2026-11-08 按用户要求整体删除，
+ *   分类跳转统一由各行「查看全部」承担）
  *
  * 所有筛选相关逻辑已迁出至 /browse 独立路由页：
  *   点击分类 → navigate('/browse?category=xxx&...')
@@ -14,8 +16,7 @@ import { BackToTopButton, LazyBlock } from '@/components/common';
 import TMDBMovieRow, { SkeletonCards } from '@/components/TMDBMovieRow';
 import HeroBanner from '@/components/HeroBanner';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import CategoryQuickAccess from '@/components/CategoryQuickAccess';
-import type { CategoryKey } from '@/components/CategoryQuickAccess';
+import type { CategoryKey } from '@/types/category';
 import { CATEGORY_CONFIG as BROWSE_CATEGORY_CONFIG } from '@/pages/Browse/constants';
 import { buildBrowseUrl } from '@/pages/Browse/urlState';
 import { buildContinueItems } from './continueItems';
@@ -533,8 +534,8 @@ export default function HomePage() {
     );
   }
 
-  // ── 首页内容（HeroBanner + 分类快捷入口 + 继续观看 + 7 行横滚）──
-  // 分类切换已移除：点击 CategoryQuickAccess 卡片直接跳 /browse，不再在首页内切类目。
+  // ── 首页内容（HeroBanner + 继续观看 + 7 行横滚）──
+  // 分类切换已移除：分类跳转统一走「查看全部」→ /browse，不再在首页内切类目。
   // 注：history / userDataLoading / historyMap / continueItems 及三个事件 handler 的
   // hook 已上移至组件顶部（所有提前 return 之前），此处仅复用，避免 hook 数随分支漂移。
   // homeRows 定义已上移到骨架之前（骨架与真实行共用一份标题真源）。
@@ -637,8 +638,7 @@ export default function HomePage() {
               initialEnterDelay={enterPhase !== 'done' && !coldSkeletonShownRef.current ? 200 : 0}
             />
             <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
-              <CategoryQuickAccess onCategorySelect={handleCategorySelect} />
-              {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型（分类热度榜），行业范式同向 */}
+              {/* 2026-09-06 调换：个人内容（继续观看）贴顶优先于探索型，行业范式同向 */}
               {showContinueRow && (
                 <div className="home-continue-row">
                   <TMDBMovieRow

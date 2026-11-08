@@ -64,7 +64,7 @@
   text-overflow: ellipsis;
 }
 
-/* 口径 tooltip（与 CategoryQuickAccess InfoTip 同款） */
+/* 口径 tooltip（radix Tooltip 同款） */
 .chart-info-tip {
   display: inline-flex;
   justify-content: center;

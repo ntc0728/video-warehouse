@@ -185,7 +185,7 @@
      全站骨架**只有一个色源**，即上方 --color-placeholder-shimmer-a/b（现值 #f3f4f7↔#e8ebf1）。
      此前并存两套（#e8e8e8↔#f5f5f5 / #f0f0f0↔#e6e6e6），同屏可出现两种灰。
      这里保留原 token 名作**别名**，历史消费方（Player / Detail / TMDBMovieRow /
-     Home / CategoryQuickAccess）无需逐个改名；今后换骨架色只改 shimmer 两行。 */
+     Home）无需逐个改名；今后换骨架色只改 shimmer 两行。 */
   --color-skeleton: var(--color-placeholder-shimmer-a);        /* 别名 → 扫光起始色 */
   --color-skeleton-shine: var(--color-placeholder-shimmer-b);  /* 别名 → 扫光终止色 */
   /* 卡片级骨架/占位扫光时长：统一调慢，避免首页卡片闪烁过快（默认 3s，原 1.5s） */

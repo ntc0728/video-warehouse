@@ -394,14 +394,12 @@ html {
 /* ── 例外：横滚容器永久隐藏滚动条（按需求 1） ─────────────── */
 .tmdb-movierow-scroll,
 .daily-picks-scroll,
-.category-quick-access__inner,
 .detail-tabs {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 .tmdb-movierow-scroll::-webkit-scrollbar,
 .daily-picks-scroll::-webkit-scrollbar,
-.category-quick-access__inner::-webkit-scrollbar,
 .detail-tabs::-webkit-scrollbar {
   display: none;
   width: 0;

@@ -109,121 +109,12 @@ test.describe('1.2 HeroBanner 交互', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 1.3 分类快捷入口
+// 1.3b 顶栏入口（分类快捷入口 060 已随组件删除，2026-11-08）
 // ═══════════════════════════════════════════════════════════════
 
-test.describe('1.3 分类快捷入口', () => {
-  // ── 分类跳转 URL 参数验证 ──
-  // 「全部」分类已下线（tv+movie 合并页的页数/入参无法稳定对齐），默认入口为「电影」。
-  const CATEGORY_TEST_CASES = [
-    { label: '电影', expectedCategory: 'movie', expectedMediaType: 'movie', expectedGenre: null },
-    { label: '剧集', expectedCategory: 'tv', expectedMediaType: 'tv', expectedGenre: null },
-    { label: '纪录片', expectedCategory: 'documentary', expectedMediaType: 'movie', expectedGenre: '99' },
-    { label: '排行榜', expectedCategory: 'top', expectedMediaType: 'all', expectedGenre: null },
-  ];
-
-  test('分类快捷入口跳转（全分类 URL 参数校验 + 搜索联动，020/022循环/024b）', async ({ page }) => {
-    // 移动端视口（< 768px）验证分类快选点击跳转；桌面 web 现已同样显示分类快选
-    await page.setViewportSize({ width: 767, height: 1024 });
-
-    // ── 020: 点击首个分类跳转浏览页 ──
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 10000 });
-    await expect(page.locator('.category-quick-access__card').first()).toBeVisible({ timeout: 8000 });
-    const chips = page.locator('.category-quick-access__card');
-    const count = await chips.count();
-    if (count > 0) {
-      await chips.first().click();
-      await expect(page).toHaveURL(/\/browse/, { timeout: 5000 });
-    }
-
-    // ── 022 循环：各分类跳转 URL 参数正确 ──
-    for (const tc of CATEGORY_TEST_CASES) {
-      await page.setViewportSize({ width: 767, height: 1024 });
-      await page.goto('/', { waitUntil: 'domcontentloaded' });
-      await page.waitForSelector('.app-shell', { timeout: 10000 });
-      await expect(page.locator('.category-quick-access')).toBeVisible({ timeout: 8000 });
-
-      const categoryBtn = page.locator(
-        `.category-quick-access__card[aria-label="分类：${tc.label}"]`
-      );
-      const isVisible = await categoryBtn
-        .waitFor({ state: 'visible', timeout: 5000 })
-        .then(() => true)
-        .catch(() => false);
-
-      if (isVisible) {
-        await categoryBtn.click();
-        await expect(page).toHaveURL(/\/browse/, { timeout: 5000 });
-        const url = new URL(page.url());
-        expect(url.pathname).toBe('/browse');
-        expect(url.searchParams.get('category')).toBe(tc.expectedCategory);
-        expect(url.searchParams.get('mediaType')).toBe(tc.expectedMediaType);
-        const genre = url.searchParams.get('genre');
-        if (tc.expectedGenre) {
-          expect(genre).toBe(tc.expectedGenre);
-        } else {
-          expect(genre).toBeNull();
-        }
-      }
-    }
-
-    // ── 024b: 分类跳转后搜索框输入验证 ──
-    await page.setViewportSize({ width: 767, height: 1024 });
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 10000 });
-    await expect(page.locator('.category-quick-access')).toBeVisible({ timeout: 8000 });
-
-    const categoryBtn = page.locator('.category-quick-access__card[aria-label="分类：电影"]');
-    await expect(categoryBtn).toBeVisible({ timeout: 5000 });
-    await categoryBtn.click();
-    await expect(page).toHaveURL(/\/browse/, { timeout: 5000 });
-
-    const url1 = new URL(page.url());
-    expect(url1.pathname).toBe('/browse');
-    expect(url1.searchParams.get('category')).toBe('movie');
-
-    const searchToggle = page.locator('.sticky-header__search-btn');
-    if (await searchToggle.isVisible().catch(() => false)) {
-      await searchToggle.click();
-      await expect(page.locator('.sticky-header .search-box__input')).toBeVisible({ timeout: 5000 });
-    }
-
-    const searchInput = page.locator('.sticky-header .search-box__input');
-    await expect(searchInput).toBeVisible({ timeout: 5000 });
-    await searchInput.click();
-    await searchInput.fill('复仇者联盟');
-    const inputValue = await searchInput.inputValue();
-    expect(inputValue).toBe('复仇者联盟');
-
-    await searchInput.press('Enter');
-    await expect(page.locator('.browse-results-body')).toBeVisible({ timeout: 5000 });
-  });
-});
-
-// =============================================================
-// 1.3b 桌面端分类入口
-// =============================================================
-
-test.describe('1.3b 桌面端分类入口', () => {
-  test('桌面端分类快选跳转 /browse + 顶栏 IPTV/设置入口（060/061）', async ({ page }) => {
-    // 2026-09-10 用户拍板：宽屏起点定为 1024（含端点），圆卡形态的回退区间为 768–1023，
-    // 故本用例用 900 视口验证「桌面非宽屏」的圆卡入口。
+test.describe('1.3b 顶栏入口', () => {
+  test('顶栏 IPTV/设置入口（061）', async ({ page }) => {
     await page.setViewportSize({ width: 900, height: 800 });
-
-    // 060: 分类快选可见且点击跳转 /browse
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.app-shell', { timeout: 10000 });
-    await expect(page.locator('.category-quick-access').first()).toBeVisible({ timeout: 8000 });
-    const qa = page.locator('.category-quick-access').first();
-    await expect(qa).toBeVisible();
-    const movieCard = page.locator('.category-quick-access__card[aria-label="分类：电影"]');
-    await expect(movieCard).toBeVisible();
-    await movieCard.click();
-    await expect(page).toHaveURL(/\/browse/, { timeout: 5000 });
-    const url = new URL(page.url());
-    expect(url.pathname).toBe('/browse');
-    expect(url.searchParams.get('category')).toBe('movie');
 
     // 061: 顶栏提供 IPTV 与设置入口
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -355,18 +246,10 @@ test.describe('1.5 全局交互', () => {
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () => {
-  test('小视口(800×900)分类快选渲染 5 项 + 桌面搜索框（055/056）', async ({ page }) => {
+  test('小视口(800×900)桌面搜索框（056；055 分类快选已随组件删除）', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
-    await expect(page.locator('.category-quick-access').first()).toBeVisible({ timeout: 8000 });
-
-    // 055: 分类快选渲染（桌面隐藏规则已解禁），800px 仍属 mobile → 3 项精简集
-    // （「全部」已下线；综艺/动漫两个入口 2026-11-07 删除，二者本质属剧集）
-    const quickAccess = page.locator('.category-quick-access').first();
-    await expect(quickAccess).toBeVisible();
-    const cardCount = await page.locator('.category-quick-access__card').count();
-    expect(cardCount).toBe(3);
 
     // 056: 桌面搜索框渲染而非移动搜索框
     const desktopInput = page.locator('.sticky-header .search-box__input').first();
@@ -412,16 +295,16 @@ test.describe('1.3c 宽屏分类入口（合集行已删除）', () => {
     await page.waitForSelector('.detail-hero', { timeout: 10000 });
   });
 
-  test('入口分支互斥与退役链回归锁（075 窄屏圆卡/076 宽屏无入口/084-086 全站无 mega 入口）', async ({ page }) => {
-    // 075'：900 窄屏——圆卡分支渲染；合集行与旧 chips 都不出现
+  test('入口分支互斥与退役链回归锁（075/076 分类入口恒不存在/084-086 全站无 mega 入口）', async ({ page }) => {
+    // 075'：900 窄屏——分类快捷入口已整体删除（2026-11-08），合集行与旧 chips 同样不得出现
     await page.setViewportSize({ width: 900, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
-    await expect(page.locator('.category-quick-access__card').first()).toBeVisible({ timeout: 8000 });
+    expect(await page.locator('.category-quick-access').count()).toBe(0);
     expect(await page.locator('.cqa-board').count()).toBe(0);
     expect(await page.locator('.cqa-nav').count()).toBe(0);
 
-    // 076'：1440 宽屏——合集行已删、圆卡也不渲染（宽屏无分类入口）
+    // 076'：1440 宽屏——合集行已删、分类快捷入口也不渲染（全端无分类入口）
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await waitHomeReady(page);

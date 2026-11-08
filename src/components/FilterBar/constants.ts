@@ -2,7 +2,7 @@
  * FilterBar 常量与类型定义
  * 单独拆分以满足 react-refresh/only-export-components 约束
  */
-import type { CategoryKey } from '@/components/CategoryQuickAccess';
+import type { CategoryKey } from '@/types/category';
 import type { TMDBCountry } from '@/types/tmdb';
 
 // ── 类型选项（仅在 category=all 时显示）────────────
