@@ -239,14 +239,13 @@
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
-  /* 入场动画（2026-11-08 二次调整，参考 B 站浮层）：从底部滑入一个按钮高 + 淡入，
-     缓动 --ease-out-expo（强力减速、**无回弹**）——旧 --ease-spring 的过冲回弹
-     是用户不满意的「Q 弹感」。时长维持 --dur-md(250ms)：必须与 TSX 的
-     EXIT_DURATION_MS=250 对齐，退场卸载不截断动画（出现逻辑不动，只改 CSS）。
+  /* 入场动画（2026-11-08 用户从对比 demo 拍板方案 C）：52px 行程 · 600ms · spring
+     （过冲 ≈5px 的 Q 弹感；spring 需要长时长才能看清过冲，250ms 下只有 2px 且被
+     淡入掩盖）。时长与 TSX 的 EXIT_DURATION_MS 无关（那只管退场卸载）。
      ⚠️ fill 必须用 backwards 而非 both——both 会在动画结束后**永久持有** 100% 帧
-     （动画填充值优先级高于普通声明），把下方的 --scrolling opacity:0 压住，
-     「滚动中隐藏」直接失效；backwards 结束后交还级联，scrolling 态正常生效。 */
-  animation: fab-stack-slide-in var(--dur-md) var(--ease-out-expo) backwards;
+     （动画填充值优先级高于普通声明），把滚动隐藏态的 opacity:0 压住；
+     backwards 结束后交还级联。 */
+  animation: fab-stack-slide-in calc(var(--dur-md) * 2.4) var(--ease-spring) backwards;
 }
 
 /* 退场保持 transition（--exiting 由已渲染态过渡回默认态，本就平滑）；

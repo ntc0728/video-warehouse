@@ -34,6 +34,9 @@ interface BackToTopButtonProps {
 const EXIT_DURATION_MS = 250;
 /** 滚动停止多少毫秒后 FAB 才淡入（2026-09-11 用户拍板：滚动中隐藏，停止后淡入并半透明化显示） */
 const SCROLL_IDLE_MS = 800;
+/** 点击「顶部」的平滑滚动时长（2026-11-08 用户反馈原生 smooth 观感僵硬/各端不一致，
+ *  改为固定时长 + ease-out-expo 的 rAF 动画；prefers-reduced-motion 直接跳顶） */
+const SMOOTH_SCROLL_MS = 450;
 
 export default function BackToTopButton({
   threshold = 280,
@@ -58,6 +61,8 @@ export default function BackToTopButton({
   /** 滚动中标记（滚动进行时 FAB 淡出，停止 SCROLL_IDLE_MS 后淡入） */
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** 「顶部」平滑滚动的 rAF 句柄（连续点击/卸载时取消上一轮） */
+  const scrollRafRef = useRef(0);
 
   /** 清理退出定时器 */
   const clearExitTimer = useCallback(() => {
@@ -118,11 +123,50 @@ export default function BackToTopButton({
     }
   }, [shouldShow, shouldRender, clearExitTimer]);
 
-  // 组件卸载时清理定时器
-  useEffect(() => clearExitTimer, [clearExitTimer]);
+  // 组件卸载时清理定时器与进行中的平滑滚动
+  useEffect(
+    () => () => {
+      clearExitTimer();
+      if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    },
+    [clearExitTimer],
+  );
 
+  /** 点击「顶部」：rAF 平滑滚动（固定 450ms + ease-out-expo，各端观感一致）。
+   *  原生 behavior:'smooth' 时长由浏览器自定且各端差异大（用户反馈僵硬）；
+   *  用户滚轮/触摸接管时立即让位；reduced-motion 直接跳顶。 */
   const handleClick = useCallback(() => {
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const from = el.scrollTop;
+    if (from <= 0) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el.scrollTop = 0;
+      return;
+    }
+    if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    const t0 = performance.now();
+    let interrupted = false;
+    const yieldControl = () => { interrupted = true; };
+    const cleanup = () => {
+      el.removeEventListener('wheel', yieldControl);
+      el.removeEventListener('touchstart', yieldControl);
+      scrollRafRef.current = 0;
+    };
+    el.addEventListener('wheel', yieldControl, { passive: true });
+    el.addEventListener('touchstart', yieldControl, { passive: true });
+    const easeOutExpo = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+    const step = (now: number) => {
+      if (interrupted) { cleanup(); return; }
+      const p = Math.min(1, (now - t0) / SMOOTH_SCROLL_MS);
+      el.scrollTop = Math.round(from * (1 - easeOutExpo(p)));
+      if (p < 1) {
+        scrollRafRef.current = requestAnimationFrame(step);
+      } else {
+        cleanup();
+      }
+    };
+    scrollRafRef.current = requestAnimationFrame(step);
   }, [scrollContainerRef]);
 
   /**
