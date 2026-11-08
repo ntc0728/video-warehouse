@@ -865,6 +865,19 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
     background: rgba(0, 0, 0, 0.55);
     transform: translate(-50%, -50%);
   }
+
+  /* ⚠️ 包含块修正（2026-11-08 用户复测「时间没有居中」）：
+     时间元素的绝对定位包含块是**最近的 positioned 祖先** = .video-card-landscape__bottom，
+     而它默认只是底部一条（inset: auto 0 0，高度 = 标题行）——上面的 50%/50% 只在
+     「标题行内」居中，视觉上仍贴在标题旁，垂直方向永远到不了封面中部。
+     移动端把文字层铺满封面（标题行靠 align-items:flex-end + padding 贴底不变），
+     渐变遮罩同步收口到底部（原 strip 高度 ≈ --space-2xl + --space-md，position:bottom），
+     避免暗渐变铺满整张封面。此后 50%/50% 才是真正的「封面正中」。 */
+  .video-card--landscape .video-card-landscape__bottom {
+    inset: 0;
+    background-size: 100% calc(var(--space-2xl) + var(--space-md));
+    background-position: bottom;
+  }
 }
 
 /* 移动端收窄：标题字号与间距同步缩一档 */
