@@ -320,7 +320,8 @@ export default function BrowsePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key, isPop]);
 
-  // ── 入口筛选（2026-11-08）：顶部搜索建议点击经 location.state 携带类型/年份 ──
+  // ── 入口筛选（2026-11-08）：顶部搜索建议点击经 location.state 携带类型 ──
+  // 年份不带入 Browse（用户拍板：搜索模式下 year 不过滤结果，仅在下拉建议/历史中展示）。
   // ⚠️ 不写 URL 参数（用户拍板：进 Browse 后还要继续筛选/换词，入口不污染路由），
   // 与上方 state.q 同一消费先例：仅 PUSH 导航读取，POP（刷新/后退）忽略。
   // 应用走 updateFilter 标准链路：setSearchParams(replace) → filterValue 变化 →
@@ -331,17 +332,12 @@ export default function BrowsePage() {
   const entryFilterAppliedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (isPop) return;
-    const st = location.state as { mediaType?: 'movie' | 'tv'; year?: number } | null;
+    const st = location.state as { mediaType?: 'movie' | 'tv' } | null;
     const mediaType = st?.mediaType === 'movie' || st?.mediaType === 'tv' ? st.mediaType : undefined;
-    const year = typeof st?.year === 'number' && Number.isFinite(st.year) && st.year > 1900 ? st.year : undefined;
-    if (!mediaType && !year) return;
+    if (!mediaType) return;
     if (entryFilterAppliedKeyRef.current === location.key) return;
     entryFilterAppliedKeyRef.current = location.key;
-    updateFilter({
-      ...filterValue,
-      ...(mediaType ? { category: mediaType, mediaType } : {}),
-      ...(year ? { year } : {}),
-    });
+    updateFilter({ ...filterValue, category: mediaType, mediaType });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key, isPop]);
 

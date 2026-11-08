@@ -25,7 +25,7 @@ import {
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { Search, X, Clock, Trash2 } from 'lucide-react';
-import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { useSearchHistory, type SearchHistoryItem } from '@/hooks/useSearchHistory';
 import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
 import { useTMDBStore } from '@/stores';
 import { searchMulti } from '@/services/tmdbService';
@@ -221,15 +221,17 @@ export default function SearchBox({
     // 无 onSearch 时（如顶部导航栏）保留去重，避免重复 navigate。
     if (!onSearch && q === lastSearchedRef.current) return;
     lastSearchedRef.current = q;
-    addHistory(q);
+    // 历史项带元数据（类型/年份，来自实时建议点击）——年份只做历史展示，
+    // 不传给 Browse（2026-11-08 用户拍板）
+    addHistory({ query: q, mediaType: opts?.mediaType, year: opts?.year });
     setIsDropdownOpen(false);
     if (onSearch) {
       onSearch(q);
     } else {
-      // 点击实时建议进入时携带类型/年份（2026-11-08 用户要求）。⚠️ 只走 location.state、
-      // 不写 URL 参数（用户拍板：进 Browse 后还要继续筛选/换词，入口不该污染路由）；
+      // 点击实时建议进入时携带类型。⚠️ 只走 location.state、不写 URL 参数
+      // （用户拍板：进 Browse 后还要继续筛选/换词，入口不该污染路由）；
       // Browse 侧 PUSH-only 消费（与 state.q 同一先例），经 updateFilter 标准链路应用。
-      navigate('/browse', { state: { q, mediaType: opts?.mediaType, year: opts?.year } });
+      navigate('/browse', { state: { q, mediaType: opts?.mediaType } });
     }
   }, [value, onSearch, navigate, addHistory]);
 
@@ -331,15 +333,16 @@ export default function SearchBox({
     e.preventDefault();
   }, []);
 
-  const handleHistoryClick = useCallback((item: string) => {
-    setValue(item);
-    handleSearch(item);
+  const handleHistoryClick = useCallback((item: SearchHistoryItem) => {
+    setValue(item.query);
+    // 历史项带类型时随搜索传递（与实时建议点击行为一致）；年份仅展示不传递
+    handleSearch(item.query, item.mediaType ? { mediaType: item.mediaType } : undefined);
     // 选中后 blur input：dropdown 的 onMouseDown 阻止了默认失焦行为，
     // 若不手动 blur，下次点击搜索框不会触发 onFocus → 下拉框无法再次弹出。
     inputRef.current?.blur();
   }, [handleSearch]);
 
-  const handleHistoryRemove = useCallback((e: React.MouseEvent, item: string) => {
+  const handleHistoryRemove = useCallback((e: React.MouseEvent, item: SearchHistoryItem) => {
     e.stopPropagation();
     removeHistory(item);
   }, [removeHistory]);
@@ -503,17 +506,23 @@ export default function SearchBox({
               <ul className="search-box-dropdown__list">
                 {history.slice(0, MAX_HISTORY_IN_DROPDOWN).map((item) => (
                   <li
-                    key={item}
+                    key={`${item.query}|${item.mediaType ?? ''}|${item.year ?? ''}`}
                     className="search-box-dropdown__item"
                     role="option"
                     onClick={() => handleHistoryClick(item)}
                   >
-                    <span className="search-box-dropdown__text">{item}</span>
+                    <span className="search-box-dropdown__text">{item.query}</span>
+                    {item.year != null && (
+                      <span className="search-box-dropdown__meta">{item.year}</span>
+                    )}
+                    {item.mediaType && (
+                      <span className="search-box-dropdown__type">{suggestionTypeLabel(item.mediaType)}</span>
+                    )}
                     <button
                       type="button"
                       className="search-box-dropdown__remove"
                       onClick={(e) => handleHistoryRemove(e, item)}
-                      aria-label={`删除 ${item}`}
+                      aria-label={`删除 ${item.query}`}
                     >
                       <Icon icon={X} size="xs" aria-hidden="true" />
                     </button>
@@ -555,7 +564,7 @@ export default function SearchBox({
                       key={item.id}
                       className="search-box-dropdown__item search-box-dropdown__item--hot"
                       role="option"
-                      onClick={() => handleHistoryClick(item.title)}
+                      onClick={() => handleHistoryClick({ query: item.title })}
                     >
                       <span
                         className={[
