@@ -1123,16 +1123,20 @@ export default function DetailPage() {
                     <span className="detail-sources-keyword">当前关键词："{title}"</span>
                   </div>
                   <div className="detail-sources-toolbar">
-                    <button
-                      className="retry-btn retry-btn--tab"
-                      onClick={() => {
-                        fetchCMSSources();
-                        // 点击「重新匹配」同时触发源检测（idle pill 转为 running→done）
-                        runSourceDetection();
-                      }}
-                    >
-                      <Icon icon={RefreshCw} size="xs" /> 重新匹配
-                    </button>
+                    {/* 搜索未完（CMS 查询中 / 源检测 running）不显示「重新匹配」——
+                        此时重复触发无意义，完成后才出现（2026-11-08 用户要求） */}
+                    {srcDetect.status !== 'running' && !cmsLoading && (
+                      <button
+                        className="retry-btn retry-btn--tab"
+                        onClick={() => {
+                          fetchCMSSources();
+                          // 点击「重新匹配」同时触发源检测（idle pill 转为 running→done）
+                          runSourceDetection();
+                        }}
+                      >
+                        <Icon icon={RefreshCw} size="xs" /> 重新匹配
+                      </button>
+                    )}
                     <SourceDetectPill
                       status={srcDetect.status}
                       done={srcDetect.done}
