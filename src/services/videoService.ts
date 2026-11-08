@@ -116,6 +116,46 @@ function getCmsVodType(item: CMSVideoItem): VideoType | undefined {
   return mapVodType(item.vod_type) ?? mapVodType(item.type_id_1) ?? mapVodType(item.type_id);
 }
 
+/** 从 CMS vod_year（可能含「2023-05-01」等形态）提取 4 位年份 */
+function parseCmsYear(raw: string | number | undefined): number | undefined {
+  if (raw == null) return undefined;
+  const m = String(raw).match(/(\d{4})/);
+  return m ? parseInt(m[1], 10) : undefined;
+}
+
+/**
+ * 标题匹配打分（2026-11-08）：
+ * 精确相等（20 分）> 包含关系（10 分），年份一致 +1 仅作加分项。
+ * 此前电影搜索把 year 直接拼进 CMS 查询当硬过滤——TMDB 年份与 CMS vod_year
+ * 不一致（上映年 vs 上线年）时整源假阴性「未找到匹配资源」，用户看到的可用源
+ * 比实际少。现查询不带 year，改在本地打分排序。
+ * 返回 -1 表示无标题关联：调用方禁止用 data.list[0] 兜底——同名翻拍/不同作品
+ * 被盲选挂成播放源比「未找到」危害更大。
+ */
+function scoreCmsTitleMatch(item: CMSVideoItem, title: string, year?: number): number {
+  const t = item.vod_name || '';
+  const base = t === title ? 20 : (t.includes(title) || title.includes(t)) ? 10 : -1;
+  if (base < 0) return -1;
+  return base + (year != null && parseCmsYear(item.vod_year) === year ? 1 : 0);
+}
+
+/**
+ * 从搜索结果列表中选最佳匹配：分数最高者，同分保留靠前条目（保持原顺序语义）。
+ * 无任何标题关联条目时返回 undefined（不兜底）。
+ */
+function pickBestCmsMatch(list: CMSVideoItem[], title: string, year?: number): CMSVideoItem | undefined {
+  let best: CMSVideoItem | undefined;
+  let bestScore = 0;
+  for (const item of list) {
+    const s = scoreCmsTitleMatch(item, title, year);
+    if (s > bestScore) {
+      bestScore = s;
+      best = item;
+    }
+  }
+  return best;
+}
+
 /**
  * 检查单个视频源是否可用
  *
@@ -473,16 +513,14 @@ export async function searchVideoFromMultipleSources(
       }
 
       try {
-        const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}${year ? `&year=${year}` : ''}`;
+        // 查询不带 year（2026-11-08）：年份改作本地打分加分项，避免 CMS vod_year
+        // 与 TMDB 不一致时硬过滤导致整源假阴性
+        const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
         const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
         if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
           return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
         }
-        const match = data.list.find((item: CMSVideoItem) => {
-          const t = item.vod_name || '';
-          return t === title || t.includes(title) || title.includes(t);
-        });
-        const target = match || data.list[0];
+        const target = pickBestCmsMatch(data.list, title, year);
         if (!target) {
           return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
         }
@@ -548,13 +586,8 @@ export async function searchVideoFromSingleSource(
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
       return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' };
     }
-    // 模糊匹配标题：完全匹配 > 包含关系
-    const match = data.list.find((item: CMSVideoItem) => {
-      const t = item.vod_name || '';
-      return t === title || t.includes(title) || title.includes(t);
-    });
-    /** 匹配到的视频（优先精确匹配，否则取第一条） */
-    const target = match || data.list[0];
+    /** 匹配到的视频（打分最高者；无标题关联不兜底，防同名作品挂错源） */
+    const target = pickBestCmsMatch(data.list, title);
     if (!target) {
       return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' };
     }
@@ -642,11 +675,8 @@ export async function searchVideoByTitle(title: string, _year?: number): Promise
       const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
       const data = await fetchCmsList(searchUrl, { useProxy: true, timeout: source.timeoutMs, retries: source.retries });
       if (!data.list || !Array.isArray(data.list) || data.list.length === 0) return null;
-      const match = data.list.find((item: CMSVideoItem) => {
-        const t = item.vod_name || '';
-        return t === title || t.includes(title) || title.includes(t);
-      });
-      return match ? mapVideoItem(match) : mapVideoItem(data.list[0]);
+      const match = pickBestCmsMatch(data.list, title);
+      return match ? mapVideoItem(match) : null;
     } catch {
       return null;
     }
