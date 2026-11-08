@@ -311,8 +311,12 @@ export default function HeroBili({
                 超长截断；小视口降到单行，避免左下块高过按钮。 */}
             {activeItem.overview ? (
               <p className="hero-bili__desc">
-                {activeItem.overview.slice(0, 160)}
-                {activeItem.overview.length > 160 ? '…' : ''}
+                {/* 底色挂内层 inline span（2026-11-08 用户要求：底色只贴文本、不铺满整行）；
+                    p 只保留左竖线/排版/行数截断 */}
+                <span className="hero-bili__desc-text">
+                  {activeItem.overview.slice(0, 160)}
+                  {activeItem.overview.length > 160 ? '…' : ''}
+                </span>
               </p>
             ) : null}
             {(onItemClick || onContinuePlay) && (

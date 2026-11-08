@@ -200,15 +200,15 @@
 }
 
 /* banner 简介（2026-11-04 用户要求：左下按钮上方）：左侧主色竖线 +
-   半透明黑底 + 2 行截断（参考稿已随 2026-11-03 风格提案清理删除）。
-   小视口（1024–1279）降为单行/更小字号，保证左下块高不超按钮行。 */
+   2 行截断（参考稿已随 2026-11-03 风格提案清理删除）。
+   小视口（1024–1279）降为单行/更小字号，保证左下块高不超按钮行。
+   2026-11-08：半透明黑底从 p（铺满整行）挪到内层 inline .hero-bili__desc-text
+   （底色只贴文本，短行自动收窄；p 只留竖线/排版/截断）。 */
 .hero-bili__desc {
   display: -webkit-box;
   margin: var(--space-sm) 0 0;
-  padding: var(--space-xs) var(--space-sm);
+  padding-left: var(--space-3xs);
   border-left: var(--space-3xs) solid var(--color-primary);
-  border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.28);
   color: rgba(255, 255, 255, 0.9);
   font-size: var(--text-xs);
   line-height: 1.6;
@@ -217,13 +217,28 @@
   -webkit-line-clamp: 2;
 }
 
+/* 底色贴文本：inline 盒宽度随文字收缩；box-decoration-break: clone 让跨行片段
+   每行都带完整左右内边距与圆角（Chromium 不支持 clone，降级为首末行带圆角、
+   中间行背景贴字，可接受——本 desc 至多 2 行）。 */
+.hero-bili__desc-text {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.28);
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Chromium 仅认 -webkit- 前缀版，非多余前缀 */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
 @media (width <= 1279px) {
   .hero-bili__desc {
     margin-top: var(--space-2xs);
-    padding: var(--space-3xs) var(--space-xs);
     font-size: var(--text-2xs);
     line-height: 1.4;
     -webkit-line-clamp: 1;
+  }
+
+  .hero-bili__desc-text {
+    padding: var(--space-3xs) var(--space-xs);
   }
 }
 
@@ -246,10 +261,14 @@
 
   .hero-bili__desc {
     margin-top: var(--space-lg);
-    padding: var(--space-md) var(--space-lg);
     font-size: calc(var(--text-sm) * 1.2);
     line-height: 1.65;
     -webkit-line-clamp: 3;
+  }
+
+  /* 2026-11-08：底色随 span 走后，放大档的 padding 同步迁到 text span */
+  .hero-bili__desc-text {
+    padding: var(--space-md) var(--space-lg);
   }
 
   .hero-bili__caption {
