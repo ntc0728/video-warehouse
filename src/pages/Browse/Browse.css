@@ -895,6 +895,28 @@
   }
 }
 
+/* ── 1024–1439 中小桌面档：Browse 左栏收窄（用户 2026-11-08 拍板 B，仅 Browse 页）──
+   1280 等视口 10vw < 148px，--rail-w 恒取 clamp 下限 148px → 模式胶囊（=栏宽，
+   2026-09-11「与左栏同宽」拍板）占视口比例偏大（1280 时 11.6%），「短文字 + 大底块」显大。
+   手法与 ≥2560 块同款：在 .browse-page 上**局部覆盖 --rail-w**（148 → 136px），
+   不动全局 token —— 设置 / IPTV / 收藏·历史 / RecordShell / 启动骨架共用 --rail-w，
+   必须零影响（.browse-page 内消费 --rail-w 的只有本页 grid 列宽、模式胶囊宽度两处）。
+   配套：胶囊两枚按钮字号降一档（text-sm→text-xs，13→12px）。实测约束：
+   13px 下两按钮 min-content 合计 ≈124.9px，136px 栏的胶囊内宽仅 ≈120.6px 会裁字；
+   降档后合计 ≈118.3px 正常容纳（图标随 --icon-xs 同步缩一档）。
+   ≥1440 回落原 148px 档（1440–1479 虽仍在 10vw<148 下限区间，但占比已 ≤10.3%，维持不动）。 */
+@media (width >= 1024px) and (width < 1440px) {
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page:not(.browse-page--mobile):not(.browse-page--tv) {
+    --rail-w: 136px;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"])
+    .browse-page .browse-search-tab {
+    font-size: var(--text-xs);
+  }
+}
+
 
 
 /* ── ≥2560 大视口：Browse 左栏单列 + 收窄 + chip 居中 + 长标签左缘对齐 ────────
