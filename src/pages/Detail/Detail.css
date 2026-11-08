@@ -1106,8 +1106,9 @@
   /* 桌面宽度 56→72 封顶（2026-11-08 用户要求提升视觉分量，仍 2:3 竖图） */
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
   width: clamp(40px, 28px + 2.5vw, 72px);
+  /* 高度随宽度按 2:3 自动缩放（2026-11-08 用户指正：宽改大高度必须等比；
+     原 max-height 5.5rem=88px 会把 72 宽的 108 高掐成 88，比例失真——已删） */
   aspect-ratio: 2 / 3;
-  max-height: 5.5rem;
   border-radius: var(--radius-sm);
   background: var(--color-placeholder);
   overflow: hidden;
@@ -1439,7 +1440,6 @@ html[data-device="app"] .detail-source-thumb-year {
     /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·阶段B) */
     width: clamp(48px, 40px + 4vw, 72px);
     aspect-ratio: 2 / 3;
-    max-height: 6.5rem;
   }
 }
 /* 9.1 app 恒移动：@media (width <= 480px) 的 app 端恒生效副本 */
