@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.1.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v2.0.0...kinotv-v2.1.0) (2026-11-09)
+
+
+### Features
+
+* **cards:** 角标按栏目/模式分档 + 骨架同步 + 记录卡封面通铺 ([308e6ca](https://github.com/ntc0728/video-warehouse/commit/308e6ca1028c9084823a41370f098cca6f6d2b17))
+* **tokens:** 全站字号统一缩档 ×0.95（原设置页 ×0.93 上收） ([1596b0c](https://github.com/ntc0728/video-warehouse/commit/1596b0c7481026fd07e615e29cae0996f607920b))
+
+
+### Bug Fixes
+
+* **build:** EdgeOne 构建机 nofile 硬上限过低致 EMFILE——graceful-fs 预加载兜底 ([09d3d18](https://github.com/ntc0728/video-warehouse/commit/09d3d18d4219328120b577fa4a60dc3c6ffbb85e))
+* **HeroBanner:** 移动端 content padding 归零，修右缘露出下一张文字 ([d87fbed](https://github.com/ntc0728/video-warehouse/commit/d87fbedc032f0b064d273ab87616507cd22bcb62))
+* **HeroBanner:** 移动端 hero 文字左/下间距恢复至 --space-lg ([319b85b](https://github.com/ntc0728/video-warehouse/commit/319b85b6a6f167c40dd36045041655627ca32f3d))
+* **HeroBanner:** 移动端卡片去 padding + slide padding 归零；lint 存量清零 ([82d8e06](https://github.com/ntc0728/video-warehouse/commit/82d8e0682d876a1f9d18e9839e822f4d0577394b))
+* **IPTV:** 移动端合并卡接缝线删除 ([e549d21](https://github.com/ntc0728/video-warehouse/commit/e549d21bd4947c8e182443560e90cbf885ecb961))
+* **IPTV:** 移动端筛选卡与频道网格卡合并为一张 ([f48c36c](https://github.com/ntc0728/video-warehouse/commit/f48c36cd0ab46cd465fa88109c4d5e009d42936c))
+* **mobile:** 顶栏/筛选栏/返回顶部尺寸收紧 + 卡标题跑马灯减速 ([a78e01a](https://github.com/ntc0728/video-warehouse/commit/a78e01ac14e8f361230459bf0b3aeeedeb52ed51))
+* **mobile:** 顶栏/筛选栏/返回顶部紧凑档贴 WCAG AA 下限 ([248c785](https://github.com/ntc0728/video-warehouse/commit/248c7855d701b1578797003fd10061be1e3133c2))
+* **RecordCard:** 封面 16:9 通铺 + 标题避让删除钮 + 删除钮缩小 ([97c70a3](https://github.com/ntc0728/video-warehouse/commit/97c70a39abd7f0972c131ac29c842cd0f2e993da))
+* **RecordShell:** 移动端记录页外层面板底部留白 ([9d6a6de](https://github.com/ntc0728/video-warehouse/commit/9d6a6de7639d6f5de4ab618ab5e99f7d93d38abf))
+* **Settings:** 子页返回抖动——视差去掉 filter 过渡，只留合成器 transform ([ac48268](https://github.com/ntc0728/video-warehouse/commit/ac482687c13d7528ecb58bab9e2949f3931d11b8))
+* **Settings:** 界面缩放档位 95–120% 对称阶梯 + --text-2xs 10px 下限 ([38ad57e](https://github.com/ntc0728/video-warehouse/commit/38ad57e3059d5865cc96388ac2ad269b5beae239))
+* **StickyHeader:** 移动端 logo 44→36px 并同步首帧骨架 ([c91c1a4](https://github.com/ntc0728/video-warehouse/commit/c91c1a415ce4aca37a3275a6fe123a12341535e1))
+* **VideoCard:** 移动端横版卡极简封面——删源徽章/进度时间，只留标题+红条 ([b81bbcd](https://github.com/ntc0728/video-warehouse/commit/b81bbcd7c688a3a64b98952d156ea25ed6931a0a))
+* **VideoCard:** 移动端横版红条高度修复(~1px→3px) + 横版年份死代码清理 ([9857555](https://github.com/ntc0728/video-warehouse/commit/98575552a643ea0fecfba2ea1897ce03a3b64024))
+* **VideoCard:** 移动端竖版角标字号压到全站最小档 --text-2xs ([9104156](https://github.com/ntc0728/video-warehouse/commit/9104156ec761ac2b1f679f11d2b15a19c99271da))
+* **VideoCard:** 继续观看卡标题左/下间距 --space-2xs→--space-sm ([e6052e8](https://github.com/ntc0728/video-warehouse/commit/e6052e8bacb414e6f3972949879ca2efd596e04c))
+
 ## [2.0.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v1.31.0...kinotv-v2.0.0) (2026-11-08)
 
 
