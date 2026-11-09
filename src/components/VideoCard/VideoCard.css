@@ -899,7 +899,8 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 
   .video-card--landscape .video-card-landscape__bottom {
     inset: auto 0 0;
-    background-size: 100% calc(100% - var(--space-2xs));
+    /* 渐变止于进度条上方：条高已由 2xs 提到 xs，扣除量必须同步（否则条顶 2px 仍被压暗） */
+    background-size: 100% calc(100% - var(--space-xs));
     background-position: bottom;
   }
 }
@@ -918,15 +919,23 @@ html[data-device="app"] .video-card--landscape .video-card-landscape__progress-b
 }
 html[data-device="app"] .video-card--landscape .video-card-landscape__bottom {
   inset: auto 0 0;
-  background-size: 100% calc(100% - var(--space-2xs));
+  gap: var(--space-2xs);
+  padding: var(--space-lg) var(--space-sm) var(--space-sm);
+  background-size: 100% calc(100% - var(--space-xs));
   background-position: bottom;
 }
 
-/* 移动端收窄：标题字号与间距同步缩一档 */
+/* 移动端收窄：标题字号与间距同步缩一档
+   ⚠️ 选择器必须带 .video-card--landscape 前缀：基础规则
+   `.video-card--landscape .video-card-landscape__bottom { padding-bottom: calc(2xs*2) }`
+   特异性更高（0,2,0），裸类名(0,1,0) 的 padding-bottom 会被压掉。 */
 @media (width <= 767px) {
-  .video-card-landscape__bottom {
+  .video-card--landscape .video-card-landscape__bottom {
     gap: var(--space-2xs);
-    padding: var(--space-lg) var(--space-2xs) var(--space-2xs);
+    /* 标题左/下间距从 --space-2xs(~1px) 提到 --space-sm(~6px)：
+       极简封面后标题是封面上唯一内容，1px 贴边观感过紧（2026-11-09 用户反馈）。
+       上边距维持 --space-lg：渐变遮罩的过渡区高度，不是布局留白。 */
+    padding: var(--space-lg) var(--space-sm) var(--space-sm);
   }
 
   .video-card-landscape__title {
@@ -934,10 +943,6 @@ html[data-device="app"] .video-card--landscape .video-card-landscape__bottom {
   }
 }
 /* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
-html[data-device="app"] .video-card-landscape__bottom {
-  gap: var(--space-2xs);
-  padding: var(--space-lg) var(--space-2xs) var(--space-2xs);
-}
 html[data-device="app"] .video-card-landscape__title {
   font-size: var(--text-2xs);
 }
