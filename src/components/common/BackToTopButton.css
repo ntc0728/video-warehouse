@@ -120,13 +120,13 @@
   height: calc(var(--space-2xl) * 1.2);
 }
 
-/* ── Mobile: 放大按钮 ────────────────────────────── */
+/* ── Mobile: 略放大按钮（2026-11-09 用户反馈圆圈偏大：1.5× → 1.25×，36→30px）── */
 @media (width <= 767px) {
   .back-to-top-button {
     right: var(--space-md);
     bottom: var(--space-lg);
-    width: calc(var(--space-2xl) * 1.5);
-    height: calc(var(--space-2xl) * 1.5);
+    width: calc(var(--space-2xl) * 1.25);
+    height: calc(var(--space-2xl) * 1.25);
   }
   /* App 端有底部 TabBar，需要额外间距 */
   [data-device="app"] .back-to-top-button {
@@ -138,8 +138,8 @@
   html[data-device="app"] .back-to-top-button {
     right: var(--space-md);
     bottom: var(--space-lg);
-    width: calc(var(--space-2xl) * 1.5);
-    height: calc(var(--space-2xl) * 1.5);
+    width: calc(var(--space-2xl) * 1.25);
+    height: calc(var(--space-2xl) * 1.25);
   }
   html[data-device="app"] /* App 端有底部 TabBar，需要额外间距 */
   [data-device="app"] .back-to-top-button {

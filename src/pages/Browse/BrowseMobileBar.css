@@ -35,16 +35,15 @@
   white-space: nowrap;
 }
 .bmb-seg {
-  /* 移动端模式段钮太高：本组件仅 <768px 生效，
- 与同文件紧凑档对齐（filter-trigger 28px / chip 26px），不再吃
- --comp-tab-height（移动端≈36–38px）。固定 px 无流体需求。 */
-  min-height: 30px;
+  /* 移动端模式段钮（2026-11-09 二次收紧：用户反馈仍偏大）：
+ 30 → 26px、字号 sm→xs(12px)，与筛选钮同档。 */
+  min-height: 26px;
   padding: var(--space-2xs) var(--space-sm);
   border: none;
   background: transparent;
   color: var(--color-text-secondary);
   font: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   transition: background 0.14s, color 0.14s;
   cursor: pointer;
 }
@@ -60,14 +59,15 @@
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
-  min-height: 28px;
+  min-height: 26px;
   padding: 0 var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
   background: var(--color-surface-hover);
   color: var(--color-text);
   font: inherit;
-  font-size: var(--text-sm);
+  /* 2026-11-09 二次收紧：字号 sm→xs(12px)，图标 15.4→12px，高度 28→26 */
+  font-size: var(--text-xs);
   transition: border-color 0.14s, background 0.14s, color 0.14s;
   cursor: pointer;
 }
@@ -80,8 +80,8 @@
 }
 .bmb-filter-ico {
   flex-shrink: 0;
-  width: var(--icon-xs);
-  height: var(--icon-xs);
+  width: var(--text-xs);
+  height: var(--text-xs);
 }
 .bmb-badge {
   display: inline-flex;

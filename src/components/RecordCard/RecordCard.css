@@ -290,9 +290,10 @@ hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
     border-radius: var(--radius-sm);
     opacity: 1;
   }
-  /* 视口 < 768px：超长标题「进入视口」才跑马灯（离开视口即停，避免全部常驻滚动） */
+  /* 视口 < 768px：超长标题「进入视口」才跑马灯（离开视口即停，避免全部常驻滚动）。
+     时长 ×1.5（7s → 10.5s）：2026-11-09 用户反馈移动端自动滚动偏快。 */
   :is(.history-page, .collection-page) .record-card.is-in-view .record-card__title.is-overflow .record-card__title-track {
-    animation: rc-marquee var(--dur-marquee) linear infinite;
+    animation: rc-marquee calc(var(--dur-marquee) * 1.5) linear infinite;
   }
 }
 /* app / 移动端（data-device=app）：同样「进入视口」才播放 */
@@ -302,7 +303,7 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card__delet
   opacity: 1;
 }
 html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-view .record-card__title.is-overflow .record-card__title-track {
-  animation: rc-marquee var(--dur-marquee) linear infinite;
+  animation: rc-marquee calc(var(--dur-marquee) * 1.5) linear infinite;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

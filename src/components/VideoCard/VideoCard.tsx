@@ -232,8 +232,17 @@ const VideoCard = memo(function VideoCard({
       }
       const gap = parseFloat(getComputedStyle(trackEl).columnGap) || 0;
       const distance = textWidth + gap;
-      // 匀速 30px/s；过短文本夹到 5s（避免窄卡里"闪滚"），超长标题封顶 24s
-      const duration = Math.min(Math.max(distance / 30, 5), 24);
+      // 匀速 30px/s；过短文本夹到 5s（避免窄卡里"闪滚"），超长标题封顶 24s。
+      // 移动端（≤767px / app）无 hover、常驻自动滚，速度降到 20px/s
+      // （2026-11-09 用户反馈自动滚动偏快），时长上下限同步放宽为 7s / 32s。
+      const isMobileAutoScroll =
+        window.matchMedia('(max-width: 767px)').matches ||
+        document.documentElement.getAttribute('data-device') === 'app';
+      const speed = isMobileAutoScroll ? 20 : 30;
+      const duration = Math.min(
+        Math.max(distance / speed, isMobileAutoScroll ? 7 : 5),
+        isMobileAutoScroll ? 32 : 24,
+      );
       el.style.setProperty('--marquee-distance', `${distance.toFixed(1)}px`);
       el.style.setProperty('--marquee-duration', `${duration.toFixed(2)}s`);
     };

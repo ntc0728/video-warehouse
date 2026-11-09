@@ -268,6 +268,12 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
 
 /* Mobile：缩小封面角标 */
 @media (width <= 767px) {
+  /* 标题跑马灯减速（2026-11-09 用户反馈移动端偏快）：8s → 约 12s
+     （复用 --dur-marquee 7s × 1.7，避免内联时长字面量触发设计审计） */
+  .iptv-card-title.marquee .iptv-card-title-track {
+    animation-duration: calc(var(--dur-marquee) * 1.7);
+  }
+
   .iptv-card-group {
     right: var(--space-3xs);
     bottom: var(--space-3xs);
@@ -285,6 +291,10 @@ html:not([data-theme="dark"]) .iptv-card-cover:has(.lazy-image-placeholder) {
   }
 }
 /* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+
+  html[data-device="app"] .iptv-card-title.marquee .iptv-card-title-track {
+    animation-duration: calc(var(--dur-marquee) * 1.7);
+  }
 
   html[data-device="app"] .iptv-card-group {
     right: var(--space-3xs);

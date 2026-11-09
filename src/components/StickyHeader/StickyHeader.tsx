@@ -205,7 +205,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
         <div className="sticky-header__left">
           {isMobile && !isNative && (
             <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
-              {menuOpen ? <Icon icon={X} size="md" /> : <Icon icon={Menu} size="md" />}
+              {menuOpen ? <Icon icon={X} size="sm" /> : <Icon icon={Menu} size="sm" />}
             </button>
           )}
           <a
@@ -291,12 +291,12 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
                 title={username.trim() || '未设置昵称'}
               >
                 <span className="sticky-header__profile-avatar">
-                  {avatar ? <img src={avatar} alt="" /> : <Icon icon={User} size="sm" />}
+                  {avatar ? <img src={avatar} alt="" /> : <Icon icon={User} size="xs" />}
                 </span>
               </a>
             )}
             <button className="sticky-header__theme-btn hover-scale" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
-              <Icon icon={ThemeIcon} size="lg" />
+              <Icon icon={ThemeIcon} size="sm" />
             </button>
           </div>
         )}
