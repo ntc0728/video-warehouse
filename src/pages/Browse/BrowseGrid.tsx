@@ -55,6 +55,9 @@ export default function BrowseGrid({ items, cmsItems, query, mode = 'smart' }: B
               key={item.id}
               video={toVideo(item)}
               rating={item.voteAverage}
+              /* 智能检索：筛选项（类型/分类）已由筛选条表达，封面类型角标冗余 → 隐藏。
+                 直链搜索结果保留（下方 cms 分支不传），源名角标本身即上下文。 */
+              hideTypeBadge
               srcSet={posterSrcSet ?? undefined}
               sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, (max-width: 1919px) 12vw, 10vw"
               highlightQuery={query}

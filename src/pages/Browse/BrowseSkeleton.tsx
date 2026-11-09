@@ -26,7 +26,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useGridCols, useFillRows } from '@/hooks';
 import './BrowseSkeleton.css';
 
-export default function BrowseSkeleton() {
+export default function BrowseSkeleton({ mode = 'smart' }: { mode?: 'smart' | 'cms' }) {
   const cols = useGridCols('--card-cols', 6);
   const gridRef = useRef<HTMLDivElement>(null);
   const rows = useFillRows(gridRef, cols, { minRows: 2, reserve: 48 });
@@ -47,7 +47,11 @@ export default function BrowseSkeleton() {
                 8.5
               </span>
               <span className="video-card-year-badge browse-skeleton__skin" aria-hidden="true">2024</span>
-              <span className="video-card-type browse-skeleton__skin" aria-hidden="true">电影</span>
+              {/* 类型角标：与真实卡同条件——智能检索隐藏（筛选项已表达类型），
+                  直链搜索保留（真实 CMS 卡仍渲染类型角标） */}
+              {mode === 'cms' && (
+                <span className="video-card-type browse-skeleton__skin" aria-hidden="true">电影</span>
+              )}
             </div>
             <div className="video-card-info">
               <div className="video-card-title-wrap">

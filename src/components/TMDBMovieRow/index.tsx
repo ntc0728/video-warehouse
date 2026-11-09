@@ -68,6 +68,9 @@ interface TMDBMovieRowProps {
   crossfadeOnChange?: boolean;
   /** 跳过进入动画（首页进入过渡期间禁用 animate-card-enter，避免"继续观看"行卡片闪烁）。 */
   skipAnimations?: boolean;
+  /** 隐藏卡片封面「类型」角标（透传 VideoCard.hideTypeBadge）。
+   * 首页分类行（热门电影/高分电影/…）类型已由栏目名表达，传 true 去冗余。 */
+  hideTypeBadge?: boolean;
   /**
  * 「查看全部」入口回调：传入时在行标题右侧渲染文字链接（仅首页 7 个推荐行使用；
  * continueMode 恒不渲染）。可见性由 CSS 控制：桌面 ≥1024 非 TV hover 行时显现，
@@ -139,7 +142,7 @@ function getVideo(item: {
  * 「继续观看」行因 continueMode + 空列表会 return null，由首页骨架手搭同结构外壳
  * 并复用本组件 —— 卡片几何仍只有这一处真源。
  */
-export function SkeletonCards({ count, landscape = false }: { count?: number; landscape?: boolean }) {
+export function SkeletonCards({ count, landscape = false, hideTypeBadge = false }: { count?: number; landscape?: boolean; hideTypeBadge?: boolean }) {
   const cols = useGridCols(landscape ? '--continue-cols' : '--row-cols', 7);
   const skeletonCount = count ?? Math.ceil(cols * 1.5);
   return (
@@ -172,7 +175,10 @@ export function SkeletonCards({ count, landscape = false }: { count?: number; la
                   8.5
                 </span>
                 <span className="video-card-year-badge tmdb-movierow-skeleton-skin" aria-hidden="true">2024</span>
-                <span className="video-card-type tmdb-movierow-skeleton-skin" aria-hidden="true">电影</span>
+                {/* 类型角标：与真实卡同条件（首页分类行 hideTypeBadge → 骨架也不画） */}
+                {!hideTypeBadge && (
+                  <span className="video-card-type tmdb-movierow-skeleton-skin" aria-hidden="true">电影</span>
+                )}
               </>
             )}
           </div>
@@ -196,6 +202,7 @@ function TMDBMovieRow({
   scrollResetToken,
   crossfadeOnChange = false,
   skipAnimations = false,
+  hideTypeBadge = false,
   onViewAll,
 }: TMDBMovieRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
@@ -556,7 +563,7 @@ function TMDBMovieRow({
           onPointerCancel={handlePointerUpOrCancel}
         >
           {isLoading && (continueMode ? (continueItems?.length ?? 0) === 0 : items.length === 0) ? (
-            <SkeletonCards landscape={continueMode} />
+            <SkeletonCards landscape={continueMode} hideTypeBadge={hideTypeBadge} />
           ) : continueMode ? (
             (continueItems ?? []).map((item) => (
               <div
@@ -612,6 +619,7 @@ function TMDBMovieRow({
                     <VideoCard
                       video={getVideo(item)}
                       rating={item.voteAverage}
+                      hideTypeBadge={hideTypeBadge}
                       srcSet={posterSrcSet ?? undefined}
                       sizes="(max-width: 767px) 33vw, (max-width: 1279px) 16vw, 12vw"
                       crossfadeOnChange={crossfadeOnChange}

@@ -411,7 +411,15 @@ export default function HomePage() {
   const homeSkeletonRows = (
     <div className="home-skeleton-rows">
       {homeRows.map((row) => (
-        <TMDBMovieRow key={row.key} title={row.title} items={[]} isLoading skipAnimations />
+        <TMDBMovieRow
+          key={row.key}
+          title={row.title}
+          items={[]}
+          isLoading
+          skipAnimations
+          /* 与真实行同条件：除「正在热映」外类型角标隐藏，骨架不画 */
+          hideTypeBadge={row.key !== 'nowPlaying'}
+        />
       ))}
     </div>
   );
@@ -572,6 +580,9 @@ export default function HomePage() {
  ）；首页已有整层 page-transition-enter 淡入，行级入场动画
  冗余，恒 skip（分类切回等场景同样由层动画承担进入感）。 */
               skipAnimations
+              /* 类型角标：栏目名已表达类型（热门电影/高分剧集…），除「正在热映」
+                 （混合电影+剧集，类型角标仍承载信息）外一律隐藏。 */
+              hideTypeBadge={row.key !== 'nowPlaying'}
               scrollResetToken="home"
               crossfadeOnChange
               onViewAll={showRowViewAll ? rowViewAllHandlers[row.key] : undefined}

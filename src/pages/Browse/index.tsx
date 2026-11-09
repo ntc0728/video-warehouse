@@ -949,7 +949,7 @@ export default function BrowsePage() {
           {/* 结果区专属骨架：结构对齐真实「类型/排序行 + 卡片网格」，
  列数随 --card-cols 视口分档（不再用全站统一 AppLoading 菊花） */}
           {showSkeleton && (
-            <BrowseSkeleton />
+            <BrowseSkeleton mode={searchMode} />
           )}
 
           {/* TMDB Access Token 未配置：不再展示 token 提示元素——

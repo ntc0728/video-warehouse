@@ -155,7 +155,8 @@ hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
   right: var(--space-2xs);
   bottom: calc(var(--space-xs) + var(--space-3xs));
   color: rgba(255, 255, 255, 0.9);
-  font-size: var(--text-xs); /* 调大：--text-2xs → --text-xs（9→12 / 桌面 11→13） */
+  /* 全站最小文本档（2026-11-09 用户拍板：进度时间用最小字体） */
+  font-size: var(--text-2xs);
   font-weight: 600;
   line-height: 1;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
@@ -316,9 +317,15 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
   :is(.history-page, .collection-page) .record-card__media {
     --record-card-media-w: 124px;
     flex: 0 0 var(--record-card-media-w);
-    align-self: center;
+    /* 封面上下通铺卡片（2026-11-09 用户反馈「封面上下没占满容器」）：
+       原 align-self:center + 固定 aspect-ratio → 封面高 86px，而右侧信息列
+       内容高 ~99px 撑高卡片，封面上下各留 ~6px 空白。
+       改为 stretch + 取消宽高比：封面高 = 卡片高（由信息列内容决定），
+       图片 object-fit:cover 裁切，左右圆角仍由卡片 overflow:hidden 裁切。 */
+    align-self: stretch;
     width: var(--record-card-media-w);
-    aspect-ratio: 132 / 92; /* 比例沿用旧横版（非 16:9，历史观感） */
+    height: auto;
+    aspect-ratio: auto;
   }
 
   :is(.history-page, .collection-page) .record-card__body {
@@ -360,6 +367,20 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
     flex: 0 0 auto;
     flex-shrink: 0;
     margin-left: auto;
+  }
+
+  /* ── IPTV 记录卡（2026-11-09 用户拍板）──
+     封面右侧 3 个元素（直播 / 来源 / 时间）水平居中成一列、间距 --space-md。
+     视频卡不受影响（仍有集数 + 时间两端对齐语义）。 */
+  :is(.history-page, .collection-page) .record-card--iptv .record-card__meta-col {
+    gap: var(--space-md);
+    align-items: center;
+  }
+  :is(.history-page, .collection-page) .record-card--iptv .record-card__meta-bottom {
+    justify-content: center;
+  }
+  :is(.history-page, .collection-page) .record-card--iptv .record-card__meta-bottom .record-card__time-text {
+    margin-left: 0;
   }
 }
 

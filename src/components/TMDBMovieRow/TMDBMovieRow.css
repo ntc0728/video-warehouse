@@ -246,6 +246,36 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   animation: tmdb-skeleton-pulse var(--card-shimmer-duration) ease-in-out infinite;
 }
 
+/* 移动端横版骨架同步真实卡（2026-11-09 极简封面后）：
+ · 右下「年份+时间」块不画——真实卡在移动端已隐藏进度时间（只留标题）
+ · 标题条位置对齐真实 .video-card-landscape__bottom 的 padding（space-sm）
+ · 进度条高度对齐真实 --space-xs(3px)（原 2xs≈1px 移动端不可见） */
+@media (width <= 767px) {
+  .tmdb-movierow-skeleton-land-year {
+    display: none;
+  }
+
+  .tmdb-movierow-skeleton-land-title {
+    bottom: var(--space-sm);
+    left: var(--space-sm);
+  }
+
+  .tmdb-movierow-skeleton-land-progress {
+    height: var(--space-xs);
+  }
+}
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+html[data-device="app"] .tmdb-movierow-skeleton-land-year {
+  display: none;
+}
+html[data-device="app"] .tmdb-movierow-skeleton-land-title {
+  bottom: var(--space-sm);
+  left: var(--space-sm);
+}
+html[data-device="app"] .tmdb-movierow-skeleton-land-progress {
+  height: var(--space-xs);
+}
+
 @keyframes tmdb-skeleton-pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 0.8; }

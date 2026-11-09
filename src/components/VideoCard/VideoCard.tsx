@@ -54,6 +54,10 @@ interface VideoCardProps {
  * （竖排顺序：观看状态 → 类型 → 年份）；不传则只显示 类型 → 年份。
  * 仅竖版卡片使用，其他页面零影响。 */
   status?: 'unwatched' | 'watching' | 'watched';
+  /** 隐藏竖版封面右下「类型」角标（电影/剧集）。首页分类行、Browse 智能检索
+   * 等「类型已由栏目/筛选器表达」的场景传入，避免冗余角标挤占小卡片。
+   * 仅影响竖版卡；横版卡无类型角标。 */
+  hideTypeBadge?: boolean;
   /** 封面旧图→新图交叉淡入（首页卡片封面切换用），透传给 LazyImage。 */
   crossfadeOnChange?: boolean;
   /** 跳过进入动画（首页进入过渡期间禁用 animate-card-enter，避免"继续观看"行卡片闪烁）。 */
@@ -125,6 +129,7 @@ const VideoCard = memo(function VideoCard({
   navigateTo,
   navigateState,
   status,
+  hideTypeBadge = false,
   crossfadeOnChange = false,
   skipAnimations = false,
   imageDisabled = false,
@@ -371,7 +376,7 @@ const VideoCard = memo(function VideoCard({
           <>
             <span className="video-card-badges-bl">
               {video.year && <span className="video-card-badge-item">{video.year}</span>}
-              {video.type && (
+              {video.type && !hideTypeBadge && (
                 <span className="video-card-badge-item video-card-badge-item--type">
                   {typeLabels[video.type] || video.type}
                 </span>
@@ -386,7 +391,7 @@ const VideoCard = memo(function VideoCard({
             {!batchMode && variant !== 'landscape' && video.year && (
               <span className="video-card-year-badge">{video.year}</span>
             )}
-            {!batchMode && variant !== 'landscape' && video.type && (
+            {!batchMode && variant !== 'landscape' && video.type && !hideTypeBadge && (
               <span className="video-card-type">
                 {typeLabels[video.type] || video.type}
               </span>
