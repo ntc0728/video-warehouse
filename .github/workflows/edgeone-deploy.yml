@@ -1,0 +1,35 @@
+name: Deploy to EdgeOne Pages
+
+# 绕开 EdgeOne 云端构建机（其 nofile 硬上限过低，vite build 必现 EMFILE）：
+# 在 GitHub runner 上完成构建，产物用 EdgeOne CLI 直传。
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      # -n 与 EdgeOne 控制台项目名一致；项目不存在会自动创建
+      - name: Deploy to EdgeOne Pages
+        run: npx edgeone makers deploy dist -n video-warehouse -e production -t "$EDGEONE_TOKEN"
+        env:
+          EDGEONE_TOKEN: ${{ secrets.EDGEONE_TOKEN }}
