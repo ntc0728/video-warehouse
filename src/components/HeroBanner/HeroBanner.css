@@ -446,8 +446,14 @@ html[data-device="app"] .hero-banner__skeleton--btn {
 
 
 @media (width <= 767px) {
+  /* content padding 归零（2026-11-09，与桌面一致）：
+     overflow:hidden 的裁切边界是 padding-box——content 若有 padding，
+     三联文字 track 被排进 content-box，下一张 slide 的前 8px 会落在
+     padding 区、仍在裁切范围内 → 右缘看到下一张的文字（slide padding
+     归 0 后该 8px 从空白变成文字，问题暴露）。
+     padding 归 0 后 track 起点 = 裁切边界，下一张从边界外开始，无露出。 */
   .hero-banner__content {
-    padding: var(--space-md);
+    padding: 0;
   }
 
   .hero-banner__text {
@@ -489,7 +495,7 @@ html[data-device="app"] .hero-banner__skeleton--btn {
 /* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .hero-banner__content {
-    padding: var(--space-md);
+    padding: 0;
   }
 
   html[data-device="app"] .hero-banner__text {
