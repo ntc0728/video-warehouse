@@ -476,8 +476,11 @@
   }
 
   .sticky-header__logo-wrap {
-    width: var(--comp-btn-min-height) !important;
-    height: var(--comp-btn-min-height) !important;
+    /* 移动端 logo 收紧（2026-11-09 用户反馈 logo 仍偏大）：44 → 36px，
+       与 32px 控件 / 30px 头像成 36 > 32 > 30 的递减层级。
+       ⚠️ index.html 首帧骨架 .bs-logo 必须同步，否则 splash→React 会跳变。 */
+    width: 36px !important;
+    height: 36px !important;
   }
 
   .sticky-header__brand-name {
@@ -548,8 +551,8 @@
   }
 
   html[data-device="app"] .sticky-header__logo-wrap {
-    width: var(--comp-btn-min-height) !important;
-    height: var(--comp-btn-min-height) !important;
+    width: 36px !important;
+    height: 36px !important;
   }
 
   html[data-device="app"] .sticky-header__brand-name {

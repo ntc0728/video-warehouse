@@ -113,10 +113,10 @@
          + 右侧头像/主题按钮；inner gap/padding = --space-sm（≈6px）。首帧骨架
          此前只有「logo 灰块 + nav 条」，缺汉堡/搜索/右侧按钮且 padding 16px 偏移。
          全部按真实几何镜像（token 不在 index.html 注入范围 → 硬编码近似值）：
-         ① .bs-menu-btn 补骨架色块（--comp-btn-min-height ≈44-51px，取 44px）
-         ② .bs-logo 去灰底、48px 圆形（--layout-logo-size 近似）直出 logo 原图
+         ① .bs-menu-btn 补骨架色块（2026-11-09 起真实为 32px，非 --comp-btn-min-height）
+         ② .bs-logo 去灰底、36px 圆形（真实移动 logo-wrap 44→36px）直出 logo 原图
          ③ .bs-search 搜索胶囊（--comp-input-height-header ≈36px，flex:1 占位）
-         ④ .bs-icon-btn 头像（圆形）+ 主题（radius-md）各 44px
+         ④ .bs-icon-btn 头像 30px（圆形）+ 主题 32px（radius-md）
          ⑤ .bs-header 间距/内边距对齐真实 inner（gap 6px / padding 0 6px）、
             .bs-nav 移动端不显示（真实 header 无导航条）
          仅 ≤767 且非 app/tv（App 端真实 header 无汉堡菜单，TV 走独立布局）。 */
@@ -127,11 +127,11 @@
           padding: 0 6px;
         }
 
-        html:not([data-device="app"]):not([data-device="tv"]) .bs-menu-btn {
+         html:not([data-device="app"]):not([data-device="tv"]) .bs-menu-btn {
           display: block;
           flex-shrink: 0;
-          width: 44px;
-          height: 44px;
+          width: 32px;
+          height: 32px;
           border-radius: 8px;
         }
 
@@ -143,8 +143,8 @@
         }
 
         html:not([data-device="app"]):not([data-device="tv"]) .bs-logo {
-          width: 44px; /* 真实移动 logo-wrap 覆盖为 44px（--layout-logo-size 桌面值 48 不适用） */
-          height: 44px;
+          width: 36px; /* 真实移动 logo-wrap 2026-11-09 起为 36px（原 44px） */
+          height: 36px;
           background: transparent;
           border-radius: 50%;
         }
@@ -171,11 +171,13 @@
         html:not([data-device="app"]):not([data-device="tv"]) .bs-icon-btn {
           display: block;
           flex-shrink: 0;
-          width: 44px;
-          height: 44px;
+          width: 32px;
+          height: 32px;
         }
 
         html:not([data-device="app"]):not([data-device="tv"]) .bs-icon-btn--avatar {
+          width: 30px;
+          height: 30px;
           border-radius: 50%;
         }
 
