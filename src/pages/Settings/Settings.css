@@ -1548,7 +1548,7 @@ html[data-device="app"] .modal-content-animate.changelog-modal {
 }
 /* （个人设置项内容字体比其他设置项大）：
  .settings-row__title 原无 font-size → inherit 16px，而其他 tab 的
- list-item__title 是 tailwind text-base（= var(--text-base)，14×0.93≈13px）
+ list-item__title 是 tailwind text-base（= var(--text-base)，14×0.95≈13.3px）
  → 对齐同值。副标题 small（0.8em）与 desc（text-sm）本就协调，不动。 */
 .settings-page .settings-row__title {
   font-size: var(--text-base);
@@ -1859,26 +1859,13 @@ html[data-device="app"] .modal-content-animate.changelog-modal {
   font-size: var(--text-xs);
 }
 
-/* 设置页字号/图标缩档（各个字体、图标尺寸有点大）：
- 在 .settings-page 作用域重定义 --text-* 为全站值 ×0.93（响应式公式保持原档形态）；
- --icon-* 的 calc(var(--text-*) × 系数) 在元素处延迟解析 → 图标随文字连锁缩 ~7%。
- 仅字号/图标，--space-*（间距）与 --card-size 不动；作用域外全站不受影响。
- html 前缀压过 :root 的桌面档覆盖（特异性 0,1,1 > 0,1,0）。 */
-html .settings-page {
-  --text-2xs: calc(11px * var(--ui-scale) * 0.93);
-  --text-xs: calc(12px * var(--ui-scale) * 0.93);
-  --text-sm: calc(13px * var(--ui-scale) * 0.93);
-  --text-base: calc(14px * var(--ui-scale) * 0.93);
-  --text-lg: calc(clamp(15px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale) * 0.93);
-  --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale) * 0.93);
-  --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale) * 0.93);
-  --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale) * 0.93);
-
-  /* （按钮、图标、tab、方型按钮尺寸过大）：
- 控件高度族同乘 0.8（从 0.93 加码——7% 不可感知）—— theme-btn/back-btn
- 方块（btn-min-height）、counter-btn ±/counter-value（tab-height）、
+/* 设置页控件缩档（按钮、图标、tab、方型按钮尺寸过大）：
+ 字号部分已上收为全站 --type-scale ×0.95（variables.css，2026-11-09 统一），
+ 此处只保留控件高度族 ×0.8（从原 0.93/0.8 双档中的加码档保留）——
+ theme-btn/back-btn 方块（btn-min-height）、counter-btn ±/counter-value（tab-height）、
  Button min-h（btn-min-width）、settings-input（input-height）、滑块手柄
  （thumb-size）全部连锁缩。输入框宽度 --comp-input-min-w 不缩。 */
+html .settings-page {
   --comp-btn-min-height: calc(clamp(44px, 36.434px + 1.94vw, 51.333px) * var(--ui-scale) * 0.8);
   --comp-btn-min-width: calc(clamp(40px, 27.277px + 3.393vw, 53.333px) * var(--ui-scale) * 0.8);
   --comp-tab-height: calc(clamp(36px, 18.545px + 4.479vw, 38.667px) * var(--ui-scale) * 0.8);
@@ -1886,40 +1873,14 @@ html .settings-page {
   --comp-thumb-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale) * 0.8);
 }
 
-/* （左栏不改，只改右侧内容区）：
- 左栏 text 档豁免 0.93 → 回全站原式；--icon-* 的 calc 延迟解析在左栏元素
- 处自动取回原字号 → 图标同步回原值。特异性 0,2,1 > 0,1,1。 */
-html .settings-page .settings-sidenav {
-  --text-2xs: calc(11px * var(--ui-scale));
-  --text-xs: calc(12px * var(--ui-scale));
-  --text-sm: calc(13px * var(--ui-scale));
-  --text-base: calc(14px * var(--ui-scale));
-  --text-lg: calc(clamp(15px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale));
-  --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale));
-  --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale));
-  --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale));
-}
-
-/* ≥768 桌面档（:root 在 variables.css 用大屏 clamp 覆盖 lg/xl/2xl → 同步缩档保持大屏形态） */
+/* ≥768 桌面档（variables.css 段2 :root 覆盖 → 控件同步 ×0.8，加码） */
 @media (width >= 768px) {
   html .settings-page {
-    --text-lg: calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale) * 0.93);
-    --text-xl: calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale) * 0.93);
-    --text-2xl: calc(clamp(22px, 23.4293px - 0.09926vw, 22.667px) * var(--ui-scale) * 0.93);
-    /* 桌面递减档同理（variables.css 段2 :root 覆盖 → 同步 ×0.8，加码） */
     --comp-btn-min-height: calc(clamp(48.212px, 54.061px - 0.35521vw, 51.333px) * var(--ui-scale) * 0.8);
     --comp-btn-min-width: calc(clamp(49.136px, 57.27471px - 0.51324vw, 53.333px) * var(--ui-scale) * 0.8);
     --comp-input-height: calc(clamp(40.54px, 50.10557px - 0.62143vw, 45.333px) * var(--ui-scale) * 0.8);
     --comp-tab-height: calc(clamp(35.827px, 41.28871px - 0.34137vw, 38.667px) * var(--ui-scale) * 0.8);
     --comp-thumb-size: calc(clamp(22.212px, 24.22786px - 0.11652vw, 23.333px) * var(--ui-scale) * 0.8);
-  }
-
-  /* 左栏桌面档豁免（回原式，与上方缩档块平级——嵌套会展开成
- 永不匹配的 html…html… 选择器） */
-  html .settings-page .settings-sidenav {
-    --text-lg: calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale));
-    --text-xl: calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale));
-    --text-2xl: calc(clamp(22px, 23.4293px - 0.09926vw, 22.667px) * var(--ui-scale));
   }
 }
 
