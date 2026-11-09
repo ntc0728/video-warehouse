@@ -423,11 +423,10 @@ const VideoCard = memo(function VideoCard({
                   </span>
                 </div>
               </div>
-              {/* 右侧：年份 + 进度时间（同一行、右对齐；标题自动让出宽度） */}
+              {/* 右侧：进度时间（同一行、右对齐；标题自动让出宽度）。
+                  横版年份胶囊已删：唯一横版数据源 ContinueWatchingItem 无 year 字段，
+                  video.year 恒 falsy，从未渲染过（2026-11-09 死代码清理）。 */}
               <div className="video-card-landscape__meta">
-                {!batchMode && video.year && (
-                  <span className="video-card-badge-item video-card-landscape__year">{video.year}</span>
-                )}
                 {progress !== undefined && duration !== undefined && duration > 0 && (() => {
                   const pct = progress / duration;
                   const fmt = (s: number) => {

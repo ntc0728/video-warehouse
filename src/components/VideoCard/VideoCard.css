@@ -786,9 +786,9 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 /* ═══════════════════════════════════════════════════════════════════════
  横版卡封面内文字层
  ───────────────────────────────────────────────────────────────────────
- 布局：封面底部一行 flex —— [标题（左，可跑马灯）][年份]，靠右下对齐；
- 标题区自动占满剩余宽度并可溢出滚动；年份间距 --space-xs。
- （继续观看卡删除类型标签，故只剩年份。）
+ 布局：封面底部一行 flex —— [标题（左，可跑马灯）][进度时间（右）]，靠右下对齐；
+ 标题区自动占满剩余宽度并可溢出滚动；间距 --space-xs。
+ （年份/类型标签均已删，移动端进一步隐藏进度时间，见 ≤767px 极简封面块。）
  底部整体压一层向上渐变，保证白字在任意封面图上的可读性。
  ═══════════════════════════════════════════════════════════════════════ */
 .video-card-landscape__bottom {
@@ -832,25 +832,12 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
-/* 右侧元信息：年份（继续观看卡已删类型标签），右下对齐 */
+/* 右侧元信息：进度时间（年份/类型标签已删），右下对齐 */
 .video-card-landscape__meta {
   display: flex;
   flex: 0 0 auto;
   gap: var(--space-xs);
   align-items: center;
-}
-
-/* 年份胶囊：半透明深底，比竖版更小一号（封面高度有限） */
-.video-card-landscape .video-card-landscape__year {
-  padding: var(--space-3xs) var(--space-xs);
-  border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.6);
-  color: var(--color-on-image);
-  font-size: var(--text-2xs);
-  font-weight: 500;
-  line-height: 1.3;
-  white-space: nowrap;
-  backdrop-filter: blur(4px);
 }
 
 /* 进度条贴底全宽（独立层，不参与文字行布局）。
@@ -903,6 +890,13 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
     inset: auto 0 0;
   }
 
+  /* 条高提回 --space-xs(3px)：--space-2xs 在 390 视口仅 ~1px，红条肉眼不可见
+     （2026-11-08 修遮罩时误收窄到 2xs，桌面 1.5px 勉强可见、移动端完全消失）。
+     与历史页 RecordCard 进度条同款（space-xs），观感即「桌面同款」。 */
+  .video-card--landscape .video-card-landscape__progress-bar-wrap {
+    height: var(--space-xs);
+  }
+
   .video-card--landscape .video-card-landscape__bottom {
     inset: auto 0 0;
     background-size: 100% calc(100% - var(--space-2xs));
@@ -918,6 +912,9 @@ html[data-device="app"] .video-card--landscape .video-card-landscape__progress-t
 }
 html[data-device="app"] .video-card--landscape .video-card-landscape__progress-overlay {
   inset: auto 0 0;
+}
+html[data-device="app"] .video-card--landscape .video-card-landscape__progress-bar-wrap {
+  height: var(--space-xs);
 }
 html[data-device="app"] .video-card--landscape .video-card-landscape__bottom {
   inset: auto 0 0;
