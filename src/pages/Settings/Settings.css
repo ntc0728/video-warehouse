@@ -1645,21 +1645,23 @@ html[data-device="app"] .modal-content-animate.changelog-modal {
   }
   /* 子页打开：下方菜单做轻微视差左移 + 缩小，营造「进入下层」的层级深度。
  注意：子页经 createPortal 挂到 document.body，并非 .settings-page 的后代，
- 原 .settings-page:has(.settings-subpage) 永不命中；改用 body:has 选择。 */
+ 原 .settings-page:has(.settings-subpage) 永不命中；改用 body:has 选择。
+ ⚠️ 只过渡 transform（合成器动画）。原方案的 filter: brightness(0.96) 已删除——
+ filter 过渡逐帧重绘整页（含 backdrop 的贴片内容），把 transform 也拖回主线程，
+ 真机上返回/进入的 300ms 内逐帧卡顿（用户反馈「页面抖动抽搐」的主嫌疑）。
+ will-change 在子页打开瞬间（菜单还被不透明子页盖住时）预建合成层，
+ 避免 transition 起播那一刻才提升层造成首帧顿挫。 */
   body:has(.settings-subpage) .settings-page {
     transform: translateX(-6%) scale(0.98);
     transform-origin: left center;
-    /* 方案1：与子页同曲线同时长（0.3s + iOS push 曲线），父视差与子页滑动同步；
- 轻微压暗强化「进入下层」的层级深度 */
-    transition: transform var(--dur-lg) cubic-bezier(.32, .72, 0, 1),
-                filter 0.3s cubic-bezier(.32, .72, 0, 1);
-    filter: brightness(0.96);
+    /* 方案1：与子页同曲线同时长（0.3s + iOS push 曲线），父视差与子页滑动同步 */
+    transition: transform var(--dur-lg) cubic-bezier(.32, .72, 0, 1);
+    will-change: transform;
     animation: none;
   }
   /* 子页滑出（返回）时菜单平滑归位，与子页右滑同步，强化「返回」层级感 */
   body.settings-subpage--closing .settings-page {
     transform: none;
-    filter: none;
   }
   /* 方案1：无障碍守卫 —— 关闭进出动画与父视差/压暗，直接显隐 */
   
