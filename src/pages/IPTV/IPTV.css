@@ -429,8 +429,8 @@
 
 /* ── 移动端：两张卡片合并为一张（2026-11-09 用户拍板「不再分开」）──
    top-card（筛选/刷新）与 grid-card（频道网格）上下拼接：
-   去掉中间的外边距、top-card 底边框与内层阴影、接缝处圆角，
-   接缝只留 grid-card 顶边一条 1px 分隔线；整卡保留外圈圆角与阴影。 */
+   去掉中间外边距、top-card 底边框/底部圆角/内层阴影、接缝处双边框与圆角
+   （接缝完全无分隔线，一整块卡片）；整卡保留外圈圆角与阴影。 */
 @media (width <= 767px) {
   .iptv-top-card {
     margin-bottom: 0;
@@ -441,6 +441,7 @@
   }
 
   .iptv-grid-card {
+    border-top: none;
     border-top-right-radius: 0;
     border-top-left-radius: 0;
   }
@@ -454,6 +455,7 @@ html[data-device="app"] .iptv-top-card {
   box-shadow: none;
 }
 html[data-device="app"] .iptv-grid-card {
+  border-top: none;
   border-top-right-radius: 0;
   border-top-left-radius: 0;
 }
