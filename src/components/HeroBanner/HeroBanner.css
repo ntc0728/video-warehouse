@@ -456,10 +456,14 @@ html[data-device="app"] .hero-banner__skeleton--btn {
     padding: 0;
   }
 
+  /* 文字距 banner 左/下缘（content/slide padding 归零后由这里独家控制）：
+     margin-left / margin-bottom 均 --space-lg(~12px，390 视口)，
+     恢复到 content padding 删除前的观感（原 ≈14px / 11px）。
+     2026-11-09 用户反馈：6px/3px 太贴边 → 先调 12/8，再要求下间距加大 → 12/12。 */
   .hero-banner__text {
     max-width: 100%;
-    margin-bottom: var(--space-xs);
-    margin-left: var(--space-sm);
+    margin-bottom: var(--space-lg);
+    margin-left: var(--space-lg);
   }
 
   /* 移动端 slide padding 归零（2026-11-09 用户拍板）：
@@ -500,8 +504,8 @@ html[data-device="app"] .hero-banner__skeleton--btn {
 
   html[data-device="app"] .hero-banner__text {
     max-width: 100%;
-    margin-bottom: var(--space-xs);
-    margin-left: var(--space-sm);
+    margin-bottom: var(--space-lg);
+    margin-left: var(--space-lg);
   }
 
   html[data-device="app"] .hero-banner__text-slide {
