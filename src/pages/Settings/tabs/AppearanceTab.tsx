@@ -96,7 +96,9 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
           />
         )}
         {/* 界面缩放手动档：仅非 TV 显示；TV 走独立 2× 曲线；
- 100% 为默认档，范围 90%–120%（旧 130%/150% 档已在 store 层钳到 1.2） */}
+ 100% 为默认档，范围 95%–120%（2026-11-09 方案 B：去 90% 档——与全站 --type-scale 0.95
+ 叠加后正文跌破 12px、角标跌破 10px；补 105% 使默认上下各 ±5% 对称。
+ 旧 90%/130%/150% 落盘值在 store 层钳到 95% / 1.2） */}
         {!tvMode && (
           <List.Item
             title="界面缩放"
@@ -105,9 +107,9 @@ export default function AppearanceTab({ theme, setTheme, skin, setSkin, tvMode, 
               <Select
                 options={[
                   { value: '0', label: '自动' },
-                  { value: '1', label: '默认' },
-                  { value: '0.9', label: '90%' },
+                  { value: '1', label: '默认（100%）' },
                   { value: '0.95', label: '95%' },
+                  { value: '1.05', label: '105%' },
                   { value: '1.1', label: '110%' },
                   { value: '1.15', label: '115%' },
                   { value: '1.2', label: '120%' },

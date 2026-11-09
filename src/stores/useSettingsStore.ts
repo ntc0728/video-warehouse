@@ -69,16 +69,20 @@ const SENSITIVE_FIELDS = ['tmdbAccessToken', 'translationApiKey'] as const;
 const APP_SETTINGS_PERSIST_KEY = 'app-settings';
 
 /**
- * uiScale 合法档位上限：120%（选项 90%–120% + 自动/默认）。
- * 旧档位 130% / 150% 已删除 —— 落盘值超限时钳到上限，避免下拉无匹配项显示空值。
+ * uiScale 合法档位边界：95%–120%（选项 95/100/105/110/115/120 + 自动）。
+ * 2026-11-09 方案 B：删除 90% 档（与全站 --type-scale 0.95 叠加后正文跌破 12px、
+ * 角标跌破 10px）、补 105% 对称档。旧档位 90% / 130% / 150% 落盘值
+ * 钳到最近合法档（90% → 95%，130%/150% → 120%），避免下拉无匹配项显示空值。
  */
 const UI_SCALE_MAX = 1.2;
+const UI_SCALE_MIN = 0.95;
 
 function normalizeUiScale(value: unknown): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return DEFAULT_SETTINGS.uiScale;
   if (n > UI_SCALE_MAX) return UI_SCALE_MAX;
-  return n; // 0（自动）与 0.9–1.2 各档原样保留
+  if (n > 0 && n < UI_SCALE_MIN) return UI_SCALE_MIN; // 0（自动）保留，非 0 旧档钳到下限
+  return n; // 0（自动）与 0.95–1.2 各档原样保留
 }
 
 /** 设置项默认值（用于"恢复默认配置"） */
