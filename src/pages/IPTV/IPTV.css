@@ -427,6 +427,37 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* ── 移动端：两张卡片合并为一张（2026-11-09 用户拍板「不再分开」）──
+   top-card（筛选/刷新）与 grid-card（频道网格）上下拼接：
+   去掉中间的外边距、top-card 底边框与内层阴影、接缝处圆角，
+   接缝只留 grid-card 顶边一条 1px 分隔线；整卡保留外圈圆角与阴影。 */
+@media (width <= 767px) {
+  .iptv-top-card {
+    margin-bottom: 0;
+    border-bottom: none;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    box-shadow: none;
+  }
+
+  .iptv-grid-card {
+    border-top-right-radius: 0;
+    border-top-left-radius: 0;
+  }
+}
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+html[data-device="app"] .iptv-top-card {
+  margin-bottom: 0;
+  border-bottom: none;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+  box-shadow: none;
+}
+html[data-device="app"] .iptv-grid-card {
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
+}
+
 /* ── 增强层「更多台」开关行（已移除：新语义改为左栏按源勾选） ── */
 
 /* ═══════════════════════════════════════════════════════════════════════════
