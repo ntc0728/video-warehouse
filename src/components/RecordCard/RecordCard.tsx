@@ -83,7 +83,15 @@ const RecordCard = memo(function RecordCard({
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
-    const check = () => setTitleOverflow(el.scrollWidth > el.clientWidth + 1);
+    /* 溢出判定必须用「单个文本段」的宽度，不能用 title 的 scrollWidth：
+       进入 is-overflow 后标题渲染两份副本，scrollWidth 变成「两段 + 间距」，
+       一旦误判为溢出就永远无法回退（短标题也会常驻跑马灯）。
+       与竖版 VideoCard 的 --marquee-distance 量法同源：量首段文本宽度。 */
+    const check = () => {
+      const seg = el.querySelector<HTMLElement>('.record-card__title-text');
+      const textW = seg ? seg.getBoundingClientRect().width : el.scrollWidth;
+      setTitleOverflow(textW > el.clientWidth + 1);
+    };
     check();
     const ro = new ResizeObserver(check);
     ro.observe(el);

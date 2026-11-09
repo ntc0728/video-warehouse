@@ -282,6 +282,12 @@ hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
 /* 移动端删除按钮常驻（对齐收藏/历史既有规则） */
 @media (width <= 767px) {
   :is(.history-page, .collection-page) .record-card__delete {
+    /* 按钮整体收一档（2026-11-09 用户反馈「删除图标和底色有点大」）：
+       Icon 注入的 width/height 走 var(--icon-xs)，就地覆写为 --text-2xs(11px)，
+       底色/命中区随内容收缩（padding 不变，22.4 → 18px 见方）。 */
+    --icon-xs: var(--text-2xs);
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
     opacity: 1;
   }
   /* 视口 < 768px：超长标题「进入视口」才跑马灯（离开视口即停，避免全部常驻滚动） */
@@ -291,6 +297,8 @@ hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
 }
 /* app / 移动端（data-device=app）：同样「进入视口」才播放 */
 html[data-device='app'] :is(.history-page, .collection-page) .record-card__delete {
+  --icon-xs: var(--text-2xs);
+  padding: var(--space-xs);
   opacity: 1;
 }
 html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-view .record-card__title.is-overflow .record-card__title-track {
@@ -315,17 +323,15 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
   }
 
   :is(.history-page, .collection-page) .record-card__media {
-    --record-card-media-w: 124px;
-    flex: 0 0 var(--record-card-media-w);
-    /* 封面上下通铺卡片（2026-11-09 用户反馈「封面上下没占满容器」）：
-       原 align-self:center + 固定 aspect-ratio → 封面高 86px，而右侧信息列
-       内容高 ~99px 撑高卡片，封面上下各留 ~6px 空白。
-       改为 stretch + 取消宽高比：封面高 = 卡片高（由信息列内容决定），
-       图片 object-fit:cover 裁切，左右圆角仍由卡片 overflow:hidden 裁切。 */
+    /* 封面同时满足两点（2026-11-09 用户两轮反馈合并）：
+       ① 高度通铺卡片（cover 上下不留白）→ align-self: stretch
+       ② 保持 16:9 比例（不机械拉伸变形）→ 宽由高反推：aspect-ratio 16/9 + width auto
+       卡高由右侧信息列内容决定（flex stretch），封面宽 = 卡高 × 16/9；
+       图片 object-fit:cover 裁切，左侧圆角由卡片 overflow:hidden 裁切。 */
+    flex: 0 0 auto;
     align-self: stretch;
-    width: var(--record-card-media-w);
-    height: auto;
-    aspect-ratio: auto;
+    width: auto;
+    aspect-ratio: 16 / 9;
   }
 
   :is(.history-page, .collection-page) .record-card__body {
@@ -338,6 +344,14 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
   /* 宽屏单行 meta 隐藏，切换窄屏信息列 */
   :is(.history-page, .collection-page) .record-card__meta-row {
     display: none;
+  }
+
+  /* 标题右端为删除按钮留位（2026-11-09 用户反馈：长标题压到删除按钮上）：
+     删除按钮 = absolute top/right space-xs + padding space-xs + icon-xs，
+     标题宽度上限扣除「按钮宽 + 右偏移 + 间隙」，跑马灯被裁在本盒内，
+     不会再从按钮底下穿过（效果同竖版 VideoCard 标题跑马灯：超宽即双段无缝滚动）。 */
+  :is(.history-page, .collection-page) .record-card__title {
+    max-width: calc(100% - var(--icon-lg) - var(--space-xs));
   }
   :is(.history-page, .collection-page) .record-card__meta-col {
     display: flex;
@@ -370,14 +384,22 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
   }
 
   /* ── IPTV 记录卡（2026-11-09 用户拍板）──
-     封面右侧 3 个元素（直播 / 来源 / 时间）水平居中成一列、间距 --space-md。
-     视频卡不受影响（仍有集数 + 时间两端对齐语义）。 */
+     封面右侧 3 个元素（直播 / 来源 / 时间）间距 --space-md；
+     收藏页左对齐成一列；历史页保持水平居中（用户仅要求收藏页左对齐）。 */
   :is(.history-page, .collection-page) .record-card--iptv .record-card__meta-col {
     gap: var(--space-md);
+  }
+  :is(.history-page) .record-card--iptv .record-card__meta-col {
     align-items: center;
   }
-  :is(.history-page, .collection-page) .record-card--iptv .record-card__meta-bottom {
+  :is(.history-page) .record-card--iptv .record-card__meta-bottom {
     justify-content: center;
+  }
+  :is(.collection-page) .record-card--iptv .record-card__meta-col {
+    align-items: flex-start;
+  }
+  :is(.collection-page) .record-card--iptv .record-card__meta-bottom {
+    justify-content: flex-start;
   }
   :is(.history-page, .collection-page) .record-card--iptv .record-card__meta-bottom .record-card__time-text {
     margin-left: 0;
