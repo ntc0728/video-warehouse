@@ -451,6 +451,31 @@ html[data-device="app"] .video-card-status {
   bottom: calc(var(--space-xs) + var(--space-xs) + var(--space-3xs) * 2 + var(--text-xs) * 1.3);
 }
 
+/* 移动端竖版角标压到全站最小字号档 --text-2xs（12→11px）：
+ 与横版 source-badge / progress-text 同契约（见下方 ≤767px 横版块注释
+ 「移动端恒最小」）。竖版五类角标原先沿用桌面 --text-xs 无移动覆盖，
+ 390 视口 3 列单卡 ≈114px 宽，「未观看」状态胶囊占卡宽 ~37%，视觉过大。
+ 仅动字号；padding / 底色不变，桌面 / TV 零影响。 */
+@media (width <= 767px) {
+  .video-card-rating,
+  .video-card-source-badge,
+  .video-card-year-badge,
+  .video-card-type,
+  .video-card-badge-item,
+  .video-card-status {
+    font-size: var(--text-2xs);
+  }
+}
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+html[data-device="app"] .video-card-rating,
+html[data-device="app"] .video-card-source-badge,
+html[data-device="app"] .video-card-year-badge,
+html[data-device="app"] .video-card-type,
+html[data-device="app"] .video-card-badge-item,
+html[data-device="app"] .video-card-status {
+  font-size: var(--text-2xs);
+}
+
 /* ── 信息区：标题 ──────────────────────────────── */
 
 .video-card-info {
