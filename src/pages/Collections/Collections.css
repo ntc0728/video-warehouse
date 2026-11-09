@@ -108,11 +108,20 @@ html:not([data-device="app"]):not([data-device="tv"]) .collection-page .iptv-cha
   .record-card__delete {
     opacity: 1;
   }
+
+  /* 底部留白（2026-11-09）：同历史页——内容溢出页面外框，须加在内容层 */
+  .collection-content {
+    padding-bottom: var(--space-sm);
+  }
 }
 /* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .record-card__delete {
     opacity: 1;
+  }
+
+  html[data-device="app"] .collection-content {
+    padding-bottom: var(--space-sm);
   }
 
 

@@ -273,6 +273,9 @@
  且不撑开 .record-main 高度。flex item 的 min:auto = min-content，内容超高
  时被撑开；内容少时 flex-grow 仍填满剩余空间，空状态垂直居中链不受影响。 */
     min-height: auto;
+    /* 面板底部与页面留距（2026-11-09 用户反馈：外层卡片式面板底部贴边）：
+       左右由 padding 留白，底部必须用 margin 把面板整体抬离页底。 */
+    margin-bottom: var(--space-sm);
     padding: 0 var(--space-sm);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
@@ -359,12 +362,13 @@
   }
   html[data-device="app"] .record-content {
     min-height: auto;
+    margin-bottom: var(--space-sm);
     padding: 0 var(--space-sm);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
-  }
+}
 
 
 

@@ -660,6 +660,21 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   padding: var(--space-sm) var(--space-sm) 0 var(--space-sm);
 }
 
+/* 移动端补底部间距（2026-11-09 用户反馈：browse/IPTV 卡片底部贴边）——
+ 与左右同档 --space-sm。
+ ⚠️ 记录页（收藏/历史）内容溢出本外框（flex 撑满视口），根 padding-bottom
+ 不计入滚动末端，故那两页的底部留白另加在自己的内容层（History.css /
+ Collections.css），不要只靠本规则。 */
+@media (width <= 767px) {
+  .page-padding {
+    padding-bottom: var(--space-sm);
+  }
+}
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+html[data-device="app"] .page-padding {
+  padding-bottom: var(--space-sm);
+}
+
 @media (width >= 768px) {
   /* 桌面端页面主体内容左右留白改由 --page-pad-x 分档驱动：
  <1440 沿用 --space-lg；≥1440<1920=60px；≥1920<2560=100px；≥2560=140px（见 variables.css）。
