@@ -9,13 +9,15 @@
 
 /* ── 卡片容器 ── */
 .hero-banner__card {
-  padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   /* 不与下方分类区的间距由 Home.css 控制，避免重复 */
+  /* padding 已删（2026-11-09 用户拍板）：banner 图区通铺到卡片边缘，
+     圆角由本卡 overflow:hidden 裁切；内层 .hero-banner__main 的圆角在
+     ≥1024 档保留为兜底（TV 场景）。 */
 }
 
 .hero-banner {
@@ -454,13 +456,12 @@ html[data-device="app"] .hero-banner__skeleton--btn {
     margin-left: var(--space-sm);
   }
 
-  /* 移动端文本距图左/下缘过远根因：slide.padding(--space-xl) 与 text 自身的
- margin(--space-lg/--space-md) 双重叠加 → 左 28px / 下 24px，在 390px 的
- 16:9 矮图上留白过大。此处双收：slide padding 收到 --space-md(8px)，
- text margin 收到 --space-sm/--space-xs(6px/3px) → 左≈14px、下≈11px。
- 桌面端保持原值不动（图宽、占比合理）。 */
+  /* 移动端 slide padding 归零（2026-11-09 用户拍板）：
+ 移动端 banner 图区已通铺卡片（卡片 padding 删除），文字距图左/下缘
+ 只保留 .hero-banner__text 自身的 margin（--space-sm / --space-xs ≈ 6px / 3px），
+ 不再叠加 slide 内边距。 */
   .hero-banner__text-slide {
-    padding: var(--space-md);
+    padding: 0;
   }
 
 
@@ -498,7 +499,7 @@ html[data-device="app"] .hero-banner__skeleton--btn {
   }
 
   html[data-device="app"] .hero-banner__text-slide {
-    padding: var(--space-md);
+    padding: 0;
   }
 
 

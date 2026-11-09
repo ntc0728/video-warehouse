@@ -6,7 +6,9 @@ import tseslint from 'typescript-eslint';
 import noHardcodedColors from './eslint-rules/no-hardcoded-colors.js';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'build', '**/build/**', 'backups/**', 'output/**', 'scripts/**', 'docs/**', '*.config.js', '*.config.ts'] },
+  // .tmp-research/**：外部调研解压目录（jellyfin/stremio 源码），非本仓代码，
+  // 若被扫描会报大量与本仓无关的错误（2026-11-09 补；目录本身 gitignore）。
+  { ignores: ['dist', 'node_modules', 'build', '**/build/**', 'backups/**', 'output/**', 'scripts/**', 'docs/**', '.tmp-research/**', '*.config.js', '*.config.ts'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
