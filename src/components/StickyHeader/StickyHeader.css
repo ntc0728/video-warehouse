@@ -455,10 +455,12 @@
 
 @media (width <= 767px) {
   .sticky-header {
-    /* 移动端顶栏控件紧凑档（2026-11-09 用户反馈「菜单 / 头像 / 主题图标过大」）：
-       方盒 --comp-btn-min-height(44) → 36px；图标在 TSX 侧同步降档
-       （菜单 md→sm、主题 lg→sm、头像占位 sm→xs）。 */
-    --hdr-ctl-size: 36px;
+    /* 移动端顶栏控件紧凑档（2026-11-09 二轮：用户反馈仍偏大）：
+       方盒 44 → 32px，头像视觉圆 30px（可点区仍 ≥32，高于 WCAG 2.5.8 的 24px；
+       B 站 H5 同类入口可点区仅 24px）。图标在 TSX 侧同步降到 xs。
+       ⚠️ Apple 44 / Material 48 的舒适触控基线已不满足，属产品取向取舍。 */
+    --hdr-ctl-size: 32px;
+    --hdr-avatar-size: 30px;
 
     height: var(--header-height-compact);
   }
@@ -512,10 +514,14 @@
   }
 
   .sticky-header__menu-btn,
-  .sticky-header__theme-btn,
-  .sticky-header__profile-avatar {
+  .sticky-header__theme-btn {
     width: var(--hdr-ctl-size);
     height: var(--hdr-ctl-size);
+  }
+
+  .sticky-header__profile-avatar {
+    width: var(--hdr-avatar-size);
+    height: var(--hdr-avatar-size);
   }
 
   /* 移动端隐藏 logo-group 的品牌文字 kinoTV */
@@ -526,7 +532,8 @@
 /* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
 
   html[data-device="app"] .sticky-header {
-    --hdr-ctl-size: 36px;
+    --hdr-ctl-size: 32px;
+    --hdr-avatar-size: 30px;
 
     height: var(--header-height-compact);
   }
@@ -584,9 +591,14 @@
     justify-content: flex-end;
   }
 
-  html[data-device="app"] .sticky-header__menu-btn, html[data-device="app"] .sticky-header__theme-btn, html[data-device="app"] .sticky-header__profile-avatar {
+  html[data-device="app"] .sticky-header__menu-btn, html[data-device="app"] .sticky-header__theme-btn {
     width: var(--hdr-ctl-size);
     height: var(--hdr-ctl-size);
+  }
+
+  html[data-device="app"] .sticky-header__profile-avatar {
+    width: var(--hdr-avatar-size);
+    height: var(--hdr-avatar-size);
   }
 
   html[data-device="app"] /* 移动端隐藏 logo-group 的品牌文字 kinoTV */

@@ -35,15 +35,15 @@
   white-space: nowrap;
 }
 .bmb-seg {
-  /* 移动端模式段钮（2026-11-09 二次收紧：用户反馈仍偏大）：
- 30 → 26px、字号 sm→xs(12px)，与筛选钮同档。 */
-  min-height: 26px;
+  /* 移动端模式段钮（2026-11-09 二轮：仍偏大 → 26→24px、字号 xs→2xs(11px)）。
+     24px 是 WCAG 2.5.8 AA 的可点区下限，不再往下压。 */
+  min-height: 24px;
   padding: var(--space-2xs) var(--space-sm);
   border: none;
   background: transparent;
   color: var(--color-text-secondary);
   font: inherit;
-  font-size: var(--text-xs);
+  font-size: var(--text-2xs);
   transition: background 0.14s, color 0.14s;
   cursor: pointer;
 }
@@ -59,15 +59,15 @@
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
-  min-height: 26px;
+  min-height: 24px;
   padding: 0 var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-full);
   background: var(--color-surface-hover);
   color: var(--color-text);
   font: inherit;
-  /* 2026-11-09 二次收紧：字号 sm→xs(12px)，图标 15.4→12px，高度 28→26 */
-  font-size: var(--text-xs);
+  /* 2026-11-09 二轮：字号 xs→2xs(11px)，图标 12→11px，高度 26→24（AA 下限） */
+  font-size: var(--text-2xs);
   transition: border-color 0.14s, background 0.14s, color 0.14s;
   cursor: pointer;
 }
@@ -80,8 +80,8 @@
 }
 .bmb-filter-ico {
   flex-shrink: 0;
-  width: var(--text-xs);
-  height: var(--text-xs);
+  width: var(--text-2xs);
+  height: var(--text-2xs);
 }
 .bmb-badge {
   display: inline-flex;

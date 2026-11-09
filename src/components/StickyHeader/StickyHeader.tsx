@@ -205,7 +205,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
         <div className="sticky-header__left">
           {isMobile && !isNative && (
             <button className="sticky-header__menu-btn" onClick={onMenuToggle} aria-label={menuOpen ? '关闭导航菜单' : '打开导航菜单'}>
-              {menuOpen ? <Icon icon={X} size="sm" /> : <Icon icon={Menu} size="sm" />}
+              {menuOpen ? <Icon icon={X} size="xs" /> : <Icon icon={Menu} size="xs" />}
             </button>
           )}
           <a
@@ -296,7 +296,7 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
               </a>
             )}
             <button className="sticky-header__theme-btn hover-scale" onClick={handleThemeToggle} aria-label={`当前主题：${currentTheme}，点击切换`} title={`主题：${currentTheme}`}>
-              <Icon icon={ThemeIcon} size="sm" />
+              <Icon icon={ThemeIcon} size="xs" />
             </button>
           </div>
         )}
