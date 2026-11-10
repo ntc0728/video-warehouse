@@ -52,10 +52,22 @@
  1) 小电视白色剪影垫底副本（.ptr-tv-halo，纯矢量——原 SVG 引用滤镜 url(#ptr-halo)
     在高 DPR 手机上低分辨率栅格化再放大 → 光晕发糊，2026-11-11 用户实测后废弃）；
  2) 文字用「深色填充 + 白色描边」（paint-order: stroke fill），浅底看深色字、深底看白描边。
+ ⚠️ 定位链（2026-11-11 真机实测「四态全变白剪影，只有更新中正常」）：wrap 必须
+ position:relative，halo 才相对小电视盒绝对定位；且 absolute 的 halo 默认绘制在
+ static 的原稿之上 → fore 副本必须提 z-index:1，否则白色剪影盖住一切。
  ⚠️ settings 变体不渲染光晕副本。 */
+.ptr-overlay__indicator--default .ptr-tv-wrap {
+  position: relative;
+  display: block;
+}
+.ptr-overlay__indicator--default .ptr-tv-wrap > .ptr-tv {
+  position: relative;
+  z-index: 1;
+}
 .ptr-overlay__indicator--default .ptr-tv-halo {
   position: absolute;
   inset: 0;
+  z-index: 0;
   pointer-events: none;
 }
 .ptr-overlay__indicator--default .ptr-tv-halo .ptr-tv {
