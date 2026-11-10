@@ -65,18 +65,9 @@
   text-decoration: underline;
 }
 
-/* 移动端：与首页一致，不撑满整页，50vh 紧凑显示 */
-@media (width <= 767px) {
-  .token-required {
-    flex: none;
-    min-height: 50vh;
-  }
-}
-/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
-
-  html[data-device="app"] .token-required {
-    flex: none;
-    min-height: 50vh;
-  }
+/* 移动端不再 50vh 紧凑（2026-11-11 用户要求「页面居中显示」）：
+ 删除原 ≤767 / app 的 flex:none + min-height:50vh 覆盖，
+ 基础规则 flex:1 撑满宿主（.token-required-page 已建 flex 链）→ 全端垂直居中，
+ 与首页无 token 提示的高度链行为一致。 */
 
 

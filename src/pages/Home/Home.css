@@ -162,7 +162,10 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
 /* ── Empty / Error ──────────────────────────────────── */
 
 .home-empty {
+  /* flex:1 撑满 .home-page__content 剩余高：错误提示整页居中
+ （与无 token 提示/TokenRequired 同款语言；此前只有 min-height，提示贴顶） */
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   gap: var(--space-sm);
   justify-content: center;
