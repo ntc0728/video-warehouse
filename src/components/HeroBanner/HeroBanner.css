@@ -355,6 +355,10 @@ html[data-device="app"] .hero-banner__skeleton--btn {
   color: var(--color-text-tertiary);
   cursor: pointer;
   transition: color var(--dur-2xs) ease;
+  /* ⚠️ 必须显式恢复：按钮位于 .hero-banner__content（pointer-events:none 的
+ 文字遮罩层）内，真机点击走命中测试会被整层拦掉——桌面 evaluate.click()
+ 不做命中测试所以测不出来（2026-11-11 用户真机实测「点了没反应」）。 */
+  pointer-events: auto;
 }
 
 .hero-banner__retry:hover {

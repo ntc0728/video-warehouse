@@ -1202,6 +1202,13 @@ root[data-device] 的更高特异性压过 :root 的 (0,1,0)，与 --iptv-cols �
  宽度：合理区间（min(22rem, 视口-2rem)），文本居中；图标与文本同高（--icon-* 派生文字 token） */
 [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
   top: calc(var(--header-height) + var(--space-lg)) !important;
+  right: 0 !important;
+  /* 水平真居中（2026-11-11 用户实测 toast 靠右）：sonner 自身对 ol 容器写
+ left/right = offset 内距（实测 16px）却又把 width 钉成 clientWidth（390）→
+ 内容盒整体右移 offset/2，项内 margin:auto 居中跟着偏。
+ 强制 ol 铺满视口宽度，项级 left/right:0 + margin:auto 即视口居中。 */
+  left: 0 !important;
+  width: 100% !important;
 }
 
 body[data-player-toast="active"] [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
