@@ -171,10 +171,15 @@ export default function DetailPage() {
   useScrollRestore(`detail:${id}`);
 
   // 前进（PUSH/REPLACE）进入新的详情页时归顶；返回（POP）由 useScrollRestore 恢复，不覆盖。
+  // 仅当 id 真正变化（详情页间跳转）才归顶：首帧挂载 / 软刷新重挂载都交给
+  // useScrollRestore 恢复，否则刷新后滚动位置清零、fab-stack 随之消失。
   const scrollContainerRef = useScrollContainer();
   const navigationType = useNavigationType();
+  const lastScrollResetIdRef = useRef(id);
   useEffect(() => {
-    if (navigationType === 'POP') return;
+    const idChanged = lastScrollResetIdRef.current !== id;
+    lastScrollResetIdRef.current = id;
+    if (!idChanged || navigationType === 'POP') return;
     const el = scrollContainerRef.current;
     if (el) el.scrollTop = 0;
   }, [id, navigationType, scrollContainerRef]);

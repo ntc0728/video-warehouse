@@ -120,14 +120,14 @@
   height: calc(var(--space-2xl) * 1.2);
 }
 
-/* ── Mobile: 略放大按钮（2026-11-09 二轮：1.25× → 1.1×，uiScale 0.95 下 28.5→25.1px；
-   WCAG 2.5.8 AA 下限 24px，不再往下压）── */
+/* ── Mobile: 略放大按钮（2026-11-10 三轮回调：1.25 → 1.1 → 1.2；
+   uiScale 0.95 下 28.8×28.8px；WCAG 2.5.8 AA 下限 24px，仍留余量）── */
 @media (width <= 767px) {
   .back-to-top-button {
     right: var(--space-md);
     bottom: var(--space-lg);
-    width: calc(var(--space-2xl) * 1.1);
-    height: calc(var(--space-2xl) * 1.1);
+    width: calc(var(--space-2xl) * 1.2);
+    height: calc(var(--space-2xl) * 1.2);
   }
   /* App 端有底部 TabBar，需要额外间距 */
   [data-device="app"] .back-to-top-button {
@@ -139,8 +139,8 @@
   html[data-device="app"] .back-to-top-button {
     right: var(--space-md);
     bottom: var(--space-lg);
-    width: calc(var(--space-2xl) * 1.1);
-    height: calc(var(--space-2xl) * 1.1);
+    width: calc(var(--space-2xl) * 1.2);
+    height: calc(var(--space-2xl) * 1.2);
   }
   html[data-device="app"] /* App 端有底部 TabBar，需要额外间距 */
   [data-device="app"] .back-to-top-button {
@@ -315,6 +315,25 @@
   box-shadow:
     var(--focus-ring),
     0 4px 12px rgb(0 0 0 / 18%);
+}
+
+/* 刷新点击反馈：图标转一圈（与「换一换」同参数 0.6s / ease-out-expo）。
+ 类挂 <html>：软刷新会重挂载页面（本按钮卸载重建），组件级状态会丢，
+ html 级类让新按钮挂载后继续转完；不加 reduced-motion 豁免
+ （点击反馈动画刻意恒播，同 HeroBili 换一换）。 */
+@keyframes fab-refresh-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+html.fab-refreshing .fab-stack__refresh svg {
+  /* 600ms = --dur-md × 2.4（与 .fab-stack--visible 入场动画同一写法） */
+  animation: fab-refresh-spin calc(var(--dur-md) * 2.4) var(--ease-out-expo);
 }
 
 /* ── 「顶部」方形：覆盖 .back-to-top-button 的 fixed / 圆形 / 自带进出场 ──

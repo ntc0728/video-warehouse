@@ -17,6 +17,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavStore } from '@/stores/useNavStore';
 import { useScrollContainer, type ScrollContainerRef } from './useScrollContext';
 import { getPreviousPathname } from '@/lib/navigation';
+import { isContentRefreshing } from '@/lib/contentRefresh';
 
 /** 允许恢复滚动位置的来源路由前缀（如 ['detail', 'play'] 表示仅从详情/播放页进入时恢复）。 */
 export type RestoreFrom = Array<'detail' | 'play' | 'collections' | 'history' | 'browse' | 'home' | 'iptv'>;
@@ -68,11 +69,20 @@ export function useScrollRestore(
     }
     if (restoredRef.current) return;
 
+    const el = container.current;
+    // 软刷新（fab「刷新」）重挂载不是新进入：跳过 restoreFrom 门控，
+    // 无条件恢复刷新前位置，避免收藏/历史等页刷新后回顶、fab-stack 消失。
+    if (isContentRefreshing()) {
+      const target = getState(pageKey)?.scrollTop;
+      if (el && target != null && target > 0) el.scrollTop = target;
+      restoredRef.current = true;
+      return;
+    }
+
     const from = getPreviousPathname();
     const allowed = restoreFromRef.current;
     const shouldRestore = !allowed || allowed.some((r) => from != null && from.startsWith('/' + r));
 
-    const el = container.current;
     if (!shouldRestore) {
       // 不符合恢复条件：直接回顶，不读取/恢复保存位置
       if (el) el.scrollTop = 0;

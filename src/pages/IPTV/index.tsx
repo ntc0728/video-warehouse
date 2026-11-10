@@ -160,10 +160,16 @@ export default function IPTVPage() {
 
   const debouncedKeyword = useDebounce(searchKeyword, 300);
 
-  // 筛选变化时重置滚动到顶部（仅在本页为活动路由时执行；
+  // 筛选**真正变化**时重置滚动到顶部（仅在本页为活动路由时执行；
   // 离开 IPTV 页时“清空筛选”会把 selectedGroup 置空并触发本 effect，
-  // 若此时对共享滚动容器做平滑滚回顶部，会出现“先滑回顶部再跳转”的观感，故加守卫）
+  // 若此时对共享滚动容器做平滑滚回顶部，会出现“先滑回顶部再跳转”的观感，故加守卫）。
+  // ⚠️ 不能“挂载即执行”：软刷新（fab「刷新」）会重挂载本页，首帧筛选值与上次相同，
+  // 无条件回顶会把滚动位置清零、fab-stack 随之消失。按签名对比，只有筛选键变化才回顶。
+  const filterSigRef = useRef(`${selectedGroup ?? ''}|${selectedCat}|${debouncedKeyword}`);
   useEffect(() => {
+    const sig = `${selectedGroup ?? ''}|${selectedCat}|${debouncedKeyword}`;
+    if (sig === filterSigRef.current) return;
+    filterSigRef.current = sig;
     if (location.pathname !== '/iptv') return;
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [selectedGroup, selectedCat, debouncedKeyword, scrollContainerRef, location.pathname]);

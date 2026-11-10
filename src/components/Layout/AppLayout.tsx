@@ -15,6 +15,7 @@ import { useVirtualKeyboardInset } from '@/hooks/useVirtualKeyboardInset';
 import { useSpatialNavigation } from '@/hooks/useSpatialNavigation';
 import { isNativePlatform } from '@/lib/platform';
 import { setCurrentPathname, recordPopPrevious } from '@/lib/navigation';
+import { beginContentRefresh, endContentRefresh } from '@/lib/contentRefresh';
 import { ScrollContainerContext } from '@/hooks/useScrollContext';
 import { matchRoute, routeComponentMap, preloadAllRoutes } from './routeConfig';
 import { getRouteTitle, APP_NAME } from '@/hooks/useDocumentTitle';
@@ -297,12 +298,22 @@ export default function AppLayout() {
   // BackToTopButton 派发 kino:content-refresh → 给 RouteRenderer 换 key：
   // 当前页面组件整体重挂载（图片重新走 LazyImage IO、文本数据随组件重新请求/revalidate），
   // Layout 壳（侧栏/顶栏/滚动容器/page-transition 容器）不卸载，进场动画也不重放。
+  // 重挂载不是新导航：标记 beginContentRefresh，供 useScrollRestore 跳过 restoreFrom 门控、
+  // 保住刷新前的滚动位置（否则收藏/历史等页刷新后回顶，fab-stack 随之消失）。
   const [contentRefreshCount, setContentRefreshCount] = useState(0);
   useEffect(() => {
-    const onContentRefresh = () => setContentRefreshCount((c) => c + 1);
+    const onContentRefresh = () => {
+      beginContentRefresh();
+      setContentRefreshCount((c) => c + 1);
+    };
     window.addEventListener('kino:content-refresh', onContentRefresh);
     return () => window.removeEventListener('kino:content-refresh', onContentRefresh);
   }, []);
+  // 子组件 layout effect 先于本 effect 执行：页面 hook 已读到标记，此处再清除
+  useLayoutEffect(() => {
+    if (contentRefreshCount === 0) return;
+    endContentRefresh();
+  }, [contentRefreshCount]);
 
   return (
     <Tooltip.Provider delayDuration={200}>

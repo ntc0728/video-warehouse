@@ -32,6 +32,11 @@ interface BackToTopButtonProps {
 }
 
 const EXIT_DURATION_MS = 250;
+/** 刷新图标转圈时长（= CSS 动画时长，连续点击时用于重启计时） */
+const REFRESH_SPIN_MS = 600;
+/** 转圈类移除计时器（模块级：软刷新会重建按钮实例，实例级 ref 的旧计时器
+ * 会在连续点击时提前移除新一轮的类，把第二圈动画截断） */
+let refreshSpinTimer: number | null = null;
 /** 滚动停止多少毫秒后 FAB 才淡入（滚动中隐藏，停止后淡入并半透明化显示） */
 const SCROLL_IDLE_MS = 800;
 /** 点击「顶部」的平滑滚动时长（原生 smooth 观感僵硬/各端不一致，
@@ -72,6 +77,16 @@ export default function BackToTopButton({
     }
   }, []);
 
+  // 路径切换 → 强制隐藏（避免"幽灵显示"）
+  // ⚠️ 必须在滚动监听 effect 之前声明：页面重挂载（含 fab「刷新」软刷新）时两个
+  // passive effect 都会跑，后执行的滚动监听要以容器真实 scrollTop 为准重新判定
+  // ——否则「先读 1200 显示、再被本 effect 置 false」会让刷新后的 fab 永久消失
+  // （重挂载不会产生新的 scroll 事件，只能靠挂载时主动判定）。
+  useEffect(() => {
+    setShouldShow(false);
+    onVisibilityChange?.(false);
+  }, [location.pathname, onVisibilityChange]);
+
   // 滚动监听：超过阈值显示，否则隐藏；滚动进行中标记 isScrolling（FAB 淡出），
   // 停止 SCROLL_IDLE_MS 后取消标记（FAB 淡入）——避免按钮压在滚动中的内容上
   useEffect(() => {
@@ -100,12 +115,6 @@ export default function BackToTopButton({
       }
     };
   }, [scrollContainerRef, threshold, onVisibilityChange]);
-
-  // 路径切换 → 强制隐藏（避免"幽灵显示"）
-  useEffect(() => {
-    setShouldShow(false);
-    onVisibilityChange?.(false);
-  }, [location.pathname, onVisibilityChange]);
 
   // 协调 shouldShow ↔ shouldRender（用于 enter/exit 动画）
   useEffect(() => {
@@ -171,8 +180,22 @@ export default function BackToTopButton({
  * 刷新 = 软刷新（只刷新页面内容——图片、文本等重新请求，
  * 页面主体结构（Layout 壳/侧栏/顶栏/滚动容器）不重载）。
  * 由 AppLayout 监听 kino:content-refresh 后给当前路由组件换 key 重挂载实现。
+ *
+ * 点击反馈 = 图标转一圈（600ms）。转圈类挂在 <html> 而非按钮自身：
+ * 软刷新会重挂载页面（本按钮随之卸载重建），组件级 state/class 会随卸载丢失，
+ * html 级类让新建的按钮挂载后继续把这一圈转完；连续点击先移除再回读样式，从头重播。
  */
   const handleRefresh = useCallback(() => {
+    const root = document.documentElement;
+    root.classList.remove('fab-refreshing');
+    // 强制回流：连续点击时让动画从头重播（同值类的 remove/add 否则会被合并）
+    root.getBoundingClientRect();
+    root.classList.add('fab-refreshing');
+    if (refreshSpinTimer) window.clearTimeout(refreshSpinTimer);
+    refreshSpinTimer = window.setTimeout(() => {
+      document.documentElement.classList.remove('fab-refreshing');
+      refreshSpinTimer = null;
+    }, REFRESH_SPIN_MS);
     window.dispatchEvent(new CustomEvent('kino:content-refresh'));
   }, []);
 
