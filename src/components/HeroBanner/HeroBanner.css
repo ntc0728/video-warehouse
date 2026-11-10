@@ -333,6 +333,46 @@ html[data-device="app"] .hero-banner__skeleton--btn {
   opacity: 0.85;
 }
 
+/* 空态标题行：标题 + 重试按钮同行基线对齐（2026-11-11 用户拍板）。
+ 重试视觉/交互与栏目行 .tmdb-movierow-retry 同语言（24px 盒、tertiary→hover 主色）。 */
+.hero-banner__title-row {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.hero-banner__retry {
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color var(--dur-2xs) ease;
+}
+
+.hero-banner__retry:hover {
+  color: var(--color-primary);
+}
+
+.hero-banner__retry svg {
+  transition: transform var(--dur-2xs) ease;
+}
+
+.hero-banner__retry:hover svg {
+  transform: rotate(90deg);
+}
+
+.hero-banner__retry:active svg {
+  transform: rotate(180deg);
+}
+
 .hero-banner__meta {
   display: flex;
   flex-wrap: wrap;

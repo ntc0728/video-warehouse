@@ -12,7 +12,7 @@
  */
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Play, MonitorPlay } from 'lucide-react';
+import { Play, MonitorPlay, RefreshCw } from 'lucide-react';
 import { useIsMobile, useIsTV, useIsTVLike } from '@/hooks/useMediaQuery';
 import { useIsWideDesktop } from '@/hooks/useIsWideDesktop';
 import { buildImageUrl, buildImageSrcSet, fetchMovieImages, fetchTVImages } from '@/services/tmdbService';
@@ -49,6 +49,8 @@ interface HeroBannerProps {
   historyMap?: Map<string, { progress: number }>;
   /** hero 数据是否加载中（加载中且 items 为空时只显示骨架，不显示误导文字） */
   loading?: boolean;
+  /** 空态（暂无推荐）重试入口：标题右侧刷新图标，点击重拉 trending */
+  onRetry?: () => void;
    /**
  * Keep-Alive 激活信号：首页处于激活路由（页面可见）时为 true；
  * 切到其他页面时 AppLayout 用 display:none 隐藏（组件不卸载），此时为 false。
@@ -247,6 +249,9 @@ function HeroBannerClassic({
   onContinuePlay,
   historyMap,
   loading = false,
+  /** 空态（暂无推荐）重试入口：标题右侧刷新图标，点击重拉 trending（首页传 ensureHomeBlock force）。
+   * 重试期间 loading 置位 → banner 自动切回加载骨架，直至响应成功/失败。 */
+  onRetry,
   active = true,
   initialEnterDelay = 0,
 }: HeroBannerProps) {
@@ -803,7 +808,20 @@ function HeroBannerClassic({
           ) : (
             <div className="hero-banner__content">
               <div className="hero-banner__text">
-                <h1 className="hero-banner__title hero-banner__title--placeholder">暂无推荐</h1>
+                <div className="hero-banner__title-row">
+                  <h1 className="hero-banner__title hero-banner__title--placeholder">暂无推荐</h1>
+                  {onRetry && (
+                    <button
+                      type="button"
+                      className="hero-banner__retry"
+                      onClick={onRetry}
+                      aria-label="重试加载推荐"
+                      title="重新加载"
+                    >
+                      <Icon icon={RefreshCw} size="xs" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

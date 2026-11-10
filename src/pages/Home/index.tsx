@@ -219,6 +219,13 @@ export default function HomePage() {
     [handleCategorySelect],
   );
 
+  // banner 空态（暂无推荐）重试：force 重拉 trending，绕过 TTL/冷却（手动重试语义）；
+  // 重试期间 loading.trending 置位 → banner 自动切回加载骨架。
+  const bannerRetryHandler = useCallback(
+    () => void useTMDBStore.getState().ensureHomeBlock('trending', { force: true }),
+    [],
+  );
+
   // 行错误重试（2026-11-11）：错误行刷新图标 → force 重调该区块接口。
   // force 绕过 TTL/空数据判定与页内 I1 失败冷却（手动重试语义 = 用户明确要求再拉）；
   // 重试期间 loading.<key> 置位 → TMDBMovieRow 切 SkeletonCards，直至响应成功/失败。
@@ -645,6 +652,7 @@ export default function HomePage() {
             onContinuePlay={handleContinuePlay}
             historyMap={historyMap}
             loading={loading.trending}
+            onRetry={bannerRetryHandler}
             initialEnterDelay={enterPhase !== 'done' && !coldSkeletonShownRef.current ? 200 : 0}
           />
           <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
@@ -673,6 +681,7 @@ export default function HomePage() {
               onContinuePlay={handleContinuePlay}
               historyMap={historyMap}
               loading={loading.trending}
+              onRetry={bannerRetryHandler}
               initialEnterDelay={enterPhase !== 'done' && !coldSkeletonShownRef.current ? 200 : 0}
             />
             <div className="home-page__content page-transition-enter home-page__content--delayed-enter">
