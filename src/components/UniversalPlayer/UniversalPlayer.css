@@ -239,6 +239,12 @@
   align-items: center;
 }
 
+/* 滚动速度比 IPTVOSDBar 的全局 10s 再慢一档（14s = --dur-marquee 7s × 2）。
+ 特异性 (0,3,0) 压过 .marquee-track.marquee-scrolling 的 10s（2026-11-11 用户反馈偏快）。 */
+.up-header-title .marquee-track.marquee-scrolling {
+  animation-duration: calc(var(--dur-marquee) * 2);
+}
+
 .up-header-title-text {
   display: inline-flex;
   align-items: center;
