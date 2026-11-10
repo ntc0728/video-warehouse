@@ -683,6 +683,9 @@ export default function BrowsePage() {
     ? logical.items.length === 0
     : (!isCmsLoading && filteredCmsResults.length === 0);
   const currentError = searchMode === 'smart' ? error : cmsError;
+  // Token 未配置时 TMDB 请求必然失败（401）：这不是「加载失败」而是「还没数据」——
+  // 错误态让位给空态（与首页无 token 的提示口径一致），配置入口由设置页承担。
+  const showError = !!currentError && hasToken;
 
   // ── 首屏 chrome 骨架──────────────────────────
   // 首次进入 Browse，在本模式首轮接口响应结束前：左栏筛选 + 顶栏排序条
@@ -980,7 +983,7 @@ export default function BrowsePage() {
           {/* 加载失败 —— 与「搜不到」彻底分开（语义分家；
 结构对齐收藏/历史空态 Empty——保留 error 红叉
  区分「加载失败 vs 暂无数据」，去掉重试按钮，不再提供页内恢复入口）。 */}
-          {!showResultsLoading && currentError && (searchMode === 'smart'
+          {!showResultsLoading && showError && (searchMode === 'smart'
             ? logical.items.length === 0
             : cmsResults.length === 0) && (
             <Empty
@@ -996,7 +999,7 @@ export default function BrowsePage() {
  三档细分：源没返回 / 本地筛选筛空 / 还没输入搜索词
  —— 旧版三档共用「尝试换个关键词搜索」，浏览态（无词 + 筛选空）时
  提示去搜索属于误导，本地筛选筛空时又指错方向。 */}
-          {!showResultsLoading && isEmpty && !currentError && (
+          {!showResultsLoading && isEmpty && !showError && (
             <Empty
               title={searchMode === 'cms' && !query ? '搜索影视内容' : '暂无结果'}
               description={
