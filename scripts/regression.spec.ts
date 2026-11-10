@@ -842,7 +842,8 @@ test.describe('UI 整改', () => {
     });
     expect(state.navHasSettings).toBe(false);
     expect(state.footerHasSettings).toBe(true);
-    expect(state.navItemCount).toBe(5);
+    // 2026-11-11：移动抽屉新增「热度榜」项（用户要求），5 → 6
+    expect(state.navItemCount).toBe(6);
   });
 
   test('搜索: 进入浏览页清旧搜索词（UI-006；UI-005 分类图标不越界已随分类快捷入口删除，2026-11-08）', async ({ page }) => {

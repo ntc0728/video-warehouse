@@ -9,6 +9,7 @@ import { useCustomNavigate } from '@/lib/navigation';
 import {
   Home,
   Search,
+  Flame,
   Tv,
   Star,
   Clock,
@@ -24,6 +25,7 @@ import { Icon } from "@/components/ui/Icon";
 const ariaLabels: Record<string, string> = {
   '/': '首页',
   '/browse': '搜索中心',
+  '/chart': '热度榜',
   '/iptv': 'IPTV',
   '/collections': '收藏',
   '/history': '历史记录',
@@ -39,6 +41,8 @@ interface SidebarProps {
 const tabs = [
   { key: '/', title: '首页', icon: <Icon icon={Home} size="md" />, activeIcon: <Icon icon={Home} size="md" strokeWidth={2.5} /> },
   { key: '/browse', title: '搜索中心', icon: <Icon icon={Search} size="md" />, activeIcon: <Icon icon={Search} size="md" strokeWidth={2.5} /> },
+  // 热度榜（2026-11-11 用户要求补）：移动 web 汉堡菜单此前缺项，仅桌面顶栏有入口
+  { key: '/chart', title: '热度榜', icon: <Icon icon={Flame} size="md" />, activeIcon: <Icon icon={Flame} size="md" strokeWidth={2.5} /> },
   { key: '/iptv', title: 'IPTV', icon: <Icon icon={Tv} size="md" />, activeIcon: <Icon icon={Tv} size="md" strokeWidth={2.5} /> },
   { key: '/collections', title: '收藏', icon: <Icon icon={Star} size="md" />, activeIcon: <Icon icon={Star} size="md" strokeWidth={2.5} /> },
   { key: '/history', title: '历史记录', icon: <Icon icon={Clock} size="md" />, activeIcon: <Icon icon={Clock} size="md" strokeWidth={2.5} /> },
