@@ -52,14 +52,24 @@ export default function SettingsSubPage({ tab, onBack, children }: SettingsSubPa
     document.body.classList.remove('settings-subpage--closing');
   }, []);
 
+  // 挂载即清一次 --closing：兜底上一次离场若未走到 unmount cleanup（极端情况），
+  // 防止新子页打开时入场视差被残留标记挡住。
+  useEffect(() => {
+    document.body.classList.remove('settings-subpage--closing');
+  }, []);
+
   // 仅退出动画（--leaving）结束才回调；进入动画的 animationend 忽略。
   // 必须校验 e.target 为容器自身：animationend 会冒泡，后代元素动画结束
   // 也会被此处捕获，若不过滤会在离场途中误触发 onBack 导致子页提前卸载。
+  // ⚠️ 这里**不能**移除 body 的 --closing 标记：标记负责压住入场视差规则
+  // （body:has(.settings-subpage) .settings-page 的 translateX(-6%)）。
+  // 若在 onBack 之前移除，React 尚未卸载 portal 的窗口内规则会重新命中，
+  // 菜单被要求再滑向 -6% → 卸载瞬间又弹回，真机掉帧时表现为「返回完成后水平晃」。
+  // 标记统一由 unmount cleanup 移除（DOM 已摘除、:has 不再命中，无重入窗口）。
   const handleAnimationEnd = useCallback((e: React.AnimationEvent<HTMLDivElement>) => {
     if (e.target !== containerRef.current) return;
     if (!leavingRef.current) return;
     if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
-    document.body.classList.remove('settings-subpage--closing');
     onBack();
   }, [onBack]);
 

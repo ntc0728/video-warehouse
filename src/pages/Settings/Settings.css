@@ -1638,6 +1638,17 @@ html[data-device="app"] .modal-content-animate.changelog-modal {
  （fixed 定位的 containing block 才能回退到视口，覆盖全局导航栏）。
  注：容器层 data-variant="soft" 已改用 fill-mode: none，动画结束后不再残留
  transform；这里保留 animation:none 只是防止子页打开瞬间动画仍在播而干扰视差。 */
+/* 本页面实例已开过子页 → 永久关闭进场动画（pt-enter-soft）。
+ 必要性：进场动画由 .page-transition[data-variant="soft"] > * 无条件挂载，
+ 而视差规则靠 animation:none 压制它。压制规则在「关闭中」（:not(--closing)）
+ 或「portal 卸载后」（:has 消失）必然失效，浏览器会把进场动画当成新动画
+ 从头重播（translateY 6px + opacity 0.45→1）→ 与返回视差叠加成闪晃。
+ 标记位由 Settings/index.tsx 在首次打开子页时加上、本页面实例内不再移除。
+ !important 用于压过 [data-revisit="true"] 的 (0,4,0) 入场规则。 */
+.settings-page--no-enter {
+  animation: none !important;
+}
+
 @media (width <= 767px) {
   .settings-page {
     gap: var(--space-md);
@@ -1651,17 +1662,26 @@ html[data-device="app"] .modal-content-animate.changelog-modal {
  真机上返回/进入的 300ms 内逐帧卡顿（用户反馈「页面抖动抽搐」的主嫌疑）。
  will-change 在子页打开瞬间（菜单还被不透明子页盖住时）预建合成层，
  避免 transition 起播那一刻才提升层造成首帧顿挫。 */
-  body:has(.settings-subpage) .settings-page {
+  body:has(.settings-subpage):not(.settings-subpage--closing) .settings-page {
     transform: translateX(-6%) scale(0.98);
     transform-origin: left center;
-    /* 方案1：与子页同曲线同时长（0.3s + iOS push 曲线），父视差与子页滑动同步 */
+    /* 方案1：与子页同曲线同时长（0.3s + iOS push 曲线），父视差与子页滑动同步。
+    ⚠️ :not(--closing) 不可删：离场期间必须让本规则整体失效，否则「移除标记→
+    React 卸载 portal」之间的一小段窗口内规则重新命中，菜单会被要求二次滑向 -6%
+    再弹回，真机掉帧时表现为返回后的水平晃动（headless 1ms 窗口撞不进帧）。 */
     transition: transform var(--dur-lg) cubic-bezier(.32, .72, 0, 1);
     will-change: transform;
     animation: none;
   }
-  /* 子页滑出（返回）时菜单平滑归位，与子页右滑同步，强化「返回」层级感 */
+  /* 子页滑出（返回）时菜单平滑归位，与子页右滑同步，强化「返回」层级感。
+ 入场规则已用 :not(--closing) 整体让位 → transform 归位的 transition 必须在
+ 本规则里重新声明（否则直接瞬移）。 */
   body.settings-subpage--closing .settings-page {
     transform: none;
+    transition: transform var(--dur-lg) cubic-bezier(.32, .72, 0, 1);
+    will-change: transform;
+    /* 与入场规则同口径：离场期间也不允许 pt-enter-soft 抢通道 */
+    animation: none;
   }
   /* 方案1：无障碍守卫 —— 关闭进出动画与父视差/压暗，直接显隐 */
   

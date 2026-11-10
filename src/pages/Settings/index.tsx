@@ -78,6 +78,17 @@ export default function SettingsPage() {
   const state = useSettingsState();
   const { appearance, video, playback, iptv, about, modals } = state;
 
+  // ── 「本页面实例已开过子页」标记 ───────────────────────────
+  // .page-transition[data-variant="soft"] > * 的进场动画（pt-enter-soft）只会
+  // 在页面挂载时播一次；但子页的视差规则靠 animation:none 压制它，一旦压制规则
+  // 在「关闭中/卸载边界」短暂失效，浏览器会把它当成新动画**从头重播**
+  // （translateY 6px + opacity 0.45→1），与返回视差叠加 → 真机上表现为返回后闪晃。
+  // 用页面实例级标记永久关闭本实例的进场动画：开过一次子页后它早已播完，
+  // 关闭全过程（含 portal 卸载瞬间）都不再有机会重播。路由重进 = 新实例，标记归零。
+  const [subPageOpened, setSubPageOpened] = useState<boolean>(() =>
+    isDesktop ? false : getDeepLinkTab() !== null,
+  );
+
   const handleSelectTab = useCallback((tab: SettingsTabKey) => {
     setActiveTab(tab);
   }, []);
@@ -85,6 +96,7 @@ export default function SettingsPage() {
   const handleSelectMenu = useCallback((tab: SettingsTabKey) => {
     setActiveTab(tab);
     setMobileSubPage(tab);
+    setSubPageOpened(true);
   }, []);
 
   const handleSubPageBack = useCallback(() => {
@@ -139,7 +151,10 @@ export default function SettingsPage() {
     const tab = new URLSearchParams(location.search).get('tab');
     if (tab && (SETTINGS_TAB_KEYS as string[]).includes(tab)) {
       setActiveTab(tab as SettingsTabKey);
-      if (!isDesktop) setMobileSubPage(tab as SettingsTabKey);
+      if (!isDesktop) {
+        setMobileSubPage(tab as SettingsTabKey);
+        setSubPageOpened(true);
+      }
     }
   }, [location.search, isDesktop]);
 
@@ -186,7 +201,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div ref={pageRef} className="page-padding settings-page">
+    <div ref={pageRef} className={`page-padding settings-page${subPageOpened ? ' settings-page--no-enter' : ''}`}>
       {isDesktop ? (
         <>
         <div className="settings-desktop-card">
