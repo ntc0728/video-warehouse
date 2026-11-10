@@ -49,6 +49,8 @@ import { useCustomNavigate } from '@/lib/navigation';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useDocumentTitle } from '@/hooks';
+import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
+import TokenRequired from '@/components/TokenRequired';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import ChartSkeleton, { ChartRowSkeleton } from './ChartSkeleton';
 import './Chart.css';
@@ -177,6 +179,8 @@ export default function ChartPage() {
   const [feed, setFeed] = useState<ChartFeed | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // TMDB token：未配置时整页只渲染 TokenRequired 提示（见主 return 前），不发请求
+  const hasToken = useHasTmdbToken();
   /* 本次会话是否已成功加载过任意榜单 —— 区分「首载」与「切 tab/时间窗」。
  首载 → 页级骨架 ChartSkeleton（与 Browse/Collections 同流派）；
  之后 → 居中「小电视 + 加载中…」。 */
@@ -235,9 +239,11 @@ export default function ChartPage() {
   );
 
   useEffect(() => {
+    // 未配置 token：整页只显示 TokenRequired，不发任何请求；配置后（hasToken 翻转）自动装载
+    if (!hasToken) return;
     loadFeed(activeTab, trendWindow, false, collectionDef);
     return () => abortRef.current?.abort();
-  }, [activeTab, trendWindow, collectionDef, loadFeed]);
+  }, [activeTab, trendWindow, collectionDef, loadFeed, hasToken]);
 
   // 无缝滚动加载下一页：去重后 0 新增视为到底（mock/漂移场景防死循环）
   const loadMore = useCallback(() => {
@@ -302,6 +308,15 @@ export default function ChartPage() {
   /** 仅「本次会话首载」走骨架；切 tab / 时间窗仍走下方居中态（见 everLoaded 注释） */
   const showInitialSkeleton = showInitialLoading && !everLoaded;
   const isTrend = activeTab === 'trend';
+
+  // ── TMDB Access Token 未配置：整页提示（与首页/详情同款，页面元素一律不渲染）──
+  if (!hasToken) {
+    return (
+      <div className="page-padding token-required-page">
+        <TokenRequired />
+      </div>
+    );
+  }
 
   return (
     <div className="page-padding chart-page content-shell">
