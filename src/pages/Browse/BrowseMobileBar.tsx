@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import './BrowseMobileBar.css'
 import type { FilterBarProps, FilterBarValue } from '@/components/FilterBar/FilterBar'
 import { YEAR_OLDER_LABEL, type RegionOption } from '@/components/FilterBar/constants'
 import FilterBar from '@/components/FilterBar/FilterBar'
 import Drawer from '@/components/ui/Drawer'
+import { Icon } from '@/components/ui/Icon'
 import type { TMDBGenre } from '@/types/tmdb'
 import { CATEGORY_CONFIG, CATEGORY_LABELS } from './constants'
 
@@ -19,6 +21,8 @@ interface BrowseMobileBarProps {
   tvGenres: TMDBGenre[]
   /** 结果数：与桌面结果头同口径的钉定值（pinnedReachable || pinnedTotal || totalResults） */
   resultCount: number
+  /** 新一轮搜索落位前（无旧数据）为 true：与桌面结果头一致显示「搜索中…」而非「共 0 条」 */
+  resultsLoading: boolean
 }
 
 function genreName(id: number, all: { id: number; name: string }[]): string {
@@ -36,6 +40,7 @@ export default function BrowseMobileBar({
   movieGenres,
   tvGenres,
   resultCount,
+  resultsLoading,
 }: BrowseMobileBarProps) {
   const { value, onChange, excludedGenreIds = [] } = filterBarProps
   const [open, setOpen] = useState(false)
@@ -164,7 +169,18 @@ export default function BrowseMobileBar({
               筛选
               <span className={`bmb-badge${activeCount === 0 ? ' zero' : ''}`}>{activeCount}</span>
             </button>
-            <span className="bmb-result-count">共 {resultCount.toLocaleString('zh-CN')} 条</span>
+            <span className="bmb-result-count" role="status">
+              {/* 与桌面 .browse-sort-bar__count 同口径：新搜索落位前显示「搜索中…」+ 转圈，
+                  避免首屏/换词期间先闪「共 0 条」再跳成真实总数 */}
+              {resultsLoading ? (
+                <>
+                  搜索中…
+                  <Icon icon={Loader2} size="xs" className="browse-count-spin" />
+                </>
+              ) : (
+                <>共 {resultCount.toLocaleString('zh-CN')} 条</>
+              )}
+            </span>
           </div>
         )}
       </div>
