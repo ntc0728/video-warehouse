@@ -82,11 +82,12 @@
   stroke-width: 4;
   paint-order: stroke;
 }
-/* 电波（两道弧线）单独收细：暗底下白光晕直接决定视觉粗细（用户反馈「有点粗」）。
- 本体 1.5px（TvMascot.css）+ 光晕 2.5px → 白弧约 2.5px，与机身 4px 光晕明显分层；
- 首轮 3px 观感差异不足（用户复测「看不出效果」）再收半档。 */
-.ptr-overlay__indicator--default .ptr-tv-halo .ptr-tv__wave path {
-  stroke-width: 2.5;
+/* 电波（两道弧线）**不参与光晕副本**（2026-11-11 用户复测「看不出两道弧线」）。
+ 内弧 r13 / 外弧 r17 中心只隔 4 个 viewBox 单位（渲染后 ~2–3px），光晕每侧外扩
+ ~1.25 会把两弧之间的缝填成一条白带 → 只剩一根粗白弧。
+ 电波浮在小电视上方、不压内容，本身用主题前景色即足够可读，无需白描边垫底。 */
+.ptr-overlay__indicator--default .ptr-tv-halo .ptr-tv__wave {
+  display: none;
 }
 .ptr-overlay__indicator--settings .ptr-tv-halo {
   display: none;
