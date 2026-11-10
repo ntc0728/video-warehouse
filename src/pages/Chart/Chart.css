@@ -479,4 +479,34 @@ html[data-device="app"] .chart-row__desc { display: none; }
 html[data-device="app"] .chart-row__rank { flex-basis: var(--comp-chart-rank-w); }
 html[data-device="app"] .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
 
+/* ── 移动端：分类 tab / 趋势时间窗按钮对齐 IPTV 筛选 chip（2026-11-11 用户要求）──
+ 高度 24px 档（Ant Design Mobile / Vant Tag 同族，WCAG 2.5.8 AA 24×24 下限），
+ padding-block 归零由 height 决定；桌面（≥768 非 app）保持 comp-tab-height 原档。
+ 窗口按钮原「2xs+1px 光学补偿」padding 是为选中描边配平——移动端整体重写 padding 后
+ 选中态走底色无描边，补偿随之失效即删。 */
+@media (width <= 767px) {
+  .chart-tabs__tab,
+  .chart-tabs__window-btn,
+  .chart-tabs__window-btn--on {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(24px * var(--ui-scale));
+    padding-block: 0;
+    padding-inline: var(--space-sm);
+  }
+}
+
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+html[data-device="app"] .chart-tabs__tab,
+html[data-device="app"] .chart-tabs__window-btn,
+html[data-device="app"] .chart-tabs__window-btn--on {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(24px * var(--ui-scale));
+  padding-block: 0;
+  padding-inline: var(--space-sm);
+}
+
 /* ── Reduced motion ── */
