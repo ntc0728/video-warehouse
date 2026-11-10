@@ -312,7 +312,10 @@ html[data-device="app"] .home-disclaimer {
   width: 100%;
   max-width: 60%;
   padding: var(--space-xl);
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), transparent);
+  /* 文字区压暗层镜像真实 banner 的文字渐变；0.45 → 0.3（2026-11-11）：
+   手机暗色下 0.45 把左侧扫光压成近黑（用户观感「骨架全黑」），
+   骨架只需暗示「文字在这里」，无需照片级遮罩强度。 */
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), transparent);
   pointer-events: none;
 }
 

@@ -172,15 +172,21 @@
 .hero-banner__bg-placeholder {
   position: absolute;
   inset: 0;
-  /* 兜底深色，与 .hero-banner__main 一致（问题 #3） */
-  background: var(--color-media-surface);
-  animation: heroPlaceholderPulse 4s ease-in-out infinite;
-  transform-origin: center center;
-}
-
-@keyframes heroPlaceholderPulse {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.04); }
+  /* 2026-11-11：原「--color-media-surface 纯深底 + scale 脉冲」在手机上就是一整块黑
+ （用户实测「banner 加载及骨架全黑」），没有任何加载反馈。
+ 改为全站骨架扫光（同 thumbnail-skeleton-bg：shimmer 渐变 + 25% 黑垫底 overlay），
+ 明暗与其它骨架卡一致；图片就绪后的深底仍由 .hero-banner__main 承担不变。 */
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-placeholder-shimmer-a) 25%,
+      var(--color-placeholder-shimmer-b) 50%,
+      var(--color-placeholder-shimmer-a) 75%
+    ),
+    rgba(0, 0, 0, 0.25);
+  background-size: 200% 100%, 100% 100%;
+  background-blend-mode: overlay;
+  animation: shimmer var(--card-shimmer-duration) infinite;
 }
 
 .hero-banner__mask {
