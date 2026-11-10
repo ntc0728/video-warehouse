@@ -325,6 +325,16 @@
   line-height: 1;
 }
 
+/* 剧集格的信息型标题（特别篇篇名等）：居中，最多 3 行，溢出省略 */
+.playlist-cell--ep .playlist-cell-ep-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  text-align: center;
+  word-break: break-word;
+}
+
 /* 线路：矩形卡片，名称 + 类型角标 */
 .playlist-cell--line {
   gap: var(--space-3xs);

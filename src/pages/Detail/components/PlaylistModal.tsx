@@ -69,6 +69,12 @@ function sortByNumber(eps: Episode[]): Episode[] {
   return [...eps].sort((a, b) => (a.number || 0) - (b.number || 0));
 }
 
+/** 裸集号标题（第01集 / 第1话 / 01）：选集格渲染序号即可，不占版面 */
+function isPlainEpisodeTitle(title: string): boolean {
+  const t = title.trim();
+  return /^第\s*\d+\s*[集话話期]$/.test(t) || /^\d+$/.test(t);
+}
+
 // 根据 cell 取到对应的进度记录。进度以「内容身份」为准（与 store.addHistory
 // 的去重键一致）：
 // - 电影（line）：按线路 URL（line.url）独立，每条线路各自维护进度
@@ -593,7 +599,13 @@ export default function PlaylistModal({
                     {showAll && (
                       <span className="playlist-cell-season">S{it.seasonNumber}</span>
                     )}
-                    <span className="playlist-cell-num">{it.number}</span>
+                    {/* 裸「第N集/纯数字」标题 → 渲染序号；有信息量的标题（特别篇篇名等）
+                        → 渲染标题文本，序号只在 hover title 里看不出内容差别 */}
+                    {isPlainEpisodeTitle(it.title) ? (
+                      <span className="playlist-cell-num">{it.number}</span>
+                    ) : (
+                      <span className="playlist-cell-name playlist-cell-ep-title">{it.title}</span>
+                    )}
                     {/* 勾号与「已看」或「有播放进度」联动：跨季/聚合视图里带进度的 cell 也显示右上角 ✓ */}
                     {isPlayed && (
                       <span
