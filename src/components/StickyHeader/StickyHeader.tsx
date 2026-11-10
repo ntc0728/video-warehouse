@@ -9,7 +9,6 @@ import { useCustomNavigate } from '@/lib/navigation';
 import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Tv, User, House, Search, Flame } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useIsTV, useIsMobileLayout } from '@/hooks/useMediaQuery';
-import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
 import { useSettingsStore } from '@/stores';
 import { findHomeCollectionDef } from '@/stores/useTMDBStore';
 import { isNativePlatform } from '@/lib/platform';
@@ -33,10 +32,6 @@ const PRIMARY_NAV_ITEMS: NavItem[] = [
   { key: 'chart', title: '热度榜', icon: Flame, path: '/chart' },
   { key: 'iptv', title: 'IPTV', icon: Tv, path: '/iptv' },
 ];
-
-/** 未配置 TMDB Access Token 时置灰的主导航项（这些页面全部依赖 TMDB 数据，无 token 必然空/失败；
- * IPTV 走 M3U/EPG 不依赖 token，历史/收藏是本地数据 —— 均保持可用） */
-const TMDB_DEPENDENT_NAV_KEYS = new Set(['home', 'browse', 'chart']);
 
 const THEME_ICONS = [Sun, Moon, Monitor] as const;
 const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
@@ -165,26 +160,20 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
 
   const ThemeIcon = THEME_ICONS[THEME_CYCLE.indexOf(currentTheme)] || Monitor;
 
-  // TMDB token 未配置 → 依赖 TMDB 的主导航项置灰不可点（IPTV / 历史 / 收藏不受影响）
-  const hasToken = useHasTmdbToken();
-
   const renderNavItem = (item: NavItem) => {
-    const disabled = !hasToken && TMDB_DEPENDENT_NAV_KEYS.has(item.key);
     const onClick = item.path === '/' ? goHome : () => handleNavClick(item.path);
     return (
       <a
         key={item.key}
         href={item.path}
-        className={`sticky-header__nav-item hover-scale${!disabled && isActive(item.path) ? ' sticky-header__nav-item--active' : ''}${disabled ? ' sticky-header__nav-item--disabled' : ''}`}
-        aria-disabled={disabled || undefined}
+        className={`sticky-header__nav-item hover-scale${isActive(item.path) ? ' sticky-header__nav-item--active' : ''}`}
         onClick={(e) => {
           // 修饰键 / 中键放行（新标签打开），普通点击走应用内导航
           if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
           e.preventDefault();
-          if (disabled) return;
           onClick();
         }}
-        title={disabled ? `${item.title}（需在设置中配置 TMDB Access Token）` : item.title}
+        title={item.title}
       >
         <Icon icon={item.icon} size={isTV ? 'md' : 'sm'} /><span className="sticky-header__nav-label">{item.title}</span>
       </a>

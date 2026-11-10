@@ -209,20 +209,6 @@
   font-weight: 700;
 }
 
-/* TMDB token 未配置时依赖 TMDB 的主导航项置灰：
- 保留占位（布局稳定、意图可见），禁用点击（cursor + 事件层拦截）；
- 原因写在 title tooltip（「需在设置中配置 TMDB Access Token」）。
- IPTV / 历史 / 收藏不依赖 token，不受影响。 */
-.sticky-header__nav-item--disabled {
-  color: var(--color-text-tertiary);
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.sticky-header__nav-item--disabled:hover {
-  color: var(--color-text-tertiary);
-}
-
 /* ── Theme Toggle ──────────────────────────────────── */
 
 .sticky-header__theme-btn {
