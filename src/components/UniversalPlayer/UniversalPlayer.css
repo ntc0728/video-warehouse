@@ -1843,8 +1843,9 @@ html[data-player-header-controls="true"] .up-player-toast {
 
 /* 播放器内居中提示（截图成功/失败 + 移动端操作类 + 更多设置操作类）。
  位置由 PlayerToast.tsx 的 measureCenterPos() 动态计算并写入 inline style：
- 水平 = 播放器容器水平居中；垂直 = 播放器高度约 30% 处（居中靠上，不遮挡视频主体）；
- 移动端（mobileCenter）额外避让 up-player-header，确保在其下方。
+ 水平 = 播放器容器水平居中；
+ 垂直 = 桌面端（截图类）播放器高度约 30% 处（居中靠上，不遮挡视频主体）；
+ 移动端（mobileCenter）= 顶部胶囊，锚定 up-player-header 下沿（隐藏时贴播放器顶缘）。
  CSS 的 top:50%/left:50% 仅为 JS 未就绪时的兜底，transform:translate(-50%,-50%) 使元素以 top/left 为中心。 */
 .up-player-center-toast {
   position: fixed;
@@ -1873,6 +1874,13 @@ html[data-player-header-controls="true"] .up-player-toast {
 }
 .up-player-center-toast__text {
   text-align: center;
+}
+/* 移动端顶部胶囊变体（.up-player-center-toast--top，仅 mobileCenter 渲染）：
+ 字号降 --text-xs、放开 nowrap 允许两行换行——长文案（如「自动播放被拦截…」）
+ 不再溢出胶囊底色。位置锚定 header 下沿由 JS 写入 inline style，此处只管观感。 */
+.up-player-center-toast--top {
+  font-size: var(--text-xs);
+  white-space: normal;
 }
 [data-theme="light"] .up-player-center-toast {
   background: rgba(0, 0, 0, 0.78);

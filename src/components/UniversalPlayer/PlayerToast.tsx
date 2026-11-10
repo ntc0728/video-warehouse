@@ -57,8 +57,8 @@ const TOAST_ICONS: Record<Exclude<PlayerToastType, 'default'>, { icon: LucideIco
  * 播放器内提示：操作类（播放/暂停、音量、切线路、切频道、频道号等）+ 更多设置操作类。
  * - 桌面端：操作类提示渲染于播放器右上角（.up-player-toast），紧贴右上角（top: space-lg）——
  * IPTV 播放页全屏按钮已移至右下角，头部右上角无控件可避让；与全局 sonner toast（中间靠上）区分。
- * - 移动端（mobileCenter，仅真实移动设备 App / 真实手机 UA）：操作类提示改在屏幕居中渲染
- * （.up-player-center-toast，portal 到 body），与更多设置提示一致；
+ * - 移动端（mobileCenter，仅真实移动设备 App / 真实手机 UA）：操作类提示改为顶部胶囊
+ * （.up-player-center-toast--top，portal 到 body，锚定 header 下沿），与更多设置提示一致；
  * 桌面窄窗（视口 <768 但非移动设备）仍走右上角 .up-player-toast。
  * 统一 3s 自动消失；show(msg, duration, type) 支持语义色图标。
  */
@@ -92,10 +92,14 @@ export function ToastProvider({
   /**
  * 测量居中提示的目标锚点：
  * - `roomy`：播放器在视口内还留有足够可见高度（≥ MIN_TOAST_ROOM）
- * - 播放器可见时：锚到「播放器 ∩ 视口」的可见交集内 —— 水平居中于播放器，
- * 垂直在播放器高度 30% 处（居中靠上，不遮挡视频主体），并避让 up-player-header。
- * ⚠️ 提示以 top 为中心（translate(-50%,-50%)），余量必须 ≥ 提示半高（~18px）
- * 才不会与 header 重叠（历史 bug：余量 12px 时提示上半截伸进 header 区域）。
+ * - 移动端（mobileCenter，2026-11-11 拍板「顶部胶囊」）：水平居中于播放器，
+ * 垂直锚定 up-player-header 下沿（header 隐藏时退回播放器顶缘）——位置恒定不随
+ * 播放器高度比例/滚动漂移，且顶部是唯一无争抢区带（中央=播放按钮+seek HUD，
+ * 底部=控制栏+字幕）。y 为提示中心（translate(-50%,-50%)），36 = 提示半高
+ * (~18px) + 18px 视觉间距。
+ * - 桌面端（截图类提示）：维持原「播放器高度 30% 处（居中靠上）」锚点不动，
+ * 同样避让 up-player-header。⚠️ 余量必须 ≥ 提示半高（历史 bug：12px 时提示
+ * 上半截伸进 header 区域）。
  * - 播放器完全滚出视口时：退回视口定位（居中靠上），由调用方决定是否显示。
  */
   const resolveCenterAnchor = useCallback((): { x: number; y: number; roomy: boolean } => {
@@ -113,17 +117,26 @@ export function ToastProvider({
     const visibleTop = Math.max(rect.top, 0);
     const visibleBottom = Math.min(rect.bottom, window.innerHeight);
     if (visibleBottom - visibleTop < MIN_TOAST_ROOM) return viewportFallback;
-    // 居中靠上：播放器高度 30% 处
-    let y = rect.top + rect.height * 0.3;
-    // 避让 up-player-header（返回栏 + 右上角操作组）：仅 header 可见时；
-    // 隐藏态（.up-player-header-hidden，opacity:0）不遮挡任何内容，无需避让
+    // header 实际高度：可见时取实测值；隐藏态（.up-player-header-hidden，opacity:0）
+    // 按 0 计——移动端提示退回播放器顶缘，桌面端 30% 锚点无需避让
     const header = el.querySelector<HTMLElement>('.up-player-header');
-    if (header && !header.classList.contains('up-player-header-hidden')) {
-      const headerH = header.getBoundingClientRect().height;
-      if (headerH > 0) {
-        // 余量 = 提示半高(~18px) + 间距，确保提示完整在 header 之下
-        y = Math.max(y, rect.top + headerH + 36);
-      }
+    const headerH = header && !header.classList.contains('up-player-header-hidden')
+      ? header.getBoundingClientRect().height
+      : 0;
+    if (mobileCenter) {
+      // 移动端顶部胶囊：header 下沿（+半高 18px + 18px 间距）
+      const y = rect.top + headerH + 36;
+      const minY = visibleTop + EDGE_MARGIN;
+      const maxY = visibleBottom - EDGE_MARGIN;
+      const clampedY = maxY > minY ? Math.min(Math.max(y, minY), maxY) : (visibleTop + visibleBottom) / 2;
+      return { x: rect.left + rect.width / 2, y: clampedY, roomy: true };
+    }
+    // 桌面端（截图类提示）：居中靠上，播放器高度 30% 处
+    let y = rect.top + rect.height * 0.3;
+    // 避让 up-player-header（返回栏 + 右上角操作组）：仅 header 可见时
+    if (headerH > 0) {
+      // 余量 = 提示半高(~18px) + 间距，确保提示完整在 header 之下
+      y = Math.max(y, rect.top + headerH + 36);
     }
     // 夹取到可见交集内：容器滚到只剩一条时（如用户滚到剧集列表后触发错误提示）
     // rect.top 为负，不夹取会把提示带到视口外（曾实测 centerY=-422 不可见）
@@ -131,7 +144,7 @@ export function ToastProvider({
     const maxY = visibleBottom - EDGE_MARGIN;
     y = maxY > minY ? Math.min(Math.max(y, minY), maxY) : (visibleTop + visibleBottom) / 2;
     return { x: rect.left + rect.width / 2, y, roomy: true };
-  }, [containerRef]);
+  }, [containerRef, mobileCenter]);
 
   /** 滚动 / 尺寸变化时重测：播放器一旦滚出视口，跟随播放器的提示就不再显示 */
   const measureCenterPos = useCallback(() => {
@@ -229,7 +242,7 @@ export function ToastProvider({
   const renderCenterToast = (msg: string, type: PlayerToastType, isExiting: boolean) =>
     createPortal(
       <div
-        className={`up-player-center-toast${isExiting ? ' up-player-center-toast--exiting' : ''}${type !== 'default' ? ` up-player-center-toast--${type}` : ''}`}
+        className={`up-player-center-toast${mobileCenter ? ' up-player-center-toast--top' : ''}${isExiting ? ' up-player-center-toast--exiting' : ''}${type !== 'default' ? ` up-player-center-toast--${type}` : ''}`}
         style={{ top: centerPos.y, left: centerPos.x }}
       >
         {type !== 'default' && (
