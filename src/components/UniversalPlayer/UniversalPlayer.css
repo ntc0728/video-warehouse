@@ -213,23 +213,18 @@
 
 .up-header-title {
   flex: 1;
-  /* 换源后集名可能很长（如「元旦特辑：戴立克的革命·HD中字」badge ≈225px，
-   加剧名单行超容器 30px → 单行省略折叠成「剧名…」）。放开两行换行显示全标题；
-   max-height 两行裁剪兜底（line-clamp 标准属性需 -webkit-box 会破坏 badge 内联布局，不用）。
-   header 高度变化无碍：toast 锚点与续播卡 --player-header-height 均为 JS 实测。 */
-  min-width: 0;
-  max-height: calc(1.4em * 2);
   margin-left: var(--space-md);
   color: var(--player-text);
   font-size: var(--text-base);
-  line-height: 1.4;
-  white-space: normal;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
 }
 
 .up-header-episode-badge {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   margin-left: var(--space-xs);
   padding: 0 var(--space-sm);
@@ -238,13 +233,6 @@
   font-size: var(--text-xs);
   font-weight: 500;
   line-height: 1.6;
-  /* badge 作为原子内联盒整体换行（内部不折）；max-width 钳进标题盒——
-   此前无宽度上限，超长集名的布局盒会伸到右侧画中画/投屏图标下方
-   （badgeRight 364 > pipIconLeft 334，2026-11-11 实测） */
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* 全屏按钮在 header 中的样式：白色图标，透明背景 */
