@@ -13,7 +13,7 @@
  */
 import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { VideoCard } from '@/components/VideoCard';
-import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, RefreshCw } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
 import { useIsMobileLayout, useIsTVLike } from '@/hooks/useMediaQuery';
 import { useGridCols } from '@/hooks/useGridCols';
@@ -46,6 +46,9 @@ interface TMDBMovieRowProps {
   items: TMDBVideoItem[];
   isLoading?: boolean;
   error?: string | null;
+  /** 该行数据的重试入口：错误态在错误文本右侧渲染刷新按钮，点击回调（首页传 ensureHomeBlock force）。
+   * 重试期间 isLoading 置位 → 本组件切 SkeletonCards 骨架，直至响应成功/失败。 */
+  onRetry?: () => void;
   /**
  * 继续观看模式：卡片用横版 landscape 样式、显示进度条、
  * 点击直达 /play/:id。items 传 ContinueWatchingItem[]（类型兼容 TMDBVideoItem 的 id/cover/title/type 字段）。
@@ -197,6 +200,7 @@ function TMDBMovieRow({
   items,
   isLoading = false,
   error = null,
+  onRetry,
   continueMode = false,
   continueItems,
   scrollResetToken,
@@ -500,13 +504,26 @@ function TMDBMovieRow({
 
   // continueMode 时以 continueItems 为准（items 为空属正常）；普通模式以 items 为准
   if (continueMode ? (continueItems?.length ?? 0) === 0 : items.length === 0 && !isLoading) {
-    // 有错误时显示错误行，否则隐藏
+    // 有错误时显示错误行 + 重试入口，否则隐藏
     if (error) {
       return (
         <div className="tmdb-movierow">
           <div className="tmdb-movierow-header">
             <h2 className="tmdb-movierow-title">{title}</h2>
-            <span className="tmdb-movierow-error">{error}</span>
+            <div className="tmdb-movierow-error-group">
+              <span className="tmdb-movierow-error">{error}</span>
+              {onRetry && (
+                <button
+                  type="button"
+                  className="tmdb-movierow-retry"
+                  onClick={onRetry}
+                  aria-label={`重试加载${title}`}
+                  title="重新加载"
+                >
+                  <Icon icon={RefreshCw} size="xs" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       );

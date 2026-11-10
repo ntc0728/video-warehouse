@@ -80,6 +80,13 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   opacity: 1;
 }
 
+.tmdb-movierow-error-group {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  min-width: 0;
+}
+
 .tmdb-movierow-error {
   max-width: var(--layout-panel-medium-w);
   color: var(--color-text-tertiary);
@@ -87,6 +94,40 @@ html:not([data-device="tv"]) .tmdb-movierow:focus-within .tmdb-movierow-viewall 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 错误行重试按钮（2026-11-11）：错误文本右侧刷新图标，点击重调该栏目接口。
+ 盒高 24px（WCAG 2.5.8 AA 下限），hover 主色 + 图标转向反馈。 */
+.tmdb-movierow-retry {
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color var(--dur-2xs) ease;
+}
+
+.tmdb-movierow-retry:hover {
+  color: var(--color-primary);
+}
+
+.tmdb-movierow-retry svg {
+  transition: transform var(--dur-2xs) ease;
+}
+
+.tmdb-movierow-retry:hover svg {
+  transform: rotate(90deg);
+}
+
+.tmdb-movierow-retry:active svg {
+  transform: rotate(180deg);
 }
 
 /* 滚动容器 — 移动端左右留白，避免卡片贴边；桌面端/TV 由父容器 .home-rows 控制 */

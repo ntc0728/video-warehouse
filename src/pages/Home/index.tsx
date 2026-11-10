@@ -219,6 +219,22 @@ export default function HomePage() {
     [handleCategorySelect],
   );
 
+  // 行错误重试（2026-11-11）：错误行刷新图标 → force 重调该区块接口。
+  // force 绕过 TTL/空数据判定与页内 I1 失败冷却（手动重试语义 = 用户明确要求再拉）；
+  // 重试期间 loading.<key> 置位 → TMDBMovieRow 切 SkeletonCards，直至响应成功/失败。
+  const rowRetryHandlers = useMemo(
+    () => ({
+      nowPlaying: () => void useTMDBStore.getState().ensureHomeBlock('nowPlaying', { force: true }),
+      popularMovies: () => void useTMDBStore.getState().ensureHomeBlock('popularMovies', { force: true }),
+      topRatedMovies: () => void useTMDBStore.getState().ensureHomeBlock('topRatedMovies', { force: true }),
+      upcomingMovies: () => void useTMDBStore.getState().ensureHomeBlock('upcomingMovies', { force: true }),
+      popularTv: () => void useTMDBStore.getState().ensureHomeBlock('popularTv', { force: true }),
+      topRatedTv: () => void useTMDBStore.getState().ensureHomeBlock('topRatedTv', { force: true }),
+      airingTodayTv: () => void useTMDBStore.getState().ensureHomeBlock('airingTodayTv', { force: true }),
+    }),
+    [],
+  );
+
   // ── 状态 ──────────────────────────────────────────
   const hasToken = tmdbAccessToken.trim().length > 0;
 
@@ -580,6 +596,7 @@ export default function HomePage() {
               items={entered ? row.items : []}
               isLoading={entered ? row.isLoading : hasToken}
               error={entered ? row.error : null}
+              onRetry={rowRetryHandlers[row.key]}
               /* 行卡逐个弹入与逐块到达叠加 = 首页行骨架「严重抖动」主因（
  ）；首页已有整层 page-transition-enter 淡入，行级入场动画
  冗余，恒 skip（分类切回等场景同样由层动画承担进入感）。 */

@@ -773,12 +773,22 @@ function HeroBannerClassic({
   }, [isDragging, handleDragMove, handleDragEnd]);
 
   // 空状态：加载中只显示骨架（无文字），加载完成且无数据才显示"暂无推荐"。
+  // 底图分两态（2026-11-11 用户要求）：加载中 = 骨架扫光；空态（暂无推荐）=
+  // 项目 card 封面加载失败通用品牌占位（MonitorPlay + kinoTV，与 LazyImage 品牌兜底同款），
+  // 不再是纯黑底。 */
   if (!displayItems.length) {
     return (
       <div className="hero-banner__card">
         <section ref={bannerRef} className={`hero-banner hero-banner--empty${isTV ? ' hero-banner--tv' : ''}`} aria-label="热门推荐">
           <div className="hero-banner__bg-wrapper">
-            <div className="hero-banner__bg-placeholder" />
+            {loading ? (
+              <div className="hero-banner__bg-placeholder" />
+            ) : (
+              <div className="lazy-image-fallback lazy-image-fallback--brand hero-banner__fallback">
+                <Icon icon={MonitorPlay} size="2xl" className="lazy-image-fallback__icon" />
+                <span className="lazy-image-fallback__brand">kinoTV</span>
+              </div>
+            )}
             <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
           </div>
           {loading ? (
