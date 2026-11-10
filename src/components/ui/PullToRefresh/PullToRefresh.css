@@ -82,11 +82,11 @@
   stroke-width: 4;
   paint-order: stroke;
 }
-/* 电波（两道弧线）单独收细：本体深色描边 2px 在暗底不可见，4px 白光晕直接
- 决定视觉粗细（用户反馈「有点粗」）→ 光晕 3px，白弧收窄一档；
- 机身/耳朵维持 4px 不变。 */
+/* 电波（两道弧线）单独收细：暗底下白光晕直接决定视觉粗细（用户反馈「有点粗」）。
+ 本体 1.5px（TvMascot.css）+ 光晕 2.5px → 白弧约 2.5px，与机身 4px 光晕明显分层；
+ 首轮 3px 观感差异不足（用户复测「看不出效果」）再收半档。 */
 .ptr-overlay__indicator--default .ptr-tv-halo .ptr-tv__wave path {
-  stroke-width: 3;
+  stroke-width: 2.5;
 }
 .ptr-overlay__indicator--settings .ptr-tv-halo {
   display: none;
