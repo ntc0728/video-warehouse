@@ -1426,9 +1426,9 @@
   justify-content: center;
   align-items: center;
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
-  width: clamp(48px, 48px + 1.5vw, 96px);
+  width: clamp(40px, 38px + 1.5vw, 76px);
   /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
-  height: clamp(48px, 48px + 1.5vw, 96px);
+  height: clamp(40px, 38px + 1.5vw, 76px);
   border: none;
   border-radius: 50%;
   background: transparent;
