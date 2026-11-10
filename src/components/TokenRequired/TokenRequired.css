@@ -6,7 +6,10 @@
 
 /* 整页拦截宿主通用修饰：不携带页面自身的布局类（browse ≥1024 是 grid、
  record 系根类在 RecordShell 上），独立保证「flex:1 撑满路由区剩余高 +
- 内容区 2200 封顶居中」，让 .token-required 垂直/水平都居中。 */
+ 内容区 2200 封顶居中」，让 .token-required 垂直/水平都居中。
+ padding 归零：page-padding 的纵向内距是「上有下无」（top space-sm / bottom 0），
+ 会让 flex 居中的提示整体下坠 ≈半档（实测 390 +6px / 1440 +4px，
+ 用户反馈「有点靠下」）；提示自身已有 space-3xl 内距兜边，水平由 text-align/flex 居中。 */
 .token-required-page {
   display: flex;
   flex: 1 1 0;
@@ -15,6 +18,7 @@
   min-width: 0;
   max-width: var(--layout-content-max-width);
   margin-inline: auto;
+  padding: 0;
 }
 
 .token-required {

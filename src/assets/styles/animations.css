@@ -115,6 +115,17 @@
   animation: none;
 }
 
+/* 无 Token 整页拦截宿主（browse / 收藏 / 历史 / 热度榜）：同样豁免入场动画。
+ ⚠️ 该宿主此前套页面根类时天然命中上面的豁免；改为独立类后 `> *` 通配规则
+ 会把 pt-enter-soft（from translateY(6px)）打在它身上——提示是整页静态内容，
+ 没有自己的 stagger 承接入场感，结果只是「提示整体下坠 6px + 变暗」
+ （渲染节流/动画冻结时永久停在 from 帧，用户感知为「提示不居中、有点靠下」）。
+ 提示页根恒静态居中。 */
+.page-transition[data-variant="soft"] > .token-required-page,
+.page-transition[data-revisit="true"][data-variant="soft"] > .token-required-page {
+  animation: none;
+}
+
 /* 首页（data-variant="home"）：本文件刻意不写任何 [data-variant="home"] 规则。
  首页保留自己的专属过渡（Hero 不参与、.home-page__content 淡入、
  骨架屏 --delayed-enter 延迟淡入）—— 这套是专门调过的，容器一旦接管，
