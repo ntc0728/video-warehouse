@@ -1540,6 +1540,14 @@ html[data-mobile-layout="true"] .up-iptv-buffering-reason {
   font-size: var(--text-2xs);
 }
 
+/* 续播卡移动端字号同收最小档（与顶部胶囊/缓冲文本统一 --text-2xs ≈10.45px；
+ 桌面维持 --text-sm 不动，2026-11-11 拍板「三种提示统一最小档」） */
+html[data-mobile-layout="true"] .up-resume-card__text,
+html[data-mobile-layout="true"] .up-resume-card__action,
+html[data-mobile-layout="true"] .up-resume-card__notice {
+  font-size: var(--text-2xs);
+}
+
 /* ===== Responsive: 超宽档由 variables.css 统一提供（≥2200 内容区封顶档；
  已清理 2560 / 3840 独立列数档——封顶后与 2200 档逐像素同值） ===== */
 
@@ -1808,7 +1816,10 @@ html[data-mobile-layout="true"] .up-iptv-buffering-reason {
   height: auto;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-lg);
-  background: rgba(0, 0, 0, 0.72);
+  /* 统一底色配方（2026-11-11 拍板）：0.6 黑 + blur 8px——亮画面可读性够、
+   存在感比实黑轻，与居中胶囊/续播卡同配方，叠加时不再一深一浅 */
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   color: var(--color-on-image);
   font-size: var(--text-sm);
   line-height: 1.4;
@@ -1826,7 +1837,7 @@ html[data-mobile-layout="true"] .up-iptv-buffering-reason {
   text-align: center;
 }
 [data-theme="light"] .up-player-toast {
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(0, 0, 0, 0.6);
   color: var(--color-on-image);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
@@ -1858,7 +1869,9 @@ html[data-player-header-controls="true"] .up-player-toast {
   max-width: min(22rem, calc(100vw - 2rem));
   padding: 0.5625rem 1rem;
   border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.78);
+  /* 统一底色配方：0.6 黑 + blur 8px（与右上角 toast / 续播卡同款） */
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   color: var(--color-on-image);
   font-size: 0.8125rem;
   line-height: 1.4;
@@ -1876,14 +1889,15 @@ html[data-player-header-controls="true"] .up-player-toast {
   text-align: center;
 }
 /* 移动端顶部胶囊变体（.up-player-center-toast--top，仅 mobileCenter 渲染）：
- 字号降 --text-xs、放开 nowrap 允许两行换行——长文案（如「自动播放被拦截…」）
- 不再溢出胶囊底色。位置锚定 header 下沿由 JS 写入 inline style，此处只管观感。 */
+ 字号收家族最小档 --text-2xs（2026-11-11 拍板：三种提示统一最小档）、
+ 放开 nowrap 允许两行换行——长文案（如「自动播放被拦截…」）不再溢出胶囊底色。
+ 位置锚定 header/续播卡下沿由 JS 写入 inline style，此处只管观感。 */
 .up-player-center-toast--top {
-  font-size: var(--text-xs);
+  font-size: var(--text-2xs);
   white-space: normal;
 }
 [data-theme="light"] .up-player-center-toast {
-  background: rgba(0, 0, 0, 0.78);
+  background: rgba(0, 0, 0, 0.6);
   color: var(--color-on-image);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
@@ -2462,7 +2476,8 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   align-items: center;
   padding: var(--space-xs) var(--space-sm) var(--space-xs) var(--space-md);
   border-radius: var(--radius-full);
-  background: rgba(20, 20, 24, 0.85);
+  /* 统一底色配方：0.6 黑（blur 8px 本卡原有），与两类 toast 同款不再一深一浅 */
+  background: rgba(0, 0, 0, 0.6);
   transform: translateX(-50%);
   animation: up-resume-in 0.24s ease-out;
   backdrop-filter: blur(8px);

@@ -89,21 +89,29 @@ export function ToastProvider({
   const [centerVisible, setCenterVisible] = useState(true);
   /** 当前提示是否为「视口兜底锚定」（触发时播放器就已在视口外）——这类提示不随滚动隐藏 */
   const viewportAnchoredRef = useRef(false);
+  /** 移动端顶部锚点偏移（相对播放器顶缘），弹出瞬间一次测定：
+   * header 实高（隐藏态按 0）与可见续播卡取 max，各 +36（半高 18 + 18px 间距）。
+   * 滚动重测只跟随 rect.top 不重查显隐——header 自动显隐（y 在 +36/+84 间跳）与
+   * 续播卡中途出现/消失是提示「抽搐」根因，冻结后消除（2026-11-11）。 */
+  const topAnchorOffsetRef = useRef(36);
 
   /**
  * 测量居中提示的目标锚点：
  * - `roomy`：播放器在视口内还留有足够可见高度（≥ MIN_TOAST_ROOM）
  * - 移动端（mobileCenter，2026-11-11 拍板「顶部胶囊」）：水平居中于播放器，
- * 垂直锚定 up-player-header 下沿（header 隐藏时退回播放器顶缘）——位置恒定不随
- * 播放器高度比例/滚动漂移，且顶部是唯一无争抢区带（中央=播放按钮+seek HUD，
- * 底部=控制栏+字幕）。y 为提示中心（translate(-50%,-50%)），36 = 提示半高
- * (~18px) + 18px 视觉间距。
+ * 垂直 = 播放器顶缘 + topAnchorOffsetRef（header 下沿 / 可见续播卡下沿取 max，
+ * 弹出瞬间一次测定，滚动重测不重查显隐防抽搐）。顶部是唯一无争抢区带
+ * （中央=播放按钮+seek HUD，底部=控制栏+字幕）。y 为提示中心
+ * （translate(-50%,-50%)），36 = 提示半高 (~18px) + 18px 视觉间距。
  * - 桌面端（截图类提示）：维持原「播放器高度 30% 处（居中靠上）」锚点不动，
  * 同样避让 up-player-header。⚠️ 余量必须 ≥ 提示半高（历史 bug：12px 时提示
  * 上半截伸进 header 区域）。
  * - 播放器完全滚出视口时：退回视口定位（居中靠上），由调用方决定是否显示。
+ *
+ * @param remeasureOffset true = 提示弹出瞬间，重测顶部锚点偏移（header/续播卡当下
+ * 的实际占位）；false = 滚动/resize 重测，只跟随播放器位置，沿用已冻结的偏移。
  */
-  const resolveCenterAnchor = useCallback((): { x: number; y: number; roomy: boolean } => {
+  const resolveCenterAnchor = useCallback((remeasureOffset: boolean): { x: number; y: number; roomy: boolean } => {
     const el = containerRef?.current;
     const viewportFallback = {
       x: window.innerWidth / 2,
@@ -125,8 +133,18 @@ export function ToastProvider({
       ? header.getBoundingClientRect().height
       : 0;
     if (mobileCenter) {
-      // 移动端顶部胶囊：header 下沿（+半高 18px + 18px 间距）
-      const y = rect.top + headerH + 36;
+      if (remeasureOffset) {
+        // 弹出瞬间测定锚点偏移：header 下沿，续播卡可见时让位到其下沿（同锚带
+        // 曾经上下叠两枚胶囊，2026-11-11 实测），取更靠下者
+        let offset = headerH + 36;
+        const resumeCard = el.querySelector<HTMLElement>('.up-resume-card');
+        if (resumeCard) {
+          const cardRect = resumeCard.getBoundingClientRect();
+          if (cardRect.height > 0) offset = Math.max(offset, cardRect.bottom - rect.top + 36);
+        }
+        topAnchorOffsetRef.current = offset;
+      }
+      const y = rect.top + topAnchorOffsetRef.current;
       const minY = visibleTop + EDGE_MARGIN;
       const maxY = visibleBottom - EDGE_MARGIN;
       const clampedY = maxY > minY ? Math.min(Math.max(y, minY), maxY) : (visibleTop + visibleBottom) / 2;
@@ -149,7 +167,7 @@ export function ToastProvider({
 
   /** 滚动 / 尺寸变化时重测：播放器一旦滚出视口，跟随播放器的提示就不再显示 */
   const measureCenterPos = useCallback(() => {
-    const anchor = resolveCenterAnchor();
+    const anchor = resolveCenterAnchor(false);
     if (!anchor.roomy && !viewportAnchoredRef.current) {
       setCenterVisible(false);
       return;
@@ -160,8 +178,8 @@ export function ToastProvider({
 
   const showCenter = useCallback((msg: string, duration = 1800, type: PlayerToastType = 'default') => {
     // 显示前重新测量：header 可见性/尺寸可能刚变化（如触摸后控制栏弹出），
-    // 确保提示位置避让最新的 up-player-header
-    const anchor = resolveCenterAnchor();
+    // 重测顶部锚点偏移（header + 可见续播卡），确保提示落在两者之下
+    const anchor = resolveCenterAnchor(true);
     // 触发时播放器已在视口外（典型：设置弹窗 / 抽屉把页面滚下去了）——这是本次操作的
     // 直接反馈，不能因为播放器不在视野里就吞掉，退回视口定位显示。
     // 这种「视口兜底锚定」的提示此后不随滚动自动隐藏；而播放器可见时锚定的提示，
