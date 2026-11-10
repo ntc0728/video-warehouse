@@ -1525,6 +1525,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── 移动端缓冲提示降到家族最小档（桌面不动）──
+ 文本 → --text-2xs（11 × type-scale 0.95 ≈ 10.45px），图标固定 24px（--icon-lg 档，
+ 不再随视口放大到 35px）。移动端判定与 variables.css 字号缩档同源：html[data-mobile-layout]。 */
+html[data-mobile-layout="true"] .up-iptv-buffering-tv {
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
+  width: 24px;
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- R7(px防二次流动·) */
+  height: 24px;
+}
+
+html[data-mobile-layout="true"] .up-iptv-buffering-text,
+html[data-mobile-layout="true"] .up-iptv-buffering-reason {
+  font-size: var(--text-2xs);
+}
+
 /* ===== Responsive: 超宽档由 variables.css 统一提供（≥2200 内容区封顶档；
  已清理 2560 / 3840 独立列数档——封顶后与 2200 档逐像素同值） ===== */
 
