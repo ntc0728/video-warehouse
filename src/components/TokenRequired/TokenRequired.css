@@ -3,6 +3,20 @@
  供 detail / play 页在未配置 TMDB Access Token 时整页展示（其余内容隐藏）。
  布局：flex:1 撑满宿主容器剩余高度（宿主需为 flex 容器或给 min-height），
  主提示经 justify-content:center 垂直居中。 */
+
+/* 整页拦截宿主通用修饰：不携带页面自身的布局类（browse ≥1024 是 grid、
+ record 系根类在 RecordShell 上），独立保证「flex:1 撑满路由区剩余高 +
+ 内容区 2200 封顶居中」，让 .token-required 垂直/水平都居中。 */
+.token-required-page {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  max-width: var(--layout-content-max-width);
+  margin-inline: auto;
+}
+
 .token-required {
   display: flex;
   flex: 1 1 0;

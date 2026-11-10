@@ -22,7 +22,9 @@ import RecordFilterPanel from '@/components/RecordFilterPanel';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useDocumentTitle } from '@/hooks';
+import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
 import { useCmsSourceGuard } from '@/hooks/useCmsSourceGuard';
+import TokenRequired from '@/components/TokenRequired';
 import CmsSourceBlockedModal from '@/components/common/CmsSourceBlockedModal';
 
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -148,6 +150,8 @@ export default function CollectionsPage() {
 
   const scrollContainerRef = useScrollContainer();
   useScrollRestore('collections', undefined, true, { restoreFrom: ['detail', 'play'] });
+  // TMDB token：未配置时整页只渲染 TokenRequired 提示（见主 return 前）
+  const hasToken = useHasTmdbToken();
 
   // 下拉刷新：从 IndexedDB 重新读取收藏与历史
   usePullToRefresh(() => useUserStore.getState().reload());
@@ -458,6 +462,17 @@ export default function CollectionsPage() {
       </button>
     </>
   );
+
+  // ── TMDB Access Token 未配置：整页提示（与首页/详情同款，页面元素一律不渲染）──
+  // 收藏的影视分区卡片（海报/评分/跳详情）依赖 TMDB 数据，未配置时只剩空壳。
+  // 注意：hasToken 声明位于上方 hooks 区，此处所有 hook 已执行完毕，提前 return 不影响 hook 顺序。
+  if (!hasToken) {
+    return (
+      <div className="page-padding token-required-page">
+        <TokenRequired />
+      </div>
+    );
+  }
 
   return (
     <RecordShell

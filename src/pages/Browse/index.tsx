@@ -12,6 +12,7 @@ import { useLocation, useNavigationType, useSearchParams } from 'react-router-do
 import { Search, Loader2 } from 'lucide-react';
 import FilterBar, { type FilterBarValue, type FilterBarCategoryOption } from '@/components/FilterBar';
 import { Empty, BackToTopButton } from '@/components/common';
+import TokenRequired from '@/components/TokenRequired';
 import { SourceStatusIndicator } from '@/components/SourceStatusIndicator';
 import { SORT_OPTIONS, buildRegionOptions } from '@/components/FilterBar/constants';
 
@@ -63,6 +64,8 @@ export default function BrowsePage() {
   const isPop = navigationType === 'POP';
   const scrollContainerRef = useScrollContainer();
   const [searchMode, setSearchMode] = useState<SearchMode>('smart');
+  // TMDB token：未配置时整页只渲染 TokenRequired 提示（browse 依赖 TMDB 数据，见主 return 前）
+  const hasToken = useHasTmdbToken();
 
   useScrollRestore('browse');
 
@@ -306,6 +309,8 @@ export default function BrowsePage() {
   useEffect(() => {
     // POP 导航（刷新/后退）不触发搜索
     if (isPop) return;
+    // 未配置 token：整页只显示 TokenRequired，不发任何请求
+    if (!hasToken) return;
     const q = stateQ || urlQ;
     if (!q) return;
     if (searchMode === 'cms') {
@@ -412,7 +417,6 @@ export default function BrowsePage() {
   // 作为地区选项的校验真源
   const countries = useTMDBStore(s => s.countries);
   const fetchGenresAndCountries = useTMDBStore(s => s.fetchGenresAndCountries);
-  const hasToken = useHasTmdbToken();
   useEffect(() => {
     if (!hasToken) return;
     if (movieGenres.length === 0 && tvGenres.length === 0) {
@@ -593,6 +597,8 @@ export default function BrowsePage() {
   useEffect(() => {
     // 直链搜索（CMS）不进逻辑分页层（它自带并发搜索 + 滚动追加），不在此取页
     if (searchMode !== 'smart') return;
+    // 未配置 token：整页只显示 TokenRequired，不发任何请求
+    if (!hasToken) return;
     // force=true：切模式回来时 query / 筛选没变，store 的 10min 缓存回显会直接
     // 顶回旧结果、不发请求。「切换模式默认调用接口」→ 必须绕过回显真实取页。
     // 其余上下文变化（换词 / 切筛选）filterOptions 已不同，本来就会真实请求，force 无副作用。
@@ -683,9 +689,6 @@ export default function BrowsePage() {
     ? logical.items.length === 0
     : (!isCmsLoading && filteredCmsResults.length === 0);
   const currentError = searchMode === 'smart' ? error : cmsError;
-  // Token 未配置时 TMDB 请求必然失败（401）：这不是「加载失败」而是「还没数据」——
-  // 错误态让位给空态（与首页无 token 的提示口径一致），配置入口由设置页承担。
-  const showError = !!currentError && hasToken;
 
   // ── 首屏 chrome 骨架──────────────────────────
   // 首次进入 Browse，在本模式首轮接口响应结束前：左栏筛选 + 顶栏排序条
@@ -787,6 +790,17 @@ export default function BrowsePage() {
       </div>
     </div>
   );
+
+  // ── TMDB Access Token 未配置：整页提示（与首页/详情同款，其余元素一律不渲染）──
+  // browse 全部数据源（智能检索 / 直链搜索的结果区、筛选、分页）都建立在
+  // TMDB 数据之上，未配置 token 时页面只剩空壳与报错，故整页拦截。
+  if (!hasToken) {
+    return (
+      <div className="page-padding token-required-page">
+        <TokenRequired />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -983,7 +997,7 @@ export default function BrowsePage() {
           {/* 加载失败 —— 与「搜不到」彻底分开（语义分家；
 结构对齐收藏/历史空态 Empty——保留 error 红叉
  区分「加载失败 vs 暂无数据」，去掉重试按钮，不再提供页内恢复入口）。 */}
-          {!showResultsLoading && showError && (searchMode === 'smart'
+          {!showResultsLoading && currentError && (searchMode === 'smart'
             ? logical.items.length === 0
             : cmsResults.length === 0) && (
             <Empty
@@ -999,7 +1013,7 @@ export default function BrowsePage() {
  三档细分：源没返回 / 本地筛选筛空 / 还没输入搜索词
  —— 旧版三档共用「尝试换个关键词搜索」，浏览态（无词 + 筛选空）时
  提示去搜索属于误导，本地筛选筛空时又指错方向。 */}
-          {!showResultsLoading && isEmpty && !showError && (
+          {!showResultsLoading && isEmpty && !currentError && (
             <Empty
               title={searchMode === 'cms' && !query ? '搜索影视内容' : '暂无结果'}
               description={
