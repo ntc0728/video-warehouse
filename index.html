@@ -375,11 +375,22 @@
           .bs-rail / .bs-home__railcard / .bs-heat* 左栏骨架与 --home-rail-w 引用一并移除。）
          <1024 / TV：回单列经典 hero（与 HeroBannerClassic 同构）。 */
       .bs-home { display: flex; flex: 1 1 auto; flex-direction: column; gap: 14.333px; min-height: 0; }
-      /* 过渡带：镜像真实 .home-topstrip 卡片壳（surface + border + radius + 同 padding），
-         此前只有三根裸条 → 高度差 10px，B→C 纵向抖动 */
-      .bs-home__strip { display: flex; gap: 8px; align-items: center; padding: 5px 7px; background: #fff; border-radius: 12px; }
-      .bs-home__strip i { display: block; width: 7rem; height: 1.5rem; background: #f3f4f7; border-radius: 999px; }
-      .bs-home__strip i:first-child { width: 10rem; }
+      /* 过渡带：镜像真实 .home-topstrip 卡片壳 + __inner + __trend 内层卡
+         （趋势卡内左侧「今日热度趋势」chip + 轮播条）。此前只有三根裸条
+         → 缺少左侧 chip 占位，且高度差 10px，B→C 纵向抖动 */
+      .bs-home__strip { display: flex; gap: 8px; align-items: center; padding: 4px 7px; background: #fff; border-radius: 12px; }
+      .bs-home__strip__inner { display: flex; flex: 1 1 auto; gap: 8px; align-items: center; min-width: 0; }
+      .bs-home__strip__trend { display: flex; flex: 1 1 auto; gap: 8px; align-items: center; min-width: 0; min-height: 24px; padding: 0 6px; border-radius: 8px; }
+      .bs-home__strip i { display: block; background: #f3f4f7; border-radius: 999px; }
+      /* 左侧 chip = 6 字 × 12px（真实 crumb 72×18）；轮播条占剩余宽度 */
+      .bs-home__strip__crumb { flex: 0 0 auto; width: 72px; height: 12px; border-radius: 6px; }
+      .bs-home__strip__rotator { flex: 1 1 auto; min-width: 0; height: 14px; border-radius: 6px; }
+      /* 真实首页 <1024 / TV 不渲染 HomeTopStrip（仅 isWide），骨架同步隐藏，
+         避免冷启动骨架多出一条带、React 挂载后整页上移 */
+      @media (width <= 1023px) {
+        .bs-home__strip { display: none; }
+      }
+      #boot-splash[data-cols="tv"] .bs-home__strip { display: none; }
       .bs-home__main { display: flex; flex: 1 1 auto; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; }
 
       /* 「继续观看」行占位（2026-09-22 审计补）：真实页首屏恒有此行
@@ -942,9 +953,12 @@
             var wide = window.matchMedia('(min-width: 1024px)').matches && cols !== 'tv';
             var home = el('bs-home', 'div');
             var strip = el('bs-home__strip', 'div');
-            strip.appendChild(el(''));
-            strip.appendChild(el(''));
-            strip.appendChild(el(''));
+            var stripInner = el('bs-home__strip__inner', 'div');
+            var stripTrend = el('bs-home__strip__trend', 'div');
+            stripTrend.appendChild(el('bs-home__strip__crumb'));
+            stripTrend.appendChild(el('bs-home__strip__rotator'));
+            stripInner.appendChild(stripTrend);
+            strip.appendChild(stripInner);
             home.appendChild(strip);
             var main = el('bs-home__main', 'div');
             main.appendChild(heroBili(wide));

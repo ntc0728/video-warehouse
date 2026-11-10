@@ -457,11 +457,15 @@ export default function HomePage() {
   );
   const homeSkeletonBody = isWide ? (
     <>
-      {/* 顶部过渡带骨架（镜像 HomeTopStrip） */}
+      {/* 顶部过渡带骨架（镜像 HomeTopStrip：外层卡 → inner → 内层趋势卡，
+          趋势卡内左侧「今日热度趋势」chip + 轮播条） */}
       <div className="home-skeleton-topstrip">
-        <span className="home-skeleton-topstrip__item" />
-        <span className="home-skeleton-topstrip__item home-skeleton-topstrip__item--sm" />
-        <span className="home-skeleton-topstrip__item home-skeleton-topstrip__item--sm" />
+        <div className="home-skeleton-topstrip__inner">
+          <div className="home-skeleton-topstrip__trend">
+            <span className="home-skeleton-topstrip__crumb" />
+            <span className="home-skeleton-topstrip__rotator" />
+          </div>
+        </div>
       </div>
       {/* HeroBili 骨架（banner 槽 + 右卡网格 + 换一换占位）；直接子节点身份
  命中 .home-page > .hero-bili 的 2200 封顶居中规则（与真实分支同构） */}

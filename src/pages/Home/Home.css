@@ -236,9 +236,8 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
 
 /* 免责声明：位于 .home-token-required 之后（.home-page__content 兄弟节点），
  token 区 flex:1 撑满后本元素自然贴容器底部；
- 占满整行宽（不设 max-width 限宽），左对齐小字次级色，不抢主提示视觉。
- 左对齐（非居中）：免责文本为多行，末行常仅余几个字，居中会让短行悬在中间显突兀；
- 左对齐后每行（含末行）统一靠左，视觉更稳。
+ 占满整行宽（不设 max-width 限宽），小字次级色，不抢主提示视觉。
+ 居中（非左对齐）：与上方 Token 提示区同轴居中，窄屏换行后每行同样居中。
 贴底处理——web 端 padding-bottom 小留白贴视口底；
  app 端 .page-transition 已有 padding-bottom: tabbar-height（全局安全区），
  声明 padding-bottom 归零以紧贴 TabBar 上沿（无法越过 TabBar 贴物理屏幕底）。 */
@@ -248,7 +247,7 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   line-height: 1.7;
-  text-align: left;
+  text-align: center;
 }
 
 /* app 端：声明紧贴 TabBar 上沿（距屏幕底 = tabbar 安全区高度） */
@@ -396,10 +395,11 @@ html[data-device="app"] .home-disclaimer {
  ═══════════════════════════════════════════════════════════════════════ */
 
 @media (width >= 1024px) {
-  /* 顶部过渡带骨架：盒模型逐条镜像 .home-topstrip（surface + border + radius-lg + 同 padding） */
+  /* 顶部过渡带骨架：盒模型逐条镜像 .home-topstrip
+     （外层卡 → __inner → __trend 内层卡；内层左侧「今日热度趋势」chip + 轮播条）。
+     骨架不画描边/底色（§8b），内层 24px 高度用 min-height 补偿 1px 边框。 */
   .home-skeleton-topstrip {
     display: flex;
-    gap: var(--space-sm);
     align-items: center;
     width: 100%;
     max-width: var(--layout-content-max-width);
@@ -410,12 +410,29 @@ html[data-device="app"] .home-disclaimer {
     background-color: var(--color-surface);
   }
 
-  .home-skeleton-topstrip__item {
-    width: 7rem;
-    /* 高度镜像真实最高子元素（pill：text-xs × 正文行高 + 上下 space-3xs 内边距）；
- 旧用 var(--text-xs) 纯字号高 → 骨架带比真实带矮 ≈10px，骨架→内容纵向抖动
- （三态实测，lh-base 1.5 与真实行高同档） */
-    height: calc(var(--text-xs) * var(--lh-base) + 2 * var(--space-3xs));
+  .home-skeleton-topstrip__inner {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* 内层趋势卡：镜像 .home-topstrip__trend 的 flex/gap/padding/圆角 */
+  .home-skeleton-topstrip__trend {
+    display: flex;
+    flex: 1 1 auto;
+    gap: var(--space-sm);
+    align-items: center;
+    min-width: 0;
+    min-height: calc(var(--text-xs) * 2);
+    padding: 0 var(--space-sm);
+    border-radius: var(--radius-md);
+  }
+
+  .home-skeleton-topstrip__crumb,
+  .home-skeleton-topstrip__rotator {
+    display: block;
     border-radius: var(--radius-sm);
     background: linear-gradient(
       90deg,
@@ -428,8 +445,18 @@ html[data-device="app"] .home-disclaimer {
     animation: shimmer var(--card-shimmer-duration) infinite;
   }
 
-  .home-skeleton-topstrip__item--sm {
-    width: 5rem;
+  /* 左侧 chip（真实「今日热度趋势」= 6 字 × --text-xs），锁定不压缩 */
+  .home-skeleton-topstrip__crumb {
+    flex: 0 0 auto;
+    width: calc(var(--text-xs) * 6);
+    height: var(--text-xs);
+  }
+
+  /* 轮播条占剩余宽度 */
+  .home-skeleton-topstrip__rotator {
+    flex: 1 1 auto;
+    width: 100%;
+    height: calc(var(--text-xs) * 1.2);
   }
 
   /* 右列 banner 槽：容器仍是真实 .hero-bili__banner（高度由 --hero-banner-h 派生、
