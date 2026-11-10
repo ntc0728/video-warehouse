@@ -51,7 +51,6 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useDocumentTitle } from '@/hooks';
 import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
 import TokenRequired from '@/components/TokenRequired';
-import { useIsMobile } from '@/hooks/useMediaQuery';
 import ChartSkeleton, { ChartRowSkeleton } from './ChartSkeleton';
 import './Chart.css';
 
@@ -448,18 +447,14 @@ function ChartRowTitle({ title }: { title: string }) {
 
 /** 榜单行：排名（top3 暖橙强调）+ 封面 + 标题/年份/类型徽标 + 热度值/评分
  *
- * 封面 分两态：
- * · ≥1024：横版 16:9，取 backdropPath
- * · <1024：**竖版 2:3**，取 posterPath（112×168，见 Chart.css 的 @media (width <= 1023px)）
- * 数据源必须跟着切——横图裁成竖版会有构图问题，故用 useIsMobile（max-width:1023px，
- * 与 CSS 断点严格一致）在 JS 侧选图。 */
+ * 封面恒横版 16:9（2026-11-11 用户要求：移动端与桌面统一横版，
+ * 原「<1024 竖版 2:3 posterPath」分档废弃）：数据源恒取 backdropPath
+ * （缺失回退 posterPath），尺寸恒 w300；CSS 侧 .chart-row__cover 全端
+ * 同一 160×90 横版盒（Chart.css 已无视口分档）。 */
 function ChartRow({ item, rank, showBadge }: { item: TMDBVideoItem; rank: number; showBadge: boolean }) {
-  const isMobile = useIsMobile();
   const top = rank <= 3;
-  // 竖版态取 posterPath；缺失时回退 backdropPath（避免整块空图），CSS 侧 object-fit:cover 兜底
-  const coverPath = isMobile
-    ? (item.posterPath ?? item.backdropPath ?? null)
-    : (item.backdropPath ?? item.posterPath ?? null);
+  // 横版取 backdropPath；缺失时回退 posterPath（避免整块空图），CSS 侧 object-fit:cover 兜底
+  const coverPath = item.backdropPath ?? item.posterPath ?? null;
   return (
     <Link
       to={{ pathname: `/detail/${item.id}` }}
@@ -467,9 +462,9 @@ function ChartRow({ item, rank, showBadge }: { item: TMDBVideoItem; rank: number
     >
       <span className="chart-row__rank">{rank}</span>
       <LazyImage
-        src={buildImageUrl(coverPath, isMobile ? 'w154' : 'w300') ?? ''}
+        src={buildImageUrl(coverPath, 'w300') ?? ''}
         alt={item.title}
-        className={`chart-row__cover${isMobile ? ' chart-row__cover--poster' : ''}`}
+        className="chart-row__cover"
       />
       <div className="chart-row__body">
         <ChartRowTitle title={item.title} />

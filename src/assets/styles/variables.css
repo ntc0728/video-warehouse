@@ -433,15 +433,11 @@
   --comp-input-height-header: clamp(36px, 34.832px + 0.3108vw, 42px);
   --comp-input-min-w: calc(clamp(180px, 103.664px + 20.356vw, 260px) * var(--ui-scale)); /* 180→300 输入框最小宽度 */
   --comp-thumb-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale)); /* 14→28 滑块拖拽手柄 */
-  /* 榜单页（Chart）封面 / 骨架尺寸：此前在移动端 media query
- 与 html[data-device="app"] 块内直接写 px，被 value 禁令命中且无 token 可换。
- 竖版海报 112×168（2:3），排名列 32。两处共用同一组 token，避免双份字面量漂移。 */
-  --comp-chart-cover-w: 112px;
-  --comp-chart-cover-h: 168px;
+  /* 榜单页（Chart）封面 / 骨架尺寸：固定值而非流体——封面为「媒体比例盒」，
+ 尺寸由 16:9 比例与网格决定，不随视口流体（流体会让行高跳动）。
+ 2026-11-11 封面全端横版：原竖版 --comp-chart-cover-w/h（112×168）随
+ 「<1024 / app 竖版分档」废弃删除，全端统一横版 160×90；排名列 32。 */
   --comp-chart-rank-w:  32px;
-  /* 横版封面（列表行内 16:9 缩略盒）：160×90。与上方竖版同族——固定值而非流体，
- 理由同：封面为「媒体比例盒」，尺寸由 2:3 / 16:9 比例与网格决定，
- 不随视口流体（流体会让行高跳动）。桌面与移动端共用同一组值。 */
   --comp-chart-cover-land-w: 160px;
   --comp-chart-cover-land-h:  90px;
   /* Switch 开关 */

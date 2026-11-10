@@ -451,27 +451,12 @@
 /* 加载失败态复用公共 Empty（status="error"，对齐 Browse），
  原 .chart-error / __retry 随页内重试按钮一并移除。 */
 
-/* ── <1024：单列 + **竖版封面 112×168（2:3）** ──
- 「chart 页视口小于 1024，下方 card 封面显示竖版图」。
- 数据源同步切 posterPath（JS 见 ChartRow 的 useIsMobile 分支），
- 纯 CSS 无法换图，故两处必须成对改动。
- 「竖版封面加大一点」：96×144 → **112×168**（保持 2:3，
- 单列布局下横向余量充足）；封面色块与骨架（.chart-list__skeleton .b）同尺寸，
- 避免加载跳变。 */
-@media (width <= 1023px) {
-  /* .chart-list / .chart-list__loading 的列数已由 --chart-cols token 接管
- （index.css 的 ≤1023 档），此处只剩封面尺寸切换 */
-  .chart-row__cover,
-  .chart-row__cover--poster {
-    flex-basis: var(--comp-chart-cover-w);
-    width: var(--comp-chart-cover-w);
-    height: var(--comp-chart-cover-h);
-  }
-  .chart-list__skeleton .b {
-    flex-basis: var(--comp-chart-cover-w);
-    height: var(--comp-chart-cover-h);
-  }
-}
+/* ── 封面全端横版（2026-11-11 用户要求）──
+ 原「<1024 / app 竖版 112×168（2:3）+ posterPath 数据源」分档已废弃：
+ ChartRow 恒取 backdropPath（w300），封面盒全端统一基础规则
+ .chart-row__cover = 160×90（--comp-chart-cover-land-*），本文件不再有视口分档；
+ 骨架 .chart-list__skeleton .b 撑满真实封面盒，自动跟随。
+ 原 --comp-chart-cover-w/h（竖版）token 已随之删除（variables.css）。 */
 /* 桌面横版基准尺寸的显式声明（>.chart-row__cover 已在上方定义 160×90，此处仅注释锚点） */
 
 /* 移动端细粒度：窄屏再收一档（保持 2:3 比例）；简介隐藏 */
@@ -489,16 +474,7 @@ html[data-device="app"] .chart-tabs { padding: var(--space-sm) var(--space-md); 
 html[data-device="app"] .chart-list {
   padding: var(--space-xs) var(--space-xs) var(--space-sm);
 }
-html[data-device="app"] .chart-row__cover,
-html[data-device="app"] .chart-row__cover--poster {
-  flex-basis: var(--comp-chart-cover-w);
-  width: var(--comp-chart-cover-w);
-  height: var(--comp-chart-cover-h);
-}
-html[data-device="app"] .chart-list__skeleton .b {
-  flex-basis: var(--comp-chart-cover-w);
-  height: var(--comp-chart-cover-h);
-}
+/* app 档封面/骨架不再有竖版覆盖：全端统一基础 .chart-row__cover 160×90（2026-11-11） */
 html[data-device="app"] .chart-row__desc { display: none; }
 html[data-device="app"] .chart-row__rank { flex-basis: var(--comp-chart-rank-w); }
 html[data-device="app"] .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
