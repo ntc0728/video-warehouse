@@ -69,7 +69,7 @@ function sortByNumber(eps: Episode[]): Episode[] {
   return [...eps].sort((a, b) => (a.number || 0) - (b.number || 0));
 }
 
-/** 裸集号标题（第01集 / 第1话 / 01）：选集格渲染序号即可，不占版面 */
+/** 裸集号标题（第01集 / 第1话 / 01）：网格选集格渲染序号即可，不占版面 */
 function isPlainEpisodeTitle(title: string): boolean {
   const t = title.trim();
   return /^第\s*\d+\s*[集话話期]$/.test(t) || /^\d+$/.test(t);
@@ -178,6 +178,8 @@ export default function PlaylistModal({
 
   const activeVideo = isSeries && !showAll ? seasons[seasonIdx] : undefined;
   const currentSeasonNumber = isSeries && !showAll ? seasonNumbers[seasonIdx] : 0;
+  // 特别篇桶（季 0）单季视图：列表行布局——方格装不下长篇名（截断后无法分辨各篇）
+  const specialListView = isSeries && !showAll && currentSeasonNumber === 0;
 
   // 最后播放选集的「集号」（仅作数字解析，季归属在 isPlaying 中判定，
   // 以便「全部」聚合视图与单季视图都能正确高亮历史那一集）。
@@ -529,7 +531,7 @@ export default function PlaylistModal({
 
       <div className="playlist-body" ref={bodyRef}>
         <div
-          className={isSeries ? 'playlist-grid' : 'playlist-line-grid'}
+          className={isSeries ? (specialListView ? 'playlist-ep-list' : 'playlist-grid') : 'playlist-line-grid'}
           ref={gridRef}
           key={`${seasonIdx}-${showAll}`}
         >
@@ -557,7 +559,7 @@ export default function PlaylistModal({
                 : 0;
             const cls = [
               'playlist-cell',
-              it.kind === 'ep' ? 'playlist-cell--ep' : 'playlist-cell--line',
+              it.kind === 'ep' ? (specialListView ? 'playlist-cell--row' : 'playlist-cell--ep') : 'playlist-cell--line',
               // 选中态（is-selected）两端都加：用于背景着色与数字主色，
               // 与「历史已看」(is-watched) 的浅色底做区分；金边框高亮框
               // 仅 TV 端通过 .playlist-modal--tv 限定显示（非 TV 端不出现高亮框）
@@ -595,6 +597,43 @@ export default function PlaylistModal({
               const inner = (
                 <>
                   {it.kind === 'ep' ? (
+                  specialListView ? (
+                  <>
+                    {/* 特别篇桶：列表行——整题单行完整可见（方格装不下长篇名）。
+                        不另渲染桶内序号：合并桶集号（1..N 连续）与标题里的「第0N集」
+                        （篇内集号）语义不同，并排会互相矛盾 */}
+                    <span className="playlist-cell-name playlist-row-title">{it.title}</span>
+                    {/* 勾号与「已看」或「有播放进度」联动：跨季/聚合视图里带进度的 cell 也显示右上角 ✓ */}
+                    {isPlayed && (
+                      <span
+                        className={`playlist-cell-check${
+                          prog?.completed ? ' is-complete' : ''
+                        }`}
+                      >
+                        ✓
+                      </span>
+                    )}
+                    {isPlaying && (
+                      <span className="playlist-cell-playing">播放中</span>
+                    )}
+                    {isBad && <span className="playlist-cell-na">无源</span>}
+                    {prog && (
+                      <>
+                        <span
+                          className={`playlist-cell-pct${prog.completed ? ' is-complete' : ''}`}
+                        >
+                          {prog.completed ? '看完' : `${pct}%`}
+                        </span>
+                        <span className="playlist-cell-progress" aria-hidden="true">
+                          <span
+                            className={`playlist-cell-progress-bar${prog.completed ? ' is-complete' : ''}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </span>
+                      </>
+                    )}
+                  </>
+                  ) : (
                   <>
                     {showAll && (
                       <span className="playlist-cell-season">S{it.seasonNumber}</span>
@@ -636,6 +675,7 @@ export default function PlaylistModal({
                       </>
                     )}
                   </>
+                  )
                 ) : (
                   <>
                     <span className="playlist-cell-name">{it.title}</span>

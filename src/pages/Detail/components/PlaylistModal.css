@@ -335,6 +335,34 @@
   word-break: break-word;
 }
 
+/* ══ 特别篇桶（季 0）：列表行布局 ══
+   方格 aspect-ratio 1:1 装不下长篇名（截断后各篇无法分辨），
+   改单列列表行，标题单行完整可见；正季方格不受影响。 */
+.playlist-ep-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  padding: var(--space-md);
+  animation: playlist-fade 0.28s var(--ease-out-expo) both;
+}
+
+.playlist-cell--row {
+  flex-direction: row;
+  align-items: center;
+  min-height: unset;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.playlist-cell--row .playlist-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* TV 端遥控器焦点金边框复用 .playlist-cell 基类，行布局同样生效（无需额外规则） */
+
 /* 线路：矩形卡片，名称 + 类型角标 */
 .playlist-cell--line {
   gap: var(--space-3xs);
