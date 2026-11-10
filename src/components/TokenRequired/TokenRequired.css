@@ -27,7 +27,11 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: var(--layout-loading-min-height);
+  /* 小视口保护（2026-11-11 用户手机实测「提示偏下」根因）：
+   手机浏览器可视高度常 < 480px + 上下 space-3xl 内距，min-height 固定档会让
+   盒体顶死溢出 → 盒内居中的内容整体下沉十几像素。改 min() 钳到宿主实际高度，
+   盒体恒 ≤ 内容区，flex 居中在任意视口都成立。 */
+  min-height: min(var(--layout-loading-min-height), 100%);
   padding: var(--space-3xl) var(--space-md);
   text-align: center;
 }
