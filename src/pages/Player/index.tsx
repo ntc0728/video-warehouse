@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { usePlayerStore, useUserStore, useSettingsStore } from '@/stores';
 import { extractSeasonNumber } from '@/services/seasonMatcher';
+import { isPlainEpisodeTitle } from '@/services/vodParser';
 import { findEpisodeByNumber } from '@/services/videoService';
 import { buildImageUrl } from '@/services/tmdbService';
 import TokenRequired from '@/components/TokenRequired';
@@ -535,7 +536,13 @@ export default function PlayerPage() {
       // 身份守卫：剧集播放但当前选集身份缺失（切季/换源/连播切换的中间态）时跳过写入，
       // 避免把剧集进度写成电影级记录（hist-{videoId}），污染内容身份键。
       if (hasEpisodes && !currentEp) return;
-      const epLabel = currentEp ? `第${currentEp.number}集` : (!hasEpisodes ? currentSourceNameRef.current : undefined);
+      // 历史 episodeLabel 存选集名（裸集号标题存「第N集」，信息型标题存原标题）——
+      // 季号在 seasonNumber 字段单独存，展示层各自拼季名前缀；
+      // 合并桶集号（连续 1..N）与标题内篇内集号不同，写死「第N集」会让
+      // 特别篇历史记录互相撞名（dedup 键 s0-第1集）且无法分辨看的是哪篇
+      const epLabel = currentEp
+        ? (isPlainEpisodeTitle(currentEp.title) ? `第${currentEp.number}集` : currentEp.title)
+        : (!hasEpisodes ? currentSourceNameRef.current : undefined);
       const vodId = id.startsWith('tmdb-') ? undefined : id;
       updateHistoryProgress({ videoId: id, progress, duration, title: v?.title, cover: v?.cover, backdrop: backdropRef.current, cmsSourceId: cmsSourceIdRef.current, cmsSourceName: cmsSourceNameRef.current, episodeLabel: epLabel, vodId, episodeUrl: currentSrcRef.current?.url, seasonNumber: hasEpisodes ? selectedSeasonRef.current : undefined, rating: tmdbDetail?.vote_average });
     }
@@ -703,13 +710,11 @@ export default function PlayerPage() {
 
   const activeEpId = localEpisodeId;
 
-  // 当前集数 badge（传递给播放器 header）
+  // 当前集信息（badge 在下方 title 计算之后拼装：去重需比对 header 实际展示的剧名）
   const currentEp = activeEpId
     ? episodes.find(ep => ep.id === activeEpId)
     : undefined;
-  const episodeLabel = currentEp
-    ? `第${currentEp.number}集`
-    : (episodes.length === 0 ? currentSourceNameRef.current : undefined);
+  const currentSeasonLabel = selectedSeason === 0 ? '特别篇' : `第${selectedSeason}季`;
 
   const d = tmdbDetail;
   const v = video;
@@ -720,6 +725,19 @@ export default function PlayerPage() {
   } else if (v) {
     title = v.title;
   }
+
+  // 播放器 header 的集数 badge：季名 + 选集名（header 已展示剧名）。
+  // 特别篇（季 0）选集标题是信息型篇名（「元旦特辑：戴立克的革命 · HD中字」），
+  // 写死「第N集」无法分辨；剧名自带季名（TMDB 未就绪/无 Token 时取 CMS 条目名）
+  // 时不再重复拼季名——去重比对 header 实际展示的 title（TMDB 优先），非 CMS 名。
+  const displayedTitle = (title ?? '').trim();
+  const seasonPrefix = currentSeasonLabel === '特别篇'
+    ? (/特别篇$/.test(displayedTitle) ? '' : '特别篇 ')
+    : (/第[一二三四五六七八九十百零\d]+季$/.test(displayedTitle) ? '' : `${currentSeasonLabel} `);
+  const episodeLabel = currentEp
+    ? `${seasonPrefix}${isPlainEpisodeTitle(currentEp.title) ? `第${currentEp.number}集` : currentEp.title}`
+    : (episodes.length === 0 ? currentSourceNameRef.current : undefined);
+
   const isTV = d ? 'name' in d : (v?.type === 'tv');
   // 优先用 CMS 搜索到的季数据，fallback 到 TMDB
   const seasons = cmsSeasons.length > 0
@@ -1146,7 +1164,9 @@ export default function PlayerPage() {
             platform={isTVDevice ? 'tv' : 'desktop'}
             url={currentSrc.url}
             type={currentSrc.type}
-            title={video?.title || ''}
+            // header 剧名：TMDB 剧名（干净剧名）优先，CMS 条目名兜底——
+            // CMS 条目名自带季名（「神秘博士第十四季」），会与 badge 季名重复
+            title={title || video?.title || ''}
             videoId={id}
             vodId={id?.startsWith('tmdb-') ? undefined : id}
             episodeUrl={currentSrc.url}

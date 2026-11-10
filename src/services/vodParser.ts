@@ -74,6 +74,22 @@ export function parseEpisodeNumber(title: string): number | undefined {
   return undefined;
 }
 
+/**
+ * 裸集号标题（第01集/第1话/01）取号；信息型标题（特别篇篇名等）返回 null。
+ * 播放进度恢复的集号匹配只信任裸集号：合并桶/特别篇标题里的篇内集号
+ * （「60周年特别篇·第01集」→ 1）与桶内连续序号不同，按号恢复会错集。
+ */
+export function plainEpisodeNumber(title: string): number | null {
+  const t = title.trim();
+  const m = /^第\s*(\d{1,4})\s*[集话話期]$/.exec(t) || /^(\d{1,4})$/.exec(t);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+/** 是否为裸集号标题（第N集/第N话/纯数字）——非裸标题应渲染/存储原标题 */
+export function isPlainEpisodeTitle(title: string): boolean {
+  return plainEpisodeNumber(title) !== null;
+}
+
 /** 解析播放源字符串，提取源列表和分集信息 */
 export function parsePlaySources(vodPlayUrl: string, vodType?: VideoType): { sources: Video['sources']; episodes: Video['episodes'] } {
   const isMovie = vodType === 'movie';

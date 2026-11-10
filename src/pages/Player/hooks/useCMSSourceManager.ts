@@ -10,6 +10,7 @@ import {
 } from '@/services/videoService';
 import type { VideoDetailResult } from '@/services/videoService';
 import type { Video, Episode, VideoSource } from '@/types/video';
+import { plainEpisodeNumber } from '@/services/vodParser';
 import type { TMDBMovieDetail, TMDBTVShowDetail } from '@/types/tmdb';
 import type { HistoryRecord } from '@/types/store';
 
@@ -210,12 +211,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     // 以「最后播放」为准，且在不同 CMS 源之间保持一致。因此恢复不限定源，而是按内容身份
     // （季号 + 集号）匹配：跨源时 episodeUrl 不同无法精确匹配线路，回退默认线路，但选集与
     // 播放进度（时间）仍按历史回显。
-    const parseEpisodeNumber = (label?: string): number | undefined => {
-      if (!label) return undefined;
-      const m = label.match(/\d+/);
-      return m ? Number(m[0]) : undefined;
-    };
-    const histEpNum = parseEpisodeNumber(histRecord?.episodeLabel);
+    // 集号只信任裸集号标题（第N集/纯数字）：信息型标题（特别篇篇名
+    // 「60周年特别篇·第01集」）里的篇内集号与合并桶序号不同，按号恢复会错集——
+    // 此类记录靠 episodeUrl 精确匹配（优先级更高）恢复。
+    const histEpNum = plainEpisodeNumber(histRecord?.episodeLabel ?? '') ?? undefined;
     const histSeason = histRecord?.seasonNumber;
 
     // 选集恢复：弹窗直达的 routePlayUrl 精确匹配 > route 集号兜底 > 历史集号 > 默认第一集。
@@ -231,6 +230,12 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       if (routeEpisodeNumber != null && (routeSeasonNumber == null || selectedSeasonRef.current === routeSeasonNumber)) {
         const byNum = sorted.find(ep => ep.number === routeEpisodeNumber);
         if (byNum) return byNum;
+      }
+      // 历史 episodeUrl 精确匹配：信息型 label 的记录（特别篇篇名）没有可靠集号，
+      // 靠 URL 恢复；跨源 URL 不同不命中，自然落回集号/首集
+      if (histRecord?.episodeUrl) {
+        const byHistUrl = sorted.find(ep => ep.sources?.some(s => s.url === histRecord.episodeUrl));
+        if (byHistUrl) return byHistUrl;
       }
       if (histEpNum != null) {
         const matched = sorted.find(ep => ep.number === histEpNum);

@@ -13,6 +13,7 @@ import LazyImage from '@/components/LazyImage/LazyImage';
 import { toast } from '@/components/ui/toastBus';
 import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useUserStore } from '@/stores';
+import { isPlainEpisodeTitle, plainEpisodeNumber } from '@/services/vodParser';
 import type { Episode, Video, VideoSource } from '@/types/video';
 import './PlaylistModal.css';
 
@@ -69,11 +70,7 @@ function sortByNumber(eps: Episode[]): Episode[] {
   return [...eps].sort((a, b) => (a.number || 0) - (b.number || 0));
 }
 
-/** 裸集号标题（第01集 / 第1话 / 01）：网格选集格渲染序号即可，不占版面 */
-function isPlainEpisodeTitle(title: string): boolean {
-  const t = title.trim();
-  return /^第\s*\d+\s*[集话話期]$/.test(t) || /^\d+$/.test(t);
-}
+/** 裸集号标题判定复用 vodParser.isPlainEpisodeTitle（见顶部 import） */
 
 // 根据 cell 取到对应的进度记录。进度以「内容身份」为准（与 store.addHistory
 // 的去重键一致）：
@@ -181,13 +178,12 @@ export default function PlaylistModal({
   // 特别篇桶（季 0）单季视图：列表行布局——方格装不下长篇名（截断后无法分辨各篇）
   const specialListView = isSeries && !showAll && currentSeasonNumber === 0;
 
-  // 最后播放选集的「集号」（仅作数字解析，季归属在 isPlaying 中判定，
+  // 最后播放选集的「集号」（仅裸集号标题可解析，季归属在 isPlaying 中判定，
   // 以便「全部」聚合视图与单季视图都能正确高亮历史那一集）。
+  // 信息型标题（特别篇篇名）→ null：篇内集号 ≠ 桶内序号，按号高亮会错集。
   const histEpNumber = useMemo(() => {
     if (!historyRecord) return null;
-    const m = /(\d+)/.exec(historyRecord.episodeLabel || '');
-    const y = m ? parseInt(m[1], 10) : NaN;
-    return Number.isNaN(y) ? null : y;
+    return plainEpisodeNumber(historyRecord.episodeLabel || '');
   }, [historyRecord]);
 
   const allItems = useMemo<Item[]>(() => {
@@ -264,9 +260,8 @@ export default function PlaylistModal({
     }
     let init = -1;
     if (isSeries && historyRecord) {
-      const m = /(\d+)/.exec(historyRecord.episodeLabel || '');
-      const y = m ? parseInt(m[1], 10) : NaN;
-      if (!Number.isNaN(y)) {
+      const y = plainEpisodeNumber(historyRecord.episodeLabel || '');
+      if (y != null) {
         const histSeason = historyRecord.seasonNumber;
         const idx = allItems.findIndex(
           (it) => it.kind === 'ep' && it.seasonNumber === histSeason && it.number === y,
