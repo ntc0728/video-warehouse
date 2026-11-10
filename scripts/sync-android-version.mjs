@@ -13,6 +13,12 @@
  *   CI 两条 workflow 都在**临时 checkout** 里跑本脚本，结果不回写仓库 →
  *   仓库副本 `capacitor.config.ts` 长期带旧版本号（曾漂移 1.27.1 / 127010 vs package.json 1.27.2）。
  *   本地直跑 `npx cap sync android` 会把旧版本号带进原生工程。--check 让漂移在 lint 阶段就暴露。
+ *
+ * 漂移的根治（2026-11-10）：
+ *   release-please 的 `release-type: node` 只 bump package.json，不会改 capacitor.config.ts，
+ *   因此每次发版必然漂移（2.0.0/200000 vs package.json 2.1.0 是第二次）。
+ *   现由 `.github/workflows/sync-version.yml` 在 release PR 合并后自动执行「写入」模式并提交；
+ *   --check 继续保留，作为本地与 CI 的兜底门禁。
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

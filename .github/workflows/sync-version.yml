@@ -1,0 +1,47 @@
+name: Sync Version Files
+
+# 根治 capacitor.config.ts 的版本漂移。
+#
+# 背景：release-please 的 `release-type: node` 只 bump package.json，不会改
+# capacitor.config.ts 里的 version / versionCode —— 每次发版必然漂移，历史上
+# 已发生 1.27.1/127010 与 2.0.0/200000 两次（`lint:version-sync` 只能暴露，不能修）。
+#
+# 做法：在 release PR 合并后（门控与 release-please.yml 的 build-apk 一致），
+# 用真源 package.json 回写 capacitor.config.ts 并提交。GITHUB_TOKEN 推送不会
+# 触发新的 workflow 运行，因此不会形成循环。
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: contains(github.event.head_commit.message, 'release-please--branches--master')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: master
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      # android/ 不在仓库里（.gitignore），脚本会自动跳过 build.gradle，只写 capacitor.config.ts
+      - name: Sync version into capacitor.config.ts
+        run: node scripts/sync-android-version.mjs
+
+      - name: Commit if drifted
+        run: |
+          if git diff --quiet -- capacitor.config.ts; then
+            echo "无漂移，跳过提交"
+            exit 0
+          fi
+          VERSION="$(node -p "require('./package.json').version")"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add capacitor.config.ts
+          git commit -m "chore: 同步 capacitor.config.ts 至 v${VERSION}"
+          git push
