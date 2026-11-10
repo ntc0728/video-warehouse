@@ -223,21 +223,9 @@ export function PullToRefreshOverlay() {
 
   return (
     <div className="ptr-overlay" aria-hidden={phase === 'idle'}>
-      {/* 的 SVG 光晕 filter：全局仅渲染一次，供 default 变体小电视引用（url(#ptr-halo)）。
- feMorphology 膨胀 SourceAlpha → 白色 flood 填充轮廓 → 与原始线稿合并，得到柔白光晕。 */}
-      <svg className="ptr-halo-defs" width="0" height="0" aria-hidden="true">
-        <defs>
-          <filter id="ptr-halo" x="-40%" y="-40%" width="180%" height="180%">
-            <feMorphology in="SourceAlpha" operator="dilate" radius="2.5" result="d" />
-            <feFlood floodColor="#ffffff" floodOpacity="0.95" result="w" />
-            <feComposite in="w" in2="d" operator="in" result="ring" />
-            <feMerge>
-              <feMergeNode in="ring" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-      </svg>
+      {/* 原 SVG 光晕 filter（#ptr-halo）已删除：引用式滤镜在高 DPR 手机上低分辨率
+ 栅格化再放大 → 光晕发糊（2026-11-11 用户实测）。白轮廓改由 PullIndicator 的
+ .ptr-tv-halo 白色剪影垫底副本承担（纯矢量，任意 DPR 锐利）。 */}
       <div
         className={`ptr-overlay__indicator ptr-overlay__indicator--${variant}`}
         style={indicatorStyle}

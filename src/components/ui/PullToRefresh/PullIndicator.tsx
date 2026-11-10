@@ -54,13 +54,26 @@ export function PullIndicator({
   else if (isRefreshing) label = refreshingText;
   else if (isSuccess) label = successText;
 
+  // 白色剪影垫底副本：原「SVG 引用滤镜（url(#ptr-halo)）膨胀描边」在高 DPR 手机上
+  // 会被低分辨率栅格化再放大 → 光晕发糊（用户实测）。改用纯矢量白色副本压底，
+  // 轮廓锐度与 DPR 无关；副本整体被上层原稿覆盖，只露出外扩白边。
   const mascot = (
-    <TvMascot
-      armed={armed}
-      blink={isRefreshing || isSuccess}
-      earProgress={p}
-      className={isRefreshing ? 'is-shaking' : ''}
-    />
+    <span className="ptr-tv-wrap">
+      <span className="ptr-tv-halo" aria-hidden="true">
+        <TvMascot
+          armed={armed}
+          blink={isRefreshing || isSuccess}
+          earProgress={p}
+          className={isRefreshing ? 'is-shaking' : ''}
+        />
+      </span>
+      <TvMascot
+        armed={armed}
+        blink={isRefreshing || isSuccess}
+        earProgress={p}
+        className={isRefreshing ? 'is-shaking' : ''}
+      />
+    </span>
   );
 
   return (

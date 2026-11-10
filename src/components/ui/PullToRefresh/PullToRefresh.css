@@ -33,8 +33,9 @@
   left: 50%;
 }
 
-/* default 变体：不使用背景色 / 阴影，仅靠 SVG filter 光晕（#ptr-halo）把小电视「托起」与图片分离。
- 光晕加在 .ptr-tv 上（见下方规则）；此容器仅负责内边距与定位，不再有任何背景 / 阴影。 */
+/* default 变体：不使用背景色 / 阴影，仅靠白轮廓把小电视「托起」与图片分离。
+ 白轮廓由 .ptr-tv-halo 白色剪影垫底副本承担（见下）；此容器仅负责内边距与定位，
+ 不再有任何背景 / 阴影。 */
 .ptr-overlay__indicator--default .ptr-indicator {
   padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-lg);
@@ -48,10 +49,29 @@
 
 /* ----------：default 变体专属（浮于图片上时） ----------
  不使用任何背景色 / box-shadow，靠两处「白描边」让黑白线稿 + 文字在任意图片底色上自带着色轮廓：
- 1) 小电视整体套一层 SVG filter 光晕（#ptr-halo，见 PullToRefreshOverlay 注入的 <defs>）；
- 2) 文字用「深色填充 + 白色描边」（paint-order: stroke fill），浅底看深色字、深底看白描边。 */
-.ptr-overlay__indicator--default .ptr-tv {
-  filter: url("#ptr-halo");
+ 1) 小电视白色剪影垫底副本（.ptr-tv-halo，纯矢量——原 SVG 引用滤镜 url(#ptr-halo)
+    在高 DPR 手机上低分辨率栅格化再放大 → 光晕发糊，2026-11-11 用户实测后废弃）；
+ 2) 文字用「深色填充 + 白色描边」（paint-order: stroke fill），浅底看深色字、深底看白描边。
+ ⚠️ settings 变体不渲染光晕副本。 */
+.ptr-overlay__indicator--default .ptr-tv-halo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ptr-overlay__indicator--default .ptr-tv-halo .ptr-tv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.ptr-overlay__indicator--default .ptr-tv-halo .ptr-tv * {
+  fill: #fff;
+  stroke: #fff;
+  stroke-width: 4;
+  paint-order: stroke;
+}
+.ptr-overlay__indicator--settings .ptr-tv-halo {
+  display: none;
 }
 .ptr-overlay__indicator--default .ptr-indicator__text {
   color: var(--color-on-image-dark);                   /* 深色填充 */
@@ -62,15 +82,6 @@
   color: var(--color-on-image-dark);
   -webkit-text-stroke: 1px var(--color-on-image);
   paint-order: stroke fill;
-}
-
-/* 的 SVG 光晕 filter 定义容器：全局仅渲染一次，零尺寸、不占布局 */
-.ptr-halo-defs {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  pointer-events: none;
 }
 
 /* ---------- 指示器整体布局（图标为主、文本为辅） ---------- */
