@@ -301,7 +301,9 @@
 
   .source-tag {
     flex-shrink: 0;
-    height: calc(30px * var(--ui-scale)); /* 移动端压低胶囊高度（默认 comp-tab-height 36-38px 显胖） */
+    /* 移动端胶囊高度对齐开源移动端规范（Ant Design Mobile / Vant Tag 24px 档），
+       默认 comp-tab-height 36-38px 显胖；24px 仍满足 WCAG 2.5.8 AA 触摸下限 */
+    height: calc(24px * var(--ui-scale));
     scroll-snap-align: start;
   }
 }
@@ -354,7 +356,7 @@
 
   html[data-device="app"] .source-tag {
     flex-shrink: 0;
-    height: calc(30px * var(--ui-scale)); /* 与上方 ≤767px 恒移动副本同步 */
+    height: calc(24px * var(--ui-scale)); /* 与上方 ≤767px 恒移动副本同步 */
     scroll-snap-align: start;
   }
 

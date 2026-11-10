@@ -159,3 +159,31 @@
 .grouppicker-popup .grouppicker__grid {
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+ 移动端：分组 chip 高度对齐开源移动端规范（Ant Design Mobile / Vant Tag 24px 档）。
+ 页内 hot-tag / 更多分类 / 展开按钮默认由 padding 撑到 26px 偏胖；
+ 与 IPTV 数据源 chip（.source-tag）统一到 24px（仍满足 WCAG 2.5.8 AA 触摸下限）。
+ ═══════════════════════════════════════════════════════════════════ */
+@media (width <= 767px) {
+  .grouppicker__hot-tag,
+  .grouppicker__more-btn,
+  .grouppicker__expand-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(24px * var(--ui-scale));
+    padding-block: 0;
+  }
+}
+
+/* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
+html[data-device="app"] .grouppicker__hot-tag,
+html[data-device="app"] .grouppicker__more-btn,
+html[data-device="app"] .grouppicker__expand-btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(24px * var(--ui-scale));
+  padding-block: 0;
+}
