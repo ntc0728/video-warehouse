@@ -353,12 +353,25 @@
   padding: var(--space-sm) var(--space-md);
 }
 
+/* 「全部」聚合视图：特别篇行嵌在方格网格里，横跨整行 */
+.playlist-grid .playlist-cell--row {
+  grid-column: 1 / -1;
+}
+
 .playlist-cell--row .playlist-row-title {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 「全部」视图行内季标：绝对定位左上会压住单行标题，改随行内联 */
+.playlist-cell--row .playlist-cell-season {
+  position: static;
+  flex-shrink: 0;
+  margin-right: var(--space-3xs);
+  line-height: 1;
 }
 
 /* TV 端遥控器焦点金边框复用 .playlist-cell 基类，行布局同样生效（无需额外规则） */

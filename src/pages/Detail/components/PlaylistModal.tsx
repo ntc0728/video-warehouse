@@ -538,6 +538,10 @@ export default function PlaylistModal({
           {visibleItems.map((it, flatIdx) => {
             const isSel = flatIdx === selectedIdx;
             const prog = cellProgress(it, progressMap);
+            // 特别篇（季 0）行布局：特别篇桶单季视图 + 「全部」聚合视图统一处理
+            // （方格装不下长篇名；「全部」里横跨整行，正季方格不动）
+            const specialRow = it.kind === 'ep'
+              && (specialListView || (showAll && it.seasonNumber === 0));
             // 已看判定：仅「真有进度记录」的 cell 显示已看标记（✓ + 已看底色），
             // 未看过/无进度记录的一律不标记。
             const isPlayed = prog != null;
@@ -559,7 +563,7 @@ export default function PlaylistModal({
                 : 0;
             const cls = [
               'playlist-cell',
-              it.kind === 'ep' ? (specialListView ? 'playlist-cell--row' : 'playlist-cell--ep') : 'playlist-cell--line',
+              it.kind === 'ep' ? (specialRow ? 'playlist-cell--row' : 'playlist-cell--ep') : 'playlist-cell--line',
               // 选中态（is-selected）两端都加：用于背景着色与数字主色，
               // 与「历史已看」(is-watched) 的浅色底做区分；金边框高亮框
               // 仅 TV 端通过 .playlist-modal--tv 限定显示（非 TV 端不出现高亮框）
@@ -597,11 +601,12 @@ export default function PlaylistModal({
               const inner = (
                 <>
                   {it.kind === 'ep' ? (
-                  specialListView ? (
+                  specialRow ? (
                   <>
                     {/* 特别篇桶：列表行——整题单行完整可见（方格装不下长篇名）。
                         不另渲染桶内序号：合并桶集号（1..N 连续）与标题里的「第0N集」
                         （篇内集号）语义不同，并排会互相矛盾 */}
+                    {showAll && <span className="playlist-cell-season">特别篇</span>}
                     <span className="playlist-cell-name playlist-row-title">{it.title}</span>
                     {/* 勾号与「已看」或「有播放进度」联动：跨季/聚合视图里带进度的 cell 也显示右上角 ✓ */}
                     {isPlayed && (
