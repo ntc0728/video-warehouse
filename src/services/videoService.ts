@@ -7,7 +7,7 @@ import type { Video, VideoType, Episode } from '@/types/video';
 import type { VideoSourceConfig } from '@/types/source';
 import { getVideoSources, getIPTVSources, getEnabledVideoSourceIndices, getEnabledIPTVSourceIndices } from './sourceService';
 import { getJSON } from './httpClient';
-import { extractSeasonNumber } from './seasonMatcher';
+import { extractSeasonNumber, isSpecialEntryTitle } from './seasonMatcher';
 import { parsePlaySources } from './vodParser';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -770,8 +770,13 @@ export async function searchVideoSeasonsFromSingleSource(
 
     /**
  * ── 阶段 1：同步筛选（不发请求）────────────────────────────
- * 把 data.list 拆成「待解析的季条目」：同一季号只取**首个**（原 `seasons.has` 去重的语义），
- * 无季号条目仍是第 1 季回退候选（名称与标题完全一致的优先）。
+ * 把 data.list 拆成三类：
+ * - 季条目：同一季号只取**首个**（原 `seasons.has` 去重的语义）
+ * - 特别篇条目：无季号但带特别篇标记（特别篇/特辑/番外/剧场版/OVA/SP 等，
+ *   isSpecialEntryTitle）→ 全部保留，解析后合并进「季 0（特别篇）」桶。
+ *   原实现把这类条目整体丢弃，神秘博士的 60 周年特别篇等就此消失。
+ * - 无标记无季号条目：仅作为第 1 季回退候选，且**收紧为名称与搜索标题一致才补位**——
+ *   原实现取首个无季号条目，源无第 1 季时会把「XX特辑」错标成第 1 季。
  * 先同步跑完，才能在阶段 2 一次性并发解析，而不是边判断边 await。
  */
     interface SeasonResolveTask {
@@ -780,20 +785,27 @@ export async function searchVideoSeasonsFromSingleSource(
       item: CMSVideoItem;
       /** 是否为「无季号条目补位第 1 季」——只有真解析出内容才入表 */
       isFallback?: boolean;
+      /** 是否为特别篇条目（解析后并入季 0 桶） */
+      isSpecial?: boolean;
     }
     const tasks: SeasonResolveTask[] = [];
+    const specialItems: CMSVideoItem[] = [];
     const claimedSeasons = new Set<number>();
     let fallbackItem: CMSVideoItem | undefined;
-    let fallbackExact = false;
+    // 名称一致性判等：去空白与常见中英文标点后全等（「超人前传」≈「超人前传 第二季」的裸剧名场景）
+    const normalizeName = (s: string) => s.replace(/[\s·・:：,，.。_（）()【】\]—-]+/g, '');
+    const normalizedTitle = normalizeName(title.trim());
     for (const item of mergedList) {
       const vodName = item.vod_name ?? '';
       const seasonNumber = extractSeasonNumber(vodName);
       if (seasonNumber === undefined) {
-        // 记录无季号条目作为第 1 季回退候选；名称与搜索标题完全一致的优先
-        const exact = vodName.trim() === title.trim();
-        if (!fallbackItem || (exact && !fallbackExact)) {
+        if (isSpecialEntryTitle(vodName)) {
+          specialItems.push(item);
+          continue;
+        }
+        // 无季号且非特别篇：名称与搜索标题一致才作第 1 季回退候选（防特辑类条目错标第 1 季）
+        if (normalizeName(vodName) === normalizedTitle) {
           fallbackItem = item;
-          fallbackExact = exact;
         }
         continue;
       }
@@ -801,10 +813,13 @@ export async function searchVideoSeasonsFromSingleSource(
       claimedSeasons.add(seasonNumber);
       tasks.push({ seasonNumber, item });
     }
-    // 第 1 季缺失时用无季号条目补位（原逻辑在循环后判定，此处提前同步判定即可，
-    // 结果等价：claimedSeasons 已收齐全部季号）
+    // 第 1 季缺失时用无季号条目补位（结果等价：claimedSeasons 已收齐全部季号）
     if (fallbackItem && !claimedSeasons.has(1)) {
       tasks.push({ seasonNumber: 1, item: fallbackItem, isFallback: true });
+    }
+    // 特别篇条目统一排在正季任务之后解析，合并时按 CMS 返回序拼接（与条目可见顺序一致）
+    for (const item of specialItems) {
+      tasks.push({ seasonNumber: 0, item, isSpecial: true });
     }
 
     /**
@@ -825,16 +840,50 @@ export async function searchVideoSeasonsFromSingleSource(
 
     /** 季号 → Video 映射（用于切换选季时快速查找） */
     const seasons = new Map<number, Video>();
+    /** 特别篇解析结果（按 tasks 中的顺序，即 CMS 返回序），循环后合并进季 0 */
+    const specialVideos: Video[] = [];
     resolvedList.forEach((resolved, i) => {
       const task = tasks[i];
       // 回退条目空结果不占位（保持原行为：宁可没有第 1 季，也不要一个空壳季）
       if (task.isFallback && (resolved.episodes?.length ?? 0) === 0 && resolved.sources.length === 0) return;
-      seasons.set(task.seasonNumber, {
+      const video: Video = {
         ...mapVideoItem(resolved.item),
         sources: resolved.sources,
         episodes: resolved.episodes,
-      });
+      };
+      if (task.isSpecial) {
+        if ((video.episodes?.length ?? 0) > 0) specialVideos.push(video);
+        return;
+      }
+      seasons.set(task.seasonNumber, video);
     });
+
+    // 特别篇合并进「季 0」桶（TMDB TV Bible 约定 Season 0 = Specials）：
+    // 多个特别篇的集列表按 CMS 返回序拼接；集号在桶内重排为连续序号——
+    // 各特别篇的标题都是「第01集」起，按标题解析的 number 会撞号，
+    // 撞号会破坏 findEpisodeByNumber 的（换源/续播）按集号匹配。
+    // 多条时集标题加特别篇名前缀区分（如「60周年特别篇·第01集」）。
+    if (specialVideos.length > 0) {
+      const stripTitle = (vodName: string) =>
+        vodName.replace(title.trim(), '').replace(/^[·・:：\s\-—]+/, '') || vodName;
+      const mergedEpisodes: NonNullable<Video['episodes']> = [];
+      specialVideos.forEach((video) => {
+        const prefix = specialVideos.length > 1 ? `${stripTitle(video.title)}·` : '';
+        for (const ep of video.episodes ?? []) {
+          mergedEpisodes.push({ ...ep, title: `${prefix}${ep.title}` });
+        }
+      });
+      mergedEpisodes.forEach((ep, i) => { ep.number = i + 1; });
+      const first = specialVideos[0];
+      seasons.set(0, {
+        ...first,
+        // 标题保持基础剧名：选季面板/弹窗的「特别篇」标签由季号 0 统一渲染，
+        // 这里再拼后缀会出现「XX·特别篇 · 特别篇」
+        title,
+        sources: [],
+        episodes: mergedEpisodes,
+      });
+    }
 
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons };
@@ -855,6 +904,7 @@ export function findEpisodeByNumber(episodes: Episode[], targetNumber: number) {
 
 /**
  * 将 CMS 搜索到的 seasonMap 转换为 PlayerSeasonPanel 所需的格式。
+ * 季 0（特别篇桶）名称固定为「特别篇」，排序保持升序（特别篇在最前）。
  */
 export function buildCmsSeasons(
   seasonMap: Map<number, { episodes?: Episode[] }>,
@@ -863,7 +913,22 @@ export function buildCmsSeasons(
     .sort(([a], [b]) => a - b)
     .map(([num, video]) => ({
       season_number: num,
-      name: `第${num}季`,
+      name: num === 0 ? '特别篇' : `第${num}季`,
       episode_count: video.episodes?.length ?? 0,
     }));
+}
+
+/**
+ * 从季映射中取「主季」video（代表该源有数据）：优先最小正季号（正片优先），
+ * 无正季号（仅特别篇桶）时回退最小季号。消费方：播放页聚合探测/初始 video、
+ * 详情页源卡代表 video——都不应让特别篇（季 0）抢先成为默认播放对象。
+ */
+export function pickPrimarySeasonVideo(seasonMap: Map<number, Video>): Video | undefined {
+  let pos: { num: number; video: Video } | undefined;
+  let any: { num: number; video: Video } | undefined;
+  for (const [num, video] of seasonMap) {
+    if (num > 0 && (pos === undefined || num < pos.num)) pos = { num, video };
+    if (any === undefined || num < any.num) any = { num, video };
+  }
+  return pos?.video ?? any?.video;
 }

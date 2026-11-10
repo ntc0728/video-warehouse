@@ -140,7 +140,11 @@ export default function PlaylistModal({
   const historyRecord = (videoId ? liveHistoryRecord : historyRecordProp) ?? null;
 
   const [showAll, setShowAll] = useState(false);
-  const [seasonIdx, setSeasonIdx] = useState(0);
+  // 默认落在首个正季：季 0 是特别篇桶，打开弹窗应优先展示正片（历史季对齐会在挂载后覆盖）
+  const [seasonIdx, setSeasonIdx] = useState(() => {
+    const firstPositive = seasonNumbers.findIndex((n) => n > 0);
+    return firstPositive >= 0 ? firstPositive : 0;
+  });
   const [query, setQuery] = useState('');
   const [selectedIdx, setSelectedIdx] = useState(-1);
   const [visibleCount, setVisibleCount] = useState(40);
@@ -154,9 +158,11 @@ export default function PlaylistModal({
   const initialSeasonSetRef = useRef(false);
 
   // 变体在挂载时锁定：桌面居中 / 移动≤10集底部 / 移动>10集右侧整页抽屉
+  // （集数按默认展示季取：季 0 特别篇桶排在数组首位，不代表正片体量）
   const [variant] = useState<'center' | 'sheet' | 'drawer'>(() => {
     if (!isMobile) return 'center';
-    if (isSeries && (seasons[0]?.episodes?.length ?? 0) > 10) return 'drawer';
+    const defaultIdx = Math.max(0, seasonNumbers.findIndex((n) => n > 0));
+    if (isSeries && (seasons[defaultIdx]?.episodes?.length ?? 0) > 10) return 'drawer';
     return 'sheet';
   });
 
@@ -240,7 +246,8 @@ export default function PlaylistModal({
       const histSeason = historyRecord.seasonNumber;
       if (histSeason != null) {
         const idx = seasonNumbers.indexOf(histSeason);
-        if (idx > 0 && idx !== seasonIdx) {
+        // idx >= 0（而非 > 0）：默认季已不是恒为 0 的下标（正季优先），历史季 0（特别篇）也要能对齐
+        if (idx >= 0 && idx !== seasonIdx) {
           setSeasonIdx(idx);
           return; // 切季后本 effect 重跑，再完成选中初始化
         }
@@ -457,7 +464,7 @@ export default function PlaylistModal({
                 setVisibleCount(40);
               }}
             >
-              {sn === 0 ? '正片' : `第${sn}季`}
+              {sn === 0 ? '特别篇' : `第${sn}季`}
             </button>
           ))}
         </div>
@@ -487,7 +494,7 @@ export default function PlaylistModal({
               setVisibleCount(40);
             }}
           >
-            <span>{sn === 0 ? '正片' : `第${sn}季`}</span>
+            <span>{sn === 0 ? '特别篇' : `第${sn}季`}</span>
             <span className="playlist-season-count">{seasons[i]?.episodes?.length ?? 0}</span>
           </button>
         ))}
@@ -718,7 +725,7 @@ export default function PlaylistModal({
             {isSeries
               ? showAll
                 ? `${video.title} · 全部`
-                : `${video.title} · 第${currentSeasonNumber === 0 ? '正片' : currentSeasonNumber}季`
+                : `${video.title} · ${currentSeasonNumber === 0 ? '特别篇' : `第${currentSeasonNumber}季`}`
               : video.title}
           </Dialog.Title>
           <div className="playlist-sub">

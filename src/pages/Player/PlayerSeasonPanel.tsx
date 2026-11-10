@@ -31,7 +31,8 @@ export function PlayerSeasonPanel({
   currentSeasonName,
   loading = false,
 }: PlayerSeasonPanelProps) {
-  const filtered = seasons.filter((s) => s.season_number > 0);
+  // 季 0 = 特别篇（CMS 特别篇桶 / TMDB Specials），与正季并列可选
+  const filtered = seasons.filter((s) => s.season_number >= 0);
 
   // App 端（compact）面板不可折叠 → collapsed 恒 false，不产生动画。
   // ⚠️ 必须在下方 return 分支之前调用，保证 Hook 顺序稳定。

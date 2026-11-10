@@ -9,7 +9,7 @@ import { useParams, useNavigationType, Link } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useUserStore, useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources, getEnabledVideoSourceIndices, checkSelectedVideoSources } from '@/services/videoService';
+import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources, getEnabledVideoSourceIndices, checkSelectedVideoSources, pickPrimarySeasonVideo } from '@/services/videoService';
 import type { SelectedSourceCheckResult } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, fetchMovieImages, fetchTVImages, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
@@ -487,11 +487,14 @@ export default function DetailPage() {
                 const v0 = single[0]?.video;
                 if (v0) { seasonVideos = [v0]; seasonNums = [1]; }
               }
+              // 源卡代表 video：正季优先（季 0 是特别篇桶，「立即播放」不应默认播特别篇）；
+              // 降级单搜的数据不在 res.seasons 里，回退 seasonVideos[0]
+              const repVideo = pickPrimarySeasonVideo(res.seasons) ?? seasonVideos[0] ?? null;
               r = {
                 sourceIndex: res.sourceIndex,
                 sourceId: res.sourceId,
                 sourceName: res.sourceName,
-                video: seasonVideos[0] ?? null,
+                video: repVideo ?? null,
                 seasons: seasonVideos,
                 seasonNumbers: seasonNums,
                 isSeries: seasonVideos.length > 0,
@@ -747,9 +750,10 @@ export default function DetailPage() {
     return map;
   }, [historyList, id]);
   // 直接读取历史记录中从源头写入的季号：季号 + 选集标签 → 「第X季 第Y集」
-  // 旧数据无 seasonNumber 时回退到 episodeLabel（第Y集），不会退化
-  const lastEpisodeLabel = historyRecord?.seasonNumber && historyRecord?.episodeLabel
-    ? `第${historyRecord.seasonNumber}季 ${historyRecord.episodeLabel}`
+  // 旧数据无 seasonNumber 时回退到 episodeLabel（第Y集），不会退化。
+  // 用 != null 而非 truthy：季 0（特别篇）会被 truthy 判断误当成「无季号」丢掉季前缀
+  const lastEpisodeLabel = historyRecord?.seasonNumber != null && historyRecord?.episodeLabel
+    ? `${historyRecord.seasonNumber === 0 ? '特别篇' : `第${historyRecord.seasonNumber}季`} ${historyRecord.episodeLabel}`
     : historyRecord?.episodeLabel;
 
   // ── Loading ──────────────────────────────────
@@ -1192,6 +1196,12 @@ export default function DetailPage() {
                     // （弹窗、「全部」按钮都能看到），meta 行却显示「0 条线路」。
                     const episodeCount = v.episodes?.length ?? 0;
                     const isSeries = result.isSeries;
+                    // 季数口径：特别篇（季 0）不计入「共 X 季」，有特别篇时单独标注
+                    const seasonCount = result.seasonNumbers.filter((n) => n > 0).length;
+                    const hasSpecial = result.seasonNumbers.includes(0);
+                    const seasonMeta = seasonCount > 0
+                      ? `共 ${seasonCount} 季${hasSpecial ? '（含特别篇）' : ''}`
+                      : hasSpecial ? '特别篇' : '';
                     const groupTitle = tmdbMediaType === 'tv' ? stripSeasonLabel(v.title) : v.title;
                     // 年份角标跟随 CMS（v.year），缺失时兜底 TMDB 年份（与海报「CMS 优先、TMDB 兜底」一致）
                     const thumbYear = v.year ?? year;
@@ -1218,7 +1228,7 @@ export default function DetailPage() {
                                 <span className="detail-source-meta-year">{thumbYear} · </span>
                               )}
                               {isSeries
-                                ? `共 ${result.seasons.length} 季`
+                                ? seasonMeta
                                 : lineCount > 0
                                   ? (lineCount === 1
                                     ? (v.sources[0]?.name || '线路 1')
@@ -1335,7 +1345,9 @@ export default function DetailPage() {
         {/* 季信息 */}
         {activeTab === 'seasons' && tmdbMediaType === 'tv' && (
           <div className="detail-seasons">
-            {seasons.filter((s) => s.season_number > 0).map((s) => (
+            {/* TMDB 季 0 = 特别篇（Specials）：一并展示，与 CMS 播放列表的特别篇桶口径一致；
+                无内容的季 0（episode_count=0）不渲染空卡片 */}
+            {seasons.filter((s) => s.season_number > 0 || s.episode_count > 0).map((s) => (
               <div key={s.id} className="detail-season-card">
                 <div className="detail-season-poster">
                   {/* 季海报：LazyImage 统一加载/失败/无图三态，失败与无图都落矩形占位（与 video card 封面一致）。 */}

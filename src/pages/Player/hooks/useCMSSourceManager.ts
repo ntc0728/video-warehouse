@@ -6,16 +6,24 @@ import {
   searchVideoSeasonsFromSingleSource,
   findEpisodeByNumber,
   buildCmsSeasons,
+  pickPrimarySeasonVideo,
 } from '@/services/videoService';
 import type { VideoDetailResult } from '@/services/videoService';
 import type { Video, Episode, VideoSource } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail } from '@/types/tmdb';
 import type { HistoryRecord } from '@/types/store';
 
-// 取 Map 第一个 key（用于跨源季号对齐时回退到新源第一季）
+// 跨源季号对齐时的回退季号：优先最小**正**季号（正片优先），
+// 仅特别篇（季 0）桶时才落季 0。原实现取插入序第一个 key，
+// CMS 把特别篇条目排在前面时会把「回退第一季」落到特别篇上。
 function firstKeyOf<T>(map: Map<number, T>, fallback: number): number {
-  const it = map.keys().next();
-  return it.done ? fallback : it.value;
+  let minPos: number | undefined;
+  let minAny: number | undefined;
+  for (const k of map.keys()) {
+    if (k > 0 && (minPos === undefined || k < minPos)) minPos = k;
+    if (minAny === undefined || k < minAny) minAny = k;
+  }
+  return minPos ?? minAny ?? fallback;
 }
 
 /**
@@ -315,7 +323,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
               if (r.seasons.size > 0) {
                 // 季映射入缓存：选择该源时 apply 链直接取用，不重复请求
                 seasonMapsRef.current.set(idx, r.seasons);
-                const first = r.seasons.values().next().value as Video | undefined;
+                // 探测代表 video：正季优先，特别篇（季 0）不作为「该源有数据」的默认播放对象
+                const first = pickPrimarySeasonVideo(r.seasons);
                 res = {
                   sourceIndex: idx,
                   sourceId: allSrc[idx]?.id ?? '',
@@ -503,7 +512,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           seasonMapsRef.current.set(sourceIdx, seasonMap);
           setCmsSeasons(buildCmsSeasons(seasonMap));
 
-          const firstSeasonVideo = seasonMap.size > 0 ? seasonMap.values().next().value : null;
+          // 初始播放的季 video：正季优先（季 0 特别篇不作默认播放对象）
+          const firstSeasonVideo = seasonMap.size > 0 ? pickPrimarySeasonVideo(seasonMap) ?? null : null;
           const cmsResult: VideoDetailResult = {
             sourceIndex: sourceIdx,
             sourceId: seasonResult.sourceId,

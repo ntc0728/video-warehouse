@@ -710,7 +710,11 @@ export default function HistoryPage() {
         title: v.title || '未知',
         media: v._histBackdrop || v.cover,
         source: v._histCmsSourceName,
-        episode: v._histEpisodeLabel ? (v._histSeasonNumber ? `第${v._histSeasonNumber}季 ${v._histEpisodeLabel}` : v._histEpisodeLabel) : undefined,
+        episode: v._histEpisodeLabel
+          ? (v._histSeasonNumber != null
+            ? `${v._histSeasonNumber === 0 ? '特别篇' : `第${v._histSeasonNumber}季`} ${v._histEpisodeLabel}`
+            : v._histEpisodeLabel)
+          : undefined,
         status: finished ? 'finished' : 'unfinished',
         timeText,
         timeTitle,

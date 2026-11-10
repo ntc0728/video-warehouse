@@ -757,9 +757,10 @@ export default function PlayerPage() {
   const voteAverage: number = d?.vote_average ?? 0;
   // 类型标签（对齐 Detail 页 detail-hero-meta）
   const typeLabel = tmdbMediaType === 'tv' ? '剧集' : '电影';
-  // 剧集总季/集数：优先 CMS 季映射聚合，fallback TMDB seasons
+  // 剧集总季/集数：优先 CMS 季映射聚合，fallback TMDB seasons。
+  // 季 0（特别篇）不计入总季数，与 TMDB number_of_seasons / 详情页口径一致
   const totalSeasons = seasons.length > 0
-    ? seasons.length
+    ? seasons.filter((s) => s.season_number > 0).length || seasons.length
     : (d && isTV ? ((d as TMDBTVShowDetail).seasons ?? []).length : 0);
   const totalEpisodes = seasons.length > 0
     ? seasons.reduce((sum, s) => sum + (s.episode_count ?? 0), 0)

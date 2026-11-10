@@ -57,7 +57,10 @@ export function buildContinueItems(history: HistoryLike[], max = 12): ContinueWa
     if (latestRec.id !== h.id) continue;
     const parts: string[] = [];
     if (h.cmsSourceName) parts.push(h.cmsSourceName);
-    if (h.seasonNumber && h.episodeLabel) parts.push(`${h.seasonNumber}季${h.episodeLabel}`);
+    // != null 而非 truthy：季 0（特别篇）会被 truthy 判断丢掉季前缀
+    if (h.seasonNumber != null && h.episodeLabel) {
+      parts.push(`${h.seasonNumber === 0 ? '特别篇' : `${h.seasonNumber}季`}${h.episodeLabel}`);
+    }
     list.push({
       id: key,
       cover: h.cover || '',

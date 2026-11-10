@@ -45,4 +45,16 @@ describe('buildCmsSeasons', () => {
     expect(result).toHaveLength(1);
     expect(result[0].season_number).toBe(3);
   });
+
+  it('季 0（特别篇桶）命名为「特别篇」，且升序排序在最前', () => {
+    const seasonMap = new Map([
+      [1, makeVideo('第一季', 10)],
+      [0, makeVideo('特别篇', 4)],
+    ]);
+    const result = buildCmsSeasons(seasonMap);
+    expect(result).toEqual([
+      { season_number: 0, name: '特别篇', episode_count: 4 },
+      { season_number: 1, name: '第1季', episode_count: 10 },
+    ]);
+  });
 });
