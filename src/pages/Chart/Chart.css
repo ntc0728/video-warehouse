@@ -243,11 +243,18 @@
 .chart-row__t {
   display: block;
   color: var(--color-text);
-  font-size: var(--text-lg);
-  font-weight: 600;
+  /* 2026-11-11 档位纠正：榜单行是横版媒体卡（封面+标题），标题归横版卡家族档
+     —— RecordCard / VideoCard 同为 --text-sm / 500 / 1.5（此前误用区块标题档
+     --text-lg / 600，移动端比同类卡大出近 2px）。TV 随家族抬到 --text-base。 */
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.5;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+[data-device="tv"] .chart-row__t {
+  font-size: var(--text-base);
 }
 .chart-row__t.is-overflow {
   text-overflow: clip;
@@ -392,10 +399,11 @@
   height: 100%;
 }
 
-/* body 三行：标题 / meta / 描述，行高与间距对齐真实（24 / 14 / 14 + 2×space-2xs） */
+/* body 三行：标题 / meta / 描述，行高与间距对齐真实
+ （2026-11-11 标题归横版卡档 --text-sm × 1.5；此前 --text-lg） */
 .chart-list__skeleton .sk-title {
   width: 62%;
-  height: calc(var(--text-lg) * 1.1);
+  height: calc(var(--text-sm) * 1.5);
 }
 
 .chart-list__skeleton .sk-meta {
@@ -459,12 +467,14 @@
  原 --comp-chart-cover-w/h（竖版）token 已随之删除（variables.css）。 */
 /* 桌面横版基准尺寸的显式声明（>.chart-row__cover 已在上方定义 160×90，此处仅注释锚点） */
 
-/* 移动端细粒度：窄屏再收一档（保持 2:3 比例）；简介隐藏 */
+/* 移动端细粒度：窄屏收窄 padding / 排名列。
+ 简介此前在 ≤639 / app 被 display:none 整条隐藏（2026-11-11 用户质疑后移除）：
+ 与收藏/历史横版卡（简介单行省略恒显示）不一致，且骨架 .sk-desc 一直按有简介排，
+ 真实行少一行造成骨架→数据行高跳动。现恒显示（基础规则单行省略号）。 */
 @media (width <= 639px) {
   .chart-head { padding: 0 var(--space-md) 0; }
   .chart-tabs { padding: var(--space-sm) var(--space-md); }
   .chart-list { padding: var(--space-xs) var(--space-xs) var(--space-sm); }
-  .chart-row__desc { display: none; }
   .chart-row__rank { flex-basis: var(--comp-chart-rank-w); }
   .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
 }
@@ -475,7 +485,6 @@ html[data-device="app"] .chart-list {
   padding: var(--space-xs) var(--space-xs) var(--space-sm);
 }
 /* app 档封面/骨架不再有竖版覆盖：全端统一基础 .chart-row__cover 160×90（2026-11-11） */
-html[data-device="app"] .chart-row__desc { display: none; }
 html[data-device="app"] .chart-row__rank { flex-basis: var(--comp-chart-rank-w); }
 html[data-device="app"] .chart-row--top .chart-row__rank { font-size: var(--text-lg); }
 
