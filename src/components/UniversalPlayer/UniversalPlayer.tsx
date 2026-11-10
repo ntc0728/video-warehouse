@@ -206,8 +206,12 @@ export default function UniversalPlayer({
   const [degradedType, setDegradedType] = useState<SourceType | null>(null);
   // 移动端布局判定（app 端恒真）：移动端/App 端点播页走「精简控制栏 + 右上角操作组 + 底部弹窗」布局
   const isMobileLayout = useIsMobileLayout();
-  // 操作类提示的「移动端居中」仅针对真实移动设备（App / 真实手机 UA）：
-  // 桌面浏览器窄窗（视口 <768 但非移动设备）仍走右上角 .up-player-toast（与桌面一致）。
+  // 操作类提示的「移动端顶部胶囊」口径 = 移动布局（真实移动设备 ∪ 移动端布局）：
+  // 播放器渲染的是移动端形态（头部三图标 + 精简控制栏）时，show()（操作类）与
+  // mobileSettingsToast（设置类）必须汇入同一提示槽——否则窄窗下操作类走右上角
+  // .up-player-toast、设置类走居中，同一操作（镜像/倍速/循环等 store 双触发）会
+  // 同时上屏两个胶囊（2026-11-11 实测叠加）。真机此前只是「同槽覆盖」巧合掩盖。
+  // 仅真桌面宽窗保留右上角通道（与截图类居中提示位置远离，不构成叠加）。
   // Hook 必须无条件调用（rules-of-hooks）：isNativePlatform() 是常量级判定，
   // 但写在 || 左侧会让 useIsRealPhone 在 App 端整条渲染周期缺席，Hook 链跨端不一致。
   const realPhone = useIsRealPhone();
@@ -1078,7 +1082,7 @@ skipHistory,
 
   // 切换频道前冻结当前帧（同步 DOM 操作，避免 React 异步渲染延迟导致黑屏闪现）
   return (
-    <ToastProvider mobileCenter={isMobileDevice} containerRef={containerRef}>
+    <ToastProvider mobileCenter={isMobileDevice || isMobileLayout} containerRef={containerRef}>
     <ToastTrigger mode={mode} />
     <PlayerErrorBoundary onRetry={() => setRetryCount(c => c + 1)}>
     <PlayerContext.Provider value={{ getVideoElement: () => videoElementRef.current }}>
