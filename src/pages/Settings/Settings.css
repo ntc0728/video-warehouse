@@ -1882,7 +1882,7 @@ html[data-device="app"] .modal-content-animate.changelog-modal {
 }
 
 /* 设置页控件缩档（按钮、图标、tab、方型按钮尺寸过大）：
- 字号部分已上收为全站 --type-scale ×0.95（variables.css，2026-11-09 统一），
+ 字号部分已上收为 --type-scale（variables.css：桌面 1 / 移动端 0.95，2026-11-10 定稿），
  此处只保留控件高度族 ×0.8（从原 0.93/0.8 双档中的加码档保留）——
  theme-btn/back-btn 方块（btn-min-height）、counter-btn ±/counter-value（tab-height）、
  Button min-h（btn-min-width）、settings-input（input-height）、滑块手柄

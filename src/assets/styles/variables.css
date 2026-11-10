@@ -44,11 +44,12 @@
 :root {
   /* ── UI 全局缩放（三段式×大屏整合）── */
   --ui-scale: 1;
-  /* ── 全站字号缩档（2026-11-09 用户定稿）──
-  原「设置页作用域 ×0.93」上收为全站 ×0.95：所有 --text-* 定义统一乘本系数，
-  Tailwind fontSize（text-sm/base/…映射 var(--text-*)）与 --icon-*（延迟解析）自动连锁。
-  TV 10-foot 契约（文件末尾 [data-device="tv"] 独立 clamp 定义）不乘，保持 2× 档。 */
-  --type-scale: 0.95;
+  /* ── 字号缩档（2026-11-10 用户定稿）──
+  桌面 = 1（保持按 1440 行业锚点校准的曲线）；移动端 = 0.95
+  （≤767 首帧兜底 + html[data-mobile-layout] / html[data-device="app"] 恒移动覆盖）。
+  乘入全部非 TV --text-* 定义；Tailwind fontSize 与 --icon-*（延迟解析）自动连锁。
+  TV 10-foot 契约（文件末尾 [data-device="tv"] 独立 clamp）不乘，保持 2× 档。 */
+  --type-scale: 1;
   /* 卡片固定宽度（≥1280 auto-fill 轨道）：290 设计基 × scale */
   --card-size: calc(290px * var(--ui-scale));
   /* ── Colors ─────────────────────────────────────────────────────────── */
@@ -324,22 +325,22 @@
  （两档塌缩）；段2 逆视口递减更违反可读性常识（桌面 1920 正文 13px < 平板 768 的 14px）。
  恒定常量本身即 ≥ 行业下限，**不设可读性下限钳制**（钳制是多余的）。 */
   /* 角标/元信息最小档：11px 基 × ui-scale × type-scale，并钳 10px 下限
- （2026-11-09 方案 B：界面缩放 95% 档与 --type-scale 0.95 叠加时裸算式得 9.93px，
+ （2026-11-09 方案 B：界面缩放 95% 档与移动端 --type-scale 0.95 叠加时裸算式得 9.93px，
  低于全行业最小档 Vant xs=10 → max() 兜底；默认档 10.45px 不受影响）。 */
-  --text-2xs: max(10px, calc(11px * var(--ui-scale) * var(--type-scale))); /* 恒定 11 × 0.95，钳 10px 下限（原 clamp(9px,…,10.333px)） */
-  --text-xs:  calc(12px * var(--ui-scale) * var(--type-scale)); /* 恒定 12 × 0.95（原 clamp(12px,…,12.667px)） */
-  --text-sm:  calc(13px * var(--ui-scale) * var(--type-scale)); /* 恒定 13 × 0.95（原 clamp(13px,…,13.667px)） */
-  --text-base: calc(14px * var(--ui-scale) * var(--type-scale)); /* 恒定 14 × 0.95（正文字号契约；段2 递减已取消）。
+  --text-2xs: max(10px, calc(11px * var(--ui-scale) * var(--type-scale))); /* 恒定 11 × type-scale，钳 10px 下限（原 clamp(9px,…,10.333px)） */
+  --text-xs:  calc(12px * var(--ui-scale) * var(--type-scale)); /* 恒定 12 × type-scale（原 clamp(12px,…,12.667px)） */
+  --text-sm:  calc(13px * var(--ui-scale) * var(--type-scale)); /* 恒定 13 × type-scale（原 clamp(13px,…,13.667px)） */
+  --text-base: calc(14px * var(--ui-scale) * var(--type-scale)); /* 恒定 14 × type-scale（正文字号契约；段2 递减已取消）。
  ⚠️ 本 token 不再是 rem 基准——rem 基准已独立为 --root-font-size（见下）。 */
   /* 大四档：段1（375→768）保持流体，段2 见 @media (width >= 768px)：
  768 处 = 段1 末值（连续无跳变）→ 1440 命中行业标准档 16/18/22/28 → 冻结。 */
   /* 段1 MIN 取 15（非原 14）：原 MIN 14 令移动端 lg(14.05) ≈ base(14.00)，相邻档位差仅
  0.05px → 违反「相邻档差 ≥1px」契约（lg 档在移动端等同虚设）。取 15 后移动端差恒 ≥1px，
  768 处仍精确续接段2 的 15.333（连续无跳变）。 */
-  --text-lg: calc(clamp(15px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale) * var(--type-scale)); /* 15→15.333 × 0.95 */
-  --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale) * var(--type-scale)); /* 16→17.333 × 0.95 */
-  --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale) * var(--type-scale)); /* 20→22.667 × 0.95 */
-  --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale) * var(--type-scale)); /* 26→28.667 × 0.95 */
+  --text-lg: calc(clamp(15px, 12.728px + 0.339vw, 15.333px) * var(--ui-scale) * var(--type-scale)); /* 15→15.333 × type-scale */
+  --text-xl: calc(clamp(16px, 14.728px + 0.339vw, 17.333px) * var(--ui-scale) * var(--type-scale)); /* 16→17.333 × type-scale */
+  --text-2xl: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale) * var(--type-scale)); /* 20→22.667 × type-scale */
+  --text-3xl: calc(clamp(26px, 23.455px + 0.679vw, 28.667px) * var(--ui-scale) * var(--type-scale)); /* 26→28.667 × type-scale */
 
   /* ── Root Font Size（rem 基准）— 从 --text-base 解耦 ────────────
  原 `html { font-size: var(--text-base) }` 让「最常用的正文 token」同时充当
@@ -645,6 +646,23 @@
   }
 }
 
+/* ── 字号缩档：仅移动端 0.95（桌面保持 1 = 1440 行业锚点校准值）──
+ ① @media ≤767：首帧（JS 尚未写 data-mobile-layout）时的视口兜底；
+ ② data-mobile-layout="true"：AppLayout 按「布局」判定（App 恒真 / 真实手机 UA 恒真 /
+    视口 <768），覆盖手机桌面模式、App 横屏等视口 ≥768 仍属移动端的场景；
+ ③ data-device="app"：原生 WebView 恒移动。
+ 三者都只改 --type-scale，token 公式（含 ≥768 段2）不变。 */
+@media (width <= 767px) {
+  :root {
+    --type-scale: 0.95;
+  }
+}
+
+html[data-mobile-layout="true"],
+html[data-device="app"] {
+  --type-scale: 0.95;
+}
+
 
 /* ── 三段式段2（768→2200，冻结点与内容封顶 2200 对齐； 迁移）── */
 @media (width >= 768px) {
@@ -745,10 +763,10 @@
  大四档从段1 末值续接 —— 768 处 = 段1 末值（连续无跳变）→ 1440 命中行业标准档 → 冻结。
  斜率校验：lg 14.5707 + 0.09926×7.68 = 15.333 ✅ ／ +0.09926×14.4 = 16.000 ✅
  3xl 29.4293 − 0.09926×7.68 = 28.667 ✅ ／ −0.09926×14.4 = 28.000 ✅ */
-    --text-lg:  calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale) * var(--type-scale)); /* 15.333@768 → 16@1440 → 16 × 0.95 */
-    --text-xl:  calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale) * var(--type-scale)); /* 17.333@768 → 18@1440 → 18 × 0.95 */
-    --text-2xl: calc(clamp(22px, 23.4293px - 0.09926vw, 22.667px) * var(--ui-scale) * var(--type-scale));  /* 22.667@768 → 22@1440 → 22 × 0.95 */
-    --text-3xl: calc(clamp(28px, 29.4293px - 0.09926vw, 28.667px) * var(--ui-scale) * var(--type-scale));  /* 28.667@768 → 28@1440 → 28 × 0.95 */
+    --text-lg:  calc(clamp(15.333px, 14.5707px + 0.09926vw, 16px) * var(--ui-scale) * var(--type-scale)); /* 15.333@768 → 16@1440 → 16 × type-scale */
+    --text-xl:  calc(clamp(17.333px, 16.5707px + 0.09926vw, 18px) * var(--ui-scale) * var(--type-scale)); /* 17.333@768 → 18@1440 → 18 × type-scale */
+    --text-2xl: calc(clamp(22px, 23.4293px - 0.09926vw, 22.667px) * var(--ui-scale) * var(--type-scale));  /* 22.667@768 → 22@1440 → 22 × type-scale */
+    --text-3xl: calc(clamp(28px, 29.4293px - 0.09926vw, 28.667px) * var(--ui-scale) * var(--type-scale));  /* 28.667@768 → 28@1440 → 28 × type-scale */
     --vol-track-radius: calc(clamp(1.587px, 1.731px - 0.00833vw, 1.667px) * var(--ui-scale)); /* 递减：1.667@768 → 1.611@1440 → 1.587 */
     --vol-track-width: calc(clamp(3.327px, 3.99729px - 0.04301vw, 3.667px) * var(--ui-scale)); /* 递减：3.667@768 → 3.378@1440 → 3.327 */
   }
