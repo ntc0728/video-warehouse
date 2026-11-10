@@ -9,6 +9,7 @@ import { useCustomNavigate } from '@/lib/navigation';
 import { Star, Clock, Settings, Sun, Moon, Monitor, Menu, X, Tv, User, House, Search, Flame } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useIsTV, useIsMobileLayout } from '@/hooks/useMediaQuery';
+import { useHasTmdbToken } from '@/hooks/useHasTmdbToken';
 import { useSettingsStore } from '@/stores';
 import { findHomeCollectionDef } from '@/stores/useTMDBStore';
 import { isNativePlatform } from '@/lib/platform';
@@ -23,15 +24,19 @@ import { Icon } from "@/components/ui/Icon";
 interface NavItem { key: string; title: string; icon: LucideIcon; path: string; }
 
 /** 主导航：logo 右侧固定顺序，桌面 / TV 顶栏承载；
- * 移动端导航由汉堡菜单（web）/ 底部 TabBar（app）承担，不渲染本组 */
+ * 移动端导航由汉堡菜单（web）/ 底部 TabBar（app）承担，不渲染本组。
+ * 历史 / 收藏已迁至搜索框右侧图标组（.hdr-icons，设置左侧）——
+ * 二者是本地数据页，与 TMDB 依赖的主导航语义不同，且桌面右侧图标更贴合使用频率。 */
 const PRIMARY_NAV_ITEMS: NavItem[] = [
   { key: 'home', title: '首页', icon: House, path: '/' },
   { key: 'browse', title: '浏览', icon: Search, path: '/browse' },
   { key: 'chart', title: '热度榜', icon: Flame, path: '/chart' },
   { key: 'iptv', title: 'IPTV', icon: Tv, path: '/iptv' },
-  { key: 'history', title: '历史', icon: Clock, path: '/history' },
-  { key: 'collections', title: '收藏', icon: Star, path: '/collections' },
 ];
+
+/** 未配置 TMDB Access Token 时置灰的主导航项（这些页面全部依赖 TMDB 数据，无 token 必然空/失败；
+ * IPTV 走 M3U/EPG 不依赖 token，历史/收藏是本地数据 —— 均保持可用） */
+const TMDB_DEPENDENT_NAV_KEYS = new Set(['home', 'browse', 'chart']);
 
 const THEME_ICONS = [Sun, Moon, Monitor] as const;
 const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
@@ -160,20 +165,26 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
 
   const ThemeIcon = THEME_ICONS[THEME_CYCLE.indexOf(currentTheme)] || Monitor;
 
+  // TMDB token 未配置 → 依赖 TMDB 的主导航项置灰不可点（IPTV / 历史 / 收藏不受影响）
+  const hasToken = useHasTmdbToken();
+
   const renderNavItem = (item: NavItem) => {
+    const disabled = !hasToken && TMDB_DEPENDENT_NAV_KEYS.has(item.key);
     const onClick = item.path === '/' ? goHome : () => handleNavClick(item.path);
     return (
       <a
         key={item.key}
         href={item.path}
-        className={`sticky-header__nav-item hover-scale${isActive(item.path) ? ' sticky-header__nav-item--active' : ''}`}
+        className={`sticky-header__nav-item hover-scale${!disabled && isActive(item.path) ? ' sticky-header__nav-item--active' : ''}${disabled ? ' sticky-header__nav-item--disabled' : ''}`}
+        aria-disabled={disabled || undefined}
         onClick={(e) => {
           // 修饰键 / 中键放行（新标签打开），普通点击走应用内导航
           if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
           e.preventDefault();
+          if (disabled) return;
           onClick();
         }}
-        title={item.title}
+        title={disabled ? `${item.title}（需在设置中配置 TMDB Access Token）` : item.title}
       >
         <Icon icon={item.icon} size={isTV ? 'md' : 'sm'} /><span className="sticky-header__nav-label">{item.title}</span>
       </a>
@@ -249,10 +260,25 @@ export default function StickyHeader({ onMenuToggle, menuOpen }: StickyHeaderPro
             scope={searchScope}
           />
         </div>
-        {/* 搜索框右侧图标组（.hdr-icons）：设置 + 主题三态切换。
- 仅桌面 / TV 渲染；移动端维持右侧原主题按钮不变。 */}
+        {/* 搜索框右侧图标组（.hdr-icons）：收藏 / 历史 + 设置 + 主题三态切换。
+ 仅桌面 / TV 渲染；移动端维持右侧原主题按钮不变。
+ 收藏 / 历史从左侧主导航迁入（本地数据页，高频入口前置）；
+ 复用 nav-item 胶囊体系（几何 / 断点收窄 / --active 选中态与主导航一致）。 */}
         {!isMobile && (
           <div className="sticky-header__hdr-icons">
+            {[{ key: 'collections', title: '收藏', icon: Star, path: '/collections' },
+              { key: 'history', title: '历史', icon: Clock, path: '/history' }].map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`sticky-header__nav-item sticky-header__nav-item--icon-only hover-scale${isActive(item.path) ? ' sticky-header__nav-item--active' : ''}`}
+                  onClick={() => handleNavClick(item.path)}
+                  aria-label={item.title}
+                  title={item.title}
+                >
+                  <Icon icon={item.icon} size={isTV ? 'md' : 'sm'} /><span className="sticky-header__nav-label">{item.title}</span>
+                </button>
+              ))}
             {/* 设置入口（也改为胶囊样式）：复用 nav-item 类体系
  （与主导航 <a> 同一套胶囊几何 / 断点收窄 / --active 选中态），icon+文字标签。
  --icon-only：≤1280 窄视口顶栏通用规则是去图标保文本，
