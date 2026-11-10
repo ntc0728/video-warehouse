@@ -372,14 +372,29 @@ export default function BrowsePage() {
  * 与 pinnedTotal 同策略钉定（首次非零为准），避免翻页时数字闪变。
  */
   const [pinnedReachable, setPinnedReachable] = useState(0);
+  /**
+ * 上下文切换瞬间 store 里仍是**上一次查询**的分页快照（数据层跨页面常驻）。
+ * 若首帧就用它钉定，旧总数会被 `p || x` 永久锁死 —— 新上下文数据落地也无法覆盖
+ * （实测：Browse 搜索 aaa（100 条）→ 切首页 → 顶栏搜 bbb（20 条），结果已是 bbb，
+ * 右上角仍显示「共 100 条」）。因此记录切换时看到的 pagination 引用，
+ * 只有它被本次请求替换（引用变化）后才允许钉定；首帧旧快照一律跳过。
+ * 渲染期同步写入（与 liveCtxRef 同模式），保证早于下方所有 effect。
+ */
+  const stalePaginationRef = useRef(discoverPagination);
+  const pinnedKeyRef = useRef(totalKey);
+  if (pinnedKeyRef.current !== totalKey) {
+    pinnedKeyRef.current = totalKey;
+    stalePaginationRef.current = discoverPagination;
+  }
   useEffect(() => { setPinnedTotal(0); setPinnedReachable(0); }, [totalKey]);
   useEffect(() => {
     if (searchMode !== 'smart') return;
     if (isRefreshing || isLoading) return;
+    if (discoverPagination === stalePaginationRef.current) return;
     if (discoverPagination.totalResults > 0) {
       setPinnedTotal((p) => p || discoverPagination.totalResults);
     }
-  }, [searchMode, isRefreshing, isLoading, discoverPagination.totalResults]);
+  }, [searchMode, isRefreshing, isLoading, discoverPagination]);
 
   // ── 分页切换（右栏由无限滚动改为分页切换）────────
   // 翻页语义 = 替换 + loading + 滚回顶部：
@@ -539,10 +554,12 @@ export default function BrowsePage() {
   useEffect(() => {
     if (searchMode !== 'smart') return;
     if (isRefreshing || isLoading) return;
+    // 与 pinnedTotal 同守卫：首帧旧上下文快照（上下文切换前遗留）不参与钉定
+    if (discoverPagination === stalePaginationRef.current) return;
     if (logical.reachableItems > 0) {
       setPinnedReachable((p) => p || logical.reachableItems);
     }
-  }, [searchMode, isRefreshing, isLoading, logical.reachableItems]);
+  }, [searchMode, isRefreshing, isLoading, logical.reachableItems, discoverPagination]);
 
   const logicalGotoRef = useRef(logical.goto);
   logicalGotoRef.current = logical.goto;
@@ -617,7 +634,10 @@ export default function BrowsePage() {
   // 于是 isLoading=true 且 smartHasData=false → 直接显示「搜索中…」loading（无需额外遮罩）
   // isRefreshing 纳入判定：filterSig 变更（切分类/筛选）到新数据就绪期间立即显示
   // loading 遮罩，避免「旧数据闪现 300ms」（fetch 完成后 150ms 内复位）。
-  const smartHasData = discoverResults.length > 0;
+  // ⚠️ 上下文切换后的首帧 store 里还是上一次查询的结果（跨页面常驻）——
+  // 只有「当前上下文请求已替换快照」才算有数据，否则结果数/加载态会拿旧值顶住。
+  const storeSnapshotStale = discoverPagination === stalePaginationRef.current;
+  const smartHasData = discoverResults.length > 0 && !storeSnapshotStale;
   const cmsHasData = cmsResults.length > 0;
   const showResultsLoading = searchMode === 'smart'
     ? (logical.loading || isRefreshing || (isLoading && !smartHasData))
