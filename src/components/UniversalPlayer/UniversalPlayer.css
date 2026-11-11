@@ -492,8 +492,10 @@
 }
 
 @media (hover: none) and (pointer: coarse) {
+  /* 触屏常驻显示（无 hover 可触发）；opacity 0.7 → 1：实心圆点，
+   半透明在黑底上观感发灰（2026-11-11 用户反馈） */
   .up-progress-thumb {
-    opacity: 0.7;
+    opacity: 1;
   }
 }
 
