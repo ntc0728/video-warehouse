@@ -2909,3 +2909,28 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 
 
+
+/* ── 移动端提示信息统一收小（2026-11-11 全局盘点补齐）──
+ 与顶部胶囊 / 缓冲层 / 续播卡同口径：
+ · 纯文本提示 → --text-2xs（≈10.45px）
+ · 带按钮或状态型提示 → --text-xs（≈11.4px，保可读与可点）
+ 播放器标题 .up-header-title 不在此列（主信息，保持 --text-base）。 */
+html[data-mobile-layout="true"] .up-seek-hud {
+  font-size: var(--text-2xs);
+}
+
+html[data-mobile-layout="true"] .up-iptv-buffering-metric {
+  font-size: var(--text-2xs);
+}
+
+html[data-mobile-layout="true"] .up-channel-empty {
+  font-size: var(--text-2xs);
+}
+
+html[data-mobile-layout="true"] .up-channel-loading-speed {
+  font-size: var(--text-xs);
+}
+
+html[data-mobile-layout="true"] .up-live-indicator {
+  font-size: var(--text-xs);
+}

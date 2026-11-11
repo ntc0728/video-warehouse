@@ -1477,3 +1477,15 @@ html[data-device="app"] .player-cms-list--measure .player-cms-item {
     border-radius: var(--radius-md);
   }
 }
+
+/* ── 移动端播放器内浮标 / 卡片收小（2026-11-11 全局盘点补齐）──
+ 跳过片头/片尾为纯文本浮标 → 2xs；自动连播卡片含按钮 → xs（与状态型提示同档）。 */
+html[data-mobile-layout="true"] .player-skip-indicator {
+  font-size: var(--text-2xs);
+}
+
+html[data-mobile-layout="true"] .player-autoplay-text,
+html[data-mobile-layout="true"] .player-autoplay-nav-btn,
+html[data-mobile-layout="true"] .player-autoplay-cancel {
+  font-size: var(--text-xs);
+}
