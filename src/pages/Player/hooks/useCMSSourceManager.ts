@@ -328,8 +328,15 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
               if (r.seasons.size > 0) {
                 // 季映射入缓存：选择该源时 apply 链直接取用，不重复请求
                 seasonMapsRef.current.set(idx, r.seasons);
-                // 探测代表 video：正季优先，特别篇（季 0）不作为「该源有数据」的默认播放对象
-                const first = pickPrimarySeasonVideo(r.seasons);
+                // 探测代表 video：正季优先，特别篇（季 0）不作为「该源有数据」的默认播放对象。
+                // 但「最小正季是壳（0 线路 0 集）」时不能就此判该源无数据——回退到第一个
+                // 真有可播内容的季（2026-11-11 审查：否则后续季有数据的源会被误判并隐藏）。
+                const primary = pickPrimarySeasonVideo(r.seasons);
+                const isPlayable = (v: Video | null | undefined) =>
+                  !!v && ((v.sources?.length ?? 0) > 0 || (v.episodes?.length ?? 0) > 0);
+                const first = isPlayable(primary)
+                  ? primary
+                  : [...r.seasons.values()].find(isPlayable) ?? primary;
                 res = {
                   sourceIndex: idx,
                   sourceId: allSrc[idx]?.id ?? '',

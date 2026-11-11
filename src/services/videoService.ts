@@ -761,14 +761,14 @@ export interface SeasonSearchResult {
  *
  * @param sourceIndex - CMS 源配置索引
  * @param title - 搜索标题（剧集名称，不含季号）
- * @param _year - 年份（当前未使用，预留）
+ * @param year - 年份（第 1 季回退候选的加分项，不做硬过滤）
  * @param signal - AbortSignal，用于取消请求
  * @returns 按季分组的搜索结果
  */
 export async function searchVideoSeasonsFromSingleSource(
   sourceIndex: number,
   title: string,
-  _year?: number,
+  year?: number,
   signal?: AbortSignal,
 ): Promise<SeasonSearchResult> {
   /** 获取所有 CMS 源配置 */
@@ -834,7 +834,8 @@ export async function searchVideoSeasonsFromSingleSource(
     const tasks: SeasonResolveTask[] = [];
     const specialItems: CMSVideoItem[] = [];
     const claimedSeasons = new Set<number>();
-    let fallbackItem: CMSVideoItem | undefined;
+    /** 无季号同名的第 1 季回退候选（可能多条：同名电影 + 同名剧集并存） */
+    const fallbackCandidates: CMSVideoItem[] = [];
     // 名称一致性判等：去空白与常见中英文标点后全等（「超人前传」≈「超人前传 第二季」的裸剧名场景）
     const normalizeName = (s: string) => s.replace(/[\s·・:：,，.。_（）()【】\]—-]+/g, '');
     const normalizedTitle = normalizeName(title.trim());
@@ -848,7 +849,7 @@ export async function searchVideoSeasonsFromSingleSource(
         }
         // 无季号且非特别篇：名称与搜索标题一致才作第 1 季回退候选（防特辑类条目错标第 1 季）
         if (normalizeName(vodName) === normalizedTitle) {
-          fallbackItem = item;
+          fallbackCandidates.push(item);
         }
         continue;
       }
@@ -856,9 +857,14 @@ export async function searchVideoSeasonsFromSingleSource(
       claimedSeasons.add(seasonNumber);
       tasks.push({ seasonNumber, item });
     }
-    // 第 1 季缺失时用无季号条目补位（结果等价：claimedSeasons 已收齐全部季号）
-    if (fallbackItem && !claimedSeasons.has(1)) {
-      tasks.push({ seasonNumber: 1, item: fallbackItem, isFallback: true });
+    // 第 1 季缺失时用无季号条目补位（结果等价：claimedSeasons 已收齐全部季号）。
+    // 候选可能同时包含「同名电影」和「同名剧集」：优先形态为剧集（多集直链）的条目，
+    // 再优先年份匹配；只有全部候选都是单集形态时才沿用第一条（兼容单集条目源）。
+    if (fallbackCandidates.length > 0 && !claimedSeasons.has(1)) {
+      const byForm = fallbackCandidates.filter((c) => inferCmsEntryForm(c) !== 'movie');
+      const pool = byForm.length > 0 ? byForm : fallbackCandidates;
+      const yearMatched = year != null ? pool.find((c) => parseCmsYear(c.vod_year) === year) : undefined;
+      tasks.push({ seasonNumber: 1, item: yearMatched ?? pool[0], isFallback: true });
     }
     // 特别篇条目统一排在正季任务之后解析，合并时按 CMS 返回序拼接（与条目可见顺序一致）
     for (const item of specialItems) {
