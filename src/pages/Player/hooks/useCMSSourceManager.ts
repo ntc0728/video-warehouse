@@ -379,6 +379,12 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       });
       await Promise.race([allDone, firstHit.then(() => new Promise(r => setTimeout(r, 1500)))]);
       if (hits.size === 0) await allDone; // 暂无任何命中：等全部落定再定夺空态
+      // 详情页指定了源、但它尚未落定（错峰 120ms/源 + 失败重试 800ms 可能超过竞速窗口）：
+      // 再等它落定（或 4s 上限），避免「用户点了 A 源却悄悄播 B 源」——选择优先级里
+      // 指定源最高，必须给它落定机会（2026-11-11 审查发现）。
+      if (routeSourceIndex !== undefined && !hits.has(routeSourceIndex) && !ctrl.signal.aborted) {
+        await Promise.race([allDone, sleep(4000)]);
+      }
       if (!isLatest() || ctrl.signal.aborted) { finishLoading(); return; }
 
       // 选择（面板数据落定后才执行）：指定源（有数据）> 历史源（有数据）> 勾选顺序首个
@@ -412,6 +418,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         // 提示不再走全局 toast（未居中/与续播卡叠加）——写入播放器内续播卡顶部行：
         // 先显示换源提示、续播完成后其下才出现「已从上次位置继续播放」，同源同卡不叠加。
         usePlayerStore.getState().setSourceNotice(`上次使用的源「${allSrc[histIdx]?.name ?? '未知'}」已无本片数据，已改用「${allSrc[selected]?.name ?? '其它源'}」并按最近进度续播`);
+      } else if (routeSourceIndex !== undefined && !hits.has(routeSourceIndex) && routeSourceIndex !== selected) {
+        // 用户在详情页明确点了某个源，但它确实无本片数据 → 换源必须告知（此前静默改播）
+        usePlayerStore.getState().setSourceNotice(`所选源「${allSrc[routeSourceIndex]?.name ?? '未知'}」暂无本片数据，已改用「${allSrc[selected]?.name ?? '其它源'}」`);
       }
       sourceIdx = selected;
       activeCmsSourceIndexRef.current = selected;

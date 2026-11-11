@@ -16,6 +16,7 @@ import type { Video, VideoSource, Episode } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBCastMember } from '@/types/tmdb';
 import type { HistoryRecord } from '@/types/store';
 import { useSmartBack } from '@/lib/navigation';
+import { resolveMediaType } from '@/lib/mediaType';
 import { isNativePlatform } from '@/lib/platform';
 import {
   ArrowLeft, VideoOff, AlertTriangle,
@@ -157,6 +158,14 @@ export default function PlayerPage() {
 
   const [tmdbDetail, setTmdbDetail] = useState<TMDBMovieDetail | TMDBTVShowDetail | null>(null);
   const [tmdbMediaType, setTmdbMediaType] = useState<'movie' | 'tv'>('movie');
+
+  // 非 TMDB id（CMS 直链 / 收藏 / 历史进入）：媒体类型取自 video.type。
+  // 否则 tmdbMediaType 恒为默认 'movie'，切源重搜会按电影形态过滤剧集（2026-11-11 审查）。
+  useEffect(() => {
+    if (!id || id.startsWith('tmdb-')) return;
+    const mt = resolveMediaType(id, video?.type);
+    if (mt) setTmdbMediaType(mt);
+  }, [id, video?.type]);
 
   const [expandedPanels, setExpandedPanels] = useState<Record<string, boolean>>({
     cms: false,
