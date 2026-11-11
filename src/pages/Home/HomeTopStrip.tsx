@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import { Flame, Star } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
 import type { TMDBVideoItem } from '@/types/tmdb';
+import { resolveMediaType } from '@/lib/mediaType';
 
 interface HomeTopStripProps {
   /** 「继续观看」条数（0 则该 pill 不渲染） */
@@ -74,7 +75,7 @@ export default function HomeTopStrip({ continueCount, favoriteCount, trending }:
                 <Link
                   key={item.id}
                   to={`/detail/${item.id}`}
-                  state={{ from: '/' }}
+                  state={{ from: '/', mediaType: resolveMediaType(item.id) }}
                   className="home-topstrip__rotator-item"
                   aria-label={`查看 ${item.title} 详情`}
                 >

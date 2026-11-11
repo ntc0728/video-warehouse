@@ -46,6 +46,7 @@ import {
 } from '@/stores/useTMDBStore';
 import type { HomeCollectionDef } from '@/stores/useTMDBStore';
 import { useCustomNavigate } from '@/lib/navigation';
+import { resolveMediaType } from '@/lib/mediaType';
 import { useScrollContainer } from '@/hooks/useScrollContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useDocumentTitle } from '@/hooks';
@@ -458,6 +459,7 @@ function ChartRow({ item, rank, showBadge }: { item: TMDBVideoItem; rank: number
   return (
     <Link
       to={{ pathname: `/detail/${item.id}` }}
+      state={{ mediaType: resolveMediaType(item.id) }}
       className={`chart-row${top ? ' chart-row--top' : ''}`}
     >
       <span className="chart-row__rank">{rank}</span>

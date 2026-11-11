@@ -28,6 +28,7 @@ import { useHeroSideCols, useHeroSideRows } from '@/hooks';
 import { Icon } from '@/components/ui/Icon';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import './HeroBili.css';
+import { resolveMediaType } from '@/lib/mediaType';
 
 /** HeroBili 接受的条目形状（TMDB trending，与 HeroBanner 的 HeroItem 结构兼容；title 必填与其对齐） */
 interface HeroBiliItem {
@@ -331,7 +332,7 @@ export default function HeroBili({
                 {onItemClick && (
                   <Link
                     to={{ pathname: `/detail/${activeItem.id}` }}
-                    state={{ from: location.pathname + location.search }}
+                    state={{ from: location.pathname + location.search, mediaType: resolveMediaType(activeItem.id) }}
                     className="hero-banner__cta"
                     onClick={(e) => { e.stopPropagation(); }}
                   >
@@ -437,7 +438,7 @@ function HeroSideCard({ item }: { item: HeroBiliItem }) {
   return (
     <Link
       to={`/detail/${item.id}`}
-      state={{ from: location.pathname + location.search }}
+      state={{ from: location.pathname + location.search, mediaType: resolveMediaType(item.id) }}
       className="hero-side-card"
       aria-label={title}
       /* 键盘可达：聚焦整卡与悬浮标题区同语义触发跑马灯（失焦即停） */

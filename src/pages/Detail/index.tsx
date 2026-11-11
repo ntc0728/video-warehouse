@@ -5,7 +5,7 @@
  * 资料区：tab 行居中置顶（概览 = 基础信息表 + 演员 + 剧照；播放列表 / 季信息同原逻辑）+ VideoCard 推荐行
  */
 import { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useParams, useNavigationType, Link } from 'react-router-dom';
+import { useParams, useNavigationType, Link, useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useUserStore, useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
@@ -13,6 +13,7 @@ import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, get
 import type { SelectedSourceCheckResult } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, fetchMovieImages, fetchTVImages, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
+import type { MediaType } from '@/lib/mediaType';
 import type { Video } from '@/types/video';
 import type { TMDBMovieDetail, TMDBTVShowDetail, TMDBSeason, TMDBCastMember } from '@/types/tmdb';
 import { BackToTopButton } from '@/components/common';
@@ -155,6 +156,10 @@ function toVideoItem(item: TMDBResultItem, mediaType: 'movie' | 'tv'): Video {
 export default function DetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useCustomNavigate();
+  // 列表页跳转带入的媒体类型（VideoCard 等入口写 state.mediaType）：
+  // 优先于 id 前缀解析，供 CMS 取数按「电影 / 剧集」过滤——id 非 tmdb 格式时也有类型。
+  const location = useLocation();
+  const stateMediaType = (location.state as { mediaType?: MediaType } | null)?.mediaType;
   // 是否已配置 TMDB Access Token（play/detail 的 tmdb- 数据依赖）
   const hasToken = useSettingsStore((s) => (s.tmdbAccessToken || '').trim().length > 0);
   const { isCollected, addCollection, removeCollection, getHistoryByVideo } = useUserStore();
@@ -401,7 +406,8 @@ export default function DetailPage() {
       try {
         if (!id.startsWith('tmdb-')) { setTmdbError('暂仅支持 TMDB 影片'); return; }
         const parts = id.replace('tmdb-', '').split('-');
-        const mt = parts[0] as 'movie' | 'tv';
+        // 类型优先级：location.state（上一页显式传入）> id 前缀
+        const mt = stateMediaType ?? (parts[0] as 'movie' | 'tv');
         const tid = parseInt(parts.slice(1).join('-'), 10);
         setTmdbMediaType(mt);
         if (isNaN(tid)) { setTmdbError('无效的 TMDB ID'); return; }

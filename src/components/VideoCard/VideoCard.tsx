@@ -15,6 +15,7 @@ import { Star, Heart } from 'lucide-react';
 import { useUserStore, useSettingsStore } from '@/stores';
 import { useIsTVLike } from '@/hooks/useMediaQuery';
 import { useHighlightedText } from '@/lib/highlight';
+import { resolveMediaType } from '@/lib/mediaType';
 import type { Video } from '@/types/video';
 import { searchMulti, buildImageUrl } from '@/services/tmdbService';
 import { getVideoSources } from '@/services/sourceService';
@@ -321,7 +322,7 @@ const VideoCard = memo(function VideoCard({
       to={navigateTo || `/detail/${video.id}`}
       className={`video-card video-card--${variant}${skipAnimations ? '' : ' animate-card-enter'} ${batchMode ? 'video-card--batch' : ''}`}
       style={skipAnimations ? undefined : stagger}
-      state={{ from: location.pathname + location.search, ...navigateState }}
+      state={{ from: location.pathname + location.search, mediaType: resolveMediaType(video.id, video.type), ...navigateState }}
       tabIndex={isTV ? 0 : undefined}
       onKeyDown={isTV ? handleKeyDown : undefined}
       aria-label={video.title}

@@ -20,6 +20,7 @@ import { isImageLoaded, markImageLoaded } from '@/components/LazyImage/imageCach
 import HeroBili from './HeroBili';
 import './HeroBanner.css';
 import { Icon } from "@/components/ui/Icon";
+import { resolveMediaType } from '@/lib/mediaType';
 
 interface HeroItem {
   id: number | string;
@@ -906,7 +907,7 @@ function HeroBannerClassic({
             )}
             <Link
               to={{ pathname: `/detail/${item.id}` }}
-              state={{ from: location.pathname + location.search }}
+              state={{ from: location.pathname + location.search, mediaType: resolveMediaType(item.id) }}
               className="hero-banner__cta"
               onClick={(e) => { e.stopPropagation(); }}
             >
