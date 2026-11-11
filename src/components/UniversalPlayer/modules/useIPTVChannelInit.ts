@@ -122,6 +122,7 @@ export function useIPTVChannelInit({
   }, [url, channels, groups, mode, setCurrentChannelId, setCurrentChannelName, setCurrentType, setCurrentUrl, setTvFocusGroupIndex, setTvFocusChannelIndex]);
 
   // URL 匹配失败时的兜底：用 channelName prop 反查频道
+  // ⚠️ 兜底实现在 UniversalPlayer.tsx（channelName 反查仅补 currentChannelId/Name，URL 原样直接播）
   useEffect(() => {
     if (mode !== 'iptv' || !channelName) return;
     // This is handled by the caller via a separate effect if needed

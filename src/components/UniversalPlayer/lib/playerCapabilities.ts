@@ -123,8 +123,8 @@ export interface PlayerCapabilities {
  * 是否持久化播放进度用于「续播」。
  *
  * 原散落点：`UniversalPlayer.tsx:1161`（`mode === 'video' && resumeAt != null` 才显示续播提示），
- * 落库在 `useUserStore`；直播侧只记 `lastPlayed`（`useIPTVStore.ts:409`），不是续播语义。
- * 矩阵表：video ✅ 记录续播 / iptv ❌ 只记 lastPlayed。
+ * 落库在 `useUserStore`；直播侧记 `playHistory/lastPlayed`（`useIPTVStore`，列表卡片与播放页
+ * 换台/换线均写入），不是续播语义（直播无进度）。矩阵表：video ✅ 续播 / iptv ❌ 只记播放记录。
  */
   hasProgressPersist: boolean;
 

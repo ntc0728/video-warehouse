@@ -3,10 +3,9 @@
  *
  * 治理"回退地狱"：
  * 1. useSmartBack — 智能回退
- * - 优先按 location.state.from 跳回
- * - 否则按 options.fallback 跳
- * - 否则用 navigate(-1)（仅在 navigationType === 'POP' 时）
- * - 兜底跳首页 /
+ * - 应用内导航（PUSH/REPLACE 有 state 或 history 可回）→ navigate(-1)
+ * - 深链/新标签（无历史可回）→ state.from → state.fallback → 参数 fallback → 兜底首页 /
+ *   （from/fallback 仅作深链兜底，不是主回退路径）
  *
  * 2. navTo — 跳转到目标路径时附带 from 来源
  *

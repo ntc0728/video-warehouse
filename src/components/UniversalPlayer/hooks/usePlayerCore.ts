@@ -145,7 +145,7 @@ interface UsePlayerCoreOptions {
   vodId?: string;
   /** 当前播放集的 URL（用于历史记录匹配） */
   episodeUrl?: string;
-  /** CMS 源配置 ID（用于历史记录匹配） */
+  /** CMS 源配置 ID（预留透传；进度匹配目前用 episodeUrl + 内容身份，见 useProgressRestore） */
   cmsSourceId?: string;
   /** 当前集标签（如 "第2季 第3集"），仅用于展示（header badge） */
   episodeLabel?: string;
