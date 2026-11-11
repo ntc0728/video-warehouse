@@ -295,6 +295,29 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     // 竞速窗口策略：首个命中即上屏并开 1.5s 收尾窗吸收在飞结果，迟到的命中后续
     // 继续增量上屏；全部失败时等到 allSettled 再走空态。
     // 历史源被判定无数据 → 不回显它：toast 提醒并换有数据的源，按内容身份（季/集号）续播。
+      /**
+ * 单源季映射（含「单条兜底」）：CMS 未按季拆分（条目标题无「第N季」）时，
+ * 把整剧单条当作第 1 季——与详情页降级口径一致，避免「详情显示可播、播放页无数据」。
+ * 返回 null 表示该源确实无本片可播内容。
+ */
+      const loadSeasonMap = async (idx: number, signal: AbortSignal): Promise<Map<number, Video> | null> => {
+        const cached = seasonMapsRef.current.get(idx);
+        if (cached) return cached;
+        const r = await searchVideoSeasonsFromSingleSource(idx, videoTitle, videoYear, signal);
+        if (r.seasons.size > 0) {
+          seasonMapsRef.current.set(idx, r.seasons);
+          return r.seasons;
+        }
+        if (signal.aborted) return null;
+        const single = await searchVideoFromSingleSource(idx, videoTitle, videoYear, signal, tmdbMediaType);
+        const v = single.video;
+        const playable = !!v && ((v.sources?.length ?? 0) > 0 || (v.episodes?.length ?? 0) > 0);
+        if (!playable || !v) return null;
+        const fallbackMap = new Map<number, Video>([[1, v]]);
+        seasonMapsRef.current.set(idx, fallbackMap);
+        return fallbackMap;
+      };
+
     if (!isSwitching && id.startsWith('tmdb-')) {
       probeActiveRef.current = true;
       // 池顺序 = 设置页勾选顺序（videoSourceIds 为空则全量下标序）
@@ -326,19 +349,18 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           let res: VideoDetailResult | null = null;
           try {
             if (tmdbMediaType === 'tv') {
-              const r = await searchVideoSeasonsFromSingleSource(idx, videoTitle, videoYear, ctrl.signal);
-              if (r.seasons.size > 0) {
-                // 季映射入缓存：选择该源时 apply 链直接取用，不重复请求
-                seasonMapsRef.current.set(idx, r.seasons);
+              // 季映射（含单条兜底）：内部已写入 seasonMapsRef 缓存，apply 链直接复用
+              const seasons = await loadSeasonMap(idx, ctrl.signal);
+              if (seasons && seasons.size > 0) {
                 // 探测代表 video：正季优先，特别篇（季 0）不作为「该源有数据」的默认播放对象。
                 // 但「最小正季是壳（0 线路 0 集）」时不能就此判该源无数据——回退到第一个
                 // 真有可播内容的季（2026-11-11 审查：否则后续季有数据的源会被误判并隐藏）。
-                const primary = pickPrimarySeasonVideo(r.seasons);
+                const primary = pickPrimarySeasonVideo(seasons);
                 const isPlayable = (v: Video | null | undefined) =>
                   !!v && ((v.sources?.length ?? 0) > 0 || (v.episodes?.length ?? 0) > 0);
                 const first = isPlayable(primary)
                   ? primary
-                  : [...r.seasons.values()].find(isPlayable) ?? primary;
+                  : [...seasons.values()].find(isPlayable) ?? primary;
                 res = {
                   sourceIndex: idx,
                   sourceId: allSrc[idx]?.id ?? '',
@@ -351,7 +373,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
                   sourceId: allSrc[idx]?.id ?? '',
                   sourceName: allSrc[idx]?.name ?? '',
                   video: null,
-                  error: r.error ?? '未找到匹配资源',
+                  error: '未找到匹配资源',
                 };
               }
             } else {
@@ -516,18 +538,18 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         let seasonMap = seasonMapsRef.current.get(sourceIdx);
 
         if (!seasonMap) {
-          /** 按季搜索 CMS 源（传递 signal 支持取消） */
-          let seasonResult = await searchVideoSeasonsFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
+          /** 单源季映射（含「单条兜底」：CMS 未按季拆分时整剧作第 1 季，与详情页口径一致） */
+          let loaded = await loadSeasonMap(sourceIdx, ctrl.signal);
           // 「继续观看→cms 源无数据」跨源兜底：历史/指定源按标题找不到该剧
           // （资源轮转/下架）时不再停死在空态——顺延其它源最多 4 次，首个命中即采用。
-          if (seasonResult.seasons.size === 0 && !isSwitching) {
+          if ((!loaded || loaded.size === 0) && !isSwitching) {
             for (let i = 0, tried = 0; i < allSrc.length && tried < 4; i++) {
               if (i === sourceIdx) continue;
               tried += 1;
               if (!isLatest() || ctrl.signal.aborted) break;
-              const alt = await searchVideoSeasonsFromSingleSource(i, videoTitle, videoYear, ctrl.signal);
-              if (alt.seasons.size > 0) {
-                seasonResult = alt; sourceIdx = i;
+              const alt = await loadSeasonMap(i, ctrl.signal);
+              if (alt && alt.size > 0) {
+                loaded = alt; sourceIdx = i;
                 // 兜底命中的新源并进面板首位（当前播放源必须在面板；tmdb 初始进入才有聚合面板）
                 if (id.startsWith('tmdb-') && allSrc[i]?.id) {
                   setSelectedSourceIds(prev => (prev.includes(allSrc[i].id) ? prev : [allSrc[i].id, ...prev]));
@@ -536,18 +558,23 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
               }
             }
           }
-          seasonMap = seasonResult.seasons;
-          seasonMapsRef.current.set(sourceIdx, seasonMap);
+          seasonMap = loaded ?? new Map<number, Video>();
           setCmsSeasons(buildCmsSeasons(seasonMap));
 
-          // 初始播放的季 video：正季优先（季 0 特别篇不作默认播放对象）
-          const firstSeasonVideo = seasonMap.size > 0 ? pickPrimarySeasonVideo(seasonMap) ?? null : null;
+          // 初始播放的季 video：正季优先（季 0 特别篇仅在没有正季时作为默认）；
+          // 最小正季为壳时回退第一个可播季（与聚合探测口径一致）
+          const isPlayable = (v: Video | null | undefined) =>
+            !!v && ((v.sources?.length ?? 0) > 0 || (v.episodes?.length ?? 0) > 0);
+          const primary = seasonMap.size > 0 ? pickPrimarySeasonVideo(seasonMap) ?? null : null;
+          const firstSeasonVideo = isPlayable(primary)
+            ? primary
+            : (primary !== undefined ? ([...seasonMap.values()].find(isPlayable) ?? primary) : null);
           const cmsResult: VideoDetailResult = {
             sourceIndex: sourceIdx,
-            sourceId: seasonResult.sourceId,
-            sourceName: seasonResult.sourceName,
+            sourceId: allSrc[sourceIdx]?.id ?? '',
+            sourceName: allSrc[sourceIdx]?.name ?? '',
             video: firstSeasonVideo ?? null,
-            error: seasonResult.error,
+            error: seasonMap.size === 0 ? '未找到匹配资源' : undefined,
           };
           setCmsResults(prev => {
             const idx = prev.findIndex(r => r.sourceIndex === sourceIdx);
