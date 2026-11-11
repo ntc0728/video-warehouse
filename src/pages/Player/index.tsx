@@ -104,7 +104,7 @@ export default function PlayerPage() {
   const location = useLocation();
   // state 优先、query 兜底：右键/中键新开页签时 location.state 丢失，深链仅剩 URL。
   // 对照：sourceIndex→src、playUrl→play、seasonNumber→season、skipHistory→fresh=1。
-  // from 仅同标签导航需要，不进 query（新开页签无历史可回，靠 useSmartBack fallback）。
+  // from 由上一页写入 state，供 useSmartBack 回退；本页不消费，也不进 query。
   const routeState = (location.state ?? null) as Record<string, unknown> | null;
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const skipHistory = routeState?.skipHistory === true || searchParams.get('fresh') === '1';
@@ -194,7 +194,6 @@ export default function PlayerPage() {
   // ── ref 绑定（渲染阶段同步，消除闭包陈旧问题）────────────────
   const abortRef = useRef<AbortController | null>(null);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-  const historyRecordRef = useRef<HistoryRecord | undefined>(undefined);
   const currentSourceNameRef = useRef<string | undefined>(undefined);
   const currentSrcRef = useRef(currentSrc);
   currentSrcRef.current = currentSrc;
@@ -373,7 +372,6 @@ export default function PlayerPage() {
       cmsSourceIdRef.current = undefined;
       cmsSourceNameRef.current = undefined;
       currentSourceNameRef.current = undefined;
-      historyRecordRef.current = undefined;
       // 重置“全部”弹框指定线路/选集的生效标记
       appliedRoutePlayRef.current = false;
       prevIdRef.current = id;
@@ -420,7 +418,6 @@ export default function PlayerPage() {
         const idxs = await getEnabledVideoSourceIndices();
         activeSourceIndex = idxs[0] ?? 0;
       }
-      historyRecordRef.current = historyRecord;
       setActiveSourceIndex(activeSourceIndex);
 
       try {
@@ -500,7 +497,7 @@ export default function PlayerPage() {
             currentSourceNameRef.current = matchedSource.name;
           }
         } else if (!id.startsWith('tmdb-')) {
-          // 本地无数据，等待 CMS 搜索
+          // 本地无数据：tmdb 路径由聚合主链接管；数字 CMS id 路径等用户点面板源触发拉取
         }
         if (!foundVideo) {
           if (historyRecord?.cmsSourceId) cmsSourceIdRef.current = historyRecord.cmsSourceId;

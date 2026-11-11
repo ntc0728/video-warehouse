@@ -156,8 +156,9 @@ function toVideoItem(item: TMDBResultItem, mediaType: 'movie' | 'tv'): Video {
 export default function DetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useCustomNavigate();
-  // 列表页跳转带入的媒体类型（VideoCard 等入口写 state.mediaType）：
-  // 优先于 id 前缀解析，供 CMS 取数按「电影 / 剧集」过滤——id 非 tmdb 格式时也有类型。
+  // 列表页跳转带入的媒体类型（VideoCard / Hero / Chart 等入口写 state.mediaType）：
+  // 优先于 id 前缀解析，用于确认本页类型（缓存命中分支仍以缓存为准）。
+  // 注：本页仅支持 tmdb- 前缀 id，非 tmdb id 在下方直接报「暂仅支持 TMDB 影片」。
   const location = useLocation();
   const stateMediaType = (location.state as { mediaType?: MediaType } | null)?.mediaType;
   // 是否已配置 TMDB Access Token（play/detail 的 tmdb- 数据依赖）

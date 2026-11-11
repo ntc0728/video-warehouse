@@ -184,7 +184,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     }
 
     // 1) 路由传入的 sourceIndex 最优先：用户在详情页点了具体源的「立即播放」，
-    // 必须播放用户点的那个源，绝不能被历史记录的源覆盖。
+    // 该源优先于历史源。聚合阶段会先等它落定（4s 上限）再决定，落定后必然被选中；
+    // 若确实无数据则换源并用 sourceNotice 明确告知（不再静默改播）。
     if (sourceIdx === undefined && routeSourceIndex !== undefined) {
       sourceIdx = routeSourceIndex;
     }
@@ -288,9 +289,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       return;
     }
 
-    // ── 进入播放页即聚合全部启用源：面板只显示「CMS 接口有返回当前视频数据」的源 ──
-    // （替代原「单源+后台探测+继续观看豁免」过渡版）：
-    // 本面板职责 = 纯数据源展示，**无条件适用于所有进入方式**（含继续观看）；
+    // ── tmdb- 路径进入 / 首次加载时聚合全部启用源：面板只显示「有可播内容」的源 ──
+    // 适用范围：仅 tmdb- 前缀 id 且非手动切源（数字 CMS id 由下方单源逻辑填充面板）。
     // 选中/季集线路回显等逻辑一律排在本聚合之后执行。
     // 竞速窗口策略：首个命中即上屏并开 1.5s 收尾窗吸收在飞结果，迟到的命中后续
     // 继续增量上屏；全部失败时等到 allSettled 再走空态。

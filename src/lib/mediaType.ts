@@ -6,8 +6,9 @@ export type MediaType = 'movie' | 'tv';
 /**
  * 解析媒体类型，供详情页 / 播放页向 CMS 取数时过滤使用。
  * 优先级：TMDB id 前缀（最可靠）→ Video.type 映射。
- * 列表卡片跳转详情时把它放进 location.state，详情页优先读 state，
- * 拿不到再回退 id 前缀（兼容历史 URL / 直接进入）。
+ * 入口（VideoCard / HeroBanner / HeroBili / Chart / HomeTopStrip）跳详情时把它放进
+ * location.state；详情页网络加载分支优先读 state，缓存命中分支以缓存为准，
+ * 两者都拿不到时回退 id 前缀（兼容历史 URL / 直接进入）。
  */
 export function resolveMediaType(id?: string | number | null, videoType?: VideoType): MediaType | undefined {
   const sid = id == null ? '' : String(id);
