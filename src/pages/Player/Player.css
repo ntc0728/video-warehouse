@@ -1498,3 +1498,10 @@ html[data-mobile-layout="true"] .player-autoplay-cancel {
   pointer-events: none;
   transition: opacity var(--dur-sm);
 }
+
+/* ── CMS 源健康度轻标注（2026-11-11）──
+ 连续网络失败 ≥2 次的源：源名降一档透明度（不隐藏、不禁用，用户仍可点）。
+ 数据来源为本地请求结果统计（services/sourceHealth.ts），非网络探测。 */
+.player-cms-item.is-degraded .player-cms-name {
+  opacity: 0.55;
+}

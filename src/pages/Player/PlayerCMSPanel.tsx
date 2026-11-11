@@ -4,6 +4,7 @@ import type { VideoDetailResult } from '@/services/videoService';
 import { Server, ChevronDown } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
 import { MarqueeText } from '@/components/ui/MarqueeText';
+import { isSourceDegraded } from '@/services/sourceHealth';
 import { usePanelCollapse } from './hooks';
 
 interface PlayerCMSPanelProps {
@@ -135,10 +136,13 @@ export function PlayerCMSPanel({
               const result = resultMap.get(sourceId);
               const displayName = sourceNameMap.get(sourceId) ?? sourceId;
               const active = isActiveSource(sourceId);
+              // 本地健康度标记：连续网络失败 ≥2 次的源轻标注（不隐藏、不禁用）
+              const degraded = isSourceDegraded(sourceId);
               return (
                 <button
                   key={sourceId}
-                  className={`player-cms-item ${active ? 'active' : ''}`}
+                  className={`player-cms-item ${active ? 'active' : ''}${degraded ? ' is-degraded' : ''}`}
+                  title={degraded ? '最近未成功返回数据' : undefined}
                   onClick={readOnly ? undefined : () => {
                     if (result?.video) {
                       onPlaySource(result);

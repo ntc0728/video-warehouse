@@ -11,6 +11,7 @@ import {
 import type { VideoDetailResult } from '@/services/videoService';
 import type { Video, Episode, VideoSource } from '@/types/video';
 import { plainEpisodeNumber } from '@/services/vodParser';
+import { recordSourceResult, orderIndicesByHealth } from '@/services/sourceHealth';
 import type { TMDBMovieDetail, TMDBTVShowDetail } from '@/types/tmdb';
 /** vod_id 快路径新鲜度阈值：缓存/历史超期即视为过期，改按标题重搜（10 分钟） */
 const VOD_ID_FRESH_MS = 10 * 60 * 1000;
@@ -322,10 +323,12 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
     if (!isSwitching && id.startsWith('tmdb-')) {
       probeActiveRef.current = true;
-      // 池顺序 = 设置页勾选顺序（videoSourceIds 为空则全量下标序）
-      const pool = videoSourceIds.length > 0
+      // 池顺序 = 设置页勾选顺序（videoSourceIds 为空则全量下标序）；
+      // 再按本地健康度稳定排序：连续网络失败的源后移（仍照常请求，只是优先级降低）。
+      const orderedPool = videoSourceIds.length > 0
         ? videoSourceIds.map(sid => allSrc.findIndex(s => s.id === sid)).filter(i => i >= 0)
         : allSrc.map((_, i) => i);
+      const pool = orderIndicesByHealth(orderedPool, i => allSrc[i]?.id);
       const hits = new Map<number, VideoDetailResult>();
       probeHits = hits;
       const writePanel = () => {
@@ -389,6 +392,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           const playable = !!hitVideo
             && ((hitVideo.sources?.length ?? 0) > 0 || (hitVideo.episodes?.length ?? 0) > 0);
           if (res && playable) {
+            recordSourceResult(allSrc[idx]?.id, true);
             hits.set(idx, res);
             writePanel();
             firstHitResolve();
@@ -396,7 +400,13 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           }
           const errMsg = res?.error ?? '';
           const permanentNoData = res !== null && errMsg === '未找到匹配资源';
-          if (permanentNoData || attempt === 1) return;
+          // 业务无数据：只是这部片该源没有，不计健康度（避免缺片率高的源被永久标红）
+          if (permanentNoData) return;
+          // 重试后仍失败：网络类失败，记一次（连续失败会让该源在后续聚合里排后）
+          if (attempt === 1) {
+            recordSourceResult(allSrc[idx]?.id, false);
+            return;
+          }
           await sleep(800);
         }
       };
