@@ -1,4 +1,4 @@
-import { AlertTriangle, ListVideo, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ListVideo, RefreshCw , FastForward } from 'lucide-react';
 import { usePlayerStore } from '@/stores';
 import type { PlayerMode } from '@/types/player';
 import { Icon } from "@/components/ui/Icon";
@@ -21,6 +21,10 @@ interface PlayerCoreProps {
   onPointerLeave?: () => void;
   /** IPTV 错误态快捷入口：唤起频道列表 */
   onOpenChannelList?: () => void;
+  /** IPTV 错误态：切换到本频道的下一条线路（存在可换线路时渲染按钮） */
+  onSwitchLine?: () => void;
+  /** IPTV 错误态：是否存在可换线路（决定「换一条线路」按钮是否渲染） */
+  hasSwitchableLine?: boolean;
   /** 重试播放 */
   onRetry?: () => void;
   /**-3 预留：错误态「切换播放源」入口（PlayerPage 接线后启用） */
@@ -52,6 +56,8 @@ export default function PlayerCore({
   onPointerMove,
   onPointerLeave,
   onOpenChannelList,
+  onSwitchLine,
+  hasSwitchableLine,
   onRetry,
   onSwitchSource,
 }: PlayerCoreProps) {
@@ -123,6 +129,16 @@ export default function PlayerCore({
               >
                 <Icon icon={ListVideo} size="xs" />
                 <span>切换频道</span>
+              </button>
+            )}
+            {mode === 'iptv' && onSwitchLine && hasSwitchableLine && (
+              <button
+                type="button"
+                className="up-error-actions-btn"
+                onClick={(e) => { e.stopPropagation(); onSwitchLine(); }}
+              >
+                <Icon icon={FastForward} size="xs" />
+                <span>换一条线路</span>
               </button>
             )}
             {mode !== 'iptv' && onSwitchSource && (

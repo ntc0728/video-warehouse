@@ -486,8 +486,7 @@ export default function UniversalPlayer({
 
   // IPTV 超时 hook
   // 超时看门狗现读能力矩阵 `hasTimeoutWatchdog`（直播类为 true）。
-  useIPTVTimeout({ enabled: capabilities.hasTimeoutWatchdog, currentUrl, onTimeout: useCallback(() => setHasError(true), []) });
-
+  
   // 初始化 effect
   useEffect(() => { setMode(mode); }, [mode, setMode]);
   useEffect(() => { setPlatform(platform); }, [platform, setPlatform]);
@@ -522,6 +521,8 @@ export default function UniversalPlayer({
   // 自动切线路：仅含音频时按「频道名」每频道最多自动切 1 次线路（防线路间死循环）。
   // /iptv/play 为独立全屏路由，离开页面即卸载组件，标记随之失效，无需手动清理。
   const audioOnlyLineSwitchedRef = useRef<Set<string>>(new Set());
+  /** IPTV 超时自愈：已自动换过线的频道（换线成功后 channelId 变化会清空，允许遍历下一条） */
+  const autoLineSwitchedRef = useRef<Set<string>>(new Set());
   const currentChannelRef = useRef(currentChannel);
   currentChannelRef.current = currentChannel;
   const channelsRef = useRef(_channels);
@@ -899,12 +900,38 @@ skipHistory,
     usePlayerStore.getState().setCurrentAudioTrack(nextTrack.id);
   }, [playerCore]);
 
-  const iptvSourceCount = useMemo(() => {
-    if (mode !== 'iptv' || !currentChannel) return 0;
-    return _channels.filter(
-      ch => ch.name === currentChannel.name && ch.sourceId !== currentChannel.sourceId
-    ).length;
+  // IPTV 线路计数：同名频道总数（含当前），当前位次 = 在同名列表中的下标。
+  // 与 useIPTVNavigation 的候选口径一致（2026-11-11 修正：此前排除自身且按 sourceId
+  // 区分，导致计数恒 0、OSD 恒显示「线路 1/N」且首点换源跳号）。
+  const iptvLineInfo = useMemo(() => {
+    if (mode !== 'iptv' || !currentChannel) return { count: 0, index: 0 };
+    const lines = _channels.filter(ch => ch.name === currentChannel.name);
+    const index = lines.findIndex(ch => ch.id === currentChannel.id);
+    return { count: lines.length, index: Math.max(0, index) };
   }, [mode, currentChannel, _channels]);
+
+  /** IPTV 超时/失败自愈：换到本频道的下一条线路。返回是否发起了切换。 */
+  const trySwitchLine = useCallback((): boolean => {
+    if (mode !== 'iptv' || !currentChannel || iptvLineInfo.count <= 1) return false;
+    if (autoLineSwitchedRef.current.has(currentChannel.id)) return false;
+    autoLineSwitchedRef.current.add(currentChannel.id);
+    handleSourceSwitch(
+      (iptvLineInfo.index + 1) % iptvLineInfo.count,
+      capabilities.hasChannelList,
+      currentChannel, _channels, sources,
+    );
+    return true;
+  }, [mode, currentChannel, iptvLineInfo, capabilities.hasChannelList, _channels, sources, handleSourceSwitch]);
+
+  // 换线成功后 currentChannelId 变化 → 清自愈标记，允许遍历下一条线路
+  useEffect(() => { autoLineSwitchedRef.current.clear(); }, [currentChannelId]);
+  // IPTV 超时看门狗现读能力矩阵 `hasTimeoutWatchdog`（直播类为 true）。
+  // 2026-11-11：超时先自愈（换下一条线路），无候选/已遍历过才置错误层。
+  useIPTVTimeout({
+    enabled: capabilities.hasTimeoutWatchdog, currentUrl,
+    onTimeout: useCallback(() => { if (!trySwitchLine()) setHasError(true); }, [trySwitchLine]),
+  });
+
 
   const volume = usePlayerStore(s => s.volume);
   const isPiP = usePlayerStore(s => s.isPiP);
@@ -1260,8 +1287,8 @@ app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全�
           currentProgram={channelProgram?.current ?? currentChannel?.currentProgram}
           nextProgram={channelProgram?.next ?? currentChannel?.nextProgram}
           channelNumber={channelNumber}
-          currentSourceIndex={0}
-          totalSources={mode === 'iptv' ? iptvSourceCount : sources.length}
+          currentSourceIndex={mode === 'iptv' ? iptvLineInfo.index : 0}
+          totalSources={mode === 'iptv' ? iptvLineInfo.count : sources.length}
           audioTracks={audioTracks}
           onToggleChannelList={() => setChannelListVisible(true)}
           // 源切换分支现读 `hasChannelList`（直播类=true 切频道、点播=false 切线路）。

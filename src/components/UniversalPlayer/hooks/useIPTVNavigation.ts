@@ -56,13 +56,16 @@ export function useIPTVNavigation({
     // 等价性：原对 iptv/live（hasChannelList=true）走切频道、对 video（false）走切线路；
     // 现对 switchByChannel=true 切频道、false 切线路。逐字等价。
     if (switchByChannel && currentChannel) {
+      // 候选 = 全部同名频道（含自身）：线路序号语义 = 「线路 X/Y」中的当前位次。
+      // 旧实现排除自身且按 sourceId 区分——org 主干所有频道 sourceId 相同 → 候选恒空，
+      // 换线能力等于未生效（2026-11-11 调研）。index 指向自身时视为无变化（不提示）。
       const sameNameChannels = channels.filter(
-        ch => ch.name === currentChannel.name && ch.sourceId !== currentChannel.sourceId
+        ch => ch.name === currentChannel.name
       );
       if (sameNameChannels.length === 0) return;
       const targetIndex = index % sameNameChannels.length;
       const nextChannel = sameNameChannels[targetIndex];
-      if (nextChannel) {
+      if (nextChannel && nextChannel.id !== currentChannel.id) {
         // 统一入口构建播放地址（预留：携带频道 UA/Referer 由开关控制，默认行为与原先一致）
         const playUrl = buildChannelPlayUrl(nextChannel, proxyUrl, proxyPattern);
         lastSetUrlRef.current = playUrl;
