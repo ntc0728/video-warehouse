@@ -12,6 +12,7 @@ import type { VideoDetailResult } from '@/services/videoService';
 import type { Video, Episode, VideoSource } from '@/types/video';
 import { plainEpisodeNumber } from '@/services/vodParser';
 import { recordSourceResult, orderIndicesByHealth } from '@/services/sourceHealth';
+import { suppressSourceToast } from '@/components/UniversalPlayer/lib/utils';
 import type { TMDBMovieDetail, TMDBTVShowDetail } from '@/types/tmdb';
 /** vod_id 快路径新鲜度阈值：缓存/历史超期即视为过期，改按标题重搜（10 分钟） */
 const VOD_ID_FRESH_MS = 10 * 60 * 1000;
@@ -657,6 +658,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
  * 场景：非 TV 类型或单季剧集，直接搜索或获取详情
  */
     try {
+      // 进入本分支时的源下标：用于区分「普通切源」与「兜底换源」的提示口径
+      const entrySourceIdx = sourceIdx;
       let result: VideoDetailResult;
       if (!id?.startsWith('tmdb-')) {
         // ── CMS 源视频（id 即某源的 vod_id）──────────────────────────
@@ -736,6 +739,11 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         if (result.video) {
           videoCache.set(id!, { video: result.video, sourceIndex: result.sourceIndex, fetchedAt: Date.now() });
           setVideo(result.video);
+          // 普通切源成功：用带 CMS 源名的提示替代旧的「已切换到<线路名>」；
+          // 兜底换源（sourceIdx 已变）由上方详细文案承担，不覆盖。
+          if (sourceIdx === entrySourceIdx && isSwitching) {
+            usePlayerStore.getState().setSourceNotice(`已切换到「${result.sourceName || allSrc[sourceIdx]?.name || '该源'}」`);
+          }
           {
             const src = allSrc[result.sourceIndex];
             if (src) cmsSourceIdRef.current = src.id;
@@ -792,6 +800,9 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
 
   // ── handlePlayCMSSource ──────────────────────
   const handlePlayCMSSource = useCallback(async (result: VideoDetailResult) => {
+    // 切 CMS 源时抑制 ToastTrigger 的「已切换到<线路名>」toast（如「已切换到源1」）：
+    // 换源说明统一由续播卡顶部行承担（带 CMS 源名），避免两条提示竞态/重复。
+    suppressSourceToast(3000);
     if (cmsSwitchTimerRef.current) clearTimeout(cmsSwitchTimerRef.current);
     cmsSwitchTimerRef.current = setTimeout(() => { cmsSwitchTimerRef.current = null; }, 300);
 
@@ -837,6 +848,8 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           : [...cachedVideo.episodes].sort((a, b) => a.number - b.number)[0];
         videoCache.set(id!, { video: cachedVideo, sourceIndex: result.sourceIndex, fetchedAt: Date.now() });
         setVideo(cachedVideo);
+        // 普通切源成功：带 CMS 源名的提示（替代旧的「已切换到<线路名>」toast）
+        usePlayerStore.getState().setSourceNotice(`已切换到「${result.sourceName || '该源'}」`);
         if (targetEp?.sources.length) onSwitchEpisode(targetEp);
       } else {
         // 该源该季无集数：清空播放状态落到空态（不回退旧源数据）

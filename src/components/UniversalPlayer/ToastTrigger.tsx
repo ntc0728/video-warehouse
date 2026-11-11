@@ -54,8 +54,10 @@ export default function ToastTrigger({ mode, disabled = false }: { mode?: Player
       // 切换线路（首帧 src 从 null 初始化为实际值不算「切换」，不提示）
       if (src && prevSource.current !== null && src !== prevSource.current) {
         // 切集/切线路瞬间会短暂经过此处；抑制窗口内跳过，避免误报「已切换到线路名」
-        // 后由 handlePlayEpisode 的集标题提示独占显示
-        if (!isSourceToastSuppressed()) {
+        // 后由 handlePlayEpisode 的集标题提示独占显示。
+        // 另：续播卡正在显示换源说明（sourceNotice）时不弹——两条提示共存会互相干扰，
+        // 换源统一由「已切换到「CMS源名」」那条承担（2026-11-11 用户要求避免竞态）。
+        if (!isSourceToastSuppressed() && !usePlayerStore.getState().sourceNotice) {
           prevSource.current = src;
           const sources = state.sources;
           const matched = sources.find(s => s.url === src);
