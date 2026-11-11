@@ -94,4 +94,9 @@ export interface IPTVPlayRecord {
   channelLogo?: string;
   channelGroup?: string;
   playedAt: number;
+  /** 播放时的源 ID 快照：本地源 ID 为 `${index}-channel-${n}`，源重排会漂移，
+   * 恢复时与当前频道 url 比对以识别漂移（2026-11-11） */
+  sourceId?: string;
+  /** 播放时的流地址快照（构建后的播放 URL）：频道下架/ID 漂移时按它恢复播放 */
+  url?: string;
 }

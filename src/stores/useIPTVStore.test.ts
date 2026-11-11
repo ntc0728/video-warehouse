@@ -67,7 +67,7 @@ describe('useIPTVStore', () => {
   describe('recordPlay', () => {
     it('记录播放历史', () => {
       useIPTVStore.setState({ channels: [makeChannel('ch1', '频道1', '央视')] });
-      useIPTVStore.getState().recordPlay('ch1');
+      useIPTVStore.getState().recordPlay(makeChannel('ch1', '频道1', '央视'));
       const state = useIPTVStore.getState();
       expect(state.playHistory).toHaveLength(1);
       expect(state.playHistory[0].channelId).toBe('ch1');
@@ -76,9 +76,9 @@ describe('useIPTVStore', () => {
 
     it('重复播放移到最前面', () => {
       useIPTVStore.setState({ channels: [makeChannel('ch1', '频道1', '央视'), makeChannel('ch2', '频道2', '卫视')] });
-      useIPTVStore.getState().recordPlay('ch1');
-      useIPTVStore.getState().recordPlay('ch2');
-      useIPTVStore.getState().recordPlay('ch1');
+      useIPTVStore.getState().recordPlay(makeChannel('ch1', '频道1', '央视'));
+      useIPTVStore.getState().recordPlay(makeChannel('ch2', '频道2', '卫视'));
+      useIPTVStore.getState().recordPlay(makeChannel('ch1', '频道1', '央视'));
       const state = useIPTVStore.getState();
       expect(state.playHistory[0].channelId).toBe('ch1');
       expect(state.playHistory).toHaveLength(2);

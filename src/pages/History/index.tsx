@@ -355,8 +355,9 @@ export default function HistoryPage() {
           name: ch?.name ?? r.channelName,
           logo: ch?.logo ?? r.channelLogo,
           group: ch?.group ?? r.channelGroup,
-          url: ch?.url ?? '',
-          sourceId: ch?.sourceId,
+          // 快照兜底：频道下架/缓存过期时用播放时的流地址与源快照（2026-11-11 recordPlay 升级）
+          url: ch?.url ?? r.url ?? '',
+          sourceId: ch?.sourceId ?? r.sourceId,
           _histTime: r.playedAt,
         };
       });
@@ -690,8 +691,15 @@ export default function HistoryPage() {
   }, [iptvHistory, iptvChannelMap]);
 
   const buildIptvNav = useCallback((item: HistoryChannelItem): { to: string; state: Record<string, unknown> } => {
+    // ID 漂移识别（2026-11-11）：本地源 ID 为 `${index}-channel-${n}`，源重排后同一 ID 可能
+    // 指向另一个台。id 命中但流地址与播放时快照不一致 → 用快照 URL 恢复（上次实际观看的流），
+    // 不信任漂移后的频道对象。
     const ch = iptvChannelMap.get(item.id);
-    const playUrl = buildChannelPlayUrl(ch ?? { url: item.url }, proxyUrl, proxyPattern);
+    const drifted = !!ch && !!item.url && ch.url !== item.url;
+    const target = drifted
+      ? { url: item.url, name: item.name, logo: item.logo, group: item.group, sourceId: item.sourceId }
+      : (ch ?? { url: item.url, name: item.name, logo: item.logo, group: item.group });
+    const playUrl = buildChannelPlayUrl(target as Parameters<typeof buildChannelPlayUrl>[0], proxyUrl, proxyPattern);
     const params = new URLSearchParams({ url: playUrl });
     params.set('id', item.id);
     params.set('name', item.name);

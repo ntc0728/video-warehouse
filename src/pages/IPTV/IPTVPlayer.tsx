@@ -167,7 +167,7 @@ export default function IPTVPlayerPage() {
     if (channel.id) params.set('id', channel.id);
     if (channel.name) params.set('name', channel.name);
     // 换台/换线即时记入观看历史（此前只有列表卡片点击会写 → 历史页不更新）
-    if (channel.id) recordPlay(channel.id);
+    recordPlay(channel);
     navigate(`/iptv/play?${params.toString()}`, { replace: true, state: { from: '/iptv' } });
   }, [navigate, settings, recordPlay]);
 

@@ -9,7 +9,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { IPTVChannel, IPTVGroup, IPTVFilter, IPTVSettings, IPTVPlayRecord } from '@/types/iptv';
-import { fetchAndParsePlaylist, fetchSingleSourceChannels } from '@/services/iptvService';
+import { fetchAndParsePlaylist, fetchSingleSourceChannels, buildChannelPlayUrl } from '@/services/iptvService';
 // iptv-org API 主干层（channels.json + streams.json + logos.json）
 import { fetchIptvOrgChinaChannels, fetchCnDisplayNames, channelMatchKeys, matchLogoForChannel } from '@/services/iptvOrgService';
 import { PlaylistSourceType } from '@/types/iptv';
@@ -154,7 +154,8 @@ interface IPTVState {
   /** 仅清空频道/分组（保留设置、播放历史、收藏频道），用于「清除全部缓存」 */
   clearChannelsCache: () => void;
   clearCache: () => void;
-  recordPlay: (channelId: string) => void;
+  /** 记录播放（含流地址/源快照）：不再依赖 channels 查找，「更多台」未加载的频道也可入史 */
+  recordPlay: (channel: IPTVChannel) => void;
   clearPlayHistory: () => void;
   removePlayRecord: (channelId: string) => void;
   clearFavorites: () => void;
@@ -467,25 +468,26 @@ export const useIPTVStore = create<IPTVState>()(
  * 记录频道播放行为
  * 更新频道的最后播放时间，并将该频道移至播放历史最前面（去重）
  */
-      recordPlay: (channelId) => {
+      recordPlay: (channel) => {
         const { channels, playHistory } = get();
-        const channel = channels.find(ch => ch.id === channelId);
-        if (!channel) return;
-
         const now = Date.now();
+        // 频道在主干中 → 同步 lastPlayed（收藏页排序/时间用）；
+        // 不在（「更多台」未加载 / extra 源）→ 仍写播放记录（快照齐全，恢复不再依赖 channels）
         set({
           channels: channels.map(ch =>
-            ch.id === channelId ? { ...ch, lastPlayed: now } : ch
+            ch.id === channel.id ? { ...ch, lastPlayed: now } : ch
           ),
           playHistory: [
             {
-              channelId,
+              channelId: channel.id,
               channelName: channel.name,
               channelLogo: channel.logo,
               channelGroup: channel.group,
               playedAt: now,
+              sourceId: channel.sourceId,
+              url: buildChannelPlayUrl(channel, get().settings.proxyUrl, get().settings.proxyPattern),
             },
-            ...playHistory.filter(h => h.channelId !== channelId),
+            ...playHistory.filter(h => h.channelId !== channel.id),
           ],
         });
       },

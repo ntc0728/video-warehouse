@@ -67,7 +67,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
       return;
     }
     setSelectedChannel(channel);
-    recordPlay(channel.id);
+    recordPlay(channel);
   }, [batchMode, channel, setSelectedChannel, recordPlay]);
 
   /** 收藏切换（动效统一由按钮 hover/scale 过渡承担，不再做弹跳动画） */
