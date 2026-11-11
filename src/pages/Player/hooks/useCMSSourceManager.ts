@@ -12,6 +12,8 @@ import type { VideoDetailResult } from '@/services/videoService';
 import type { Video, Episode, VideoSource } from '@/types/video';
 import { plainEpisodeNumber } from '@/services/vodParser';
 import type { TMDBMovieDetail, TMDBTVShowDetail } from '@/types/tmdb';
+/** vod_id 快路径新鲜度阈值：缓存/历史超期即视为过期，改按标题重搜（10 分钟） */
+const VOD_ID_FRESH_MS = 10 * 60 * 1000;
 import type { HistoryRecord } from '@/types/store';
 
 // 跨源季号对齐时的回退季号：优先最小**正**季号（正片优先），
@@ -658,10 +660,13 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         // 反例（必须走标题重搜）：跨源切换时 id 属于旧源；用户从详情页「立即播放」传的
         // sourceIndex 是**匹配结果所属源**，未必等于 id 的来源。
         const cachedEntry = id ? videoCache.get(id) : undefined;
+        // 新鲜度：详情页/列表页可能停留很久，vod_id 快路径会用过期数据 → 命中失效源。
+        // 超过 VOD_ID_FRESH_MS 的缓存/历史记录不再走快路径，直接按标题重搜（无感修正）。
+        const isFresh = (ts?: number) => ts == null || Date.now() - ts < VOD_ID_FRESH_MS;
         const idBelongsToTargetSource =
           (!isSwitching) ||
-          (!!cachedEntry && cachedEntry.sourceIndex === sourceIdx) ||
-          (!!histRecord?.vodId && histRecord.vodId === id &&
+          (!!cachedEntry && cachedEntry.sourceIndex === sourceIdx && isFresh(cachedEntry.fetchedAt)) ||
+          (!!histRecord?.vodId && histRecord.vodId === id && isFresh(histRecord.updatedAt) &&
             ((!!histRecord.cmsSourceId && histRecord.cmsSourceId === allSrc[sourceIdx]?.id) ||
               (!!histRecord.cmsSourceName && histRecord.cmsSourceName === allSrc[sourceIdx]?.name)));
         if (idBelongsToTargetSource) {
@@ -684,9 +689,10 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         result = probeHits?.get(sourceIdx) ?? await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal, tmdbMediaType);
       }
 
-      // 电影跨源兜底（同 TV 分支）：指定/历史源搜不到本片时顺延其它源最多 4 次，
+      // 跨源兜底（同 TV 分支）：指定/历史源搜不到本片时顺延其它源最多 4 次，
       // 首个命中即采用并同步面板选中源，杜绝「继续观看→cms 源无数据」死端。
       if (!result.video && !isSwitching && videoTitle) {
+        const staleSourceName = allSrc[sourceIdx]?.name ?? '原源';
         for (let i = 0, tried = 0; i < allSrc.length && tried < 4; i++) {
           if (i === sourceIdx) continue;
           tried += 1;
@@ -696,10 +702,14 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
             result = alt;
             sourceIdx = i;
             activeCmsSourceIndexRef.current = i;
-            // 同 TV 分支：兜底命中的新源并进面板首位
-            if (id.startsWith('tmdb-') && allSrc[i]?.id) {
+            // 兜底命中的新源进面板（数字 vod_id 入口此前不更新 → 面板与播放源不一致）
+            if (allSrc[i]?.id) {
               setSelectedSourceIds(prev => (prev.includes(allSrc[i].id) ? prev : [allSrc[i].id, ...prev]));
             }
+            // 无感换源说明：写入续播卡顶部行（不打断播放，不用全局 toast）
+            usePlayerStore.getState().setSourceNotice(
+              `原源「${staleSourceName}」已无本片数据，已改用「${alt.sourceName || '其它源'}」`,
+            );
             break;
           }
         }

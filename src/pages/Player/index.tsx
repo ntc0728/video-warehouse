@@ -1100,6 +1100,30 @@ export default function PlayerPage() {
               <div className="player-loading-wrap">
                 <PlayerTVLoader />
               </div>
+            ) : !video && hasLoadedOnce ? (
+              /* 解析已结束但无任何可播数据：给明确空态 + 出口（重新检测/返回），
+                 不再显示黑屏播放按钮（用户会误以为可点却无反应）。2026-11-11 */
+              <div className="player-empty-state player-empty-state--inline">
+                <div className="up-player-header up-player-header-visible">
+                  <button className="up-header-back" onClick={(e) => { e.stopPropagation(); handleBack(); }}>
+                    <Icon icon={ArrowLeft} size="sm" />
+                    <span>返回</span>
+                  </button>
+                  <span className="up-header-title">{title || ''}</span>
+                </div>
+                <div className="player-empty-content">
+                  <Icon icon={VideoOff} size="lg" />
+                  <p className="player-empty-title">该片所有源暂不可用</p>
+                  <p className="player-empty-sub">已自动尝试其它源，可重新检测或返回</p>
+                  <button
+                    className="player-empty-back"
+                    onClick={() => { void _fetchCMSSources(undefined, false); }}
+                  >
+                    <Icon icon={AlertTriangle} size="xs" />
+                    <span>重新检测源</span>
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="up-universal-player up-mode-video up-player-placeholder">
                 <div className="up-player-core">
