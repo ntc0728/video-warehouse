@@ -493,9 +493,28 @@
 
 @media (hover: none) and (pointer: coarse) {
   /* 触屏常驻显示（无 hover 可触发）；opacity 0.7 → 1：实心圆点，
-   半透明在黑底上观感发灰（2026-11-11 用户反馈） */
+   半透明在黑底上观感发灰（2026-11-11 用户反馈）。
+   尺寸同步收小一档：×0.85（≈11.4 → 9.7px）。 */
   .up-progress-thumb {
+    width: calc(var(--text-xs) * 0.85);
+    height: calc(var(--text-xs) * 0.85);
     opacity: 1;
+  }
+
+  /* 错误覆盖层（源不可用等）：图标 / 文案 / 重试按钮整体收小。
+     Icon 尺寸是内联 width/height → 必须 !important 覆盖，仅触屏生效。 */
+  .up-player-error-content svg {
+    width: var(--icon-xl) !important;
+    height: var(--icon-xl) !important;
+  }
+
+  .up-player-error {
+    font-size: var(--text-sm);
+  }
+
+  .up-retry-btn {
+    padding: var(--space-xs) var(--space-md);
+    font-size: var(--text-sm);
   }
 }
 
@@ -511,6 +530,16 @@
   white-space: nowrap;
   transform: translateX(-50%);
   pointer-events: none;
+}
+
+/* 触屏点击进度条的时间气泡收小一档（字号 / 内边距 → 底色块同步变小）。
+ 必须写在基础规则之后：@media 不提升特异性，同权重靠先后覆盖。 */
+@media (hover: none) and (pointer: coarse) {
+  .up-progress-tooltip {
+    margin-bottom: var(--space-xs);
+    padding: var(--space-2xs) var(--space-xs);
+    font-size: var(--text-xs);
+  }
 }
 
 /* ===== Volume Control ===== */

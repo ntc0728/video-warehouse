@@ -394,7 +394,9 @@ export default function UniversalPlayer({
       if (!video || video.error || video.readyState < 2) return;
       // C3：长按 seek 与键盘/进度条共用 playerCore.seek（seek 守卫策略同一处）
       const seekAmount = direction === 'left' ? -6 : 6;
-      playerCore.seek(Math.max(0, Math.min(video.duration || 0, video.currentTime + seekAmount)));
+      // silent：长按/横滑已有 seekIndicator / seekHud 视觉反馈，不再弹「已跳转 xx:xx」
+      // （长按每 500ms 一次，toast 会连刷并遮挡画面）
+      playerCore.seek(Math.max(0, Math.min(video.duration || 0, video.currentTime + seekAmount)), { silent: true });
     }, [hasError]),
     // C3：仅加载未就绪禁用（缓冲中允许 seek，与键盘/进度条一致）
     disabled: isPlayerLoading && !isReadyToPlay,
