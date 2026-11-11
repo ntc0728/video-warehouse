@@ -707,3 +707,40 @@ top-card 同批并入去卡（原「仅桌面 >=1024」注释有误——
   background: var(--color-border-light);
 }
 
+
+/* ── 上次观看快捷入口（2026-11-11）── */
+.iptv-last-watch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.iptv-last-watch:hover {
+  border-color: var(--color-primary, currentColor);
+}
+.iptv-last-watch__label {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  flex: none;
+}
+.iptv-last-watch__name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iptv-last-watch__go {
+  margin-left: auto;
+  color: var(--color-text-tertiary);
+  flex: none;
+}

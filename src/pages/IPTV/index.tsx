@@ -18,6 +18,7 @@ import { useLocation } from 'react-router-dom';
 import { useCustomNavigate } from '@/lib/navigation';
 import { useNavStore } from '@/stores';
 import { useIPTVStore } from '@/stores/useIPTVStore';
+import { buildChannelPlayUrl } from '@/services/iptvService';
 import { useSourceManagerStore } from '@/stores/useSourceManagerStore';
 import { getEPGCacheTime, fetchAndParseEPG } from '@/services/epgService';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -62,6 +63,8 @@ export default function IPTVPage() {
     lastRefresh,
     refreshChannels,
     proxyUrl,
+    settings,
+    playHistory,
     aggregatorUrls,
     sourceNames,
     sourceChannels,
@@ -70,6 +73,8 @@ export default function IPTVPage() {
   } = useIPTVStore(
     useShallow((s) => ({
       channels: s.channels,
+      playHistory: s.playHistory,
+      settings: s.settings,
       groups: s.groups,
       isLoading: s.isLoading,
       isRefreshing: s.isRefreshing,
@@ -197,6 +202,16 @@ export default function IPTVPage() {
  * 勾选本地源后，该源频道追加到主干列表一并参与分类计数、搜索和 card 渲染；
  * 取消勾选则移除。桌面端分类过滤在分节时应用（inCategory）；移动端叠加 selectedGroup。
  */
+  // 上次观看：取播放历史首条（按频道 ID 匹配当前频道，缺失时仍显示快照名但不给入口）
+  const lastWatched = useMemo(() => {
+    const rec = playHistory[0];
+    if (!rec) return null;
+    const ch = channels.find((c) => c.id === rec.channelId);
+    if (!ch) return null;
+    const playUrl = buildChannelPlayUrl(ch, settings.proxyUrl, settings.proxyPattern);
+    return { id: ch.id, name: ch.name, playUrl, logo: ch.logo };
+  }, [playHistory, channels, settings]);
+
   const mainChannels = useMemo(() => {
     // 把勾选的「更多台」源频道拼接到主干后面（sourceChannels 已按源去重）
     const extra = extraSourceIds.flatMap(id => sourceChannels[id] ?? []);
@@ -485,6 +500,21 @@ export default function IPTVPage() {
                     </button>
                   </div>
 
+                  {lastWatched && (
+                    <button
+                      className="iptv-last-watch"
+                      onClick={() => {
+                        const params = new URLSearchParams({ url: encodeURIComponent(lastWatched.playUrl) });
+                        params.set('id', lastWatched.id);
+                        params.set('name', lastWatched.name);
+                        navigate(`/iptv/play?${params.toString()}`, { state: { from: '/iptv' } });
+                      }}
+                    >
+                      <span className="iptv-last-watch__label">上次观看</span>
+                      <span className="iptv-last-watch__name">{lastWatched.name}</span>
+                      <span className="iptv-last-watch__go">▶</span>
+                    </button>
+                  )}
                   {channels.length === 0 ? (
                     <Empty
                       status={error ? 'error' : 'waiting'}
@@ -620,6 +650,21 @@ export default function IPTVPage() {
                   </span>
                 )}
               </div>
+            )}
+            {lastWatched && (
+              <button
+                className="iptv-last-watch"
+                onClick={() => {
+                  const params = new URLSearchParams({ url: encodeURIComponent(lastWatched.playUrl) });
+                  params.set('id', lastWatched.id);
+                  params.set('name', lastWatched.name);
+                  navigate(`/iptv/play?${params.toString()}`, { state: { from: '/iptv' } });
+                }}
+              >
+                <span className="iptv-last-watch__label">上次观看</span>
+                <span className="iptv-last-watch__name">{lastWatched.name}</span>
+                <span className="iptv-last-watch__go">▶</span>
+              </button>
             )}
             {channels.length === 0 ? (
               <Empty
