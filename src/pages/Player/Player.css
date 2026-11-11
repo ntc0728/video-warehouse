@@ -246,6 +246,7 @@
 .player-cms-item {
   display: inline-flex;
   gap: var(--space-xs);
+  justify-content: center;
   align-items: center;
   /* 单个 tab 超长时以容器为上限（name 的 ellipsis 兜底），不撑破面板 */
   max-width: 100%;
@@ -275,12 +276,16 @@
   color: var(--color-text-inverse);
 }
 
-.player-cms-name {
-  flex: 1;
+/* 面板 tab 文本（MarqueeText 根节点）：作为按钮的 flex item，
+不溢出时按内容宽（由按钮 justify-content: center 居中），
+溢出时加 .mq-root--scrolling 占满整行、从左侧起滚。 */
+.player-cms-name,
+.player-season-name,
+.player-episode-label,
+.player-source-label {
+  flex: 0 1 auto;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* ── 选季面板 ──────────────────────────────────── */
@@ -1177,8 +1182,8 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   html:not([data-device="app"]) .player-page {
     /* 播放页局部布局变量：不上提 :root，避免污染全站与 TV 体系；
  TV 端（[data-device="tv"] 自有体系）与 app 端走 var() 的第二个参数回退。 */
-    --player-sidebar-w: clamp(180px, 14vw, 230px);        /* 面板栏：动态 + 180 下限（一行一条后继续收窄，播放器等比变宽变高，2026-11-11） */
-    --player-sidebar-min-w: 180px;
+    --player-sidebar-w: clamp(170px, 13vw, 210px);        /* 面板栏：动态 + 170 下限（一行一条后继续收窄，播放器等比变宽变高，2026-11-11） */
+    --player-sidebar-min-w: 170px;
     --player-stage-min-w: 480px;                          /* 播放器最小宽度 */
     --player-stage-max-h: calc(100dvh - var(--header-height) - var(--space-sm) * 3);
     --player-tab-h: calc(var(--comp-tab-height) * 0.78);  /* 面板内 tab 收窄：≈38→30 / 36→28 */
@@ -1460,15 +1465,9 @@ html[data-device="app"] .player-cms-list--measure .player-cms-item {
   html:not([data-device="app"]):not([data-device="tv"]) .player-season-item,
   html:not([data-device="app"]):not([data-device="tv"]) .player-episode-btn,
   html:not([data-device="app"]):not([data-device="tv"]) .player-source-item {
-    justify-content: flex-start;
+    /* 文本统一居中（与移动端网格 chip 一致；溢出滚动时由 .mq-root--scrolling
+   占满整行，内容自然从左侧起滚，不会被居中裁掉首字） */
+    justify-content: center;
     border-radius: var(--radius-md);
-  }
-
-  /* 单列列表：文本吃满整行，左对齐滚动 */
-  html:not([data-device="app"]):not([data-device="tv"]) .player-cms-name,
-  html:not([data-device="app"]):not([data-device="tv"]) .player-season-name,
-  html:not([data-device="app"]):not([data-device="tv"]) .player-episode-label,
-  html:not([data-device="app"]):not([data-device="tv"]) .player-source-label {
-    flex: 1;
   }
 }

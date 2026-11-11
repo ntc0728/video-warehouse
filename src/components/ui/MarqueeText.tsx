@@ -29,7 +29,15 @@ export function MarqueeText({ signature, children, className = '', scroll = true
   useLayoutEffect(() => {
     const el = rootRef.current;
     if (!el) return;
-    const check = () => setOverflows(el.scrollWidth > el.clientWidth + 1);
+    const check = () => {
+      // 用「第一份文本的真实宽度」判断溢出，而不是容器 scrollWidth：
+      // 副本间距（.mq-text 的 margin-right）会被算进 track/scrollWidth，
+      // 导致文本实际放得下、加上间距就超了 → 误判滚动（2026-11-11 用户反馈）。
+      const track = el.firstElementChild as HTMLElement | null;
+      const firstText = track?.firstElementChild as HTMLElement | null;
+      const textW = firstText ? firstText.getBoundingClientRect().width : el.scrollWidth;
+      setOverflows(textW > el.clientWidth + 1);
+    };
     check();
     if (typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(check);
@@ -40,7 +48,11 @@ export function MarqueeText({ signature, children, className = '', scroll = true
   const scrolling = scroll && overflows;
 
   return (
-    <span ref={rootRef} className={`mq-root${className ? ` ${className}` : ''}`} title={title}>
+    <span
+      ref={rootRef}
+      className={`mq-root${scrolling ? ' mq-root--scrolling' : ''}${className ? ` ${className}` : ''}`}
+      title={title}
+    >
       <span className={`mq-track${scrolling ? ' mq-track--scrolling' : ''}`}>
         <span className="mq-text">{children}</span>
         {scrolling && <span className="mq-text" aria-hidden="true">{children}</span>}

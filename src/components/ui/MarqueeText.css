@@ -16,10 +16,16 @@
   white-space: nowrap;
 }
 
-/* 速度统一 14s（--dur-marquee 7s × 2）：比 IPTV OSD 的 10s 慢一档，
- 与播放器 header 标题口径一致（2026-11-11 用户反馈 10s 偏快）。 */
+/* 溢出滚动时占满可用宽：内容从左侧起滚，避免按钮 justify-content:center
+ 把超宽 track 居中后裁掉首字；不溢出时按内容宽，由按钮决定居中。 */
+.mq-root--scrolling {
+  width: 100%;
+}
+
+/* 速度统一 21s（--dur-marquee 7s × 3）：比 IPTV OSD 的 10s 明显慢一档，
+ 播放器 header 标题与面板 tab 共用（2026-11-11 用户两次反馈偏快）。 */
 .mq-track--scrolling {
-  animation: mq-scroll calc(var(--dur-marquee, 7s) * 2) linear infinite;
+  animation: mq-scroll calc(var(--dur-marquee, 7s) * 3) linear infinite;
 }
 
 @keyframes mq-scroll {
@@ -31,9 +37,10 @@
   }
 }
 
-/* 每份文案尾部留间距：两份等宽，-50% 恰好退回一份宽度 → 无缝 */
+/* 每份文案尾部留间距：用 margin（不参与 scrollWidth 溢出判定，避免
+ 「文本放得下 + 间距」被误判为溢出而空滚）；两份等宽，-50% 恰好退回一份宽度 → 无缝 */
 .mq-text {
   display: inline-flex;
   align-items: center;
-  padding-right: var(--space-xl);
+  margin-right: var(--space-xl);
 }
