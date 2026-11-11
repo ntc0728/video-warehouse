@@ -267,6 +267,7 @@ export default function PlayerPage() {
     selectedSeason, setSelectedSeason, selectedSeasonRef, seasonChangedRef,
     cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
     setCurrentSrc, setLocalEpisodeId, videoCache,
+    localEpisodeId,
     routeSourceIndex, activeSourceIndex, skipHistory, onSwitchEpisode: switchToEpisode, handlePlaySource,
     // 弹窗直达：初始选集/季优先按 routePlayUrl / routeSeasonNumber 对齐，避免首播季号竞态
     routePlayUrl, routeSeasonNumber, routeEpisodeNumber,

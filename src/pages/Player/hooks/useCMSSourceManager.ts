@@ -51,6 +51,8 @@ interface UseCMSSourceManagerOptions {
   currentSourceNameRef: React.MutableRefObject<string | undefined>;
   setCurrentSrc: (src: { url: string; type: Video['sources'][0]['type'] } | null) => void;
   setLocalEpisodeId: (id: string | undefined) => void;
+  /** 当前正在播放的集 id（切源时按它对齐集号；缺省则回退首集） */
+  localEpisodeId?: string;
   videoCache: Map<string, CachedVideoEntry>;
   routeSourceIndex: number | undefined;
   /** 当前实际使用的 CMS 源索引（历史恢复/设置默认等计算后的最终值，普通 CMS id 进入时用于初始化面板） */
@@ -72,7 +74,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     setTmdbDetail, setTmdbMediaType, onTmdbReady,
     selectedSeason, setSelectedSeason, selectedSeasonRef, seasonChangedRef,
     cmsSourceIdRef, cmsSourceNameRef, currentSourceNameRef,
-    setCurrentSrc, setLocalEpisodeId, videoCache,
+    setCurrentSrc, setLocalEpisodeId, videoCache, localEpisodeId,
     routeSourceIndex, activeSourceIndex, skipHistory, onSwitchEpisode, handlePlaySource,
     routePlayUrl, routeSeasonNumber, routeEpisodeNumber,
   } = opts;
@@ -756,9 +758,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
     setActiveSourceId(result.sourceId || result.sourceName);
     activeCmsSourceIndexRef.current = result.sourceIndex;
 
-    const activeEpId = video?.episodes?.length
-      ? video.episodes.find(ep => ep.id === video.episodes?.[0]?.id)?.id
-      : undefined;
+    const activeEpId = localEpisodeId ?? video?.episodes?.[0]?.id;
     const oldEpisodes = video?.episodes ?? [];
     const currentEp = activeEpId ? oldEpisodes.find(ep => ep.id === activeEpId) : undefined;
     const currentEpNumber = currentEp?.number;
