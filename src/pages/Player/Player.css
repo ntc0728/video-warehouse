@@ -921,11 +921,12 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
     justify-content: flex-start;
   }
 
-  /* 移动端/App：选集/线路一行 5 列 */
+  /* 移动端/App：选集/线路一行 3 列（2026-11-11 由 5 列改：每列更宽，
+   特别篇长集名的滚动频次明显下降） */
   .player-episode-grid,
   .player-source-list {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-sm);
   }
 
@@ -933,7 +934,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
     justify-items: start;
   }
 
-  /* 移动端/App：选集面板最高为 12 条（6行×2列）高度 */
+  /* 移动端/App：选集面板 body 最高 6 行（3 列 → 约 18 条）高度，超出内部滚动 */
   .player-panel--episodes {
     flex: none;
     max-height: none;
@@ -1000,10 +1001,10 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
     justify-content: flex-start;
   }
 
-  html[data-device="app"] /* 移动端/App：选集/线路一行 5 列 */
+  html[data-device="app"] /* 移动端/App：选集/线路一行 3 列 */
   .player-episode-grid, html[data-device="app"] .player-source-list {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-sm);
   }
 
@@ -1011,7 +1012,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
     justify-items: start;
   }
 
-  html[data-device="app"] /* 移动端/App：选集面板最高为 12 条（6行×2列）高度 */
+  html[data-device="app"] /* 移动端/App：选集面板 body 最高 6 行（3 列 → 约 18 条）高度，超出内部滚动 */
   .player-panel--episodes {
     flex: none;
     max-height: none;
