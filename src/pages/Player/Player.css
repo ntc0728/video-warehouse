@@ -255,8 +255,8 @@
   align-items: center;
   /* 单个 tab 超长时以容器为上限（name 的 ellipsis 兜底），不撑破面板 */
   max-width: 100%;
-  /* 面板内 tab 收窄：--player-tab-h 在 ≥1024 桌面块定义（≈ --comp-tab-height × 0.78）；
- 窄屏/App 无该变量 → 回退 --comp-tab-height，保住触摸目标尺寸。 */
+  /* 面板内 tab 高度：--player-tab-h 由布局块定义（桌面 ×0.78 ≈28px、移动/App ×0.83 ≈30px）；
+ 回退 --comp-tab-height 仅作无布局块时的兜底。 */
   height: var(--player-tab-h, var(--comp-tab-height));
   padding: 0 var(--space-sm);
   /* 有底色即无边框（站内筛选 tag 同口径：浅灰边框叠浅灰底会显脏，2026-11-11） */

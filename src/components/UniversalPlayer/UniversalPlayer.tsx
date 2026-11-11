@@ -1159,9 +1159,8 @@ skipHistory,
             setPlayClickAnim(true);
             setTimeout(() => {
               setPlayClickAnim(false);
-              // 用 togglePlay（而非 play）：togglePlay 会设置 userPlayRequested 标记，
-              // ToastTrigger 据此显示「播放」提示；直接 play() 不设标记、
-              // 且 autoPlayToastShownRef 已被首次自动播放置真 → 手动续播无提示（历史回归点）
+              // 用 togglePlay（而非 play）：统一走播放/暂停守卫与 200ms 防连点，
+              // 与点击画面、控制栏按钮同一入口（播放/暂停均已不弹 toast）
               playerCore.togglePlay();
             }, 300);
           }}

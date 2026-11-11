@@ -75,14 +75,6 @@ interface PlayerState {
   isReadyToPlay: boolean;
   mirror: boolean;
   aspectRatio: 'default' | '4:3' | '16:9' | 'fill';
-  /** 最近一次「由用户手动发起」的播放标记（点击播放按钮/切集后手动播放）。
- * 用于 ToastTrigger 区分「用户手动播放」（显示『播放』提示）与
- * 「自动缓冲播放」（切集/恢复时 canplay 自动播，不重复提示）。 */
-  userPlayRequested: boolean;
-  /** 最近一次「由用户手动发起」的暂停标记（点击暂停按钮）。
- * 用于 ToastTrigger 区分「用户手动暂停」（显示『暂停』提示）与
- * 「拖拽进度条触发的自动 pause」（不提示『暂停』，改显示最新进度）。 */
-  userPauseRequested: boolean;
   /** 播放错误的具体文案（-3）：native error / adapter error 时写入，PlayerCore 覆盖层透传显示 */
   errorMessage: string | null;
   /** 续播恢复目标时间（-4/-10）：loadProgress 找到历史进度时写入，
@@ -99,8 +91,6 @@ interface PlayerState {
   setSource: (src: string, type: SourceType) => void;
   setSources: (sources: VideoSource[]) => void;
   setPlaying: (isPlaying: boolean) => void;
-  setUserPlayRequested: (requested: boolean) => void;
-  setUserPauseRequested: (requested: boolean) => void;
   setErrorMessage: (message: string | null) => void;
   setResumeAt: (time: number | null) => void;
   setSourceNotice: (notice: string | null) => void;
@@ -171,8 +161,6 @@ const initialState = {
   isReadyToPlay: false,
   mirror: false,
   aspectRatio: 'default' as const,
-  userPlayRequested: false,
-  userPauseRequested: false,
   errorMessage: null as string | null,
   resumeAt: null as number | null,
   sourceNotice: null as string | null,
@@ -188,8 +176,6 @@ export const usePlayerStore = create<PlayerState>()(
       setSource: (src, type) => set({ currentSrc: src, currentType: type }),
       setSources: (sources) => set({ sources }),
       setPlaying: (isPlaying) => set({ isPlaying }),
-      setUserPlayRequested: (userPlayRequested) => set({ userPlayRequested }),
-      setUserPauseRequested: (userPauseRequested) => set({ userPauseRequested }),
       setErrorMessage: (errorMessage) => set({ errorMessage }),
       setResumeAt: (resumeAt) => set({ resumeAt }),
       setSourceNotice: (sourceNotice) => set({ sourceNotice }),
@@ -254,8 +240,6 @@ export const usePlayerStore = create<PlayerState>()(
         isFullscreen: false,
         isPlayerLoading: false,
         isReadyToPlay: false,
-        userPlayRequested: false,
-        userPauseRequested: false,
         errorMessage: null,
         resumeAt: null,
         sourceNotice: null,

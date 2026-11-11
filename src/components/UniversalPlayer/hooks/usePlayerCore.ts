@@ -658,17 +658,11 @@ useEffect(() => {
       // 交错产生「视频在播但 UI 显示暂停」的瞬时态
       const { isPlayerLoading, isReadyToPlay } = usePlayerStore.getState();
       if (isPlayerLoading && !isReadyToPlay) return;
-      // 用户手动点击播放 → 标记来源，ToastTrigger 据此显示「播放」提示
-      // （自动缓冲播放由 handleCanPlay 直接 video.play()，不设此标记）
-      usePlayerStore.getState().setUserPlayRequested(true);
       play();
     } else {
       //-7：缓冲中允许暂停。原实现为防「缓冲锁死」在暂停分支
       // `if (isBuffering) return`，反而让 handlePause 里的 setBuffering(false) 解锁
       // 逻辑永远走不到，形成「暂停入口自锁」。暂停本身即解锁缓冲态（见 handlePause）。
-      // 用户手动点击暂停 → 标记来源，ToastTrigger 据此显示「暂停」提示
-      // （拖拽进度条触发的自动 pause 不设此标记 → 不提示『暂停』，改显示进度）
-      usePlayerStore.getState().setUserPauseRequested(true);
       pause();
     }
     togglePlayTimerRef.current = setTimeout(() => {
