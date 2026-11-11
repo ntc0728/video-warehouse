@@ -525,6 +525,9 @@ export default function PlayerPage() {
 
     return () => {
       controller.abort();
+      // 离开播放页时立即落库历史：进度写入是 3s 节流 + 内存态，而播放页进入时读的是 DB。
+      // 不 flush 会让「切集后 3s 内返回历史页再点回」按上一条记录回显（播放成上一集）。
+      useUserStore.getState().flushHistoryNow();
       resetPlayer();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
