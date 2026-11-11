@@ -24,6 +24,9 @@ interface IPTVOSDBarProps {
   totalSources: number;
   audioTracks: { id: number; name: string; language: string; default: boolean }[];
   onToggleChannelList: () => void;
+  /** 当前频道收藏态（false/未传 = 不渲染收藏按钮） */
+  channelFavorite?: boolean;
+  onToggleFavorite?: () => void;
   onSourceSwitch?: (index: number) => void;
   onOpenAudioTrack?: () => void;
   epgStatus?: 'idle' | 'loading' | 'success' | 'error';
@@ -173,6 +176,8 @@ export default function IPTVOSDBar({
   totalSources = 1,
   audioTracks = [],
   onToggleChannelList,
+  channelFavorite,
+  onToggleFavorite,
   onSourceSwitch,
   onOpenAudioTrack,
   epgStatus = 'idle',
@@ -334,6 +339,17 @@ export default function IPTVOSDBar({
               <button className="iptv-osd-control-btn no-border" onClick={onOpenProgramGuide} title="节目单">
                 <MdiTimetableIcon size="xs" />
                 <span>节目单</span>
+              </button>
+            )}
+            {onToggleFavorite && (
+              <button
+                className="iptv-osd-control-btn no-border"
+                onClick={onToggleFavorite}
+                title={channelFavorite ? '取消收藏' : '收藏频道'}
+                aria-pressed={!!channelFavorite}
+              >
+                <i data-lucide="heart" style={{ fill: channelFavorite ? 'currentColor' : 'none' }} aria-hidden="true"></i>
+                <span>{channelFavorite ? '已收藏' : '收藏'}</span>
               </button>
             )}
           </div>

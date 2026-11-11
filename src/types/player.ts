@@ -159,6 +159,10 @@ export interface UniversalPlayerProps {
     /** 右侧插槽 */
     right?: React.ReactNode;
   };
+  /** IPTV：当前频道收藏态（控制 OSD 收藏按钮的选中与文案） */
+  channelFavorite?: boolean;
+  /** IPTV：切换当前频道收藏态（未传则不渲染收藏按钮） */
+  onToggleFavorite?: () => void;
   /** IPTV 专用：频道初始化用的原始 query（url/id/name）；`url` 传真实播放地址。
    * 2026-11-11：此前把整段 query 当 url 传入，导致 store.currentSrc / MediaSession
    * 后台播放拿到非媒体 URL。 */

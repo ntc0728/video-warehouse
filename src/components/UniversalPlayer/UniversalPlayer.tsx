@@ -174,6 +174,8 @@ export default function UniversalPlayer({
   episodeLabel,
   progressEpisodeLabel,
   initQuery,
+  channelFavorite,
+  onToggleFavorite,
   seasonNumber,
   hasPrevEpisode,
   hasNextEpisode,
@@ -1292,6 +1294,8 @@ app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全�
           audioTracks={audioTracks}
           onToggleChannelList={() => setChannelListVisible(true)}
           // 源切换分支现读 `hasChannelList`（直播类=true 切频道、点播=false 切线路）。
+          channelFavorite={channelFavorite}
+          onToggleFavorite={onToggleFavorite}
           onSourceSwitch={(index) => handleSourceSwitch(index, capabilities.hasChannelList, currentChannel, _channels, sources)}
           onOpenAudioTrack={handleAudioTrackSelect}
           epgStatus={epgStatus}

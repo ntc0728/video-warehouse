@@ -22,7 +22,8 @@ export default function IPTVPlayerPage() {
   const rawQuery = searchParams.toString();
   const url = searchParams.get('url') || '';
   const navigate = useCustomNavigate();
-  const { channels, sourceChannels, extraSourceIds, isLoading, refreshChannels, settings, recordPlay } = useIPTVStore();
+  const { channels, sourceChannels, extraSourceIds, isLoading, refreshChannels, settings, recordPlay, favoriteChannelIds, toggleFavorite } = useIPTVStore();
+
   // 与 IPTV 列表页同口径：勾选的「更多台」源频道并入主干，保证播放页能回显频道身份
   // （高亮 / EPG / 同名换线都依赖 channels 里能查到频道）。
   const allChannels = useMemo(() => {
@@ -50,6 +51,11 @@ export default function IPTVPlayerPage() {
     id: searchParams.get('id') || '',
     name: searchParams.get('name') || '',
   }), [searchParams]);
+  // 当前频道收藏态：换台时 URL 参数同步替换 → id 跟随，收藏态自动更新
+  const isChannelFavorite = urlParams.id ? favoriteChannelIds.includes(urlParams.id) : false;
+  const handleToggleFavorite = useCallback(() => {
+    if (urlParams.id) toggleFavorite(urlParams.id);
+  }, [urlParams.id, toggleFavorite]);
 
   /** 直接从 URL 匹配频道，避免依赖 selectedChannel 导致的延迟 */
   const matchedChannel = useMemo(() => {
@@ -183,6 +189,8 @@ export default function IPTVPlayerPage() {
             autoPlay
             channelName={channelName}
             channels={allChannels}
+            channelFavorite={isChannelFavorite}
+            onToggleFavorite={handleToggleFavorite}
             groups={groups}
             onBack={handleBack}
             onChannelChange={handleChannelChange}
