@@ -18,6 +18,10 @@ interface UseTouchGestureOptions {
   onSeekTarget: (targetTime: number) => void;
   /** 纵向手势主导后置 true，通知 useLongPress 取消长按（G8 防手势冲突） */
   verticalGestureActiveRef?: React.MutableRefObject<boolean>;
+  /** 长按快进/快退已激活：触摸手势不接管（防「长按时手指微动被判成横滑 seek」）。
+   * 真机长按不可避免有位移，此前 8px 阈值 + 15% 宽=全片的灵敏度会让一按就跳片尾，
+   * 且显示的是居中的 seekHud 而非靠左/靠右的 seekIndicator（2026-11-11 实测）。 */
+  longPressActiveRef?: React.MutableRefObject<boolean>;
 }
 
 /** 锁定轴类型：null = 未锁定（位移未过阈值），锁定后不再改变 */
@@ -25,6 +29,9 @@ type GestureAxis = 'brightness' | 'volume' | 'seek';
 
 /** 纵向滑动主导判定阈值（px）：超过则锁定滑动方向 */
 const VERTICAL_LOCK_THRESHOLD = 8;
+/** 横向滑动 seek 启动阈值（px）：必须明显横向位移才接管——
+ * 长按快进/快退时手指的微动（<20px）不应被判成 seek */
+const SEEK_LOCK_THRESHOLD = 24;
 /** 亮度调节范围（filter brightness） */
 const MIN_BRIGHTNESS = 0.1;
 const MAX_BRIGHTNESS = 2;
@@ -50,6 +57,9 @@ const GESTURE_EXCLUDE_SELECTOR = [
   '.iptv-osd-bar',
   '.iptv-volume-popup',
   '.up-ms-sheet',
+  /* 全屏「更多设置」抽屉：此前漏登记 → 抽屉内纵向滑动被手势拿去调音量，
+     且 preventDefault 让抽屉无法滚动（2026-11-11 真机反馈） */
+  '.up-fs-drawer',
   '.up-cast-sheet',
   '.up-subtitle-settings',
   '.up-program-guide-overlay',
@@ -77,6 +87,7 @@ export function useTouchGesture({
   getSeekBaseTime,
   onSeekTarget,
   verticalGestureActiveRef,
+  longPressActiveRef,
 }: UseTouchGestureOptions) {
   const [brightness, setBrightness] = useState(initialBrightness);
   const [volume, setVolume] = useState(0);
@@ -94,6 +105,7 @@ export function useTouchGesture({
   const getSeekBaseTimeRef = useRef(getSeekBaseTime);
   const onSeekTargetRef = useRef(onSeekTarget);
   const verticalGestureActiveRefRef = useRef(verticalGestureActiveRef);
+  const longPressActiveRefRef = useRef(longPressActiveRef);
 
   onBrightnessChangeRef.current = onBrightnessChange;
   onVolumeChangeRef.current = onVolumeChange;
@@ -103,6 +115,7 @@ export function useTouchGesture({
   getSeekBaseTimeRef.current = getSeekBaseTime;
   onSeekTargetRef.current = onSeekTarget;
   verticalGestureActiveRefRef.current = verticalGestureActiveRef;
+  longPressActiveRefRef.current = longPressActiveRef;
 
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gestureRef = useRef<{
@@ -229,13 +242,18 @@ export function useTouchGesture({
       }
 
       // ── 未锁定：方向判定 ──
+      // 长按快进/快退进行中：触摸手势不接管。真机长按必然伴随手指微动，
+      // 若继续按位移判定会被锁成『横向 seek』——一滑就是全片（15% 宽=整片），
+      // 提示也从靠左/靠右的 seekIndicator 变成居中的 seekHud（2026-11-11 实测）。
+      if (longPressActiveRefRef.current?.current) return;
+
       const dy = touch.clientY - g.startY;
       const dx = touch.clientX - g.startX;
-      if (Math.abs(dy) < VERTICAL_LOCK_THRESHOLD && Math.abs(dx) < VERTICAL_LOCK_THRESHOLD) {
-        return;
-      }
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
 
-      if (Math.abs(dx) > Math.abs(dy)) {
+      // 横向 seek：需要明显的横向位移（24px）且横向显著主导，避免轻扫/长按微动误触发
+      if (absDx > SEEK_LOCK_THRESHOLD && absDx > absDy * 1.5) {
         // 横向主导 → 锁定 seek 轴（-1）；seek 不可用（错误态/无时长）才放弃
         if (!canSeekRef.current) {
           gestureRef.current = null;
@@ -255,7 +273,8 @@ export function useTouchGesture({
         return;
       }
 
-      // 纵向主导
+      // 纵向主导（未达纵向阈值或被横向主导时忽略）
+      if (absDy < VERTICAL_LOCK_THRESHOLD || absDy <= absDx) return;
       //-5：非全屏形态（嵌入/可滚动页面）纵向滑动交还页面滚动，不接管
       if (!g.coversViewport) {
         gestureRef.current = null;

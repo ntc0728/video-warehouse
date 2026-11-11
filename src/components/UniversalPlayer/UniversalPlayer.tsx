@@ -410,6 +410,8 @@ export default function UniversalPlayer({
     // `!isDesktopWeb` 是平台/设备判定（非 mode 纯函数），保留在组件侧与运算，等价性不变。
     enabled: !isDesktopWeb && capabilities.hasTouchGesture,
     initialBrightness: 1,
+    // 长按快进/快退激活期间触摸手势不接管（真机长按的手指微动不应被当成横滑 seek）
+    longPressActiveRef: hasLongPressedRef,
     // 手势亮度调节统一写入 store.colorFilter（与色彩调整弹窗同源），由 PlayerCore 经 CSS filter 应用
     onBrightnessChange: (v) => {
       usePlayerStore.getState().setColorFilter({ brightness: v });

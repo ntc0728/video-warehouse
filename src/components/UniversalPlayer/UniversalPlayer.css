@@ -2818,6 +2818,13 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   flex-direction: column;
   min-height: 0;
   padding: 0 var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom));
+  /* 内容超出可滚动：此前缺 overflow，设置项多时（清晰度/循环/定时/后台听/镜像/比例/解码）
+     末尾几项被裁掉且无法上滑（2026-11-11 真机反馈）。touch-action 交还纵向滚动，
+     overscroll-behavior 防止滚动穿透到播放器手势。 */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 .up-fs-drawer .up-ms-body {
   flex: 1;
