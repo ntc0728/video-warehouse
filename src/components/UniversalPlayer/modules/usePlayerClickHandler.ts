@@ -7,6 +7,10 @@ interface UsePlayerClickHandlerOptions {
   isControlsVisible: boolean;
   /** 移动端布局：单击立即显/隐控制栏，不做 250ms 双击等待（-2） */
   isMobileLayout?: boolean;
+  /** 仅音频源（manifest 无视频轨）：单击直接暂停/播放，且不进入双击全屏。
+   * 黑屏上控制栏会自动隐藏，首击若只「叫出控制栏」用户完全看不到反馈，
+   * 250ms 内第二击又会被判成全屏 → 体感「点了暂停没反应」（2026-11-11）。 */
+  audioOnly?: boolean;
   hasLongPressedRef: React.MutableRefObject<boolean>;
   videoElementRef: React.MutableRefObject<HTMLVideoElement | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -15,7 +19,7 @@ interface UsePlayerClickHandlerOptions {
 }
 
 export function usePlayerClickHandler({
-  mode, hasError, isControlsVisible, isMobileLayout = false,
+  mode, hasError, isControlsVisible, isMobileLayout = false, audioOnly = false,
   hasLongPressedRef, videoElementRef, containerRef,
   showControls, togglePlay,
 }: UsePlayerClickHandlerOptions) {
@@ -41,6 +45,14 @@ export function usePlayerClickHandler({
     // 长按快进快退后不触发单击
     if (hasLongPressedRef.current) {
       hasLongPressedRef.current = false;
+      return;
+    }
+
+    // 仅音频源：单击直接暂停/播放（黑屏上「先叫出控制栏」没有任何视觉反馈），
+    // 且不进入双击全屏——黑屏全屏无意义，还会让第二击把暂停变成全屏。
+    if (audioOnly) {
+      togglePlay();
+      showControls();
       return;
     }
 
@@ -83,7 +95,7 @@ export function usePlayerClickHandler({
         showControls();
       }, 250);
     }
-  }, [mode, isControlsVisible, isMobileLayout, showControls, togglePlay, handleToggleFullscreen, hasLongPressedRef]);
+  }, [mode, isControlsVisible, isMobileLayout, audioOnly, showControls, togglePlay, handleToggleFullscreen, hasLongPressedRef]);
 
   return { handlePlayerClick, handleToggleFullscreen, clickTimerRef };
 }

@@ -204,6 +204,11 @@ export default function UniversalPlayer({
   // D1 裸流降级：HLS 解析失败（非 HLS 清单）时临时覆盖播放器类型为 flv，
   // 复用同一 URL 重建 mpegts.js 重试（URL 变化时复位）
   const [degradedType, setDegradedType] = useState<SourceType | null>(null);
+  // 仅音频源（manifest 无视频轨，HLSAdapter 上报「该源仅含音频」）：黑屏 + 音频正常播放。
+  // 供点击语义使用——此时单击直接暂停/播放、不进入双击全屏（2026-11-11 用户反馈
+  // 「仅有音频时点击暂停无法暂停」：黑屏上控制栏已自动隐藏，首击只叫出控制栏，
+  // 250ms 内第二击又被判为全屏）。
+  const [audioOnly, setAudioOnly] = useState(false);
   // 移动端布局判定（app 端恒真）：移动端/App 端点播页走「精简控制栏 + 右上角操作组 + 底部弹窗」布局
   const isMobileLayout = useIsMobileLayout();
   // 操作类提示的「移动端顶部胶囊」口径 = 移动布局（真实移动设备 ∪ 移动端布局）：
@@ -550,6 +555,8 @@ const handleAdapterError = useCallback((error: Error) => {
       if (error.message.includes('仅含音频')) {
         // 已确认源可播放音频（无视频轨）：停止加载动画，避免 spinner 一直转
         usePlayerStore.getState().setPlayerLoading(false);
+        // 标记仅音频态（切源/切集时由 currentUrl 变化复位）→ 点击语义改直通暂/播
+        setAudioOnly(true);
         const channel = currentChannelRef.current;
         // 现读能力矩阵 `hasChannelList`（直播类=true 走切频道）。
         // handleSourceSwitch 内部已用 `switchByChannel` 参数接收该语义。逐字等价。
@@ -801,9 +808,12 @@ skipHistory,
   // 缓冲检测
   useBufferMonitor(videoElementRef, currentUrl);
 
+  // 换源/换集（currentUrl 变化）复位仅音频标记：新源可能带视频轨
+  useEffect(() => { setAudioOnly(false); }, [currentUrl]);
+
   // 点击处理（移动端单击即时响应：-2）
   const { handlePlayerClick, clickTimerRef } = usePlayerClickHandler({
-    mode, hasError, isControlsVisible, isMobileLayout,
+    mode, hasError, isControlsVisible, isMobileLayout, audioOnly,
     hasLongPressedRef, videoElementRef, containerRef,
     showControls, togglePlay: () => playerCore.togglePlay(),
   });
