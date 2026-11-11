@@ -47,7 +47,7 @@ export function useIPTVChannelInit({
       urlId = sp.get('id') || '';
       urlName = sp.get('name') || '';
       const rawUrl = sp.get('url');
-      if (rawUrl) lookupUrl = decodeURIComponent(rawUrl);
+      if (rawUrl) lookupUrl = rawUrl;
     } catch {
       try {
         const parsed = new URL(url);

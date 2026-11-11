@@ -54,7 +54,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   const to = useMemo(() => {
     if (batchMode) return '#';
     const playUrl = buildChannelPlayUrl(channel, proxyUrl, proxyPattern);
-    const params = new URLSearchParams({ url: encodeURIComponent(playUrl) });
+    const params = new URLSearchParams({ url: playUrl });
     params.set('id', channel.id);
     params.set('name', channel.name);
     return `/iptv/play?${params.toString()}`;

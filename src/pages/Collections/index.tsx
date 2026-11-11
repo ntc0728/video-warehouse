@@ -109,7 +109,7 @@ const FUSED_TAB_META: { key: MainTab; label: string; icon: LucideIcon; color: st
 
 export default function CollectionsPage() {
   const { collections, history, removeCollection, _loading: userLoading, loadError } = useUserStore();
-  const { channels: iptvChannels, toggleFavorite, clearFavorites } = useIPTVStore();
+  const { channels: iptvChannels, favoriteChannelIds, toggleFavorite, clearFavorites } = useIPTVStore();
   // 收藏页 IPTV 卡片对齐历史页 RecordCard：直链代理参数与历史页 buildIptvNav 同源
   const proxyUrl = useIPTVStore((s) => s.settings.proxyUrl);
   const proxyPattern = useIPTVStore((s) => s.settings.proxyPattern);
@@ -292,6 +292,12 @@ export default function CollectionsPage() {
   }, [collectedVideosBase, statusFilter, sortBy]);
 
   /** 直播收藏：应用搜索（综合用 all 关键词、iptv tab 用 iptv 关键词），按最后播放时间倒序。 */
+  // 收藏的「更多台/下架」频道：收藏只存 id，频道缓存过期或源变更时这些 id 在 channels 里查不到
+  const missingFavoriteCount = useMemo(
+    () => favoriteChannelIds.filter((id) => !iptvChannels.some((ch) => ch.id === id)).length,
+    [favoriteChannelIds, iptvChannels],
+  );
+
   const favoriteChannels = useMemo(() => {
     let list = iptvChannels.filter(ch => ch.isFavorite);
     const kw = searchByTab[mainTab === 'all' ? 'all' : 'iptv'] || '';
@@ -399,7 +405,7 @@ export default function CollectionsPage() {
   const buildChannelCardItem = useCallback((ch: (typeof iptvChannels)[number]): RecordCardItem => {
     const candidates = resolveChannelLogoCandidates(ch);
     const playUrl = buildChannelPlayUrl(ch, proxyUrl, proxyPattern);
-    const params = new URLSearchParams({ url: encodeURIComponent(playUrl) });
+    const params = new URLSearchParams({ url: playUrl });
     params.set('id', ch.id);
     params.set('name', ch.name);
     return {
@@ -568,6 +574,11 @@ export default function CollectionsPage() {
                 <span className="collection-section-head__title">直播</span>
                 <span className="collection-section-head__count">共 {favoriteChannels.length} 个频道</span>
               </div>
+              {missingFavoriteCount > 0 && (
+                <div className="iptv-missing-tip">
+                  {missingFavoriteCount} 个收藏频道已下架或不在当前频道列表（频道缓存已刷新/源变更）
+                </div>
+              )}
               <div className="iptv-channel-grid iptv-channel-grid--batch">
                 {displayedChannels.map((ch) => (
                   <RecordCard

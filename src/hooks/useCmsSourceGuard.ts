@@ -9,6 +9,8 @@ export interface CmsSourceGuard {
  * 源已启用（或未携带源标识）返回 true，调用方继续导航。
  */
   requestNavigate: (cmsSourceId?: string, cmsSourceName?: string) => boolean;
+  /** 直接弹出自定义拦截文案（如「频道已下架」），返回 false 供调用方阻止导航 */
+  blockNavigate: (message: string) => boolean;
   /** 当前被拦截的源名称（用于弹窗文案）；null 表示无弹窗 */
   blockedSourceName: string | null;
   modalVisible: boolean;
@@ -40,10 +42,17 @@ export function useCmsSourceGuard(): CmsSourceGuard {
     [isSourceEnabled],
   );
 
+  /** 自定义文案拦截：例如 IPTV 频道已下架、无播放地址 */
+  const blockNavigate = useCallback((message: string): boolean => {
+    setBlockedSourceName(message);
+    return false;
+  }, []);
+
   const closeModal = useCallback(() => setBlockedSourceName(null), []);
 
   return {
     isSourceEnabled,
+    blockNavigate,
     requestNavigate,
     blockedSourceName,
     modalVisible: blockedSourceName !== null,

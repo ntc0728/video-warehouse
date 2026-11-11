@@ -692,7 +692,7 @@ export default function HistoryPage() {
   const buildIptvNav = useCallback((item: HistoryChannelItem): { to: string; state: Record<string, unknown> } => {
     const ch = iptvChannelMap.get(item.id);
     const playUrl = buildChannelPlayUrl(ch ?? { url: item.url }, proxyUrl, proxyPattern);
-    const params = new URLSearchParams({ url: encodeURIComponent(playUrl) });
+    const params = new URLSearchParams({ url: playUrl });
     params.set('id', item.id);
     params.set('name', item.name);
     return { to: `/iptv/play?${params.toString()}`, state: { from: location.pathname } };
@@ -727,6 +727,9 @@ export default function HistoryPage() {
     const ch = item as HistoryChannelItem;
     const candidates = iptvLogoCandidates.get(ch.id) ?? [];
     const nav = buildIptvNav(ch);
+    // 频道已下架（当前频道列表查不到且无快照 URL）→ 拦截跳转并弹窗说明，
+    // 避免拼出 m3u8-proxy?url= 空链接卡 15-20s 后才报错（2026-11-11）
+    const iptvUnavailable = !ch.url;
     return {
       id: ch.id,
       kind: 'iptv',
@@ -739,8 +742,11 @@ export default function HistoryPage() {
       timeTitle,
       navigateTo: nav.to,
       navState: nav.state,
+      onBeforeNavigate: iptvUnavailable
+        ? () => cmsSourceGuard.blockNavigate(`频道「${ch.name}」已下架或无播放地址`)
+        : undefined,
     };
-  }, [iptvLogoCandidates, buildIptvNav, cmsSourceGuard.requestNavigate]);
+  }, [iptvLogoCandidates, buildIptvNav, cmsSourceGuard]);
 
   // 根据确认类型执行删除
   const executeDelete = useCallback(() => {
