@@ -350,7 +350,12 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
             }
           } catch { res = null; }
           if (!isLatest() || ctrl.signal.aborted) return;
-          if (res?.video) {
+          // 只认「有可播放内容」的命中：video 对象存在但 sources/episodes 都空的是壳条目，
+          // 计入面板会让该源看着有数据、点进去却播不了（2026-11-11）。
+          const hitVideo = res?.video;
+          const playable = !!hitVideo
+            && ((hitVideo.sources?.length ?? 0) > 0 || (hitVideo.episodes?.length ?? 0) > 0);
+          if (res && playable) {
             hits.set(idx, res);
             writePanel();
             firstHitResolve();

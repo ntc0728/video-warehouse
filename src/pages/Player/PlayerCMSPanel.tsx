@@ -103,12 +103,14 @@ export function PlayerCMSPanel({
     );
   };
 
-  // 面板只展示「有本片数据」或「尚未探测（lazy 入口）」的源：
-  // cmsResults 里 video 为空的落定记录（切源失败 / 探测无数据）不再渲染成可点 tab。
-  // 2026-11-11 用户反馈「没数据的 CMS 源为何还显示」。
+  // 面板只展示「有可播放内容」或「尚未探测（lazy 入口）」的源：
+  // cmsResults 里 video 为空、或 video 存在但 sources/episodes 都空的壳条目
+  // （切源失败 / 探测无数据）不再渲染成可点 tab。2026-11-11 用户反馈。
   const visibleSourceIds = selectedSourceIds.filter((sourceId) => {
     const result = resultMap.get(sourceId);
-    return !result || !!result.video;
+    if (!result) return true;
+    const v = result.video;
+    return !!v && ((v.sources?.length ?? 0) > 0 || (v.episodes?.length ?? 0) > 0);
   });
 
   return (
