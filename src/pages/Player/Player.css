@@ -253,11 +253,12 @@
  窄屏/App 无该变量 → 回退 --comp-tab-height，保住触摸目标尺寸。 */
   height: var(--player-tab-h, var(--comp-tab-height));
   padding: 0 var(--space-sm);
-  border: 1px solid var(--color-border-light);
+  /* 有底色即无边框（站内筛选 tag 同口径：浅灰边框叠浅灰底会显脏，2026-11-11） */
+  border: none;
   border-radius: var(--radius-full);
-  background: transparent;
+  background: var(--color-tag-bg);
   color: var(--color-text-secondary);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: 600;
   white-space: nowrap;
   transition: all var(--dur-sm);
@@ -265,11 +266,11 @@
 }
 
 .player-cms-item:hover:not(.active) {
+  background: var(--color-surface-hover);
   color: var(--color-primary);
 }
 
 .player-cms-item.active {
-  border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
@@ -296,11 +297,11 @@
   min-width: 0;
   height: var(--player-tab-h, var(--comp-tab-height));
   padding: 0 var(--space-sm);
-  border: 1px solid var(--color-border-light);
+  border: none;
   border-radius: var(--radius-full);
-  background: transparent;
+  background: var(--color-tag-bg);
   color: var(--color-text-secondary);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -309,11 +310,11 @@
 }
 
 .player-season-item:hover:not(.active) {
+  background: var(--color-surface-hover);
   color: var(--color-primary);
 }
 
 .player-season-item.active {
-  border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
@@ -344,11 +345,11 @@
   min-width: 0;
   height: var(--player-tab-h, var(--comp-tab-height));
   padding: 0 var(--space-sm);
-  border: 1px solid var(--color-border-light);
+  border: none;
   border-radius: var(--radius-full);
-  background: transparent;
+  background: var(--color-tag-bg);
   color: var(--color-text-secondary);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: 600;
   white-space: nowrap;
   /* 关键：此前无 overflow 时 grid 1fr 轨道被 min-content 撑爆——特别篇信息型
@@ -358,13 +359,13 @@
   cursor: pointer;
 }
 
-.player-episode-btn:hover {
+.player-episode-btn:hover:not(.active) {
+  background: var(--color-surface-hover);
   color: var(--color-primary);
 }
 
 .player-episode-btn.active,
 .player-episode-btn.active:hover {
-  border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
@@ -435,11 +436,11 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   min-width: 0;
   height: var(--player-tab-h, var(--comp-tab-height));
   padding: 0 var(--space-sm);
-  border: 1px solid var(--color-border-light);
+  border: none;
   border-radius: var(--radius-full);
-  background: transparent;
+  background: var(--color-tag-bg);
   color: var(--color-text-secondary);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -447,13 +448,13 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   cursor: pointer;
 }
 
-.player-source-item:hover {
+.player-source-item:hover:not(.active) {
+  background: var(--color-surface-hover);
   color: var(--color-primary);
 }
 
 .player-source-item.active,
 .player-source-item.active:hover {
-  border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-background);
 }
@@ -1176,8 +1177,8 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   html:not([data-device="app"]) .player-page {
     /* 播放页局部布局变量：不上提 :root，避免污染全站与 TV 体系；
  TV 端（[data-device="tv"] 自有体系）与 app 端走 var() 的第二个参数回退。 */
-    --player-sidebar-w: clamp(200px, 16vw, 260px);        /* 面板栏：动态 + 200 下限（三面板一行一条后不再需要 3 列宽，2026-11-11 收窄） */
-    --player-sidebar-min-w: 200px;
+    --player-sidebar-w: clamp(180px, 14vw, 230px);        /* 面板栏：动态 + 180 下限（一行一条后继续收窄，播放器等比变宽变高，2026-11-11） */
+    --player-sidebar-min-w: 180px;
     --player-stage-min-w: 480px;                          /* 播放器最小宽度 */
     --player-stage-max-h: calc(100dvh - var(--header-height) - var(--space-sm) * 3);
     --player-tab-h: calc(var(--comp-tab-height) * 0.78);  /* 面板内 tab 收窄：≈38→30 / 36→28 */
