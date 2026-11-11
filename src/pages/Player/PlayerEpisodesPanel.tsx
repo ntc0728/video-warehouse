@@ -98,13 +98,16 @@ export function PlayerEpisodesPanel({
         )}
       </HeaderTag>
       <div className={`player-panel-body${collapsed ? ' collapsed' : ''}`}>
-        {loading ? (
+        {/* 切源/切季期间保留既有列表（降透明 + 禁点），不塌成单行「加载中…」：
+            移动端面板按内容撑高，列表消失会让下方整块内容上移、切完再弹回 = 页面抖动。
+            仅「首次无数据」时才显示加载行。 */}
+        {loading && episodes.length === 0 && sources.length === 0 ? (
           <div className="player-panel-loading">
             <Icon icon={Loader2} size="sm" className="spinning" />
             <span>加载中...</span>
           </div>
         ) : episodes.length > 0 ? (
-          <>
+          <div className={loading ? 'player-panel-switching' : undefined}>
             <div className="player-episode-controls">
               <button
                 className="player-episode-sort-btn"
@@ -137,9 +140,9 @@ export function PlayerEpisodesPanel({
                 </button>
               ))}
             </div>
-          </>
+          </div>
         ) : sources.length > 0 ? (
-          <>
+          <div className={loading ? 'player-panel-switching' : undefined}>
             <div className="player-source-list">
               {sources.map((src) => (
                 <button
@@ -154,7 +157,7 @@ export function PlayerEpisodesPanel({
                 </button>
               ))}
             </div>
-          </>
+          </div>
         ) : (
           <div className="player-panel-empty">暂无数据</div>
         )}

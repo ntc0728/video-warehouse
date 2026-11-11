@@ -1489,3 +1489,12 @@ html[data-mobile-layout="true"] .player-autoplay-nav-btn,
 html[data-mobile-layout="true"] .player-autoplay-cancel {
   font-size: var(--text-xs);
 }
+
+/* ── 切源/切季期间的面板占位（2026-11-11 无感切换）──
+ 保留既有列表、只降透明并禁止交互：移动端面板按内容撑高，若在切源时把列表
+ 换成单行「加载中…」，面板高度会塌陷 → 下方内容整体上移、切完再弹回（页面抖动）。 */
+.player-panel-switching {
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity var(--dur-sm);
+}

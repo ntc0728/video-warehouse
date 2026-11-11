@@ -128,7 +128,7 @@ export function PlayerCMSPanel({
       </HeaderTag>
       <div className={`player-panel-body${collapsed ? ' collapsed' : ''}`}>
         {visibleSourceIds.length > 0 ? (
-          <div ref={listRef} className="player-cms-list">
+          <div ref={listRef} className={`player-cms-list${loading ? ' player-panel-switching' : ''}`}>
             {visibleSourceIds.map((sourceId) => {
               const result = resultMap.get(sourceId);
               const displayName = sourceNameMap.get(sourceId) ?? sourceId;

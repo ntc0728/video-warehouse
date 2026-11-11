@@ -59,24 +59,27 @@ export function PlayerSeasonPanel({
           )}
         </HeaderTag>
         <div className={`player-panel-body${collapsed ? ' collapsed' : ''}`}>
-          {loading ? (
+          {/* 切源/切季期间保留既有季列表（降透明 + 禁点），避免移动端面板高度塌陷导致页面抖动 */}
+          {loading && filtered.length === 0 ? (
             <div className="player-panel-loading">
               <Icon icon={Loader2} size="sm" className="spinning" />
               <span>加载中...</span>
             </div>
           ) : (
-            <div className="player-season-list">
-              {filtered.map((s) => (
-                <button
-                  key={s.season_number}
-                  className={`player-season-item ${s.season_number === activeSeason ? 'active' : ''}`}
-                  onClick={() => onSelectSeason(s.season_number)}
-                >
-                  <MarqueeText signature={`${s.name}|${s.episode_count}`} className="player-season-name">
-                    {s.name} · {s.episode_count}集
-                  </MarqueeText>
-                </button>
-              ))}
+            <div className={loading ? 'player-panel-switching' : undefined}>
+              <div className="player-season-list">
+                {filtered.map((s) => (
+                  <button
+                    key={s.season_number}
+                    className={`player-season-item ${s.season_number === activeSeason ? 'active' : ''}`}
+                    onClick={() => onSelectSeason(s.season_number)}
+                  >
+                    <MarqueeText signature={`${s.name}|${s.episode_count}`} className="player-season-name">
+                      {s.name} · {s.episode_count}集
+                    </MarqueeText>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
