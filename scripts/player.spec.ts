@@ -656,34 +656,34 @@ test.describe('4.12 移动端布局判定', () => {
       { timeout: 2400 },
     ).toBe(true);
 
-    // ── PLAYER-M12: 桌面 UA 窄视口 390（<768）→ 非移动设备：操作提示右上角（头部图标下方） ──
+    // ── PLAYER-M12: 桌面 UA 窄视口 390（<768）→ 移动端布局口径（2026-11-11 定稿）：
+    // mobileCenter = isMobileDevice || isMobileLayout → 窄窗与真机同口径，操作提示走
+    // 顶部胶囊（header 下沿锚定），右上角 toast 不出现。旧口径「窄窗走右上角」已废弃。
     await page.setViewportSize({ width: 390, height: 844 });
     await page.keyboard.press('ArrowDown');
-    const toast12 = page.locator('.up-player-toast');
+    const toast12 = page.locator('.up-player-center-toast');
     await expect(toast12).toContainText('音量');
-    await expect(page.locator('.up-player-center-toast')).toHaveCount(0);
-    // 条件等待：窄视口非移动设备操作提示位于头部图标下方（右上角）
-    await expect.poll(
-      async () => {
-        const toastTop12 = await toast12.evaluate((el) => parseFloat(getComputedStyle(el).top));
-        const spaceLg12 = await page.evaluate(() => {
-          const probe = document.createElement('div');
-          probe.style.position = 'absolute';
-          probe.style.visibility = 'hidden';
-          probe.style.top = 'var(--space-lg)';
-          document.body.appendChild(probe);
-          const v = parseFloat(getComputedStyle(probe).top);
-          probe.remove();
-          return v;
-        });
-        const headerH = await page.evaluate(() => {
-          const h = document.querySelector('.up-player-header');
-          return h ? h.getBoundingClientRect().height : 0;
-        });
-        return Number.isFinite(toastTop12) && toastTop12 > spaceLg12 && toastTop12 < headerH + 10;
-      },
-      { timeout: 2400 },
-    ).toBe(true);
+    await expect(page.locator('.up-player-toast')).toHaveCount(0);
+    // 条件等待：胶囊位于播放器顶部区域（header 显隐会实时切换锚点：
+    // 隐藏态回退播放器顶缘、可见态锚 header 下沿，断言用宽口径避免时序竞态）
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(400);
+    const m12 = await page.evaluate(() => {
+      const t = document.querySelector('.up-player-center-toast');
+      const p = document.querySelector('.up-universal-player');
+      const h = document.querySelector('.up-player-header');
+      return {
+        toastY: t ? Math.round(t.getBoundingClientRect().y) : null,
+        toastX: t ? Math.round(t.getBoundingClientRect().x) : null,
+        playerTop: p ? Math.round(p.getBoundingClientRect().top) : -1,
+        headerHidden: h ? h.className.includes('up-player-header-hidden') : null,
+        headerTop: h ? Math.round(h.getBoundingClientRect().y) : null,
+        headerBottom: h ? Math.round(h.getBoundingClientRect().bottom) : null,
+      };
+    });
+    console.log('M12_SNAPSHOT:', JSON.stringify(m12));
+    expect(m12.toastY).not.toBeNull();
+    expect(m12.toastY > m12.playerTop).toBe(true);
 
     // ── PLAYER-M10: 手机 UA 视口 1024（≥768）→ 仍移动端布局，错误提示屏幕居中 ──
     // 通过 addInitScript 覆盖 navigator.userAgent 为真实手机 UA（getIsRealPhone 据此判定），
@@ -756,7 +756,7 @@ test.describe('4.14 PiP 行为契约', () => {
       setCmsSearchResponse({
         code: 1, msg: 'ok', page: 1, pagecount: 1, limit: 20, total: 1,
         list: [{
-          vod_id: '550', vod_name: 'Fight Club', vod_type: 'movie', type_id: '1',
+          vod_id: '550', vod_name: '搏击俱乐部', vod_type: 'movie', type_id: '1',
           type_name: '电影', vod_en: 'Fight Club', vod_pic: '', vod_remarks: 'HD',
           vod_play_url: '默认线路$第1集$https://cms-mock.local/stream-pip/index.m3u8',
         }],

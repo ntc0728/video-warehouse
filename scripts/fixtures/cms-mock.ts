@@ -39,7 +39,7 @@ const CMS_SEARCH_RESPONSE = {
   list: [
     {
       vod_id: '550',
-      vod_name: 'Fight Club',
+      vod_name: '搏击俱乐部',
       vod_type: 'movie',
       type_id: '1',
       type_name: '电影',
