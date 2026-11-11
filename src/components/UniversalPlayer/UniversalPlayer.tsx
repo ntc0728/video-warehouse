@@ -173,6 +173,7 @@ export default function UniversalPlayer({
   controlBarSlots,
   episodeLabel,
   progressEpisodeLabel,
+  initQuery,
   seasonNumber,
   hasPrevEpisode,
   hasNextEpisode,
@@ -775,7 +776,7 @@ skipHistory,
 
   // IPTV 频道初始化
   useIPTVChannelInit({
-    mode, url, channels: _channels, groups, channelName,
+    mode, url: initQuery ?? url, channels: _channels, groups, channelName,
     setCurrentChannelId, setCurrentChannelName,
     setCurrentUrl, setCurrentType,
     setTvFocusGroupIndex, setTvFocusChannelIndex,

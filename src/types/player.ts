@@ -159,6 +159,10 @@ export interface UniversalPlayerProps {
     /** 右侧插槽 */
     right?: React.ReactNode;
   };
+  /** IPTV 专用：频道初始化用的原始 query（url/id/name）；`url` 传真实播放地址。
+   * 2026-11-11：此前把整段 query 当 url 传入，导致 store.currentSrc / MediaSession
+   * 后台播放拿到非媒体 URL。 */
+  initQuery?: string;
   /** 当前集的展示标签（header badge 用，如 "第2季 第3集"） */
   episodeLabel?: string;
   /** 进度匹配用的「裸」集标签（如 "第3集" / 信息型篇名），必须与历史记录写入口径一致。
