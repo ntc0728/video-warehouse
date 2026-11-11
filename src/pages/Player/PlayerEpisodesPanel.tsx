@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import type { VideoSource, Episode } from '@/types/video';
 import { ListVideo, ChevronDown, Play, Loader2, ArrowUpDown } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
+import { MarqueeText } from '@/components/ui/MarqueeText';
 import { usePanelCollapse } from './hooks';
 
 interface PlayerEpisodesPanelProps {
@@ -130,7 +131,9 @@ export function PlayerEpisodesPanel({
                   className={`player-episode-btn ${ep.id === activeEpisodeId ? 'active' : ''}`}
                   onClick={() => onPlayEpisode(ep)}
                 >
-                  {ep.title}
+                  <MarqueeText signature={ep.title} className="player-episode-label">
+                    {ep.title}
+                  </MarqueeText>
                 </button>
               ))}
             </div>
@@ -145,7 +148,9 @@ export function PlayerEpisodesPanel({
                   onClick={() => onPlaySource(src)}
                 >
                   <Icon icon={Play} size="xs" fill="currentColor" />
-                  <span>{src.name}</span>
+                  <MarqueeText signature={src.name} className="player-source-label">
+                    {src.name}
+                  </MarqueeText>
                 </button>
               ))}
             </div>

@@ -293,6 +293,7 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
+  min-width: 0;
   height: var(--player-tab-h, var(--comp-tab-height));
   padding: 0 var(--space-sm);
   border: 1px solid var(--color-border-light);
@@ -317,8 +318,14 @@
   color: var(--color-text-inverse);
 }
 
-.player-season-name {
-  white-space: nowrap;
+/* 面板 tab 文本（MarqueeText 根节点）：作为按钮的 flex item，
+不溢出时按内容宽（网格 chip 居中），溢出时以按钮内容宽为上限触发滚动。 */
+.player-season-name,
+.player-episode-label,
+.player-source-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .player-episode-grid {
@@ -334,6 +341,7 @@
   justify-content: center;
   align-items: center;
   width: 100%;
+  min-width: 0;
   height: var(--player-tab-h, var(--comp-tab-height));
   padding: 0 var(--space-sm);
   border: 1px solid var(--color-border-light);
@@ -343,6 +351,9 @@
   font-size: var(--text-2xs);
   font-weight: 600;
   white-space: nowrap;
+  /* 关键：此前无 overflow 时 grid 1fr 轨道被 min-content 撑爆——特别篇信息型
+   集名很长，列宽超出面板、右侧被裁（2026-11-11 实测「特别篇没做适配」根因） */
+  overflow: hidden;
   transition: all var(--dur-sm);
   cursor: pointer;
 }
@@ -421,6 +432,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   gap: var(--space-xs);
   justify-content: center;
   align-items: center;
+  min-width: 0;
   height: var(--player-tab-h, var(--comp-tab-height));
   padding: 0 var(--space-sm);
   border: 1px solid var(--color-border-light);
@@ -430,6 +442,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   font-size: var(--text-2xs);
   font-weight: 600;
   white-space: nowrap;
+  overflow: hidden;
   transition: all var(--dur-sm);
   cursor: pointer;
 }
@@ -854,6 +867,9 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   }
 
   .player-sidebar {
+    /* 移动端面板 tab 高度：--comp-tab-height（≈36px）→ ×0.83 ≈ 30px
+   （2026-11-11 用户反馈偏大；桌面同口径 ×0.78 ≈28px）。 */
+    --player-tab-h: calc(var(--comp-tab-height) * 0.83);
     flex: none;
     flex-direction: column;
     width: 100%;
@@ -918,7 +934,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   }
 
   .player-panel--episodes .player-panel-body {
-    max-height: calc(var(--space-xs) + (var(--comp-tab-height) + var(--space-xs)) * 6);
+    max-height: calc(var(--space-xs) + (var(--player-tab-h, var(--comp-tab-height)) + var(--space-xs)) * 6);
     padding: var(--space-sm);
   }
 
@@ -941,6 +957,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   }
 
   html[data-device="app"] .player-sidebar {
+    --player-tab-h: calc(var(--comp-tab-height) * 0.83);
     flex: none;
     flex-direction: column;
     width: 100%;
@@ -995,7 +1012,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   }
 
   html[data-device="app"] .player-panel--episodes .player-panel-body {
-    max-height: calc(var(--space-xs) + (var(--comp-tab-height) + var(--space-xs)) * 6);
+    max-height: calc(var(--space-xs) + (var(--player-tab-h, var(--comp-tab-height)) + var(--space-xs)) * 6);
     padding: var(--space-sm);
   }
 
@@ -1159,8 +1176,8 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   html:not([data-device="app"]) .player-page {
     /* 播放页局部布局变量：不上提 :root，避免污染全站与 TV 体系；
  TV 端（[data-device="tv"] 自有体系）与 app 端走 var() 的第二个参数回退。 */
-    --player-sidebar-w: clamp(240px, 16vw, 300px);        /* 面板栏：动态 + 240 下限（保 CMS 一行 3 列） */
-    --player-sidebar-min-w: 240px;
+    --player-sidebar-w: clamp(200px, 16vw, 260px);        /* 面板栏：动态 + 200 下限（三面板一行一条后不再需要 3 列宽，2026-11-11 收窄） */
+    --player-sidebar-min-w: 200px;
     --player-stage-min-w: 480px;                          /* 播放器最小宽度 */
     --player-stage-max-h: calc(100dvh - var(--header-height) - var(--space-sm) * 3);
     --player-tab-h: calc(var(--comp-tab-height) * 0.78);  /* 面板内 tab 收窄：≈38→30 / 36→28 */
@@ -1418,3 +1435,39 @@ html[data-device="app"] .player-cms-list--measure .player-cms-item {
   }
 }
 
+
+/* ═════════════════════════════════════════════════════════════════════
+ 桌面端三面板「一行一条」列表（2026-11-11 用户拍板）
+ 侧栏收窄到 200-260px 后，两列会把长集名（特别篇信息型篇名）压到不可读；
+ 改单列列表：每条占满整行、圆角收缩（胶囊在列表语义里显胖）、文本左对齐，
+ 超长文本由 MarqueeText 溢出滚动（PlayerEpisodesPanel/SeasonPanel/CMSPanel）。
+ ═════════════════════════════════════════════════════════════════════ */
+@media (width >= 1024px) {
+  html:not([data-device="app"]):not([data-device="tv"]) .player-cms-list,
+  html:not([data-device="app"]):not([data-device="tv"]) .player-season-list,
+  html:not([data-device="app"]):not([data-device="tv"]) .player-episode-grid,
+  html:not([data-device="app"]):not([data-device="tv"]) .player-source-list {
+    grid-template-columns: 1fr;
+  }
+
+  /* source-list 基础是 flex-wrap → 用同一 grid 接管单列 */
+  html:not([data-device="app"]):not([data-device="tv"]) .player-source-list {
+    display: grid;
+  }
+
+  html:not([data-device="app"]):not([data-device="tv"]) .player-cms-item,
+  html:not([data-device="app"]):not([data-device="tv"]) .player-season-item,
+  html:not([data-device="app"]):not([data-device="tv"]) .player-episode-btn,
+  html:not([data-device="app"]):not([data-device="tv"]) .player-source-item {
+    justify-content: flex-start;
+    border-radius: var(--radius-md);
+  }
+
+  /* 单列列表：文本吃满整行，左对齐滚动 */
+  html:not([data-device="app"]):not([data-device="tv"]) .player-cms-name,
+  html:not([data-device="app"]):not([data-device="tv"]) .player-season-name,
+  html:not([data-device="app"]):not([data-device="tv"]) .player-episode-label,
+  html:not([data-device="app"]):not([data-device="tv"]) .player-source-label {
+    flex: 1;
+  }
+}

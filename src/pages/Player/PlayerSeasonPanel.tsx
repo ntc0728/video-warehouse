@@ -1,5 +1,6 @@
 import { Layers, ChevronDown, Loader2 } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
+import { MarqueeText } from '@/components/ui/MarqueeText';
 import { usePanelCollapse } from './hooks';
 
 interface SeasonInfo {
@@ -71,7 +72,9 @@ export function PlayerSeasonPanel({
                   className={`player-season-item ${s.season_number === activeSeason ? 'active' : ''}`}
                   onClick={() => onSelectSeason(s.season_number)}
                 >
-                  <span className="player-season-name">{s.name} · {s.episode_count}集</span>
+                  <MarqueeText signature={`${s.name}|${s.episode_count}`} className="player-season-name">
+                    {s.name} · {s.episode_count}集
+                  </MarqueeText>
                 </button>
               ))}
             </div>

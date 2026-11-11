@@ -212,6 +212,8 @@
 }
 
 .up-header-title {
+  /* 溢出滚动用 MarqueeText（.mq-root 自带 inline-flex / min-width:0 / overflow:hidden），
+ 此处只管布局分配与排版。 */
   flex: 1;
   min-width: 0;
   /* 右侧留安全间距：badge 是原子内联盒不收缩，此前其布局盒会伸到画中画图标
@@ -221,34 +223,7 @@
   margin-left: var(--space-md);
   color: var(--player-text);
   font-size: var(--text-base);
-  white-space: nowrap;
-  /* 溢出不再 ellipsis：改由 marquee 滚动完整显示（PlayerHeader.tsx HeaderTitleMarquee） */
-  overflow: hidden;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
-}
-
-/* 标题跑马灯：复用 marquee-track/marquee-scrolling 的 marquee-scroll 动画。
- 每份文案尾部留间距 → translateX(-50%) 无缝衔接（两份等宽，各含尾部 padding）。
- 复合选择器压过 .marquee-container 的 inline-flex（同特异性时依赖加载顺序不可靠）。 */
-.up-header-title.marquee-container {
-  display: flex;
-  align-items: center;
-}
-
-.up-header-title .marquee-track {
-  align-items: center;
-}
-
-/* 滚动速度比 IPTVOSDBar 的全局 10s 再慢一档（14s = --dur-marquee 7s × 2）。
- 特异性 (0,3,0) 压过 .marquee-track.marquee-scrolling 的 10s（2026-11-11 用户反馈偏快）。 */
-.up-header-title .marquee-track.marquee-scrolling {
-  animation-duration: calc(var(--dur-marquee) * 2);
-}
-
-.up-header-title-text {
-  display: inline-flex;
-  align-items: center;
-  padding-right: var(--space-xl);
 }
 
 .up-header-episode-badge {

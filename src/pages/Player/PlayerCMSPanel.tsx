@@ -3,6 +3,7 @@ import { type VideoSource } from '@/types/video';
 import type { VideoDetailResult } from '@/services/videoService';
 import { Server, ChevronDown } from 'lucide-react';
 import { Icon } from "@/components/ui/Icon";
+import { MarqueeText } from '@/components/ui/MarqueeText';
 import { usePanelCollapse } from './hooks';
 
 interface PlayerCMSPanelProps {
@@ -136,7 +137,9 @@ export function PlayerCMSPanel({
                     }
                   }}
                 >
-                  <span className="player-cms-name">{displayName}</span>
+                  <MarqueeText signature={displayName} className="player-cms-name">
+                    {displayName}
+                  </MarqueeText>
                 </button>
               );
             })}

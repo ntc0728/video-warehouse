@@ -1,0 +1,39 @@
+/* 通用单行溢出跑马灯（MarqueeText.tsx） */
+
+.mq-root {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.mq-track {
+  display: flex;
+  flex-shrink: 0;
+  width: fit-content;
+  min-width: max-content;
+  white-space: nowrap;
+}
+
+/* 速度统一 14s（--dur-marquee 7s × 2）：比 IPTV OSD 的 10s 慢一档，
+ 与播放器 header 标题口径一致（2026-11-11 用户反馈 10s 偏快）。 */
+.mq-track--scrolling {
+  animation: mq-scroll calc(var(--dur-marquee, 7s) * 2) linear infinite;
+}
+
+@keyframes mq-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* 每份文案尾部留间距：两份等宽，-50% 恰好退回一份宽度 → 无缝 */
+.mq-text {
+  display: inline-flex;
+  align-items: center;
+  padding-right: var(--space-xl);
+}
