@@ -319,7 +319,7 @@ test.describe('3.6 播放列表 Tab', () => {
 
     // CMS 搜索（ac=videolist，经代理时编码为 ac%3Dvideolist）→ 固定返回「双线路」电影条目，
     // 使源卡渲染出 .detail-source-all-btn（lineCount=2 → 命中 index.tsx:1244 的 >1 分支）。
-    // vod_id / vod_name 与 tmdb-movie-550（Fight Club）对齐，保证详情页关键词匹配通过。
+    // vod_id / vod_name 与 tmdb-movie-550（搏击俱乐部，mock-tmdb title）对齐，保证详情页关键词匹配通过。
     await page.route(/ac(?:=|%3D)videolist/i, (route) =>
       route.fulfill({
         status: 200,
@@ -335,7 +335,7 @@ test.describe('3.6 播放列表 Tab', () => {
           list: [
             {
               vod_id: '550',
-              vod_name: 'Fight Club',
+              vod_name: '搏击俱乐部',
               vod_type: 'movie',
               type_id: '1',
               type_name: '电影',

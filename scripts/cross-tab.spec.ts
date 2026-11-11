@@ -9,6 +9,10 @@
 import { test, expect, ENABLE_MOCK } from './fixtures/mock-tmdb';
 import { matchMockRoute } from './fixtures/tmdb-mock-data';
 
+// cross-tab 的挂载依赖 /src 源码路径动态导入（mountUserStore → import('/src/stores/...')），
+// 仅 dev 模式可用；preview(dist) 无 /src 路径必失败（2026-11-11）→ preview 全量批次自动跳过。
+test.skip(process.env.E2E_MODE === 'preview', 'cross-tab 为 dev 专属测试（依赖 /src 动态导入）');
+
 // ═══════════════ 统一的 mock 路由安装（4 文件原各自重复定义，合并去重） ═══════════════
 async function installMockRoutes(page: import('@playwright/test').Page): Promise<void> {
   if (!ENABLE_MOCK) return;

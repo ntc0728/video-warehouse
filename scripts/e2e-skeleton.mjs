@@ -39,6 +39,7 @@
  *   node scripts/e2e-skeleton.mjs --dev --budget 180 scripts/home.spec.ts -g "1\.2"
  *                                                 # 单轮增量档（run-tests.ps1 就是这么调的）
  */
+import fs from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, openSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -89,6 +90,16 @@ const ALL = flag('--all');
 const GREP = val('-g', val('--grep', ''));
 
 /** 位置参数 = 调试目标 spec 文件（-g/--workers 等旗标的值不在此列） */
+
+/** 全量档的 spec 名单：扫 scripts/*.spec.ts（与 playwright config testDir 对齐） */
+function collectAllSpecFiles() {
+  const dir = resolve(ROOT, 'scripts');
+  return fs.readdirSync(dir)
+    .filter((f) => f.endsWith('.spec.ts'))
+    .map((f) => `scripts/${f}`)
+    .sort();
+}
+
 function collectSpecFiles() {
   const flagWithValue = new Set(['-g', '--grep', '--workers', '--test-timeout', '--global-timeout', '--budget', '--retries']);
   const out = [];
@@ -317,62 +328,85 @@ say(`:${PORT} HTTP 就绪（${readyMs}ms）`);
 // ─── d. 跑 Playwright（封顶，必退）───────────────────────
 // 多阶段并行时产物目录按阶段隔离（防 globalTeardown rm -rf 互清附件）
 const outDir = process.env.E2E_SUITE_STAGE ? `.pw-out-${process.env.E2E_SUITE_STAGE}` : 'test-results';
-const pwArgs = [
-  resolve(ROOT, 'node_modules/@playwright/test/cli.js'),
-  'test',
-  // 全量档：跑全部 spec 且不覆盖 reporter（保留 config 的 html 报告，供 test:e2e:report 查看）；
-  // ad-hoc：指定文件（无则默认骨架 spec）+ list 拿即时输出
-  ...(FULL ? [] : [...(SPEC_FILES.length ? SPEC_FILES : ['scripts/skeleton.spec.ts']), '--reporter=list']),
-  `--workers=${WORKERS}`,
-  `--timeout=${TEST_TIMEOUT}`,
-  `--global-timeout=${GLOBAL_TIMEOUT}`,
-  `--retries=${RETRIES}`,
-  `--output=${outDir}`,
-];
-if (GREP) pwArgs.push('-g', GREP);
-// 透传额外 playwright 旗标（供 e2e-suite 并行分片注入 --reporter=blob --blob-report=…）
-if (process.env.E2E_PW_EXTRA) pwArgs.push(...process.env.E2E_PW_EXTRA.trim().split(/\s+/).filter(Boolean));
 
-say(`playwright 开跑：${pwArgs.slice(2).join(' ')}（预算 ${BUDGET_S}s）`);
-// 把本轮动态端口传给 playwright：config 会复用同一端口（webServer.reuseExistingServer
-// 命中已探活的自建 server），不再自己起第二个 server；
-// dev 全量时排除骨架契约 spec（它要生产单包 CSS，dev 分 chunk 会假失败，
-// 契约由本脚本 preview 模式专属执行）
-const childEnv = { ...process.env, E2E_PORT: String(PORT), PW_OUTPUT_DIR: outDir };
-if (FULL && USE_DEV) childEnv.E2E_SKIP_CONTRACT = '1';
-
-// 用**异步 spawn + 自建看门狗**，而非 `spawnSync(..., { timeout })`：
-// 预算到点必须按**进程树**击杀 —— Windows 上 SIGKILL 只杀 playwright CLI 本身，
-// worker / 浏览器成孤儿继续跑（占 CPU、拖住后续轮次、残留产物）。
-pwChild = spawn(process.execPath, pwArgs, {
-  cwd: ROOT,
-  stdio: 'inherit',
-  windowsHide: true,
-  env: childEnv,
-});
-const res = await new Promise((done) => {
-  const killer = setTimeout(() => {
-    say(`⛔ 超出单轮预算 ${BUDGET_S}s —— 按进程树击杀 playwright`);
-    killTree(pwChild && pwChild.pid);
-    done({ timedOut: true, code: null });
-  }, BUDGET_S * 1000);
-  pwChild.on('error', (err) => {
-    clearTimeout(killer);
-    done({ error: err, code: null });
-  });
-  pwChild.on('exit', (code) => {
-    clearTimeout(killer);
-    done({ timedOut: false, code });
-  });
-});
-if (res.error) {
-  console.error(`✗ 无法启动 playwright：${res.error.message}`);
-} else if (res.timedOut) {
-  console.error(
-    `✗ 超出单轮预算 ${BUDGET_S}s，已强制击杀（硬规矩：ad-hoc ≤120s、--all ≤300s，--budget 显式放宽需在结论中说明理由）`,
-  );
+// 全量时把 /play 系 spec（CMS mock + 代理链路）拆成独立批次串行执行：
+// 这组 spec 互相并发会把代理打满 → 播放器挂载超时（player.spec 头部注释、YER-094 全量实测）。
+// 批次内仍可用多 worker；批次间共享同一 server 与同一份预算（deadline）。
+/** /play 系 spec（CMS mock + 代理链路）识别：全量时单独成批串行 */
+const isPlayerChainSpec = (f) =>
+  f.endsWith('player.spec.ts') ||
+  f.endsWith('player-failover.spec.ts') ||
+  f.endsWith('player-cms-error.spec.ts') ||
+  f.endsWith('smoke-player-fs-mobile.spec.ts');
+let fullBatches = null;
+if (FULL) {
+  const allSpecs = collectAllSpecFiles();
+  const playerSpecs = allSpecs.filter(isPlayerChainSpec);
+  // cross-tab.spec 依赖 /src 源码动态导入（挂 store 到 window），仅 dev 可跑：preview 批次排除
+  const otherSpecs = allSpecs.filter((f) => !isPlayerChainSpec(f) && !f.endsWith('cross-tab.spec.ts'));
+  fullBatches = [];
+  if (otherSpecs.length > 0) fullBatches.push({ files: otherSpecs, workers: WORKERS });
+  if (playerSpecs.length > 0) fullBatches.push({ files: playerSpecs, workers: 1 });
 }
-const code = res.timedOut ? 2 : (res.code ?? 1);
+
+const deadlineAt = Date.now() + BUDGET_S * 1000;
+
+const runPlaywright = async (specFiles, workers, remainingMs) => {
+  const pwArgs = [
+    resolve(ROOT, 'node_modules/@playwright/test/cli.js'),
+    'test',
+    ...(specFiles.length > 0 ? specFiles : []),
+    `--workers=${workers}`,
+    `--timeout=${TEST_TIMEOUT}`,
+    `--global-timeout=${Math.max(30000, remainingMs)}`,
+    `--retries=${RETRIES}`,
+    `--output=${outDir}`,
+  ];
+  if (GREP) pwArgs.push('-g', GREP);
+  if (process.env.E2E_PW_EXTRA) pwArgs.push(...process.env.E2E_PW_EXTRA.trim().split(/\s+/).filter(Boolean));
+
+  say(`playwright 开跑：${pwArgs.slice(2).join(' ')}（本批预算 ${Math.floor(remainingMs / 1000)}s）`);
+  const childEnv = { ...process.env, E2E_PORT: String(PORT), PW_OUTPUT_DIR: outDir, E2E_MODE: USE_DEV ? 'dev' : 'preview' };
+  if (FULL && USE_DEV) childEnv.E2E_SKIP_CONTRACT = '1';
+
+  pwChild = spawn(process.execPath, pwArgs, {
+    cwd: ROOT,
+    stdio: 'inherit',
+    windowsHide: true,
+    env: childEnv,
+  });
+  const res = await new Promise((done) => {
+    const killer = setTimeout(() => {
+      say(`⛔ 超出本批预算 ${Math.floor(remainingMs / 1000)}s —— 按进程树击杀 playwright`);
+      killTree(pwChild && pwChild.pid);
+      done({ timedOut: true, code: null });
+    }, Math.max(5, remainingMs));
+    pwChild.on('error', (err) => {
+      clearTimeout(killer);
+      done({ timedOut: false, code: 1, err });
+    });
+    pwChild.on('exit', (code) => {
+      clearTimeout(killer);
+      done({ timedOut: false, code: code ?? 1 });
+    });
+  });
+  return res;
+};
+
+const results = [];
+if (FULL && fullBatches) {
+  for (const batch of fullBatches) {
+    if (Date.now() >= deadlineAt) { results.push({ timedOut: true, code: null }); continue; }
+    results.push(await runPlaywright(batch.files, batch.workers, deadlineAt - Date.now()));
+  }
+} else {
+  const specFiles = FULL ? collectAllSpecFiles() : [...(SPEC_FILES.length ? SPEC_FILES : ['scripts/skeleton.spec.ts'])];
+  results.push(await runPlaywright(FULL ? specFiles : [...specFiles, '--reporter=list'], WORKERS, deadlineAt - Date.now()));
+}
+
+const timedOut = results.some((r) => r.timedOut);
+const exitCodes = results.map((r) => r.code ?? 1);
+const code = timedOut ? 2 : (exitCodes.every((c) => c === 0) ? 0 : 1);
 
 // ─── e. 收尾 ────────────────────────────────────────────
 await killZombieE2EServers();

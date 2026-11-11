@@ -25,7 +25,7 @@ test.describe('PLAYER 源不可用自动故障转移', () => {
       list: [
         {
           vod_id: '550',
-          vod_name: 'Fight Club',
+          vod_name: '搏击俱乐部',
           vod_type: 'movie',
           type_id: '1',
           type_name: '电影',
