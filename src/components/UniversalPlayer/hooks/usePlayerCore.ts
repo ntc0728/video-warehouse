@@ -147,8 +147,11 @@ interface UsePlayerCoreOptions {
   episodeUrl?: string;
   /** CMS 源配置 ID（用于历史记录匹配） */
   cmsSourceId?: string;
-  /** 当前集标签（如 "第3集"），供进度恢复按「内容身份」匹配 */
+  /** 当前集标签（如 "第2季 第3集"），仅用于展示（header badge） */
   episodeLabel?: string;
+  /** 进度匹配用的裸集标签（如 "第3集"），与历史记录写入口径一致；
+   * 不传则回退 episodeLabel。2026-11-11：展示标签带季名前缀，直接做严格相等匹配会永不命中。 */
+  progressEpisodeLabel?: string;
   /** 当前季号（剧集播放时有值），供进度恢复按「内容身份」匹配 */
   seasonNumber?: number;
   /** 是否跳过历史记录恢复（用于"从头播放"场景） */
@@ -191,7 +194,7 @@ interface UsePlayerCoreOptions {
  */
 export function usePlayerCore(options: UsePlayerCoreOptions) {
   const {
-    url, type, videoId, vodId, episodeUrl, episodeLabel, seasonNumber, skipHistory = false, autoPlay = false, decoderMode, isLive, retryCount,
+    url, type, videoId, vodId, episodeUrl, episodeLabel, progressEpisodeLabel, seasonNumber, skipHistory = false, autoPlay = false, decoderMode, isLive, retryCount,
     onProgress, onEnded, onPlay, onPause, onError, onSkipIntro, onSkipOutro, mediaSession,
   } = options;
 
@@ -214,7 +217,8 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   /** 片头/片尾跳过逻辑 */
   const { checkSkipIntro, checkSkipOutro, reset: resetSkip } = useSkipLogic({ onSkipIntro, onSkipOutro, onEnded });
   /** 播放进度恢复逻辑 */
-  const { loadProgress } = useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel, seasonNumber, skipHistory });
+  // 进度匹配用「裸标签」（与历史写入口径一致）；展示标签带季名前缀，不能直接用于严格相等
+  const { loadProgress } = useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel: progressEpisodeLabel ?? episodeLabel, seasonNumber, skipHistory });
   /** Issue4 音效调节：Web Audio 图谱随 audioEffect 状态变化应用（默认态不构建图谱，零风险） */
   useAudioEffects(videoRef);
   /** MediaSession（后台听视频）：锁屏媒体卡片 + 媒体键控制；开关由 store.backgroundPlay 驱动 */

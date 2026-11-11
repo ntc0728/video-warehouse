@@ -159,8 +159,12 @@ export interface UniversalPlayerProps {
     /** 右侧插槽 */
     right?: React.ReactNode;
   };
-  /** 当前集的标签（如 "第3集"） */
+  /** 当前集的展示标签（header badge 用，如 "第2季 第3集"） */
   episodeLabel?: string;
+  /** 进度匹配用的「裸」集标签（如 "第3集" / 信息型篇名），必须与历史记录写入口径一致。
+   * 不传则回退 episodeLabel（兼容非剧集场景）。2026-11-11：此前把展示标签直接用于
+   * 严格相等匹配，季名前缀导致「按内容身份续播」永不命中。 */
+  progressEpisodeLabel?: string;
   /** 当前季号（剧集播放时有值），用于进度恢复按「内容身份」精确匹配 */
   seasonNumber?: number;
   /** 是否有上一集（显示上一集按钮） */

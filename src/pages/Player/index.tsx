@@ -738,6 +738,12 @@ export default function PlayerPage() {
     ? `${seasonPrefix}${isPlainEpisodeTitle(currentEp.title) ? `第${currentEp.number}集` : currentEp.title}`
     : (episodes.length === 0 ? currentSourceNameRef.current : undefined);
 
+  // 进度匹配标签：必须与历史写入口径完全一致（裸集标签「第N集」/信息型篇名，不带季名前缀）。
+  // 展示用 episodeLabel 带「第N季 」前缀，直接做严格相等会永不命中（2026-11-11 修复）。
+  const progressEpisodeLabel = currentEp
+    ? (isPlainEpisodeTitle(currentEp.title) ? `第${currentEp.number}集` : currentEp.title)
+    : episodeLabel;
+
   const isTV = d ? 'name' in d : (v?.type === 'tv');
   // 优先用 CMS 搜索到的季数据，fallback 到 TMDB
   const seasons = cmsSeasons.length > 0
@@ -1172,6 +1178,7 @@ export default function PlayerPage() {
             episodeUrl={currentSrc.url}
             cmsSourceId={cmsSourceIdRef.current}
             episodeLabel={episodeLabel}
+            progressEpisodeLabel={progressEpisodeLabel}
             // 当前季号：供进度恢复按「内容身份」（季号+集标签）精确匹配，避免跨集恢复错位
             seasonNumber={episodes.length > 0 ? selectedSeason : undefined}
             skipHistory={skipHistory}
