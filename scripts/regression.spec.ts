@@ -1054,7 +1054,20 @@ test.describe('全局问题', () => {
   });
 
   test('收藏空态: 空数据时内容容器不挂载', async ({ page }) => {
-    // G-09
+    // G-09。测试环境 seed 有 IPTV 收藏/历史（iptv-store），须先清空才能构造「空数据」前提
+    await page.addInitScript(() => {
+      try {
+        const raw = localStorage.getItem('iptv-store');
+        if (raw) {
+          const st = JSON.parse(raw);
+          if (st?.state) {
+            st.state.favoriteChannelIds = [];
+            st.state.playHistory = [];
+            localStorage.setItem('iptv-store', JSON.stringify(st));
+          }
+        }
+      } catch { /* ignore */ }
+    });
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/collections', { waitUntil: 'domcontentloaded' });
     // 等收藏页渲染（数据容器或空态出现）：空态组件根为 .empty-state-wrapper，非空才有 .collection-content

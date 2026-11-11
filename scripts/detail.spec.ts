@@ -10,7 +10,7 @@
  * 等待策略: 全部使用 Playwright web-first 条件等待（expect / expect.poll / waitForResponse），
  *          不使用固定 waitForTimeout 睡眠；轮询 50ms 起步，条件成立立即返回。
  */
-import { test, expect } from './fixtures/mock-tmdb';
+import { test, expect } from './fixtures/cms-mock';
 import { MOVIE_DETAIL } from './fixtures/tmdb-mock-data';
 
 // 超长简介（压测 hero 简介弹性区折叠）
@@ -285,6 +285,17 @@ test.describe('3.5 概览 Tab', () => {
 
 test.describe('3.6 播放列表 Tab', () => {
   test('DETAIL-060/062: CMS 按需加载 / 全部弹框线路列表', async ({ page }) => {
+    const net: string[] = [];
+    page.on('request', (r) => {
+      if (!r.url().startsWith('http://127.0.0.1') && !r.url().includes('favicon')) net.push('REQ ' + r.url().slice(0, 140));
+    });
+    page.on('response', (r) => {
+      if (!r.url().startsWith('http://127.0.0.1') && !r.url().includes('favicon') && r.status() >= 400) {
+        net.push('FAIL ' + r.status() + ' ' + r.url().slice(0, 130));
+      }
+    });
+    let lateDumpDone = false;
+    page.on('console', (m) => { if (m.type() === 'error') net.push('ERR ' + m.text().slice(0, 110)); });
     // 060 CMS 按需加载
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
@@ -350,9 +361,25 @@ test.describe('3.6 播放列表 Tab', () => {
 
     await page.goto(`/detail/${TEST_MOVIE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
+    // 先等 tab 出现（TMDB 详情 + CMS 聚合就绪后再 poll，避免首载耗时吃掉 poll 窗口）
+    await page.waitForSelector('.detail-tab', { timeout: 15000 });
+    await page.waitForTimeout(2500);
+    const d060 = await page.evaluate(() => ({
+      tabs: Array.from(document.querySelectorAll('.detail-tab')).map((t) => t.textContent),
+      facts: !!document.querySelector('.detail-facts'),
+      appText: (document.querySelector('.app-shell')?.textContent ?? '').slice(0, 120),
+    }));
+    const errEl = await page.evaluate(() =>
+      [...document.querySelectorAll('.app-shell *')]
+        .filter((el) => el.children.length === 0 && el.textContent?.includes('401'))
+        .map((el) => `${el.tagName}.${el.className}: ${(el.textContent || '').slice(0, 60)}`),
+    );
+    console.log('D060_ERR_EL:', JSON.stringify(errEl, null, 1));
+    console.log('D060_SNAP:', JSON.stringify(d060));
+    console.log('D060_NET:', JSON.stringify(net.slice(0, 10)));
 
     const sourcesTab2 = page.locator('.detail-tab').filter({ hasText: '播放列表' });
-    await expect.poll(() => sourcesTab2.count(), { ...POLL, timeout: 5000 }).toBeGreaterThan(0);
+    await expect.poll(() => sourcesTab2.count(), { ...POLL, timeout: 8000 }).toBeGreaterThan(0);
     if (!(await sourcesTab2.isVisible().catch(() => false))) {
       return;
     }
