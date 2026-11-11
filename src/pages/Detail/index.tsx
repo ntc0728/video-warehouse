@@ -489,7 +489,7 @@ export default function DetailPage() {
               let seasonNums = entries.map(([n]) => n);
               // 降级：CMS 未按季拆分时，整剧作为单季
               if (seasonVideos.length === 0) {
-                const single = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal);
+                const single = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal, tmdbMediaType);
                 const v0 = single[0]?.video;
                 if (v0) { seasonVideos = [v0]; seasonNums = [1]; }
               }
@@ -523,7 +523,7 @@ export default function DetailPage() {
             let r: DetailSourceResult;
             try {
               if (ctrl.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-              const rs = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal);
+              const rs = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal, tmdbMediaType);
               const one = rs[0];
               r = one
                 ? ({ ...one, seasons: [], seasonNumbers: [], isSeries: false } as DetailSourceResult)

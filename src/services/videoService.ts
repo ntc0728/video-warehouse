@@ -10,6 +10,7 @@ import { getJSON } from './httpClient';
 import { extractSeasonNumber, isSpecialEntryTitle } from './seasonMatcher';
 import { parsePlaySources } from './vodParser';
 import { mapWithConcurrency } from '@/lib/concurrency';
+import type { MediaType } from '@/lib/mediaType';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 export { getVideoSources, getEnabledVideoSourceIndices, getEnabledIPTVSourceIndices };
@@ -140,20 +141,59 @@ function scoreCmsTitleMatch(item: CMSVideoItem, title: string, year?: number): n
 }
 
 /**
+ * 从 vod_play_url 推断条目形态（不请求详情，纯字符串解析）：
+ * - 任一条线路内 >1 集 → `tv`（剧集/多集）
+ * - 所有线路各只有 1 条 → `movie`（电影；多线路各 1 条仍属电影）
+ * - 无 vod_play_url / 解析不出集 → `undefined`（形态未知，调用方不应据此淘汰）
+ *
+ * 为什么用形态而不是 vod_type/type_id：各 CMS 的类型编码不统一（实测
+ * type_id=11 / type_id_1=7 均不在映射表内），类型字段不可靠，播放地址结构才是通用信号。
+ */
+function inferCmsEntryForm(item: CMSVideoItem): MediaType | undefined {
+  const raw = item.vod_play_url || '';
+  if (!raw.trim()) return undefined;
+  const lines = raw.split('$$$').filter((l) => l.trim());
+  if (lines.length === 0) return undefined;
+  const maxPerLine = Math.max(...lines.map((l) => l.split('#').filter((s) => s.trim()).length));
+  if (!Number.isFinite(maxPerLine) || maxPerLine <= 0) return undefined;
+  return maxPerLine > 1 ? 'tv' : 'movie';
+}
+
+/**
  * 从搜索结果列表中选最佳匹配：分数最高者，同分保留靠前条目（保持原顺序语义）。
  * 无任何标题关联条目时返回 undefined（不兜底）。
+ *
+ * mediaType 传入时按「播放地址形态」先过滤（电影 / 剧集），避免同名作品挂错：
+ * 形态未知的条目不过滤；过滤后无候选则回退全量打分（宁可不过滤，也不整源假阴性）。
  */
-function pickBestCmsMatch(list: CMSVideoItem[], title: string, year?: number): CMSVideoItem | undefined {
-  let best: CMSVideoItem | undefined;
-  let bestScore = 0;
-  for (const item of list) {
-    const s = scoreCmsTitleMatch(item, title, year);
-    if (s > bestScore) {
-      bestScore = s;
-      best = item;
+function pickBestCmsMatch(
+  list: CMSVideoItem[],
+  title: string,
+  year?: number,
+  mediaType?: MediaType,
+): CMSVideoItem | undefined {
+  const pick = (items: CMSVideoItem[]): CMSVideoItem | undefined => {
+    let best: CMSVideoItem | undefined;
+    let bestScore = 0;
+    for (const item of items) {
+      const s = scoreCmsTitleMatch(item, title, year);
+      if (s > bestScore) {
+        bestScore = s;
+        best = item;
+      }
     }
+    return best;
+  };
+
+  if (mediaType) {
+    const byForm = list.filter((item) => {
+      const form = inferCmsEntryForm(item);
+      return form === undefined || form === mediaType;
+    });
+    const best = pick(byForm);
+    if (best) return best;
   }
-  return best;
+  return pick(list);
 }
 
 /**
@@ -498,6 +538,7 @@ export async function searchVideoFromMultipleSources(
   title: string,
   year?: number,
   signal?: AbortSignal,
+  mediaType?: MediaType,
 ): Promise<VideoDetailResult[]> {
   const sources = await getVideoSources();
   const searchTerm = title;
@@ -520,7 +561,7 @@ export async function searchVideoFromMultipleSources(
         if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
           return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
         }
-        const target = pickBestCmsMatch(data.list, title, year);
+        const target = pickBestCmsMatch(data.list, title, year, mediaType);
         if (!target) {
           return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
         }
@@ -558,15 +599,17 @@ export async function searchVideoFromMultipleSources(
  *
  * @param sourceIndex - CMS 源配置索引
  * @param title - 搜索标题（视频名称）
- * @param _year - 年份（当前未使用，预留）
+ * @param year - 年份（本地打分加分项，不做硬过滤）
  * @param signal - AbortSignal，用于取消请求
+ * @param mediaType - 媒体类型（movie/tv）：按播放地址形态过滤同名条目
  * @returns 搜索结果，包含视频数据或错误信息
  */
 export async function searchVideoFromSingleSource(
   sourceIndex: number,
   title: string,
-  _year?: number,
+  year?: number,
   signal?: AbortSignal,
+  mediaType?: MediaType,
 ): Promise<VideoDetailResult> {
   /** 获取所有 CMS 源配置 */
   const sources = await getVideoSources();
@@ -587,7 +630,7 @@ export async function searchVideoFromSingleSource(
       return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' };
     }
     /** 匹配到的视频（打分最高者；无标题关联不兜底，防同名作品挂错源） */
-    const target = pickBestCmsMatch(data.list, title);
+    const target = pickBestCmsMatch(data.list, title, year, mediaType);
     if (!target) {
       return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' };
     }

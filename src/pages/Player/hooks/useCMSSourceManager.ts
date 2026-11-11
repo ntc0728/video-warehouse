@@ -346,7 +346,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
                 };
               }
             } else {
-              res = await searchVideoFromSingleSource(idx, videoTitle, videoYear, ctrl.signal);
+              res = await searchVideoFromSingleSource(idx, videoTitle, videoYear, ctrl.signal, tmdbMediaType);
             }
           } catch { res = null; }
           if (!isLatest() || ctrl.signal.aborted) return;
@@ -622,7 +622,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           result = { sourceIndex: sourceIdx, sourceId: allSrc[sourceIdx]?.id ?? '', sourceName, video: detailVideo };
         } else if (videoTitle) {
           // 切源 + vod_id 不可移植：改用「标题 + 年份」在新源重搜（与 TMDB 分支同一路径）
-          result = await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
+          result = await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal, tmdbMediaType);
         } else {
           // 无标题可用（直接进 /play/<vod_id> 且无任何元数据）：宁可留空也不发错请求，
           // 避免把别的片子的线路写进播放器。
@@ -631,7 +631,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         }
       } else {
         // TMDB 视频：优先复用聚合探测已拿到的结果（免重复搜索）；未命中（手动切源等）才现搜
-        result = probeHits?.get(sourceIdx) ?? await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal);
+        result = probeHits?.get(sourceIdx) ?? await searchVideoFromSingleSource(sourceIdx, videoTitle, videoYear, ctrl.signal, tmdbMediaType);
       }
 
       // 电影跨源兜底（同 TV 分支）：指定/历史源搜不到本片时顺延其它源最多 4 次，
@@ -641,7 +641,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
           if (i === sourceIdx) continue;
           tried += 1;
           if (!isLatest() || ctrl.signal.aborted) break;
-          const alt = await searchVideoFromSingleSource(i, videoTitle, videoYear, ctrl.signal);
+          const alt = await searchVideoFromSingleSource(i, videoTitle, videoYear, ctrl.signal, tmdbMediaType);
           if (alt.video) {
             result = alt;
             sourceIdx = i;

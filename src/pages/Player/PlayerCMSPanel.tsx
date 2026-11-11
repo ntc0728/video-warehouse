@@ -103,6 +103,14 @@ export function PlayerCMSPanel({
     );
   };
 
+  // 面板只展示「有本片数据」或「尚未探测（lazy 入口）」的源：
+  // cmsResults 里 video 为空的落定记录（切源失败 / 探测无数据）不再渲染成可点 tab。
+  // 2026-11-11 用户反馈「没数据的 CMS 源为何还显示」。
+  const visibleSourceIds = selectedSourceIds.filter((sourceId) => {
+    const result = resultMap.get(sourceId);
+    return !result || !!result.video;
+  });
+
   return (
     <div ref={collapseRef} className={`player-panel player-panel--cms${!seasonAvailable ? ' player-panel--cms-movie' : ''}${collapsed ? ' collapsed' : ''}`}>
       <HeaderTag
@@ -111,7 +119,7 @@ export function PlayerCMSPanel({
       >
         <span className="player-panel-icon"><Icon icon={Server} size="sm" /></span>
         <span className="player-panel-title">CMS源</span>
-        <span className="player-panel-info">{loading && selectedSourceIds.length === 0 ? '搜索源中…' : `${selectedSourceIds.length}个源`}</span>
+        <span className="player-panel-info">{loading && visibleSourceIds.length === 0 ? '搜索源中…' : `${visibleSourceIds.length}个源`}</span>
         {!compact && (
           <span className={`player-panel-arrow ${expanded ? 'expanded' : ''}`}>
             <Icon icon={ChevronDown} size="sm" />
@@ -119,9 +127,9 @@ export function PlayerCMSPanel({
         )}
       </HeaderTag>
       <div className={`player-panel-body${collapsed ? ' collapsed' : ''}`}>
-        {selectedSourceIds.length > 0 ? (
+        {visibleSourceIds.length > 0 ? (
           <div ref={listRef} className="player-cms-list">
-            {selectedSourceIds.map((sourceId) => {
+            {visibleSourceIds.map((sourceId) => {
               const result = resultMap.get(sourceId);
               const displayName = sourceNameMap.get(sourceId) ?? sourceId;
               const active = isActiveSource(sourceId);
