@@ -1587,7 +1587,8 @@ html[data-mobile-layout="true"] .up-resume-card__notice {
   align-items: center;
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.7);
+  /* 与 toast / 续播卡统一配方：0.6 黑 + blur 8px（2026-11-11 拍板） */
+  background: rgba(0, 0, 0, 0.6);
   color: var(--player-text);
   font-size: var(--text-base);
   font-weight: 600;
@@ -1629,7 +1630,8 @@ html[data-mobile-layout="true"] .up-resume-card__notice {
   align-items: center;
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.7);
+  /* 与 toast / 续播卡统一配方：0.6 黑 + blur 8px（2026-11-11 拍板） */
+  background: rgba(0, 0, 0, 0.6);
   color: var(--player-text);
   font-size: var(--text-lg);
   font-weight: 600;

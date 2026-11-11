@@ -39,8 +39,11 @@ const MAX_BRIGHTNESS = 2;
 const INDICATOR_HIDE_DELAY = 1200;
 /** 手势增量灵敏度：位移 1px 对应的值变化（亮度/音量） */
 const SENSITIVITY = 1 / 200;
-/**-1：seek 灵敏度——横向滑过 15% 容器宽度 ≈ 全片长（对齐 B站手感） */
-const SEEK_SENS_FRACTION = 0.15;
+/** 横滑 seek 步进：每滑过该像素距离 = 一次快进/快退，单位与长按一致（6s/次）。
+ * 旧实现按「滑过 15% 容器宽 = 整个片长」比例换算（手机 58px 就跳全片，一滑即片尾）。
+ * 2026-11-11 用户拍板：长按与滑动统一 6s 粒度。 */
+const SEEK_STEP_PX = 24;
+const SEEK_STEP_SECONDS = 6;
 /**-1：拖动中 onSeekTarget 回调节流（ms） */
 const SEEK_CB_THROTTLE = 100;
 /**
@@ -218,11 +221,12 @@ export function useTouchGesture({
       if (g.locked === 'seek') {
         const dur = getDurationRef.current();
         if (!Number.isFinite(dur) || dur <= 0) return;
-        const rect = el.getBoundingClientRect();
-        const deltaSeconds = ((touch.clientX - g.lastMoveX) / (rect.width * SEEK_SENS_FRACTION)) * dur;
-        g.lastMoveX = touch.clientX;
-        const { target, accum } = clampSeekTarget(g.seekBaseTime, g.seekAccum + deltaSeconds);
+        // 步进式 seek：每滑过 SEEK_STEP_PX 位移 = 一次 ±6s（与长按逐次 6s 同口径）。
+        // 以「相对起点的总位移」换算步数，避免累加漂移；贴边时 clamp 后再反向可正常回退。
+        const steps = Math.trunc((touch.clientX - g.startX) / SEEK_STEP_PX);
+        const { target, accum } = clampSeekTarget(g.seekBaseTime, steps * SEEK_STEP_SECONDS);
         g.seekAccum = accum;
+        g.lastMoveX = touch.clientX;
         setSeekHud({ active: true, deltaSeconds: accum });
         if (e.cancelable) e.preventDefault();
         const now = performance.now();

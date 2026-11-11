@@ -1175,7 +1175,7 @@ skipHistory,
 
       {seekIndicator && (
         <div className={`up-seek-indicator up-seek-indicator-${seekIndicator}`}>
-          {seekIndicator === 'left' ? <Icon icon={Rewind} size="2xl" /> : <Icon icon={FastForward} size="2xl" />}
+          {seekIndicator === 'left' ? <Icon icon={Rewind} size="lg" /> : <Icon icon={FastForward} size="lg" />}
           <span>6s</span>
         </div>
       )}
@@ -1183,7 +1183,7 @@ skipHistory,
       {/* -1：移动端横向滑动 seek 的居中时间气泡（跟随手指，松手消失） */}
       {seekHud.active && (
         <div className={`up-seek-hud ${seekHud.deltaSeconds >= 0 ? 'up-seek-hud-forward' : 'up-seek-hud-backward'}`}>
-          <Icon icon={seekHud.deltaSeconds >= 0 ? FastForward : Rewind} size="2xl" />
+          <Icon icon={seekHud.deltaSeconds >= 0 ? FastForward : Rewind} size="lg" />
           <span>
             {seekHud.deltaSeconds >= 0 ? '+' : '-'}
             {formatSeekHudTime(Math.abs(seekHud.deltaSeconds))}
