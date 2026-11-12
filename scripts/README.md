@@ -15,7 +15,7 @@
 | `browse.spec.ts` | 浏览/搜索页 | 2.1 搜索模式切换 / 2.2 搜索 / 2.3 筛选与排序 / 2.4 CMS 直链搜索 / 2.7 移动端搜索 / 2.8 BrowseMobileBar / 2.9 筛选面板底部操作区 / 2.10 逻辑分页 / 2.11 分页器渲染门控 | 13 |
 | `chart.spec.ts` | 热度榜 | CHART 热度榜页 | 5 |
 | `detail.spec.ts` | 详情页 | 3.1 加载 / 3.2 Hero / 3.3 操作按钮 / 3.4 Tab 导航 / 3.5 概览 / 3.6 播放列表 / 3.8 推荐 / 3.11 剧照灯箱 | 8 |
-| `player.spec.ts` | 播放页 | 4.1 加载与布局稳定 / 4.5 CMS 源管理 / 4.8 收藏与详情 / 4.11 移动端整改 / 4.12 移动端布局判定 / 4.13 投屏能力分端 / 4.14 PiP 契约 | 11 |
+| `player.spec.ts` | 播放页 | 4.1 加载与布局稳定 / 4.5 CMS 源管理 / 4.8 收藏与详情 / 4.11 移动端播放器 / 4.12 移动端布局判定 / 4.13 投屏能力分端 / 4.14 PiP 契约 | 11 |
 | `player-failover.spec.ts` | 播放页 | 源不可用自动故障转移 | 1 |
 | `player-cms-error.spec.ts` | 播放页 | CMS 业务错误码失败态（PLAYER-095） | 1 |
 | `iptv.spec.ts` | IPTV 直播页 | 5.1 加载 / 5.2 分组筛选 / 5.5 频道检测 / 5.7 懒加载与滚动 / 5.10 台标回退链 / 5.11 卡片收藏按钮 | 6 |
@@ -24,7 +24,7 @@
 | `collections.spec.ts` | 收藏页 | 7.1 Tab 切换 / 7.2 影视收藏 / 7.4 批量管理 | 3 |
 | `history.spec.ts` | 历史页 | 8.1 Tab 切换 + 8.2 影视历史 / 8.3 时间分组 / 8.4 去重 + 8.5 批量 / 8.6 桌面算珠时间轴 / 8.7 融合 Tab 与筛选面板 / 8.8 网格列数 | 6 |
 | `person.spec.ts` | 人物页 | 10.1 加载 / 10.2 Hero / 10.3 作品列表 Tab / 10.4 卡片与懒加载 | 4 |
-| `regression.spec.ts` | 历史专项合并 | 跨页联动回归 9 / 详情页回归 10 / 9.1 修复 4（冷启动·app 适配·布局一致性）/ UI 整改 3 / 全局问题 4 | 30 |
+| `regression.spec.ts` | 历史专项回归 | 跨页联动回归 9 / 详情页回归 10 / 冷启动与应用适配 4 / UI 修正 3 / 全局交互 4 | 30 |
 | `cross-tab.spec.ts` | 跨页签同步 | COL-CROSS-001 IDB 主键幂等 / USER-CROSS-001 BroadcastChannel 内存快照 / IPTV-CROSS-001 storage + isFavorite / SETTINGS-CROSS-001 白名单 storage | 4 |
 | `smoke-player-fs-mobile.spec.ts` | 播放器全屏专项 | PC 桌面全屏 / 移动竖屏更多弹窗 / 移动横屏角落组+抽屉 / 移动竖屏点击语义 | 6 |
 | `source-checker.spec.ts` | 源检测（按需 subpages） | 9.1 网速检测 / 9.6 Tab 与统计 | 2 |
@@ -35,7 +35,7 @@
 | `boot-splash-shots.spec.ts` | 骨架截图取证（按需 shots） | 多主题/多视口截图 + 摘除验证（人工核查，不进默认套） | 29 |
 
 > **上表用例数由 `pnpm run test:count` 统计**（`npx playwright test --list`），全仓合计 **249 条 / 22 spec**。
-> **唯一事实源 = `pnpm run test:count`**（测试映射文档的生成块与之一致，由 `lint:test-map` 校验）；
+> **唯一事实源 = `pnpm run test:count`**（可选的外部映射文档的生成块与之一致，文档缺失时自动跳过校验，由 `lint:test-map` 校验）；
 > 加删用例后请重跑 `pnpm run test:count -- --write`，**不要手改上面任何一个数字**。
 
 ### 测试辅助工具
@@ -43,7 +43,7 @@
 | 文件 | 说明 |
 |------|------|
 | `global-setup.ts` | Playwright 全局设置（注入 TMDB Token / CORS 代理 / IPTV 代理） |
-| `test-count-report.mjs` | **用例计数 / 测试映射一致性报告**（不启浏览器，1–2s）。`--check` 校验五项：映射引用的 spec 存在 / pattern 基路径存在 / grep 每个 `\|` 片段真命中 / 档位恒等式 / 测试映射文档生成块未过期（= `pnpm run lint:test-map`，已入 `lint:all` 第 7 门）；`--write` 把生成块写回测试映射文档 |
+| `test-count-report.mjs` | **用例计数 / 测试映射一致性报告**（不启浏览器，1–2s）。`--check` 校验五项：映射引用的 spec 存在 / pattern 基路径存在 / grep 每个 `\|` 片段真命中 / 档位恒等式 / 可选的外部映射文档（缺失时自动跳过校验）生成块未过期（= `pnpm run lint:test-map`，已入 `lint:all` 第 7 门）；`--write` 把生成块写回映射文档（仅维护者本地映射文档存在时生效） |
 | `run-tests.ps1` | 增量测试运行（按「未提交改动」自动跑对应 spec；命中 >3 spec 需 -Full 放行；playwright 段委派 `e2e-skeleton.mjs --dev`，带 -Budget 封顶） |
 | `e2e-skeleton.mjs` | **全仓唯一跑 playwright 的入口**（自建 server + HTTP 200 探活 + 预算封顶 + 进程树收尾）；`test:e2e:*` / `e2e-suite.mjs` 各阶段 / `run-tests.ps1` 增量档共用。**别裸调 `playwright test`**（config 的 webServer 经 shell 启动，收尾会留孤儿 vite） |
 | `e2e-suite.mjs` | 全量编排（Stage A dev 行为套 + Stage B preview 播放器），两段串跑并 merge blob 报告 |
@@ -139,7 +139,7 @@ TMDB_MOCK=false pnpm run test:e2e
 
 # 计数 / 映射一致性（不跑浏览器）
 pnpm run test:count                     # 报告 + 校验
-pnpm run test:count -- --write          # 同步测试映射文档生成块
+pnpm run test:count -- --write          # 同步映射文档生成块（仅维护者本地可用；文档缺失时自动跳过）
 pnpm run lint:test-map                  # 只校验（lint:all 第 7 门）
 
 # 用 run-tests.ps1 增量测试
