@@ -44,7 +44,7 @@
 :root {
   /* ── UI 全局缩放（三段式×大屏整合）── */
   --ui-scale: 1;
-  /* ── 字号缩档（2026-11-10 用户定稿）──
+  /* ── 字号缩档 ──
   桌面 = 1（保持按 1440 行业锚点校准的曲线）；移动端 = 0.95
   （≤767 首帧兜底 + html[data-mobile-layout] / html[data-device="app"] 恒移动覆盖）。
   乘入全部非 TV --text-* 定义；Tailwind fontSize 与 --icon-*（延迟解析）自动连锁。

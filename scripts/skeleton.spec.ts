@@ -514,8 +514,7 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     await expect(skeleton).toBeVisible({ timeout: 10000 });
 
     // 卡壳复用真实 .video-card：封面 + 角标（评分/年份，复用真实类 + __skin 骨架皮）+ info 区标题行
-    // （2026-11-04 二次定稿：封面内标题方案已回滚；2026-11-11 角标类改造——
-    //  .browse-skeleton__badge 已删除，骨架角标复用真实类 video-card-rating/year-badge，
+    // （封面内标题方案已回滚；骨架角标复用真实类 video-card-rating/year-badge，
     //  类型角标仅在 cms 直链搜索模式渲染，Browse 默认智能检索隐藏）
     const cards = await page.locator('.browse-skeleton__card.video-card').count();
     expect(cards).toBeGreaterThan(0);

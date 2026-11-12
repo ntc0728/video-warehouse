@@ -41,7 +41,7 @@ const INDICATOR_HIDE_DELAY = 1200;
 const SENSITIVITY = 1 / 200;
 /** 横滑 seek 步进：每滑过该像素距离 = 一次快进/快退，单位与长按一致（6s/次）。
  * 旧实现按「滑过 15% 容器宽 = 整个片长」比例换算（手机 58px 就跳全片，一滑即片尾）。
- * 2026-11-11 用户拍板：长按与滑动统一 6s 粒度。 */
+ * 长按与滑动统一 6s 粒度。 */
 const SEEK_STEP_PX = 24;
 const SEEK_STEP_SECONDS = 6;
 /**-1：拖动中 onSeekTarget 回调节流（ms） */

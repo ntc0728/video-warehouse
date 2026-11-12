@@ -412,7 +412,7 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   line-height: 1;
 }
 
-/* 年份/类型：右下同一行横排（2026-11-09 用户拍板，原为竖排「类型在上、年份在下」）。
+/* 年份/类型：右下同一行横排（原为竖排「类型在上、年份在下」）。
  基础 .corner 的 absolute 在此复位为 static。 */
 .hero-side-card__corner--year,
 .hero-side-card__corner--type {

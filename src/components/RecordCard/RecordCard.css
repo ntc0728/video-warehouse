@@ -155,7 +155,7 @@ hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
   right: var(--space-2xs);
   bottom: calc(var(--space-xs) + var(--space-3xs));
   color: rgba(255, 255, 255, 0.9);
-  /* 全站最小文本档（2026-11-09 用户拍板：进度时间用最小字体） */
+  /* 全站最小文本档（进度时间用最小字体） */
   font-size: var(--text-2xs);
   font-weight: 600;
   line-height: 1;
@@ -384,7 +384,7 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
     margin-left: auto;
   }
 
-  /* ── IPTV 记录卡（2026-11-09 用户拍板）──
+  /* ── IPTV 记录卡 ──
      封面右侧 3 个元素（直播 / 来源 / 时间）间距 --space-md；
      收藏页左对齐成一列；历史页保持水平居中（用户仅要求收藏页左对齐）。 */
   :is(.history-page, .collection-page) .record-card--iptv .record-card__meta-col {

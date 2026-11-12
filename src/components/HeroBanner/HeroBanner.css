@@ -15,7 +15,7 @@
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   /* 不与下方分类区的间距由 Home.css 控制，避免重复 */
-  /* padding 已删（2026-11-09 用户拍板）：banner 图区通铺到卡片边缘，
+  /* padding 已删：banner 图区通铺到卡片边缘，
      圆角由本卡 overflow:hidden 裁切；内层 .hero-banner__main 的圆角在
      ≥1024 档保留为兜底（TV 场景）。 */
 }
@@ -333,7 +333,7 @@ html[data-device="app"] .hero-banner__skeleton--btn {
   opacity: 0.85;
 }
 
-/* 空态标题行：标题 + 重试按钮同行基线对齐（2026-11-11 用户拍板）。
+/* 空态标题行：标题 + 重试按钮同行基线对齐。
  重试视觉/交互与栏目行 .tmdb-movierow-retry 同语言（24px 盒、tertiary→hover 主色）。 */
 .hero-banner__title-row {
   display: flex;
@@ -516,7 +516,7 @@ html[data-device="app"] .hero-banner__skeleton--btn {
     margin-left: var(--space-lg);
   }
 
-  /* 移动端 slide padding 归零（2026-11-09 用户拍板）：
+  /* 移动端 slide padding 归零：
  移动端 banner 图区已通铺卡片（卡片 padding 删除），文字距图左/下缘
  只保留 .hero-banner__text 自身的 margin（--space-sm / --space-xs ≈ 6px / 3px），
  不再叠加 slide 内边距。 */

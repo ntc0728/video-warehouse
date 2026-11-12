@@ -3,7 +3,7 @@
  * 路由: /proxy-setup（设置页的子页，从设置页进入）
  * 覆盖: PROXY-001 ~ PROXY-003
  *
- * 2026-09-21 用户拍板：设置页**子页**（源检测 / 代理配置）移出默认 e2e 套，改按需
+ * 设置页**子页**（源检测 / 代理配置）不在默认 e2e 套内，按需跑
  *   `npm run test:e2e:subpages`。设置页本体（settings.spec）保留默认套。
  *   本文件用例自 regression.spec.ts 的「代理配置」describe 原样抽出（断言不弱化）。
  */

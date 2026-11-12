@@ -425,7 +425,7 @@ html:not([data-theme="dark"]) .video-card-cover:has(.lazy-image-placeholder) {
 /* ── 收藏页角标移动端重排（status 分支）──
  桌面 / 移动统一：左下 = 年份 + 类型同一行并排、右下 = 观看状态。
  （原移动端「badges-bl 撑满底部 + 类型右对齐 + 状态叠在类型上方」已废弃，
-  2026-11-09 用户拍板：年份/类型同行靠左，状态回右下角。） */
+  年份/类型同行靠左，状态回右下角。） */
 /* 基类规则已满足（badges-bl 左下 flex 行；status 右下 --space-xs），
  此处仅保留一条约束：badges-bl 最宽 60%，避免与右侧状态胶囊重叠。 */
 @media (width <= 767px) {
@@ -443,7 +443,7 @@ html[data-device="app"] .video-card-badges-bl {
   max-width: 60%;
 }
 
-/* 移动端竖版角标整体压到全站最小档（2026-11-09 用户拍板：文字/底色/图标都最小）：
+/* 移动端竖版角标整体压到全站最小档（文字/底色/图标都最小）：
  · 文字：--text-xs(12px) → --text-2xs(11px，全站最小文本 token)
  · 图标：评分星标的 --icon-xs 就地覆写为 --text-2xs（原覆写为 --text-xs，
    星标会比同条数字大一圈）；Icon 的 width/height 由 SIZE_VAR 注入，
@@ -872,7 +872,7 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
 }
 
 @media (width <= 767px) {
-  /* 移动端极简封面（2026-11-09 用户拍板）：
+  /* 移动端极简封面：
      封面上只留标题 + 底部红色进度条，源徽章 / 进度时间全部隐藏。
      · 源徽章（电影天堂·9季第13集）：信息在 Detail 页可得，胶囊占封面 ~40% 宽，删；
      · 进度时间（12:34/45:17 原居中胶囊）：进度语义已由底部红条承载，数字删；

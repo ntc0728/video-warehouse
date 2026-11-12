@@ -318,7 +318,7 @@
       .bs-rail { display: none; }
       .bs-split__main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
       /* Browse 左栏筛选组（镜像真实 FilterBar rail 化，2026-09-21 用户反馈修正）：
-         每组 = 组标题小字 + 固定 2 列 chips（2026-09-14 拍板恒两列），组间 1px 分割线 */
+         每组 = 组标题小字 + 固定 2 列 chips（恒两列），组间 1px 分割线 */
       .bs-fgroup { display: flex; flex-direction: column; gap: 6px; }
       .bs-fgroup + .bs-fgroup { margin-top: 6px; padding-top: 10px; }
       .bs-fgroup__chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 8px; }
@@ -680,7 +680,7 @@
         <div class="bs-icon-btn bs-icon-btn--theme"></div>
         <div class="bs-nav"><i></i><i></i><i></i><i></i></div>
       </div>
-      <!-- 启动链两段式（2026-09-22 用户定稿：plain 在前、同构骨架在后，顺序不覆盖）：
+      <!-- 启动链两段式（plain 在前、同构骨架在后，顺序不覆盖）：
            第一段 = plain 启动页（本静态中性形态：顶栏 + 居中「正在启动…」）；
            第二段 = 目标页同构轮廓（由下方脚本延迟 PLAIN_MS 后换形，非叠层）。
            无 JS / 脚本失败时停在第一段中性形态，不漏首页轮廓（2026-09-20 要求）。 -->

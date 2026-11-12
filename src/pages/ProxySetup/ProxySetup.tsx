@@ -3,7 +3,7 @@
  *
  * 
  * - 两栏 + 日志坞：左步骤导航（① 选部署项 → ② 登录凭证 → ③ 部署回写）/ 右当前步面板（上一步·下一步）；
- *   深色部署日志收成页面底部「吸底日志坞」（收起 = 一行状态条，点开抽屉看全量，部署中自动展开，2026-11-09 用户拍板方案 B）
+ *   深色部署日志收成页面底部「吸底日志坞」（收起 = 一行状态条，点开抽屉看全量，部署中自动展开）
  * - 步骤门控：下一步与未解锁的步骤导航项在必填值未填时置灰不可点（不再走点击时报错提示）
  * - 两个独立入口：视频采集 CORS 代理 / IPTV 流代理（互不关联）
  * - 登录 Cloudflare（API Token + Account ID）→ 一键上传 Worker 脚本；部署按钮仅在第 3 步
@@ -172,7 +172,7 @@ export default function ProxySetup() {
   const stepCls = (s: 1 | 2 | 3) =>
     `proxy-setup__stepnav-item${stepDone[s] ? ' is-done' : ''}${step === s ? ' is-on' : ''}${stepReachable(s) ? '' : ' is-locked'}`;
 
-  // 步骤门控（2026-11-09 用户拍板）：必填值未填时「下一步」置灰、未解锁的步骤导航项置灰不可点（替代原「点击时报红字提示」）
+  // 步骤门控：必填值未填时「下一步」置灰、未解锁的步骤导航项置灰不可点（替代原「点击时报红字提示」）
   const stepValid1 = kind !== null;
   const stepValid2 = Boolean(token.trim() && accountId.trim());
   const stepReachable = (n: 1 | 2 | 3) => {
