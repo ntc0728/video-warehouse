@@ -48,20 +48,21 @@ test.describe('10.2 Hero 区域', () => {
     await page.goto(`/person/${TEST_PERSON_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
 
-    // 010 头像显示
+    // 010 头像显示（精确类门控：骨架占位类 person-skeleton__avatar 不算数，
+    // 模糊 [class*="avatar"] 会在骨架期假阳性放行，导致后续 aka 断言在数据未达时挂掉）
     await expect
-      .poll(async () => page.evaluate(() => !!document.querySelector('.person-avatar, [class*="avatar"]')), { timeout: 5000 })
+      .poll(async () => page.evaluate(() => !!document.querySelector('.person-avatar')), { timeout: 5000 })
       .toBeTruthy();
 
-    // 012 又名显示
-    const hasAKA = await page.evaluate(() => {
-      return !!document.querySelector('.person-aka, [class*="aka"]');
-    });
-    expect(hasAKA).toBeTruthy();
+    // 012 又名显示（poll 等数据到达，骨架期 .person-aka 不存在）
+    await expect
+      .poll(async () => page.evaluate(() => !!document.querySelector('.person-aka')), { timeout: 5000 })
+      .toBeTruthy();
 
-    // 018 返回按钮
-    const backBtn = page.locator('.person-hero-back, [class*="hero-back"]');
-    expect(await backBtn.count()).toBeGreaterThan(0);
+    // 018 返回按钮（同上 poll 等真实内容渲染）
+    await expect
+      .poll(async () => page.evaluate(() => !!document.querySelector('.person-hero-back')), { timeout: 5000 })
+      .toBeTruthy();
   });
 });
 

@@ -197,6 +197,11 @@ for (const w of VIEWPORTS) {
           },
           { id: PROBE_ID, html: c.realHtml },
         );
+        // dev 下路由 CSS（VideoCard.css / History.css 只随懒加载路由 chunk 到达），
+        // 探针注入过早会读到 grid-template-columns: none（-1）——七视口同构在 dev 形态的
+        // 批量假失败根因。此处只等「探针已着色」（列数 > 0）消除时序假失败；
+        // 真实列数是否漂移仍由下方 realCols === tokenOnReal 断言把关。
+        await expect.poll(async () => readCols(page, c.realSel), { timeout: 10000 }).toBeGreaterThan(0);
         const realCols = await readCols(page, c.realSel);
         const tokenOnReal = await readToken(page, c.token);
         await cdpShot(page, `${c.key}-${w}-real.png`);

@@ -314,16 +314,19 @@ test.describe('3.6 播放列表 Tab', () => {
 
     // 062 播放源"全部"弹框显示线路列表（拦截外部请求使非 mock 流量快速失败；CMS 搜索随后再单独放行并返回「双线路」假数据 ——
     // 单线路或空数据都不渲染「全部」按钮（index.tsx:1244：isSeries || lineCount>1 || episodeCount>1），
-    // 弹窗路径将无从验证。Playwright 后注册的 route 优先，故两条 route 的注册顺序不可颠倒）
+    // 弹窗路径将无从验证。Playwright 后注册的 route 优先，故两条 route 的注册顺序不可颠倒。
+    // ⚠️ 本守卫注册在 fixture 的 mock-tmdb 之后：对 TMDB 域必须 route.fallback()（落回先注册的
+    // mock），route.continue() 会直接出网 → 占位 token 401 → 详情页 tabs 空（DETAIL-060 假失败根因）。
     await page.route('**/*', (route) => {
       const url = route.request().url();
       if (
         url.includes('api.tmdb.org') ||
+        url.includes('image.tmdb.org') ||
         url.startsWith('http://localhost') ||
         url.startsWith('http://127.0.0.1') ||
         url.startsWith('https://127.0.0.1')
       ) {
-        return route.continue();
+        return route.fallback();
       }
       return route.abort();
     });
@@ -399,8 +402,7 @@ test.describe('3.6 播放列表 Tab', () => {
       .catch(() => false);
 
     // 源区终态二选一：有源卡（.detail-source-group）或统一提示（.detail-sources-empty）。
-    // 2026-09-30 纠偏：原断言 '.detail-source-status--err' 在实现中不存在（只有 --ok，
-    // index.tsx:1217 / Detail.css:1000）→ count 恒为 0，属永真假绿，已删除。
+    // 实现只产出 --ok 状态标记（index.tsx:1217 / Detail.css:1000），不存在 --err 变体。
     const srcGroupCount = await page.locator('.detail-source-group').count();
     if (srcGroupCount > 0) {
       // 有源卡时状态标记不得出现非「可播放」值（实现只产出 --ok）
@@ -425,9 +427,8 @@ test.describe('3.6 播放列表 Tab', () => {
     }
 
     await allBtn.click();
-    // 播放列表弹窗 = PlaylistModal（选择器基类 .playlist-modal playlist-modal--<center|sheet|drawer>）。
-    // 2026-09-30 纠偏：原 .source-all-modal* 已被 PlaylistModal 取代（PlaylistModal.tsx:750），
-    // 旧类在 Detail.css 清理后不存在 → 改用真实类名，并把「行」对应到 .playlist-cell。
+    // 播放列表弹窗 = PlaylistModal（选择器基类 .playlist-modal playlist-modal--<center|sheet|drawer>，
+    // PlaylistModal.tsx:750）。「行」对应到 .playlist-cell。
     await expect(page.locator('.playlist-modal')).toBeVisible({ timeout: 5000 });
 
     // 弹窗条目：电影渲染线路格（.playlist-cell--line），剧集渲染选集格（.playlist-cell--ep），
@@ -437,7 +438,6 @@ test.describe('3.6 播放列表 Tab', () => {
       .toBeGreaterThan(0);
 
     await page.locator('.playlist-cell').first().click({ timeout: 5000 });
-    // 2026-09-20 纠偏：原 waitForURL().catch(()=>{}) + 未使用的 onPlayer = 零断言悬挂段。
     // 「弹窗条目 → 进播放器」是产品契约（点击走 Link/handleCellClick → onPlayLine/onPlayEpisode → navigate），
     // CMS 数据已被 hermetic mock 固定，故改为硬断言。
     await expect(page).toHaveURL(/\/play\//, { timeout: 10000 });

@@ -86,7 +86,7 @@ test.describe('11.3 IPTV 播放独立逻辑', () => {
 // 11.4 播放页 chrome 尺寸契约（2026-09-10 落地）
 //   覆盖：OSD 宽度单曲线 / OSD 左右翼等宽与控件居中 / 控件行不裁切
 //        / 「音轨」恒显示 / 频道列表一级栏内容派生宽度 + 窄屏档
-//   口径说明见 docs/agents/patterns.md「IPTV 播放页 chrome」段。
+//   口径：chrome 几何以真实页同源 token / 曲线为基准断言。
 // ═══════════════════════════════════════════════════════════════
 
 /** 读 OSD 与控件行的几何量（全在页内跑，避免多次 round-trip 拿到不一致的快照） */
@@ -202,19 +202,19 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
   });
 
   test('IPTVP-022: 「音轨」恒显示（无音轨时也在）+ 窄屏只留图标且不裁切', async ({ page }) => {
-    // 桌面：4 个控件按钮（列表 / 节目单 / 换源 / 音轨）
+    // 桌面：5 个控件按钮（列表 / 节目单 / 收藏 / 换源 / 音轨）
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/iptv/play?url=test', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 10000 });
-    await expect.poll(async () => (await readOsd(page))?.ctrlBtnCount ?? 0, { timeout: 10000 }).toBe(4);
+    await expect.poll(async () => (await readOsd(page))?.ctrlBtnCount ?? 0, { timeout: 10000 }).toBe(5);
     // 桌面显示文字标签
     expect((await readOsd(page))!.ctrlLabelShown).toBe(true);
 
-    // 375：控件收成纯图标（4 个带文字按钮需 ~200px，中列只有 ~163px）
+    // 375：控件收成纯图标（5 个带文字按钮超出中列宽度）
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/iptv/play?url=test', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.iptv-osd-bar')).toBeAttached({ timeout: 10000 });
-    await expect.poll(async () => (await readOsd(page))?.ctrlBtnCount ?? 0, { timeout: 10000 }).toBe(4);
+    await expect.poll(async () => (await readOsd(page))?.ctrlBtnCount ?? 0, { timeout: 10000 }).toBe(5);
     const m = await readOsd(page);
     expect(m!.ctrlLabelShown).toBe(false);
     expect(m!.ctrlScrollOverflow).toBeLessThanOrEqual(0);
@@ -236,8 +236,7 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
     await expect.poll(async () => (await readChannelList(page))?.groupW ?? 0, { timeout: 10000 }).toBeGreaterThan(50);
     let m = await readChannelList(page);
     expect(m!.groupW).toBeGreaterThan(130);
-    // 2026-09-20：hermetic mock 数据档实测 136px（旧 132±2 档系真实 cn.m3u 内容校准的
-    // 经验值）；契约不变——按内容定宽且明显小于面板 50%，见下 channelW 相对断言。
+    // hermetic mock 数据档实测 136px；契约——按内容定宽且明显小于面板 50%，见下 channelW 相对断言。
     expect(m!.groupW).toBeLessThan(140);
     // 二级栏吃剩余：必须明显宽于一级栏（改前两者都是 222.3，相等）
     expect(m!.channelW).toBeGreaterThan(m!.groupW * 1.8);

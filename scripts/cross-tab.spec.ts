@@ -1,5 +1,5 @@
 /**
- * 跨页签实时同步回归（2026-09-09 合并自 collection/user/iptv/settings 四个 cross-tab 单例）
+ * 跨页签实时同步回归
  * 4 条用例各自覆盖一条跨页签链路（均为真实回归锁，用同 context 双 page 复现）：
  *  - COL-CROSS-001  收藏去重（IndexedDB 确定性主键幂等，旧随机主键实现下并发收藏必出双记录）
  *  - USER-CROSS-001 收藏/历史 BroadcastChannel 内存快照实时刷新（双向 + 自过滤 + 脏进度保护）
@@ -311,8 +311,10 @@ test('IPTV-CROSS-001: localStorage storage 事件 → 另一页签 IPTV 收藏/�
       __iptv: { getState(): { setChannels(c: Array<{ id: string; name: string; group?: string; logo?: string }>): void } }
     }).__iptv;
     iptv.getState().setChannels([
-      { id: 'iptv-cross-ch-1', name: 'CrossTab-1', group: '测试' },
-      { id: 'iptv-cross-ch-2', name: 'CrossTab-2', group: '测试' },
+      // url 必填：recordPlay 的 url 快照走 buildChannelPlayUrl(channel.url)，缺 url 会在
+      // detectVideoSourceType(undefined) 上 toLowerCase TypeError
+      { id: 'iptv-cross-ch-1', name: 'CrossTab-1', group: '测试', url: 'http://example.com/live/crosstab-1.m3u8' },
+      { id: 'iptv-cross-ch-2', name: 'CrossTab-2', group: '测试', url: 'http://example.com/live/crosstab-2.m3u8' },
     ]);
   });
 
@@ -336,8 +338,14 @@ test('IPTV-CROSS-001: localStorage storage 事件 → 另一页签 IPTV 收藏/�
 
   // 5. B 页签 recordPlay（播放历史）→ A 页签播放历史实时出现
   await page2.evaluate((cid) => {
-    const iptv = (window as unknown as { __iptv: { getState(): { recordPlay(c: string): void } } }).__iptv;
-    iptv.getState().recordPlay(cid);
+    // recordPlay 自 e31dea2 起接收频道对象（含 url 快照，供 ID 漂移恢复）；
+    // 从已加载频道里按 id 取对象传入（旧版传 id 字符串会在 buildChannelPlayUrl 里
+    // 对 undefined url 调 toLowerCase 直接 TypeError）。
+    const iptv = (window as unknown as {
+      __iptv: { getState(): { recordPlay(c: { id: string; name: string }): void; channels: Array<{ id: string; name: string }> } }
+    }).__iptv;
+    const ch = iptv.getState().channels.find((c) => c.id === cid);
+    if (ch) iptv.getState().recordPlay(ch);
   }, CH_HIST);
   await expect.poll(() => page.evaluate(() => {
     const iptv = (window as unknown as { __iptv?: { getState(): { playHistory: Array<{ channelId: string }> } } }).__iptv;

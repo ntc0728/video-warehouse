@@ -327,10 +327,10 @@ say(`:${PORT} HTTP 就绪（${readyMs}ms）`);
 
 // ─── d. 跑 Playwright（封顶，必退）───────────────────────
 // 多阶段并行时产物目录按阶段隔离（防 globalTeardown rm -rf 互清附件）
-const outDir = process.env.E2E_SUITE_STAGE ? `.pw-out-${process.env.E2E_SUITE_STAGE}` : 'test-results';
+const outDir = process.env.E2E_OUTPUT_DIR || process.env.E2E_SUITE_STAGE ? (process.env.E2E_OUTPUT_DIR || `.pw-out-${process.env.E2E_SUITE_STAGE}`) : 'test-results';
 
 // 全量时把 /play 系 spec（CMS mock + 代理链路）拆成独立批次串行执行：
-// 这组 spec 互相并发会把代理打满 → 播放器挂载超时（player.spec 头部注释、YER-094 全量实测）。
+// 这组 spec 互相并发会把代理打满 → 播放器挂载超时（player.spec 头部注释、全量并发压测实测）。
 // 批次内仍可用多 worker；批次间共享同一 server 与同一份预算（deadline）。
 /** /play 系 spec（CMS mock + 代理链路）识别：全量时单独成批串行 */
 const isPlayerChainSpec = (f) =>
@@ -342,8 +342,10 @@ let fullBatches = null;
 if (FULL) {
   const allSpecs = collectAllSpecFiles();
   const playerSpecs = allSpecs.filter(isPlayerChainSpec);
-  // cross-tab.spec 依赖 /src 源码动态导入（挂 store 到 window），仅 dev 可跑：preview 批次排除
-  const otherSpecs = allSpecs.filter((f) => !isPlayerChainSpec(f) && !f.endsWith('cross-tab.spec.ts'));
+  // cross-tab.spec 依赖 /src 源码动态导入（挂 store 到 window），仅 dev 可跑：
+  // 非 dev 形态（preview 全量 / e2e-suite 阶段 B）排除；dev 批次必须包含，
+  // 否则默认套 A 段静默漏跑。
+  const otherSpecs = allSpecs.filter((f) => !isPlayerChainSpec(f) && (!f.endsWith('cross-tab.spec.ts') || USE_DEV));
   fullBatches = [];
   if (otherSpecs.length > 0) fullBatches.push({ files: otherSpecs, workers: WORKERS });
   if (playerSpecs.length > 0) fullBatches.push({ files: playerSpecs, workers: 1 });
