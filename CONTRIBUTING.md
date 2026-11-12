@@ -69,7 +69,7 @@ docs: 更新 README 的部署说明
   pnpm test:e2e:skeleton     # skeleton + boot-splash
   pnpm test:e2e:boot-iso     # boot-splash-iso
   ```
-- **全量 E2E**（`pnpm test:e2e` / `e2e-skeleton.mjs --all`）**未经负责人明确允许不得运行**。
+- **全量 E2E**（`pnpm test:e2e` / `e2e-skeleton.mjs --all`）耗时较长（全仓 249 条），提交改动请优先精准跑受影响的 spec，全量留给发版回归。
 - 单步等待/超时一律 ≤10s；改动测试映射或增删用例后必须跑 `pnpm test:count` 校验一致性。
 - 单元测试：`pnpm test`。
 

@@ -22,7 +22,7 @@
 - **响应式设计** - 完美适配手机、平板、桌面和 TV 大屏
 - **TV 端适配** - 支持 WebOS、Tizen、Roku、Apple TV、PlayStation、Xbox、Google TV
 - **播放历史** - 自动记录播放历史，支持快速继续观看
-- **收藏管理** - 影片和 IPTV 频道收藏，云端同步
+- **收藏管理** - 影片和 IPTV 频道收藏，支持备份导出 / 导入
 
 ### 技术亮点
 - **流体设计系统** - 基于 CSS 变量的 Design Token，375px-3840px 全覆盖
@@ -31,7 +31,7 @@
 - **离线缓存** - IndexedDB 本地缓存（idb），提升二次加载速度
 - **代理转发** - Cloudflare Worker 代理 M3U8/TS/DASH 流，解决跨域问题
 - **网络质量感知** - 实时评估网络质量，自适应码率切换
-- **统一响应式卡片布局** - 卡片网格列数全局收敛为 2/3/5，IPTV 骨架与真实网格对齐；TV 模式顶部导航直达 IPTV
+- **响应式卡片网格** - 列数按断点自适应（2/3/5 列），IPTV 骨架与真实网格对齐；TV 模式顶部导航直达 IPTV
 
 ## 技术栈
 
@@ -73,7 +73,7 @@
 - 图标经 `Icon` 组件（`size` 为档名 xs/sm/md/lg/xl/2xl/3xl）或 `--icon-*` token，且 `--icon-*` 必须 `calc(var(--text-<档>) * 系数)` 派生自文字 token，与 `--text-*` 共享同一条 vw 缩放曲线（TV 端改 `[data-device="tv"]` 覆盖 `--text-*` 后图标/布局自动跟随放大）
 - 布局 / 间距 / 字号经 `--space-*` / `--text-*` / `--layout-*` token
 - **例外（允许保留字面量，属逻辑阈值而非视觉尺寸）**：媒体查询断点、`IntersectionObserver` 的 `rootMargin`、`<img sizes>` 响应式提示、`sr-only` 的 `1px` hack、`window.innerWidth` 列数兜底
-- 去硬编码统一用 `scripts/css-px-to-token.mjs` 自动替换，再人工核对 token 语义边界（严禁把跨语义尺寸硬压进同一档）
+- 新增样式时优先复用既有 token，避免把跨语义尺寸硬压进同一档
 - **焦点框与设备交互**：非 TV 设备（桌面 / 移动端 Web / App，`data-device` 非 `"tv"`）全局清零键盘焦点框（`:focus-visible { outline:none; box-shadow:none }`），焦点可见性交由 hover / 可见性提示；TV 端（`[data-device="tv"]`）保留显式焦点框供遥控器导航。交互元素（如 TMDB 行左右箭头）的显隐、留白、图标↔标题间距等视觉细节一律走对应 token，禁止硬编码。
 
 ## 项目结构
@@ -101,7 +101,7 @@ video-warehouse/
 │   │   ├── Collections/     # 收藏页
 │   │   └── History/         # 历史记录
 │   ├── services/            # 服务层（API、数据库）
-│   ├── stores/              # Zustand 状态管理（index.ts 导出 7 个 store；useSourceManagerStore/useHomeCategoryStore/usePageSearchStore 按需直接导入）
+│   ├── stores/              # Zustand 状态管理（index.ts 统一导出；useSourceManagerStore/usePageSearchStore 按需直接导入）
 │   ├── types/               # TypeScript 类型定义
 │   ├── test/                # 测试工具（setup + custom render）
 │   └── lib/                 # 工具函数
@@ -126,6 +126,17 @@ node scripts/fetch-diagram-data.mjs
 TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs
 ```
 
+### 数据源格式
+
+视频采集站使用苹果 CMS V10 API，播放地址字段 `vod_play_url` 为三层分隔的编码串：
+
+```
+线路1$第1集$http://example.com/ep1.m3u8#第2集$http://example.com/ep2.m3u8$$$线路2$第1集$http://example2.com/ep1.m3u8
+```
+
+- `$$$` 分隔播放线路，`#` 分隔剧集，`$` 分隔集标题与 URL
+- URL 后缀决定播放适配器：`.m3u8` → HLS（hls.js）、`.mpd` → DASH（dash.js）、其他 → 原生播放
+
 ### 代理配置
 
 | 代理 | URL | 用途 |
@@ -138,16 +149,18 @@ TMDB_TOKEN=xxx node scripts/fetch-diagram-data.mjs
 
 ### 环境要求
 - Node.js >= 18
-- npm >= 9
+- pnpm >= 10
+
+> ⚠️ 仓库只提交 `pnpm-lock.yaml`、没有 `package-lock.json`，请勿用 `npm install`（会拉到不同的依赖树）。
 
 ### 安装依赖
 ```bash
-npm install
+pnpm install --frozen-lockfile
 ```
 
 ### 启动开发服务器
 ```bash
-npm run dev
+pnpm dev
 ```
 
 访问 http://127.0.0.1:3001
@@ -176,12 +189,12 @@ npx wrangler login
 #### 部署前端
 ```bash
 # 一键构建并部署到 Cloudflare Pages
-npm run deploy:pages
+pnpm run deploy:pages
 ```
 
 执行流程：
-1. `npm run build` - 构建生产版本（TypeScript 编译 + Vite 构建）
-2. `npx wrangler pages deploy dist --project-name video-warehouse` - 部署到 Pages
+1. `pnpm run build` - 构建生产版本（TypeScript 编译 + Vite 构建）
+2. `pnpm dlx wrangler pages deploy dist --project-name video-warehouse` - 部署到 Pages
 
 部署完成后，访问 `https://video-warehouse.pages.dev`
 
@@ -190,7 +203,7 @@ npm run deploy:pages
 #### M3U8 流代理（用于 IPTV 直播）
 ```bash
 # 部署 M3U8 代理 Worker
-npm run deploy:worker
+pnpm run deploy:worker
 ```
 
 部署 `worker/m3u8-proxy.js` 到 Cloudflare Workers，用于：
@@ -201,7 +214,7 @@ npm run deploy:worker
 #### CORS 代理（用于视频源 API）
 ```bash
 # 部署 CORS 代理 Worker（worker/cors-proxy.js + wrangler-cors.toml）
-npm run deploy:cors
+pnpm run deploy:cors
 ```
 
 部署 `worker/cors-proxy.js`，用于：
@@ -250,13 +263,10 @@ APK 输出位置：
 #### 其他 Android 命令
 ```bash
 # 一键构建（CAPACITOR=true 构建 + 同步到 Android）
-npm run build:android
+pnpm run build:android
 
 # 在 Android Studio 中打开项目
-npm run open:android
-
-# 生成应用图标（需要 sharp）
-npm run icons:android
+pnpm run open:android
 ```
 
 ## 开发命令
@@ -264,66 +274,47 @@ npm run icons:android
 ### 代码质量
 ```bash
 # 完整检查（推荐提交前运行）
-npm run lint:all
+pnpm run lint:all
 
 # 单独检查
-npm run lint          # ESLint 检查
-npm run lint:css      # Stylelint 检查
+pnpm run lint          # ESLint 检查
+pnpm run lint:css      # Stylelint 检查
 
 # 自动修复
-npm run lint:fix      # 修复 ESLint 问题
-npm run lint:css:fix  # 修复 CSS 问题
+pnpm run lint:fix      # 修复 ESLint 问题
+pnpm run lint:css:fix  # 修复 CSS 问题
 ```
 
 ### 测试
 ```bash
-npm run test           # Vitest 单元测试（单次运行）
-npm run test:watch     # Vitest 监听模式
-npm run test:coverage  # Vitest + 覆盖率报告
-npm run test:e2e       # E2E 默认套（两阶段 A dev 行为 + B preview 播放器；自建 server，无需先起 dev）
-npm run test:changed   # E2E 增量（按「未提交改动」跑相关 spec）
-npm run test:count     # 用例计数 / 测试映射一致性报告（不跑浏览器，1–2s）
+pnpm test              # Vitest 单元测试（单次运行）
+pnpm run test:watch     # Vitest 监听模式
+pnpm run test:coverage  # Vitest + 覆盖率报告
+pnpm run test:e2e       # E2E 默认套（两阶段 A dev 行为 + B preview 播放器；自建 server，无需先起 dev）
+pnpm run test:changed   # E2E 增量（按「未提交改动」跑相关 spec，Windows / PowerShell）
+pnpm run test:count     # 用例计数 / 测试映射一致性报告（不跑浏览器，1–2s）
 # ⚠️ 只有 `npx playwright test --list`（校准用例数）可以裸跑；
-#    实跑一律走 npm run test:e2e / e2e-skeleton.mjs / e2e-suite.mjs，否则会留孤儿 vite 且进程不返回。
+#    实跑一律走 pnpm run test:e2e / e2e-skeleton.mjs / e2e-suite.mjs，否则会留孤儿 vite 且进程不返回。
 ```
 
 ### 构建与预览
 ```bash
-npm run build         # 构建生产版本
-npm run preview       # 本地预览生产版本
+pnpm run build         # 构建生产版本
+pnpm run preview       # 本地预览生产版本
 ```
 
 ## 设计系统
 
 ### Design Tokens
-所有设计变量定义在 `src/assets/styles/variables.css`，采用流体 `clamp()` 实现 375px-3840px 全覆盖：
+所有设计变量定义在 `src/assets/styles/variables.css`，间距 / 圆角采用流体 `clamp()` 实现 375px-3840px 全覆盖，并统一乘以 `--ui-scale`（界面缩放）与 `--type-scale`（字号缩档）两个调节变量。示例：
 
 ```css
-/* 间距（375px 基准 → 768px 冻结，COEFF = (MAX-MIN)/393，PREF = MIN - COEFF·375） */
---space-3xs:    clamp(1px, 0.0029rem + 0.0025vw, 2px);    /* 1→2   */
---space-2xs:    clamp(1px, -0.0568rem + 0.0051vw, 3px);   /* 1→3   */
---space-xs:     clamp(3px, 0.0086rem + 0.0076vw, 6px);    /* 3→6   */
---space-xs-plus: clamp(4px, 0.0115rem + 0.0102vw, 8px);   /* 4→8   */
---space-sm:     clamp(6px, 0.0172rem + 0.0153vw, 12px);   /* 6→12  */
---space-md:     clamp(8px, -0.0964rem + 0.0254vw, 18px);  /* 8→18  */
---space-lg:     clamp(12px, -0.2042rem + 0.0407vw, 28px); /* 12→28 */
---space-lg-xl:  clamp(14px, -0.3181rem + 0.0509vw, 34px); /* 14→34 lg↔xl 过渡档（分类快选 gap 等） */
---space-xl:     clamp(16px, -0.4313rem + 0.0611vw, 40px); /* 16→40 */
---space-2xl:    clamp(24px, -0.4084rem + 0.0814vw, 56px); /* 24→56 */
---space-3xl:    clamp(32px, -0.8626rem + 0.1221vw, 80px); /* 32→80 */
-
-/* 字号 */
---text-xs: 12px;
---text-sm: 13px;
---text-base: 14px;
---text-lg: 16px;
---text-xl: 18px;
-
-/* 圆角 */
---radius-sm: clamp(3px, 0.168rem + 0.043vw, 5px);
---radius-md: clamp(6px, 0.356rem + 0.087vw, 10px);
---radius-full: 9999px;  /* 胶囊专用 */
+--text-xs:   calc(12px * var(--ui-scale) * var(--type-scale));
+--space-md:  calc(clamp(8px, 6.5687px + 0.38168vw, 9.5px) * var(--ui-scale));  /* 8→9.5→12.5 */
+--radius-md: calc(clamp(6px, 3.455px + 0.679vw, 8.667px) * var(--ui-scale));   /* 6→10 */
 ```
+
+> token 取值以 `variables.css` 为准，本文档只示意约定，不复制完整 token 表（避免两处漂移）。
 
 ### 响应式断点
 | 断点 | 宽度 | 设备 |
@@ -338,12 +329,12 @@ npm run preview       # 本地预览生产版本
 
 ## 浏览器支持
 
-- Chrome >= 90
-- Firefox >= 88
-- Safari >= 14
-- Edge >= 90
+- Chrome >= 87
+- Firefox >= 78
+- Safari >= 14（含 iOS Safari）
+- Edge >= 88
 - WebOS / Tizen / Roku / Apple TV / PlayStation / Xbox / Google TV
 
 ## 许可证
 
-MIT License
+[MIT](./LICENSE)

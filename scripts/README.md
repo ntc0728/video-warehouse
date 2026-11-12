@@ -34,16 +34,16 @@
 | `boot-splash-iso.spec.ts` | 七视口同构（按需 boot-iso） | `七视口同构 @375/768/1024/1280/1440/1920/2560px` × home/browse/collections 等 | 42 |
 | `boot-splash-shots.spec.ts` | 骨架截图取证（按需 shots） | 多主题/多视口截图 + 摘除验证（人工核查，不进默认套） | 29 |
 
-> **上表用例数由 `npm run test:count` 统计**（`npx playwright test --list`），全仓合计 **246 条 / 22 spec**。
-> **唯一事实源 = `npm run test:count`**（测试映射文档的生成块与之一致，由 `lint:test-map` 校验）；
-> 加删用例后请重跑 `npm run test:count -- --write`，**不要手改上面任何一个数字**。
+> **上表用例数由 `pnpm run test:count` 统计**（`npx playwright test --list`），全仓合计 **249 条 / 22 spec**。
+> **唯一事实源 = `pnpm run test:count`**（测试映射文档的生成块与之一致，由 `lint:test-map` 校验）；
+> 加删用例后请重跑 `pnpm run test:count -- --write`，**不要手改上面任何一个数字**。
 
 ### 测试辅助工具
 
 | 文件 | 说明 |
 |------|------|
 | `global-setup.ts` | Playwright 全局设置（注入 TMDB Token / CORS 代理 / IPTV 代理） |
-| `test-count-report.mjs` | **用例计数 / 测试映射一致性报告**（不启浏览器，1–2s）。`--check` 校验五项：映射引用的 spec 存在 / pattern 基路径存在 / grep 每个 `\|` 片段真命中 / 档位恒等式 / 测试映射文档生成块未过期（= `npm run lint:test-map`，已入 `lint:all` 第 7 门）；`--write` 把生成块写回测试映射文档 |
+| `test-count-report.mjs` | **用例计数 / 测试映射一致性报告**（不启浏览器，1–2s）。`--check` 校验五项：映射引用的 spec 存在 / pattern 基路径存在 / grep 每个 `\|` 片段真命中 / 档位恒等式 / 测试映射文档生成块未过期（= `pnpm run lint:test-map`，已入 `lint:all` 第 7 门）；`--write` 把生成块写回测试映射文档 |
 | `run-tests.ps1` | 增量测试运行（按「未提交改动」自动跑对应 spec；命中 >3 spec 需 -Full 放行；playwright 段委派 `e2e-skeleton.mjs --dev`，带 -Budget 封顶） |
 | `e2e-skeleton.mjs` | **全仓唯一跑 playwright 的入口**（自建 server + HTTP 200 探活 + 预算封顶 + 进程树收尾）；`test:e2e:*` / `e2e-suite.mjs` 各阶段 / `run-tests.ps1` 增量档共用。**别裸调 `playwright test`**（config 的 webServer 经 shell 启动，收尾会留孤儿 vite） |
 | `e2e-suite.mjs` | 全量编排（Stage A dev 行为套 + Stage B preview 播放器），两段串跑并 merge blob 报告 |
@@ -62,41 +62,37 @@
 
 | 修改路径 | 运行测试 |
 |----------|----------|
-| `src/pages/Home/**` | `npx playwright test scripts/home.spec.ts` |
-| `src/pages/Detail/**` | `npx playwright test scripts/detail.spec.ts scripts/regression.spec.ts` |
-| `src/pages/Settings/**` | `npx playwright test scripts/settings.spec.ts` |
-| `src/pages/Browse/**` | `npx playwright test scripts/browse.spec.ts` |
-| `src/pages/Collections/**` | `npx playwright test scripts/collections.spec.ts` |
-| `src/pages/History/**` | `npx playwright test scripts/history.spec.ts` |
-| `src/pages/IPTV/**` | `npx playwright test scripts/iptv.spec.ts scripts/iptv-player.spec.ts` |
-| `src/pages/Player/**` | `npx playwright test scripts/player.spec.ts` |
-| `src/pages/SourceChecker/**` | `npx playwright test scripts/source-checker.spec.ts` |
-| `src/pages/Person/**` | `npx playwright test scripts/person.spec.ts` |
-| `src/components/UniversalPlayer/**` | `npx playwright test scripts/player.spec.ts scripts/iptv-player.spec.ts` |
-| `src/components/RecordShell/**` | `npx playwright test scripts/collections.spec.ts scripts/history.spec.ts` |
-| `src/stores/**` | `npm test`（vitest 单元测试） |
-| `src/hooks/**` | `npm test`（vitest 单元测试） |
-| `src/components/Layout/**` | `npx playwright test scripts/cross-tab.spec.ts scripts/home.spec.ts scripts/browse.spec.ts` |
+| `src/pages/Home/**` | `node scripts/e2e-skeleton.mjs scripts/home.spec.ts` |
+| `src/pages/Detail/**` | `node scripts/e2e-skeleton.mjs scripts/detail.spec.ts scripts/regression.spec.ts` |
+| `src/pages/Settings/**` | `node scripts/e2e-skeleton.mjs scripts/settings.spec.ts` |
+| `src/pages/Browse/**` | `node scripts/e2e-skeleton.mjs scripts/browse.spec.ts` |
+| `src/pages/Collections/**` | `node scripts/e2e-skeleton.mjs scripts/collections.spec.ts` |
+| `src/pages/History/**` | `node scripts/e2e-skeleton.mjs scripts/history.spec.ts` |
+| `src/pages/IPTV/**` | `node scripts/e2e-skeleton.mjs scripts/iptv.spec.ts scripts/iptv-player.spec.ts` |
+| `src/pages/Player/**` | `node scripts/e2e-skeleton.mjs scripts/player.spec.ts` |
+| `src/pages/SourceChecker/**` | `node scripts/e2e-skeleton.mjs scripts/source-checker.spec.ts` |
+| `src/pages/Person/**` | `node scripts/e2e-skeleton.mjs scripts/person.spec.ts` |
+| `src/components/UniversalPlayer/**` | `node scripts/e2e-skeleton.mjs scripts/player.spec.ts scripts/iptv-player.spec.ts` |
+| `src/components/RecordShell/**` | `node scripts/e2e-skeleton.mjs scripts/collections.spec.ts scripts/history.spec.ts` |
+| `src/stores/**` | `pnpm test`（vitest 单元测试） |
+| `src/hooks/**` | `pnpm test`（vitest 单元测试） |
+| `src/components/Layout/**` | `node scripts/e2e-skeleton.mjs scripts/cross-tab.spec.ts scripts/home.spec.ts scripts/browse.spec.ts` |
 
-### 全量测试（提交代码前）
+### 全量测试（发版回归）
 
-提交代码前必须运行全量测试：
+日常提交请按「增量测试规则」精准跑受影响的 spec；全量留给发版回归：
 
 ```bash
-# 日常提交（mock 模式）
-npm run lint:all && npx playwright test scripts/
+# 日常回归（mock 模式）
+pnpm run lint:all && pnpm run test:e2e
 
 # 发版回归（真实 API 模式）
-npm run lint:all && TMDB_MOCK=false npx playwright test scripts/
+pnpm run lint:all && TMDB_MOCK=false pnpm run test:e2e
 ```
 
 ### 测试前置条件
 
-Playwright 测试需要开发服务器运行：
-
-```bash
-npm run dev  # 端口 3001
-```
+无需先手动启动开发服务器：`test:e2e` / `e2e-skeleton.mjs` 会自建 server 并做健康轮询、超时封顶与进程收尾。
 
 ## 测试环境配置
 
@@ -118,9 +114,9 @@ npm run dev  # 端口 3001
 
 | 模式 | 命令 | 用途 | Token 风险 |
 |------|------|------|-----------|
-| **默认套**（mock，推荐） | `npm run test:e2e` | 日常全量（A dev 行为 + B preview 播放器，串行 ≤300s） | 无（不调用真实 API） |
+| **默认套**（mock，推荐） | `pnpm run test:e2e` | 日常全量（A dev 行为 + B preview 播放器，串行 ≤300s） | 无（不调用真实 API） |
 | 单 spec 调试 | `node scripts/e2e-suite.mjs --only <spec> [-g 子串] [--dev]` | 开发中定位 | 无 |
-| **真实 API 模式** | `TMDB_MOCK=false npm run test:e2e` | 发版前回归 | 有（调用真实 API） |
+| **真实 API 模式** | `TMDB_MOCK=false pnpm run test:e2e` | 发版前回归 | 有（调用真实 API） |
 
 > ⚠️ **不要裸跑 `npx playwright test`**（除了 `--list` 校准用例数）：没有清场/健康轮询，
 > 僵尸 dev server 会把每条 `goto` 耗满超时；且 `webServer.command` 是字符串，Windows 下经 shell 启动，
@@ -130,27 +126,27 @@ npm run dev  # 端口 3001
 
 ```bash
 # 日常全量（默认 mock，保护 Token）
-npm run test:e2e
+pnpm run test:e2e
 
 # 按需档（不进默认套，显式跑）
-npm run test:e2e:skeleton     # 骨架契约 + 启动骨架（39 条）
-npm run test:e2e:boot-iso     # 七视口同构（42 条）
-npm run test:e2e:subpages     # 设置页子页 source-checker / proxy-setup（4 条）
-npm run test:e2e:shots        # 启动骨架截图取证（29 条，人工核查）
+pnpm run test:e2e:skeleton     # 骨架契约 + 启动骨架（38 条）
+pnpm run test:e2e:boot-iso     # 七视口同构（42 条）
+pnpm run test:e2e:subpages     # 设置页子页 source-checker / proxy-setup（4 条）
+pnpm run test:e2e:shots        # 启动骨架截图取证（29 条，人工核查）
 
 # 发版前回归（关闭 mock，验证真实 API）
-TMDB_MOCK=false npm run test:e2e
+TMDB_MOCK=false pnpm run test:e2e
 
 # 计数 / 映射一致性（不跑浏览器）
-npm run test:count                     # 报告 + 校验
-npm run test:count -- --write          # 同步测试映射文档生成块
-npm run lint:test-map                  # 只校验（lint:all 第 7 门）
+pnpm run test:count                     # 报告 + 校验
+pnpm run test:count -- --write          # 同步测试映射文档生成块
+pnpm run lint:test-map                  # 只校验（lint:all 第 7 门）
 
 # 用 run-tests.ps1 增量测试
 .\scripts\run-tests.ps1                    # mock 模式（默认；自动侦测「未提交改动」）
 .\scripts\run-tests.ps1 -Since HEAD~1      # 相对某 ref 的改动
 .\scripts\run-tests.ps1 -Budget 60         # 收紧单轮墙钟预算（默认增量 180s / -Full 1200s，到点击杀退码 2）
-.\scripts\run-tests.ps1 -Full -Retries 2 -Group regression   # 发版回归档（13 spec / 121 条）
+.\scripts\run-tests.ps1 -Full -Retries 2 -Group regression   # 发版回归档（13 spec / 125 条）
 .\scripts\run-tests.ps1 -RealApi           # 真实 API 模式
 # 注：自动侦测命中 >3 个 spec 会 exit 2 拦下（防无感受跑全量回归）；要跑请显式 -Full
 # 注：playwright 段由 scripts/e2e-skeleton.mjs --dev 代跑（自建 server + 探活 + 预算封顶 + 进程树收尾）
@@ -176,7 +172,7 @@ npm run lint:test-map                  # 只校验（lint:all 第 7 门）
 | 页面测试 | `<page-name>.spec.ts` | `home.spec.ts` |
 | 交叉测试 | `cross-tab.spec.ts` | 页面跳转交互 |
 | 构建脚本 | `build-*.ps1` | `build-android.ps1` |
-| 工具脚本 | `*.mjs` / `*.ps1` | `css-px-to-token.mjs` |
+| 工具脚本 | `*.mjs` / `*.ps1` | `optimize-deps.mjs` |
 
 ## 测试脚本编写规范
 
@@ -197,4 +193,4 @@ npm run lint:test-map                  # 只校验（lint:all 第 7 门）
 - 临时调试/验证脚本执行成功后应立即删除
 - 仅保留覆盖项目整体行为的功能测试脚本
 - 新增脚本需遵循上述命名规范
-- 运行测试：`npx playwright test scripts/<test-name>.spec.ts`
+- 运行测试：`node scripts/e2e-skeleton.mjs scripts/<test-name>.spec.ts`
