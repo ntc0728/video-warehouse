@@ -1,5 +1,88 @@
 # Changelog
 
+## [2.2.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v2.1.0...kinotv-v2.2.0) (2026-11-12)
+
+
+### Features
+
+* **chart:** 移动端封面统一横版 16:9（真实行 + 骨架） ([cef925f](https://github.com/ntc0728/video-warehouse/commit/cef925fd85a343f79ce92644c16305495a288528))
+* **cms:** 按媒体类型过滤同名条目——vod_play_url 形态判 movie/tv（形态未知不淘汰、无候选回退）；单源搜索启用 year 加分；面板隐藏无数据源 ([f3694af](https://github.com/ntc0728/video-warehouse/commit/f3694af3a591709f1db358233747f95e7be8c192))
+* **cms:** 特别篇归入「季 0（特别篇）」桶——不再被静默过滤/错标第 1 季 ([8bb1c24](https://github.com/ntc0728/video-warehouse/commit/8bb1c24324799c1260be222cde22be340004cdce))
+* **detail:** 进入详情页显式传递媒体类型——新增 resolveMediaType，列表/榜单/banner 入口写 location.state.mediaType，详情页优先读 state 回退 id 前缀 ([2083047](https://github.com/ntc0728/video-warehouse/commit/20830478c9321a84812d0e77346c4edda3918938))
+* **home:** banner 空态（暂无推荐）标题右侧新增重试按钮 ([ea3780b](https://github.com/ntc0728/video-warehouse/commit/ea3780b29a8fd95c06495901478b17fb0b5e2b4c))
+* **home:** banner 空态品牌占位 + 栏目错误行刷新重试 ([7f02b1c](https://github.com/ntc0728/video-warehouse/commit/7f02b1c93ef0dc99a48f9ff300ec689ed55470f8))
+* **iptv:** IPTVPlayRecord 加 sourceId/url 快照——recordPlay 改接收频道对象（更多台未加载也可入史），恢复时按快照识别 ID 漂移（id 命中但流地址不一致用快照恢复），历史 join 快照兜底 ([e31dea2](https://github.com/ntc0728/video-warehouse/commit/e31dea2b0560a8adbba37051c748bd51e710ce23))
+* **iptv:** OSD 增加频道收藏按钮——收藏态回显（心形填充）+ 播放页内可直接收藏/取消 ([de25430](https://github.com/ntc0728/video-warehouse/commit/de25430a0efc03276376b31fb5873f0e7068c5dc))
+* **iptv:** P2——编码口径统一为单层；频道下架的历史记录拦截并弹窗说明；收藏区提示已下架频道数；guard 支持自定义文案 ([f03dbca](https://github.com/ntc0728/video-warehouse/commit/f03dbca76689cdd0a3836f7bffbcc6736e851f50))
+* **iptv:** 列表页增加「上次观看」快捷入口——取播放历史首条（频道仍在列表时），桌面/移动双布局 ([bb9bc14](https://github.com/ntc0728/video-warehouse/commit/bb9bc14722ad86fc6ab16931c5f06bd88811bc71))
+* **iptv:** 换线候选改同名频道全集（含自身）、OSD 线路号修正；超时先自愈换下一条线路，错误层增加「换一条线路」按钮 ([befe52b](https://github.com/ntc0728/video-warehouse/commit/befe52bbb9b90facb361b45b757b74b9a01d42d2))
+* **nav:** 移动抽屉搜索中心下方新增「热度榜」入口 ([27ac1e4](https://github.com/ntc0728/video-warehouse/commit/27ac1e4e65e1318c5d10043d31b57af7c6dcf8ca))
+* **player:** TV 分支加单条兜底——CMS 未按季拆分时整剧作第 1 季（与详情页降级同口径），修复「详情可播、播放页无数据」；明确只有特别篇时默认播特别篇 ([4c0ca97](https://github.com/ntc0728/video-warehouse/commit/4c0ca97e392892ca855844ad131a9709cede0435))
+* **player:** 切源提示统一——抑制「已切换到&lt;线路名&gt;」toast，改由续播卡显示带 CMS 源名的「已切换到「X」」；续播卡换源说明存在时不再弹线路提示（防竞态） ([74a2728](https://github.com/ntc0728/video-warehouse/commit/74a2728c52769e9363874cea7de691c04c9c3828))
+* **player手势:** 横滑 seek 改 6s 步进（每 24px 一档，与长按同口径）；seek 提示图标 33→24px、底色统一 0.6+blur ([167514c](https://github.com/ntc0728/video-warehouse/commit/167514c0874e05e86c2d4c981c10feea085745b7))
+* **player:** 播放器 header 标题 = 剧名 + 季名 + 选集名；恢复匹配只信任裸集号 ([05b4b4f](https://github.com/ntc0728/video-warehouse/commit/05b4b4f0b72623fb658917ba675a6b21ac3af3e7))
+* **player:** 本地 CMS 源健康度——真实请求结果统计（仅网络类失败计数、业务无数据不计），聚合池失败源后移、面板降透明度+title；localStorage 30 天衰减+代理指纹 ([f5001eb](https://github.com/ntc0728/video-warehouse/commit/f5001eb238c8918492a6d3c3015ece82c035cb62))
+* **player:** 源失效无感处理——数字 vod_id 入口兜底后同步面板+写换源说明；vod_id 快路径加 10 分钟新鲜度；全源失败改为明确空态+重新检测/返回 ([883d299](https://github.com/ntc0728/video-warehouse/commit/883d299da827bda9fa7f826908c2fa3c676760ef))
+* **player:** 面板 tab 改一行一条列表——桌面侧栏 200-260、单列、圆角收 md、文本溢出跑马灯；移动端 tab 30px；抽出通用 MarqueeText ([833991b](https://github.com/ntc0728/video-warehouse/commit/833991b2b10b8e54b907200a3d132cd459a7b70b))
+* **playlist:** 「全部」聚合视图的特别篇集统一为整行列表 ([a14233f](https://github.com/ntc0728/video-warehouse/commit/a14233f4c3fb318931bae0db4d088be5f233779d))
+* **playlist:** 特别篇桶改列表行布局——长篇名完整可见 ([58a6a9a](https://github.com/ntc0728/video-warehouse/commit/58a6a9aefbbd518342a0db9126d75087725b2874))
+* **token:** browse/收藏/历史无 Token 整页拦截——居中显示首页同款提示 ([0a7b92a](https://github.com/ntc0728/video-warehouse/commit/0a7b92a1af3c951bb37ffca9dc34bf18f11123b4))
+* **token:** 热度榜纳入无 Token 整页拦截 ([cb8b468](https://github.com/ntc0728/video-warehouse/commit/cb8b468215d84e73660378104e7fd95767ff3a01))
+
+
+### Bug Fixes
+
+* **browse:** 无 Token 时显示「暂无结果」而非「加载失败」 ([8938035](https://github.com/ntc0728/video-warehouse/commit/893803589f8b5db774533368f8ef7c183ebd61d6))
+* **browse:** 移动端搜索期间结果数显示「搜索中…」而非「共 0 条」 ([3cd8b0a](https://github.com/ntc0728/video-warehouse/commit/3cd8b0aecb05ac646721726d9ed3ebb67952c018))
+* **browse:** 跨页搜索回来时不再沿用上一次的结果数/分页钉定 ([2f7dfff](https://github.com/ntc0728/video-warehouse/commit/2f7dfffd56ac256aa0f794c3e03c05bfb79924e9))
+* **chart:** 榜单行标题归横版卡标题档 + 移动端简介恢复显示 ([1296e4d](https://github.com/ntc0728/video-warehouse/commit/1296e4db9f6ef9ac59519e62e7fc74eba829f8f2))
+* **chart:** 移动端分类 tab / 时间窗按钮对齐 IPTV 筛选 chip（24px 档） ([6cd40a9](https://github.com/ntc0728/video-warehouse/commit/6cd40a94e14768d5ca91f2a68dbdb7d1f854053c))
+* **ci:** 直传项目改名 video-warehouse-app——Github 导入型项目解除关联后仍不收直传 ([d111456](https://github.com/ntc0728/video-warehouse/commit/d1114567bbbad0654be5b6ba56440471990ee72b))
+* **ci:** 部署改 -a overseas 不含大陆区（自定义域名免备案）+ 项目改名 video-warehouse-app2 ([093e28c](https://github.com/ntc0728/video-warehouse/commit/093e28cba9204066661639cb33b63e2ff21e3e51))
+* **ci:** 钉 edgeone CLI 1.6.47——1.7.x 依赖的 @edgeone/pages-blob@0.0.19 未发布致 ETARGET ([9770a91](https://github.com/ntc0728/video-warehouse/commit/9770a91ad44bc3456d0b0288ed9636f73362336d))
+* **cms:** 剧集第 1 季回退候选按形态/年份优选（同名电影不再被当第 1 季）；探测代表 video 回退到首个可播季，避免壳季把有数据源判成无数据 ([183cc32](https://github.com/ntc0728/video-warehouse/commit/183cc3215facf8244daa8327922bcc8ec71866bc))
+* **cms:** 聚合命中与面板展示都要求有可播放内容——壳条目（video 有值但无线路/无集）不再冒充有数据的源 ([301c011](https://github.com/ntc0728/video-warehouse/commit/301c0116f94544f21d2398bab5ab5c4802db3ed8))
+* **fab-stack:** 刷新图标转圈反馈 + 刷新后不再消失（滚动位置保留） ([228c817](https://github.com/ntc0728/video-warehouse/commit/228c81755874252f0074d80d71484d45e858ee81))
+* **header:** 无 Token 置灰 TMDB 导航项 + 收藏/历史迁至右侧图标组 ([c413979](https://github.com/ntc0728/video-warehouse/commit/c4139797ee59fba689b6f2717644da0121515601))
+* **home:** 免责声明居中 + banner 简介底色整体化 + 冷启动骨架补过渡带 crumb ([4a2cdb8](https://github.com/ntc0728/video-warehouse/commit/4a2cdb867cea634aec22ce24c1ab30ee2511eb7d))
+* **home:** 移动端 banner 加载/骨架不再是一整块黑 ([3940a7e](https://github.com/ntc0728/video-warehouse/commit/3940a7e7048282e810f9176b3235f602ce97580f))
+* **iptv:** P0 链路修复——url 传真实播放地址(新增 initQuery 承接频道解析)、额外源频道并入播放页并回显、换台/换线写入观看历史、离开播放页复位频道列表面板 ([556a228](https://github.com/ntc0728/video-warehouse/commit/556a228975b9fcda4864c193feea53594cdb57b9))
+* **iptv:** 移动端筛选 chip 尺寸对齐开源规范（24px） ([688dd8e](https://github.com/ntc0728/video-warehouse/commit/688dd8ec9ed8b629f4035111803876851171c5fe))
+* **mobile:** banner 重试按钮真机可点 + 全局 toast 真居中 ([35d8148](https://github.com/ntc0728/video-warehouse/commit/35d8148980f2b63ccf2125a7910e5abc971d0e4b))
+* **mobile:** 禁用 Android 字体自动放大——同列表标题字号不一致根因 ([96fc598](https://github.com/ntc0728/video-warehouse/commit/96fc598b040fdf9fb44287f05046abf253a98c3c))
+* **player:** header 标题放开两行换行——换源后长集名单行超宽 30px 折叠成「剧名…」；badge 钳进标题盒不再溢出到画中画图标下 ([4b302d3](https://github.com/ntc0728/video-warehouse/commit/4b302d3fea45ef0244dea631bf3896e80e5fef78))
+* **player:** header 标题溢出改跑马灯滚动（复用 marquee 套件），不再省略折叠；标题右侧留间距让出操作图标 ([240d925](https://github.com/ntc0728/video-warehouse/commit/240d9252a3e151951d00dd260649d3a7c31dc2d3))
+* **player:** 仅音频源单击直接暂停/播放——黑屏上首击只叫控制栏、二击误触全屏导致暂停失效；currentUrl 变化复位 ([d0998a9](https://github.com/ntc0728/video-warehouse/commit/d0998a99929d436c3511c693d91bafbbd3b0fdbc))
+* **player:** 全屏更多设置抽屉可滚动 + 手势排除（抽屉内滑动不再调音量）；长按快进/快退期间触摸手势不接管、横滑 seek 门槛 8→24px ([ee4fdfc](https://github.com/ntc0728/video-warehouse/commit/ee4fdfca620e32096127237f3d117128d17b55f2))
+* **player:** 切源/切季期间保留面板列表（降透明+禁点），消除移动端面板高度塌陷导致的页面抖动 ([5c3330e](https://github.com/ntc0728/video-warehouse/commit/5c3330e39031cff8b4afd6423460c3857f327ba7))
+* **player:** 切源按当前播放集对齐集号——此前恒取首集，在第5集点其它源会回到第1集 ([b30275a](https://github.com/ntc0728/video-warehouse/commit/b30275a9fcac45d80d87c71903045305f1dc05f6))
+* **player:** 指定源不再被聚合竞速静默改掉（等其落定 + 换源必告知）；非 TMDB id 按 video.type 推导媒体类型，切源不再恒按电影过滤 ([22ac645](https://github.com/ntc0728/video-warehouse/commit/22ac6453671d9f7af898be4f01f1d9888fa3933f))
+* **player:** 按内容身份续播修复——进度匹配改用裸集标签（progressEpisodeLabel），展示标签带季名前缀导致严格相等永不命中 ([94a35eb](https://github.com/ntc0728/video-warehouse/commit/94a35ebd5ce3219eb450c8e7acb9455602b27a93))
+* **player:** 提示体系四项收口——统一底色 0.6+blur、移动端三提示字号收 2xs、toast 避让续播卡、锚点偏移冻结防抽搐 ([01fd622](https://github.com/ntc0728/video-warehouse/commit/01fd622a401ee15a0df1826149b981beef5c89e4))
+* **player:** 提示双通道叠加——mobileCenter 口径扩为移动布局，操作/设置类统一汇入顶部胶囊单槽 ([bcc72ea](https://github.com/ntc0728/video-warehouse/commit/bcc72ea7131b977f209780ac487045419b7685b3))
+* **player:** 离开播放页立即落库历史（flushHistoryNow）——修复切集后 3s 内返回历史页再点回时回显上一集 ([d307513](https://github.com/ntc0728/video-warehouse/commit/d307513e7ac7c158587571a70e3fe465a2d0317d))
+* **player面板:** panel-info 去掉 flex:1 改内容宽+margin-left:auto，文本右缘固定不再随 title 宽度左右摆动 ([62eccec](https://github.com/ntc0728/video-warehouse/commit/62eccec90576728bc4cf21630944be8fc172898a))
+* **player面板:** 宽度再收至 170-210；tab 文本统一居中；修复溢出误判（间距改 margin，按首份文本宽判定）；跑马灯 14s→21s ([b7f3b71](https://github.com/ntc0728/video-warehouse/commit/b7f3b718ca147e9af80e20dd38afea438d401f73))
+* **playlist:** 特别篇选集格显示篇名而非纯数字序号 ([408d695](https://github.com/ntc0728/video-warehouse/commit/408d69520747050d83936c3263e6a37b5fd38b0d))
+* **ptr:** 下拉刷新小电视光晕去 SVG 引用滤镜——高 DPR 手机发糊根因 ([5f96032](https://github.com/ntc0728/video-warehouse/commit/5f96032bcd70ce79a7a14d78547d65de3fd220e0))
+* **ptr:** 电波两弧拉开间距 + 粗细定稿 2.2（去光晕副本后） ([7766305](https://github.com/ntc0728/video-warehouse/commit/77663054375b9e09a6c17e6f352fc2da31d84c51))
+* **ptr:** 电波光晕单独收细（4→3） ([f53411a](https://github.com/ntc0728/video-warehouse/commit/f53411a68c8b71b2d8ffb2bb69510f8160330cb0))
+* **ptr:** 电波再收细一档——本体 2→1.5、光晕 3→2.5 ([a03a10e](https://github.com/ntc0728/video-warehouse/commit/a03a10e38640e1d0dcfc5f918f2fa2213e9c823b))
+* **ptr:** 补光晕副本定位链——四态不再被白色剪影盖住 ([497ec46](https://github.com/ntc0728/video-warehouse/commit/497ec4695ede8e6d0a1f2d1ede90adc9ef0c4e09))
+* **record:** 移动端筛选栏与顶栏间距对齐其它页面（aside margin-top 归零） ([6db8154](https://github.com/ntc0728/video-warehouse/commit/6db8154d2b9a137c34f20246c6fd12e48c35f3cc))
+* **release:** 根治 capacitor.config.ts 版本漂移——发版合并后自动回写 + 补 2.1.0 ([866b8ba](https://github.com/ntc0728/video-warehouse/commit/866b8ba3ba2258d34e238f81615dbfd2d00d02af))
+* **Settings:** 子页返回闪晃——禁止页面进场动画在关闭边界重播 ([0b9c7b2](https://github.com/ntc0728/video-warehouse/commit/0b9c7b2342cc73aa880eac287cc4b2398b52a373))
+* **style:** 存量 lint:css/design 违规治理 ([01498fd](https://github.com/ntc0728/video-warehouse/commit/01498fd066142e04e7826ecf4731a158ecbf7f95))
+* **tokens:** 字号缩档按端拆分——桌面 1.0 / 移动端 0.95 ([d6d4adc](https://github.com/ntc0728/video-warehouse/commit/d6d4adc1f2260a7afd15dd8d1711184e0db17a90))
+* **token:** 小视口提示偏下根治——min-height 钳到宿主实际高度 ([197c3bf](https://github.com/ntc0728/video-warehouse/commit/197c3bf62a43528ebfbc60f6f194822f899ceb78))
+* **token:** 无 Token 提示精确居中——宿主 padding 归零 + 豁免 soft 入场动画 ([2677dec](https://github.com/ntc0728/video-warehouse/commit/2677dec0bab78d8e349c0bfe4c14b4f51ac3e5d3))
+* **ui:** 无 token 提示与首页 401 错误提示整页居中 ([cff707d](https://github.com/ntc0728/video-warehouse/commit/cff707d02c7a8b08409fa8a79e6a8fd4b18fd5ad))
+
+
+### Reverts
+
+* **header:** 无 Token 导航不再置灰——口径改为依赖页整页 TokenRequired 拦截 ([bac71ad](https://github.com/ntc0728/video-warehouse/commit/bac71ada410d5fa1b60f6c582257dc448bd9ec92))
+
 ## [2.1.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v2.0.0...kinotv-v2.1.0) (2026-11-09)
 
 
