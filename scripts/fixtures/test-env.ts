@@ -80,7 +80,7 @@ export const MOCK_IPTV_PLAYLIST = [
  * 未知键会原样透传英文拉长一级栏宽，破坏「按内容定宽」类像素契约（IPTVP-023）。
  * 前三条对齐 iptv.spec 5.10 台标链的桩数据（id + tvg-logo 指向 fanmingming/wanglindl，
  * 与真实 cn.m3u「台标内联、logos.json 已退役」形态一致），否则该功能用例在
- * hermetic 环境下被条件跳过掏空（2026-09-20 取舍纠偏）。
+ * hermetic 环境下被条件跳过掏空。
  */
 export const MOCK_ORG_PLAYLIST = [
   '#EXTM3U',

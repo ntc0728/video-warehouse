@@ -1,18 +1,17 @@
 /**
- * 历史专项回归合并 spec（2026-09-09 合并；2026-09-23 校正头注释）
+ * 历史专项回归合并 spec
  *
- * 合并来源（共 55 条 → 30 条）：
- *   scripts/cross-page.spec.ts         → describe '跨页联动回归'（9 条）
- *   scripts/regression-detail.spec.ts  → describe '详情页回归'（10 条）
- *   scripts/fix-2026-08.spec.ts        → describe '9.1 修复'（4 条：冷启动与首屏 / app 端适配 / 布局一致性）
- *   scripts/ui-fixes.spec.ts           → describe 'UI 整改'（3 条）
- *   scripts/global-fixes.spec.ts       → describe '全局问题'（4 条）
+ * 分组（共 30 条）：
+ *   describe '跨页联动回归'（9 条）
+ *   describe '详情页回归'（10 条）
+ *   describe '9.1 修复'（4 条：冷启动与首屏 / app 端适配 / 布局一致性）
+ *   describe 'UI 修正'（3 条）
+ *   describe '全局问题'（4 条）
  *
- * ⚠️ 原先并入的 `scripts/proxy-setup.spec.ts`（describe '代理配置' 2 条）已于 2026-09-21 随
- *    「设置页子页移出默认套」拆回独立文件 `scripts/proxy-setup.spec.ts`（按需 `test:e2e:subpages`），
- *    所以本文件的用例数是 **30 条**（旧注释写的 32 条 = 含已拆出的 2 条）。
+ * 代理配置用例在独立文件 `scripts/proxy-setup.spec.ts`（按需 `test:e2e:subpages`），
+ * 不计入本文件的用例数（本文件为 **30 条**）。
  *
- * 约束：只合并、不弱化断言；保留全部核心回归断言。
+ * 约束：不弱化断言；保留全部核心回归断言。
  * TMDB 走 fixtures/mock-tmdb（默认 mock）。
  * 计数事实源：`npm run test:count`（本文件 30 条，默认套 Stage A）。
  */
@@ -182,7 +181,7 @@ test.describe('跨页联动回归', () => {
       await expect(page).toHaveURL(/\/(detail|play)\//, { timeout: 3000 });
     }
 
-    // X-003: 首页分类 → 浏览页（分类快捷入口已随组件删除，2026-11-08；
+    // X-003: 首页分类 → 浏览页（分类快捷入口不存在；
     // 行「查看全部」→ /browse 跳转由 home.spec 覆盖，此处不再重复）
     await page.setViewportSize({ width: 900, height: 800 });
 
@@ -375,7 +374,7 @@ test.describe('跨页联动回归', () => {
       }
     }
 
-    // X-121: 首页切走再切回 banner 不闪烁（方案 B 重挂载归单层）
+    // X-121: 首页切走再切回 banner 不闪烁（重挂载归单层）
     // 2026-09-10：宽屏起点改为 1024（含端点）后，1280 视口会渲染 HeroBili
     // （.hero-bili__banner-img），不再有 .hero-banner__bg-layer 图层；
     // 故改用 900 视口验证经典 HeroBanner 分支的分层行为。
@@ -663,9 +662,9 @@ test.describe('详情页回归', () => {
       await new Promise(() => {});
     });
     await page.goto('/iptv', { waitUntil: 'domcontentloaded' });
-    // 2026-09-12 骨架整改：整页 AppLoading → IPTV 页专属骨架（rail/移动两套）。
-    // 2026-09-20 修正：≥1280 走 rail 档，其根类名是 `.iptv-skeleton--rail`（无 `.iptv-skeleton`
-    // token），旧选择器只匹配移动档 → rail 视口下永不命中（卡死年代没人跑全量漏检的存量缺陷）。
+    // IPTV loading 为页专属骨架（rail/移动两套）。
+    // ≥1280 走 rail 档，其根类名是 `.iptv-skeleton--rail`（无 `.iptv-skeleton`
+    // token），选择器需同时匹配两档根类名，否则 rail 视口下永不命中。
     await page.waitForSelector('.iptv-page .iptv-skeleton, .iptv-page .iptv-skeleton--rail', { timeout: 10000 });
     expect(await page.locator('.iptv-top-card').count()).toBe(0);
   });
@@ -798,9 +797,9 @@ test.describe('9.1 修复', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// UI 整改（原 ui-fixes.spec.ts：7 条 → 3 条）
+// UI 修正
 // ═══════════════════════════════════════════════════════════════
-test.describe('UI 整改', () => {
+test.describe('UI 修正', () => {
   test.use({ ...IPHONE_13 });
 
   test('头部/抽屉: 顶栏头像入口 + 抽屉设置项移底', async ({ page }) => {
@@ -842,11 +841,11 @@ test.describe('UI 整改', () => {
     });
     expect(state.navHasSettings).toBe(false);
     expect(state.footerHasSettings).toBe(true);
-    // 2026-11-11：移动抽屉新增「热度榜」项（用户要求），5 → 6
+    // 移动抽屉含「热度榜」项，共 6 项
     expect(state.navItemCount).toBe(6);
   });
 
-  test('搜索: 进入浏览页清旧搜索词（UI-006；UI-005 分类图标不越界已随分类快捷入口删除，2026-11-08）', async ({ page }) => {
+  test('搜索: 进入浏览页清旧搜索词（UI-006；UI-005 分类图标不越界——分类快捷入口不存在）', async ({ page }) => {
     // UI-006
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     // 等搜索框渲染，替代固定 2500ms 睡眠

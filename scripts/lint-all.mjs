@@ -14,7 +14,7 @@
  * - `lint:test-map` = `test-count-report.mjs --check`，拦**测试映射腐化**：
  *   run-tests.ps1 里引用了不存在的 spec / pattern 基路径不存在（改了目录却没改映射）/
  *   grep 的某个 `|` 片段永远不命中（编号合并成 `BROWSE-020/023/025` 后写 `BROWSE-023` 即此）/
- *   档位恒等式被破坏 / 测试映射文档的生成块过期。它只跑 `playwright --list`（1–2s），
+ *   档位恒等式被破坏 / 外部映射文档的生成块过期（如配置了映射文档）。它只跑 `playwright --list`（1–2s），
  *   不起浏览器。补映射或加删用例后跑 `npm run test:count -- --write` 同步文档即可。
  * - `lint:lock-pnpm` = `pnpm install --frozen-lockfile --lockfile-only`，拦
  *   **pnpm 依赖配置漂移**：package.json 的 pnpm.* 配置（patchedDependencies 等）与
@@ -47,7 +47,7 @@ const steps = [
   { name: 'lint:css', cmd: 'pnpm run lint:css' },
   { name: 'lint:json (重复 key)', cmd: 'node scripts/json-dup-key-check.mjs' },
   { name: 'lint:version-sync (版本漂移)', cmd: 'pnpm run lint:version-sync' },
-  { name: 'lint:test-map (测试映射/计数漂移)', cmd: 'pnpm run lint:test-map' },
+  { name: 'lint:test-map (映射/计数漂移)', cmd: 'pnpm run lint:test-map' },
   { name: 'lint:lock-pnpm (pnpm 配置/lock 一致性)', cmd: 'pnpm install --frozen-lockfile --lockfile-only' },
   { name: 'lint (eslint)', cmd: 'pnpm run lint' },
   {

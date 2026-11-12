@@ -59,7 +59,7 @@ test.describe('2.1 搜索模式切换', () => {
   });
 
   test('BROWSE-098: 切回智能检索默认真实调用接口（不被 store 缓存回显吞掉）', async ({ page }) => {
-    // 2026-11-06 用户方案 B：直链搜索无关键词时保持「不构造请求」；
+    // 直链搜索无关键词时保持「不构造请求」；
     // 但切回智能检索必须真实取页（logicalContext 纳入 searchMode + force 绕过缓存回显）。
     const discover = [];
     page.on('request', (r) => {
@@ -238,11 +238,9 @@ test.describe('2.7 移动端搜索', () => {
 
 // ═══════════════════════════════════════════════════════════════
 // 2.8 移动端命令栏 BrowseMobileBar
-// 注：原 scripts/browse-mobile.spec.ts 已并入本块（2026-07-30）。
 // 触发条件: useIsMobileLayout() = isNative || isRealPhone(手机UA) || 视口<768px
 //          本块用「视口<768px」触发，无需伪造手机 UA。
-//          面板内「✨ 为你推荐」标题 (bmb-rec-head) 已于 2026-07-30 删除，
-//          故断言改为稳定的 .bmb-pf-apply / FilterBar。
+//          面板内「✨ 为你推荐」入口不存在，断言用稳定的 .bmb-pf-apply / FilterBar。
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
@@ -426,7 +424,7 @@ test.describe('2.8 移动端命令栏 BrowseMobileBar', () => {
     await box.press('Enter');
 
     // BROWSE-077: 移动端结果区专属骨架被去壳（不卡片套卡片）
-    // 2026-09-12 骨架整改：结果区 loading 由 AppLoading 换为页面专属 BrowseSkeleton
+    // 结果区 loading 为页面专属 BrowseSkeleton
     const loading = page.locator('.browse-results-body .browse-skeleton').first();
     await expect(loading).toBeVisible({ timeout: 5000 });
     const border = await loading.evaluate((el) => getComputedStyle(el).borderTopWidth);
@@ -544,7 +542,7 @@ test.describe('2.10 逻辑分页', () => {
   }
 
   test('BROWSE-090/091: 每页恒 cols×4 行 + 跨页漂移不产生重复 key', async ({ page }) => {
-    // 逻辑分页必须保留：每页恒定 cols×4 行、行行完整（2026-11-06 用户由 5 行改为 4 行）。
+    // 逻辑分页必须保留：每页恒定 cols×4 行、行行完整（产品口径）。
     // 「全部」= movie+tv 合并页已下线（两路页数不等会让算术定位错位），
     // 默认「电影」单路 M=20 均匀 → 算术精确定位、无重复/越界。
     const dupKeys: string[] = [];
@@ -628,7 +626,7 @@ test.describe('2.10 逻辑分页', () => {
   });
 
   test('BROWSE-096: 单路均匀 → 每页满行、入参不越界、无重复、页数准确', async ({ page }) => {
-    // 2026-11-05 最终态：删除「全部」(tv+movie 合并页) 后默认「电影」单路，
+    // 默认「电影」单路；「全部」合并页已下线，
     // 每个 TMDB 页恒定 20 条 → 逻辑分页 (P = cols×4) 的算术定位精确成立，
     // 不会再出现合并页稀疏区的错位/重复/越界。本测试逐条锁死。
     //
@@ -729,7 +727,7 @@ test.describe('2.11 分页器渲染门控', () => {
   test('BROWSE-094: 结果不足一页（totalPages=1）不渲染分页器、不误渲染空态', async ({ page }) => {
     // 智能检索会把 TMDB 结果与 CMS 聚合源合并渲染；只 mock TMDB 时，配了真实
     // CORS 代理的环境（.env.local）会混入几十条 CMS 卡 → toHaveCount(1) 恒红
-    // （2026-09-20 BROWSE-094 真因，此前被误标「并发 flaky」）。CMS 通道封成空列表。
+    // （BROWSE-094 根因：CMS 通道封成空列表）。
     await page.route(/ac=videolist/, (route) =>
       route.fulfill({ json: { code: 1, msg: 'ok', page: 1, limit: 20, total: 1, pagecount: 1, list: [] } }),
     );

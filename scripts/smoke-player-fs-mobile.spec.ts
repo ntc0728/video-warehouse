@@ -1,6 +1,6 @@
-// 2026-09-20：改用 cms-mock fixture（CMS 本地假数据 + 本地 HLS）。原 mock-tmdb 下
-// 播放器挂载要等真实代理的 CMS 聚合，代理抖动 = waitPlayer 贴边 flaky 的真根因
-// （waitPlayer 曾放宽到 30s；2026-09-21 起硬规矩：单步等待 ≤10s，现上限 10s）。
+// 改用 cms-mock fixture（CMS 本地假数据 + 本地 HLS）：mock-tmdb 下播放器挂载
+// 要等真实代理的 CMS 聚合，代理抖动 = waitPlayer 贴边 flaky 的真根因
+// （单步等待上限 10s）。
 import { test, expect } from './fixtures/cms-mock';
 import type { Page } from '@playwright/test';
 
@@ -9,16 +9,16 @@ import type { Page } from '@playwright/test';
 test.describe.configure({ mode: 'serial' });
 
 /**
- * 真实播放器（UniversalPlayer）移动端全屏整改冒烟测试
+ * 真实播放器（UniversalPlayer）移动端全屏冒烟测试
  *
- * 覆盖自测整改后的核心行为（对照 commit f02eb23 的需求①/②/④ + 本轮需求①②）：
- *   ① 全屏整改仅限真机移动端 —— PC 桌面 web 全屏保持原样（无角落组/右侧抽屉，音量/画中画组/更多菜单保留）
- *   ② 右侧更多设置抽屉：背景对齐右键菜单、隐藏倍速/字幕/快捷键，保留循环/镜像/画面比例/解码模式
- *   ④ 细节交互：点空白关抽屉、重进全屏抽屉不自动开、移动端点击控制栏已显→不再隐藏（改暂停）
+ * 覆盖核心行为：
+ *   全屏改造仅限真机移动端 —— PC 桌面 web 全屏保持原样（无角落组/右侧抽屉，音量/画中画组/更多菜单保留）
+ *   右侧更多设置抽屉：背景对齐右键菜单、隐藏倍速/字幕/快捷键，保留循环/镜像/画面比例/解码模式
+ *   细节交互：点空白关抽屉、重进全屏抽屉不自动开、移动端点击控制栏已显→不再隐藏（改暂停）
  *   + 改子设置项后自动关抽屉，操作提示（center-toast）完整避开 up-player-header
  *
  * 用 iPhone UA 模拟真机；全屏走 Fullscreen API（headless Chromium 支持）或回退 CSS 伪全屏，
- * 两种都会置 isFullscreen=true → fsMobile 成立 → 触发整改 UI。
+ * 两种都会置 isFullscreen=true → fsMobile 成立 → 触发移动端全屏 UI。
  *
  * 运行前需 dev server 就绪（playwright.config webServer 会自动起，或手动 npm run dev）。
  * 本测试使用 `__smoke_fullscreen=1` 参数：开发/冒烟场景下允许在 hasError 时仍进入全屏，
@@ -66,7 +66,7 @@ async function enterFullscreen(page: Page) {
   await page.waitForSelector('.up-fs-corner', { state: 'visible', timeout: 8000 });
 }
 
-test.describe('PC 桌面 web 全屏 —— 整改不生效（需求①）', () => {
+test.describe('PC 桌面 web 全屏 —— 保持桌面布局', () => {
   test.use({ viewport: { width: 1280, height: 720 } }); // 默认桌面 UA
   test('PLAYER-FS-PC: 全屏后无角落组/抽屉，音量/画中画组/更多菜单保留', async ({ page }) => {
     const errors = collectErrors(page);
@@ -78,12 +78,12 @@ test.describe('PC 桌面 web 全屏 —— 整改不生效（需求①）', () =
     await expect(page.locator('.up-fs-drawer')).toHaveCount(0);
 
     // 进入全屏（桌面底栏全屏按钮）。fullscreen prop 仅对真机移动端为真，
-    // PC 桌面全屏应保留原桌面布局（不带移动端整改类）。
+    // PC 桌面全屏应保留原桌面布局（不带移动端全屏类）。
     await page.locator('.up-control-bar .up-header-fullscreen-btn').first().click();
-    // 条件等待：PC 桌面全屏整改不生效（无移动端 fullscreen 类）
+    // 条件等待：PC 桌面全屏不启用移动端布局（无移动端 fullscreen 类）
     await expect(page.locator('.up-control-bar--fullscreen')).toHaveCount(0, { timeout: 1000 });
 
-    // 核心回归：PC 桌面全屏不改 —— 无角落组、无右侧抽屉，且控制栏不带移动端整改类
+    // 核心回归：PC 桌面全屏不改 —— 无角落组、无右侧抽屉，且控制栏不带移动端全屏类
     await expect(page.locator('.up-fs-corner')).toHaveCount(0);
     await expect(page.locator('.up-fs-drawer')).toHaveCount(0);
     await expect(page.locator('.up-control-bar')).not.toHaveClass(/up-control-bar--fullscreen/);
@@ -121,7 +121,7 @@ test.describe('移动竖屏 —— 底部更多设置弹窗内容不裁（基线
   });
 });
 
-test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉（需求②）', () => {
+test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉', () => {
   test.use({ viewport: { width: 844, height: 390 }, userAgent: IPHONE_UA });
   test('PLAYER-FS-M1: 角落组 + 底栏去音量/循环 + 右侧抽屉（裁剪倍速/字幕/快捷键）', async ({ page }) => {
     const errors = collectErrors(page);
@@ -192,15 +192,15 @@ test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉（需求②）
     await expect(drawer).toBeVisible();
     await drawer.locator('button').filter({ hasText: /单集循环|列表循环/ }).first().click();
 
-    // 需求②：修改子设置项后抽屉自动关闭
+    // 修改子设置项后抽屉自动关闭
     await expect(page.locator('.up-fs-drawer')).toHaveCount(0);
 
-    // 需求②：播放器内部居中靠上操作提示出现（center-toast）
+    // 播放器内部居中靠上操作提示出现（center-toast）
     const toast = page.locator('.up-player-center-toast');
     await expect(toast).toBeVisible();
     await expect(toast).toContainText(/单集循环|列表循环/);
 
-    // 需求①：提示完整避开 up-player-header —— toast 顶部 ≥ header 底部
+    // 提示完整避开 up-player-header —— toast 顶部 ≥ header 底部
     const toastBox = await toast.boundingBox();
     const headerBox = await header.boundingBox();
     expect(toastBox).not.toBeNull();
@@ -211,7 +211,7 @@ test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉（需求②）
     const inContainer = await toast.evaluate((el) => el.closest('.up-universal-player') != null);
     expect(inContainer).toBe(true);
 
-    // —— M2 部分：点空白关抽屉 + 重进全屏抽屉不自动开（需求④）——
+    // —— M2 部分：点空白关抽屉 + 重进全屏抽屉不自动开 ——
     await page.locator('.up-fs-corner button[aria-label="更多设置"]').click();
     await page.waitForSelector('.up-fs-drawer', { state: 'visible', timeout: 5000 });
     // 点播放器空白（视频区，避开右侧抽屉与右上角组）→ 抽屉关闭（force 穿透 .up-player-core 拦截层）
@@ -253,7 +253,7 @@ test.describe('移动横屏全屏 —— 角落组 + 右侧抽屉（需求②）
 
 });
 
-test.describe('移动竖屏点击语义（需求④：已显→不隐藏，改暂停）', () => {
+test.describe('移动竖屏点击语义（已显→不隐藏，改暂停）', () => {
   test.use({ viewport: { width: 390, height: 844 }, userAgent: IPHONE_UA });
   test('PLAYER-FS-CLICK: 控制栏已显时单击空白不再隐藏控制栏', async ({ page }) => {
     const errors = collectErrors(page);

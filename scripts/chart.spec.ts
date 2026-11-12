@@ -149,7 +149,7 @@ test.describe('CHART 热度榜页', () => {
     });
 
     await page.locator('.chart-tabs__tab', { hasText: '综艺' }).click();
-    // 2026-09-10 重构：切 tab / 切时间窗立即清空旧榜单（不再保留「旧行降沉 + 胶囊」），
+    // 切 tab / 切时间窗立即清空旧榜单（不保留「旧行降沉 + 胶囊」），
     // 统一由居中「小电视 + 加载中」接管；.chart-list--refreshing / .chart-refresh-sticky 已移除。
     await page.waitForSelector('.chart-loading', { timeout: 5000 });
     await expect(page.locator('.chart-loading')).toContainText('加载中…');

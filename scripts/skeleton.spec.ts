@@ -1,5 +1,5 @@
 /**
- * 骨架体系测试 — 覆盖 2026-09-18 骨架整改后的三条硬契约：
+ * 骨架体系测试 — 覆盖三条硬契约：
  *
  *   A. **色源唯一**：--color-skeleton / --color-skeleton-shine 是
  *      --color-placeholder-shimmer-a/b 的别名（variables.css）。任何主题下两者计算值
@@ -11,7 +11,7 @@
  *      Person 作品网格 768–1023 曾是「真实 5 列 / 骨架 4 列」的硬伤（P0），本组守住。
  *      → SKEL-003 ~ 008
  *
- *   C. **结构同构 + 视口填充**（2026-09-18 用户要求「每页骨架 == 真实页元素结构」）：
+ *   C. **结构同构 + 视口填充**（每页骨架 == 真实页元素结构）：
  *      · 区块**数量**取自真实真源（tabs 2 / 演员 12 / 剧照 6 / 推荐区 2 / Browse 类型 7、
  *        排序 3 / Collections 分区数随 tab），断言骨架把这些块都渲染出来；
  *      · 行数**不固定** —— useFillRows 按滚动容器可视高度实测推导，故「视口变高 →
@@ -382,7 +382,7 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     const skeleton = page.locator('.detail-skeleton');
     await expect(skeleton).toBeVisible({ timeout: 10000 });
 
-    // hero 对开（方案 A 2026-10-10）：海报列 + 文本区（<768 海报列隐藏，只断言存在）
+    // hero 对开：海报列 + 文本区（<768 海报列隐藏，只断言存在）
     await expect(page.locator('.detail-skeleton__hero')).toHaveCount(1);
     await expect(page.locator('.detail-skeleton__poster')).toHaveCount(1);
     await expect(page.locator('.detail-skeleton__chip')).toHaveCount(4);
@@ -473,7 +473,7 @@ test.describe('骨架契约 C：骨架可见性 + 结构同构', () => {
     await holdTmdb(page);
     await page.goto('/browse', { waitUntil: 'domcontentloaded' });
 
-    /* 2026-09-23 用户需求：首次进入、接口未响应前，左栏筛选 + 顶栏排序条
+    /* 首次进入、接口未响应前，左栏筛选 + 顶栏排序条
        渲染 chrome 骨架（BrowseChromeSkeleton），真实筛选项不渲染；
        模式 tab（智能检索/直链搜索）不属筛选项，恒真实。 */
     await expect(page.locator('.browse-search-tab')).toHaveCount(2);

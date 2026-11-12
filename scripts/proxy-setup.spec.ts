@@ -19,7 +19,7 @@ test.describe('代理配置', () => {
     expect(title).toContain('一键配置代理');
     const cardCount = await page.locator('.proxy-setup__card').count();
     expect(cardCount).toBe(2);
-    // 2026-11-09 方案 B：右栏常驻控制台改为底部日志坞（收起为一行状态条）
+    // 右栏常驻控制台为底部日志坞（收起为一行状态条）
     const dockBarVisible = await page.locator('.proxy-setup__dock-bar').isVisible().catch(() => false);
     expect(dockBarVisible).toBe(true);
   });

@@ -74,7 +74,7 @@ test.describe('6.2 TMDB 配置', () => {
 
 test.describe('6.3 视频源配置', () => {
   test('SET-020/021: 视频源管理面板可见且可启用/停用切换', async ({ page }) => {
-    // 源管理已由 .source-multi-dropdown 改为 SourceManager 组件（ADR-019），
+    // 源管理已由 .source-multi-dropdown 改为 SourceManager 组件），
     // 用 ?tab=video 深链直达「视频设置」tab。
     await page.goto('/settings?tab=video', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
@@ -107,7 +107,7 @@ test.describe('6.4 播放设置', () => {
   test('SET-040: 跳过片头开关', async ({ page }) => {
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
-    // 2026-09-20 纠偏：原实现只断「.list-item 数>0」，从未定位到开关本体 = 空壳。
+    // 须定位开关本体，仅断「.list-item 数>0」是空壳断言。
     // 真实开关在「播放设置」tab 的 PlaybackTab（List.Item + Switch role=switch）。
     await page.locator('.settings-tab', { hasText: '播放' }).first().click();
     const row = page.locator('.list-item', { hasText: '跳过片头' }).first();
@@ -127,7 +127,7 @@ test.describe('6.4 播放设置', () => {
 
 test.describe('6.5 IPTV 配置', () => {
   test('SET-050/052: IPTV 源面板可见且至少保留一个已启用源', async ({ page }) => {
-    // 源管理已由 .source-multi-dropdown 改为 SourceManager 组件（ADR-019），
+    // 源管理已由 .source-multi-dropdown 改为 SourceManager 组件），
     // 用 ?tab=iptv 深链直达「IPTV 设置」tab。
     await page.goto('/settings?tab=iptv', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
@@ -417,10 +417,10 @@ test.describe('6.9 顶部搜索框', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 6.11 桌面端左栏竖排导航（方案 B）（SET-095 + 096）
+// 6.11 桌面端左栏竖排导航（SET-095 + 096）
 // ═══════════════════════════════════════════════════════════════
 
-test.describe('6.11 桌面端左栏竖排导航（方案 B）', () => {
+test.describe('6.11 桌面端左栏竖排导航', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test('SET-095/096: 左栏竖排导航布局 + tab 点击切换内容', async ({ page }) => {

@@ -241,10 +241,8 @@ export const TMDB_MOCK_ROUTES: MockRoute[] = [
   { pattern: /\/discover\/movie/, response: DISCOVER_RESULTS },
   { pattern: /\/discover\/tv/, response: DISCOVER_RESULTS },
 
-  // 首页 8 区块（2026-08-06 补充：此前只有 trending 有 mock，其余区块命中 fallback
-  // 返回空数组 → 首页仅 trending 行有数据，TMDBMovieRow 箭头等依赖「行溢出」的
-  // 断言无法在 mock 下验证（HOME-050/HOME-054 均检测不到箭头）。补齐后首页
-  // 全部区块都有数据，箭头/继续观看等测试可稳定断言。）
+  // 首页 8 区块 mock 全覆盖（TMDBMovieRow 箭头等依赖「行溢出」的断言依赖此处
+  // 有数据；HOME-050/HOME-054 箭头/继续观看等测试据此可稳定断言。）
   { pattern: /\/movie\/now_playing/, response: makePage(TRENDING_RESULTS) },
   { pattern: /\/movie\/popular/, response: makePage(TRENDING_RESULTS) },
   { pattern: /\/movie\/top_rated/, response: makePage(TRENDING_RESULTS) },

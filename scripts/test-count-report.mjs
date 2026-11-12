@@ -19,14 +19,14 @@
  *   node scripts/test-count-report.mjs                 # 打印完整报告（人读）
  *   node scripts/test-count-report.mjs --markdown      # 只打印可粘贴的 markdown 片段
  *   node scripts/test-count-report.mjs --list-file <p> # 复用已有 --list 输出（离线/加速）
- *   node scripts/test-count-report.mjs --write         # 把生成块写回测试映射文档
+ *   node scripts/test-count-report.mjs --write         # 把生成块写回映射文档（仅本地映射文档存在时生效）
  *   node scripts/test-count-report.mjs --check         # 只校验（exit 1 = 有问题）
  *
  * `--check` 的校验项（也是 `npm run lint:test-map` 的内容）：
  *   A. 映射/分组/按需档里引用的 spec 文件**必须存在**（防改名后死引用）
  *   B. grep 的每个 `|` 片段在它声明的 spec 里**必须至少命中 1 条**（防段号重编号后死 grep）
  *   C. 档位恒等式：Stage A + Stage B = 默认套；默认套 + 按需档 = 全仓 `--list` 总数
- *   D. 测试映射文档的生成块与本次实算一致（防文档过期）
+ *   D. （可选）外部映射文档的生成块与本次实算一致（防文档过期）
  *
  * 退出码：0 全部通过；1 有任一校验失败；2 环境/参数错误（如 --list 跑不起来）。
  */
@@ -379,10 +379,10 @@ md.push(BLOCK_END);
 const generated = md.join('\n');
 
 // ── 5.5 校验 D：文档生成块是否与实算一致 ────────────────────────────────────
-// 测试映射文档不入版本控制（本地知识库）。缺失时（如新 clone）跳过该文档校验，
+// 映射文档为可选外部文档，不入版本控制。缺失时（如新 clone）跳过该文档校验，
 // 只保留 spec 存在性 / pattern / grep 片段等与文档无关的校验。
 if (!existsSync(DOC_PATH)) {
-  console.log('（跳过文档生成块校验：测试映射文档不存在，仅本地维护）');
+  console.log('（跳过可选的映射文档校验：文档不存在）');
   const errorsOnly = [...refErrors, ...patternErrors, ...grepErrors, ...identityErrors];
   if (errorsOnly.length) {
     console.error(errorsOnly.map((e) => `✗ ${e}`).join('\n'));
@@ -402,13 +402,13 @@ const docOutdated = docBlock !== generated;
 
 // ── 6. 输出 ─────────────────────────────────────────────────────────────────
 const errors = [...refErrors, ...patternErrors, ...grepErrors, ...identityErrors];
-if (docOutdated) errors.push('测试映射文档的生成块已过期（跑 --write 同步）');
+if (docOutdated) errors.push('映射文档的生成块已过期（跑 --write 同步）');
 
 if (OPT.write) {
-  if (bStart < 0 || bEnd < bStart) fail('测试映射文档里没有 `<!-- test-counts:begin … -->` … `<!-- test-counts:end -->` 标记，无法写入');
+  if (bStart < 0 || bEnd < bStart) fail('映射文档里没有 `<!-- test-counts:begin … -->` … `<!-- test-counts:end -->` 标记，无法写入');
   const next = docSrc.slice(0, bStart) + generated + docSrc.slice(bEnd + BLOCK_END.length);
   writeFileSync(DOC_PATH, next);
-  console.log(`✓ 已写入测试映射文档（${generated.split('\n').length} 行）`);
+  console.log(`✓ 已写入映射文档（${generated.split('\n').length} 行）`);
   process.exit(0);
 }
 

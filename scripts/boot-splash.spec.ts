@@ -90,9 +90,8 @@ test.describe('启动骨架：视口填充与路由感知', () => {
     expect(m.bottom).toBeGreaterThanOrEqual(m.vh - 60);
   });
 
-  // （2026-10-09 删除两条 home 左栏用例：「≥1024 带左栏栏宽 240」「1920 档栏宽 260」——
-  //   真实页左栏已于 2026-09-29 删除，boot-splash 的 .bs-rail/.bs-heat* 左栏骨架同日清理，
-  //   断言对象已不存在。）
+  // 真实页左栏已删除（boot-splash 的 .bs-rail/.bs-heat* 左栏骨架同步清理），
+  // 断言对象不存在，无左栏栏宽用例。
 
   // 2026-11-04：≥1024 全档统一 2 列×3 行 = 6 张，不再按 2560 切档。
   test('BOOT: home hero 右卡网格（2 列×3 行 = 6 张）', async ({ page }) => {

@@ -8,7 +8,7 @@
  *       070~071~074~083, 075~076~080~081~082~084~085~086,
  *       088, 090
  * 合并前 46 条 → 合并后 12 条（仅合并、断言并集完整保留）。
- * 2026-11-04：首页合集推荐行（072/073/077/079/087）随组件删除一并移除。
+ * 首页无「合集推荐」行（072/073/077/079/087）。
  */
 import { test, expect } from './fixtures/mock-tmdb';
 
@@ -19,7 +19,7 @@ import { test, expect } from './fixtures/mock-tmdb';
 test.describe('1.1 页面加载与初始状态', () => {
   test('首屏初始态与加载（001 无Token提示 / 002 跳设置 / 003 loading / 004 完整首页 / 005 超时收起）', async ({ page }) => {
     // ── 有 Token：003 加载中 / 004 数据就绪 / 005 超时边界 ──
-    // 003: 首屏必有加载占位。2026-09-22 plain 整改后启动链为：#boot-splash（home 同构骨架）
+    // 003: 首屏必有加载占位。启动链为：#boot-splash（home 同构骨架）
     //      → homeSkeleton（无 plain AppLoading 盖脸），故断言两者任一在位。
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     const loadingVisible = await page.evaluate(() => {
@@ -36,7 +36,7 @@ test.describe('1.1 页面加载与初始状态', () => {
     });
     expect(hasHomeContent).toBe(true);
 
-    // 005: 首页 plain loading 最大超时 10 秒（整改后启动链本不应出现 .app-loading，
+    // 005: 首页 plain loading 最大超时 10 秒（启动链本不应出现 .app-loading，
     // 若因异常出现也须在 10s 内收敛）
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => {
@@ -80,8 +80,7 @@ test.describe('1.2 HeroBanner 交互', () => {
     });
     expect(heroExists).toBeTruthy();
 
-    // 012（2026-09-11 同步）：首页 banner 右侧缩略图列已整体删除（用户请求 1），
-    // 原 `.hero-banner__thumb` 断言失去对象 → 改为校验「当前视口下的 Hero 主图区」存在：
+    // 012: 首页 banner 右侧缩略图列不存在 → 校验「当前视口下的 Hero 主图区」存在：
     //   ≥1024 非 TV → HeroBili 的 .hero-bili__banner；<1024 / TV → .hero-banner__main。
     const heroStage = page.locator('.hero-bili__banner, .hero-banner__main');
     expect(await heroStage.count()).toBeGreaterThan(0);
@@ -109,7 +108,7 @@ test.describe('1.2 HeroBanner 交互', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 1.3b 顶栏入口（分类快捷入口 060 已随组件删除，2026-11-08）
+// 1.3b 顶栏入口（分类快捷入口 060 不存在）
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('1.3b 顶栏入口', () => {
@@ -265,13 +264,13 @@ test.describe('1.7 非手机 web 小视口（768–1023px）设备区分', () =>
 // ═══════════════════════════════════════════════════════════════
 
 test.describe('1.3c 宽屏分类入口（合集行已删除）', () => {
-  // 2026-11-04 用户要求删除首页「合集推荐」行：宽屏不再有分类入口（<1024 回退圆卡）。
+  // 首页无「合集推荐」行：宽屏不再有分类入口（<1024 回退圆卡）。
   // 本组锁定「旧 mega 链 / 合集行任何页面都不复生」。
   test.use({ viewport: { width: 1440, height: 900 } });
 
   // 等首页异步数据稳定（首行 .tmdb-movierow 已渲染），避免 re-render 窗口期误断。
-  // 2026-10-11：原 waitPageReady/openPanel/openPanelOverlay（hover .cqa-nav 触发 mega）
-  // 随顶栏 chips 退役删除——现态无 mega 触发源，面板 overlay 恒不出现。
+  // waitPageReady/openPanel/openPanelOverlay（hover .cqa-nav 触发 mega）已随顶栏
+  // chips 退役——现态无 mega 触发源，面板 overlay 恒不出现。
   const waitHomeReady = async (page: import('@playwright/test').Page) => {
     await expect(page.locator('.home-page:not(.home-skeleton) .tmdb-movierow').first()).toBeVisible({ timeout: 10000 });
   };
@@ -284,7 +283,7 @@ test.describe('1.3c 宽屏分类入口（合集行已删除）', () => {
     expect(await page.locator('.sticky-header .cqa-nav').count()).toBe(0);
     expect(await page.locator('.cqa-overlay').count()).toBe(0);
 
-    // 074'：合集推荐行已删除（2026-11-04 用户要求）——宽屏不再渲染该入口
+    // 074'：首页无「合集推荐」行——宽屏不再渲染该入口
     expect(await page.locator('.cqa-board').count()).toBe(0);
 
     // 083'：点 banner 右侧卡前往影片详情（首页常驻 /detail 入口，沿用原测点）
@@ -296,7 +295,7 @@ test.describe('1.3c 宽屏分类入口（合集行已删除）', () => {
   });
 
   test('入口分支互斥与退役链回归锁（075/076 分类入口恒不存在/084-086 全站无 mega 入口）', async ({ page }) => {
-    // 075'：900 窄屏——分类快捷入口已整体删除（2026-11-08），合集行与旧 chips 同样不得出现
+    // 075'：900 窄屏——分类快捷入口不存在，合集行与旧 chips 同样不得出现
     await page.setViewportSize({ width: 900, height: 800 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.app-shell', { timeout: 10000 });
@@ -345,7 +344,7 @@ test.describe('1.3d 宽屏 HeroBili 卡', () => {
       const cs = getComputedStyle(el);
       return { style: cs.borderStyle, width: cs.borderWidth };
     });
-    // 2026-09-28 去卡片化：桌面端 hero-side-card 四件套（border/radius/surface/shadow）已移除。
+    // 去卡片化：桌面端 hero-side-card 四件套（border/radius/surface/shadow）已移除。
     // border-style 恒为 solid 是 Tailwind preflight 的全局值（width 才是可见性判据），只断 width。
     expect(border.width).toBe('0px');
     expect(await page.locator('.hero-side-card__img.lazy-image-container').count()).toBeGreaterThan(0);
@@ -357,7 +356,7 @@ test.describe('1.3d 宽屏 HeroBili 卡', () => {
     ).toContainText('kinoTV');
   });
 
-  // 2026-11-04 用户报「≥2560 hero-bili__cards 内 card 封面比例失调」的回归锁。
+  // ≥2560 档封面比例回归锁：
   // 根因：--hero-grid-w 旧式 min(100vw,2200px) − 2×page-pad-x 是「先封顶再扣留白」，
   // 而 hero 真实宽是 min(100vw − 2×page-pad-x, 2200px)。封顶后两者相差 2×page-pad-x
   // （≥2560 达 280px）→ 右栏 token 偏窄，banner 按 1fr 吃剩余被撑宽、

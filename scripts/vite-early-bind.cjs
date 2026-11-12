@@ -6,7 +6,7 @@
  * 端口不可连 → 浏览器 ECONNREFUSED 纯白屏，连 early-index-html 中间件都无机会执行。
  * 旧方案是 pnpm.patchedDependencies 直改 vite 内部 chunk，但 npm 安装路径从不
  * apply pnpm patch（本地 npm run dev 吃不到），且手写 patch 非法导致 Cloudflare
- * CI frozen install 首爆（见 changelogs/2026-10-11.md）。
+ * CI frozen install 失败——根因是 patch 产物无法通过 CI 的依赖完整性校验。
  *
  * 本脚本经 NODE_OPTIONS=--require 在 vite CLI 之前加载（dev 脚本 / e2e-vite-server.cjs），
  * patch `http.createServer`：vite 的 `_createServer` 是在 createServer() 返回**之后**
