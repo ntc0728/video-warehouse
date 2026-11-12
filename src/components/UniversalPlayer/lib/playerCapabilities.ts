@@ -239,7 +239,7 @@ export function getCapabilities(
  * 调用方不传 `hasCatchup` 时 `hasCatchup === false`，表达式退化为
  * `(isVod || false) && !hasError` === `mode === 'video' && !hasError`
  * 与迁移前 `UniversalPlayer.tsx:375` 的原式逐字等价。
- * P5 传入 `hasCatchup: true` 后才会为自带回看的直播频道额外放开（见 §3.4）。
+ * 传入 `hasCatchup: true` 后才会为自带回看的直播频道额外放开 seek。
  */
     canSeek: (isVod || hasCatchup) && !hasError,
     // 两种 mode 都可切源，只是切的对象不同（线路 vs 频道），故恒真。

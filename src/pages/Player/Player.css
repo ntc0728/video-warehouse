@@ -363,7 +363,7 @@
   font-weight: 600;
   white-space: nowrap;
   /* 关键：此前无 overflow 时 grid 1fr 轨道被 min-content 撑爆——特别篇信息型
-   集名很长，列宽超出面板、右侧被裁（2026-11-11 实测「特别篇没做适配」根因） */
+   集名很长，超长集名会超出面板列宽被裁 */
   overflow: hidden;
   transition: all var(--dur-sm);
   cursor: pointer;
@@ -879,7 +879,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
 
   .player-sidebar {
     /* 移动端面板 tab 高度：--comp-tab-height（≈36px）→ ×0.83 ≈ 30px
-   （2026-11-11 用户反馈偏大；桌面同口径 ×0.78 ≈28px）。 */
+   （桌面同口径 ×0.78 ≈28px）。 */
     --player-tab-h: calc(var(--comp-tab-height) * 0.83);
     flex: none;
     flex-direction: column;
@@ -926,7 +926,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
     justify-content: flex-start;
   }
 
-  /* 移动端/App：选集/线路一行 3 列（2026-11-11 由 5 列改：每列更宽，
+  /* 移动端/App：选集/线路一行 3 列（每列更宽，
    特别篇长集名的滚动频次明显下降） */
   .player-episode-grid,
   .player-source-list {
@@ -1478,7 +1478,7 @@ html[data-device="app"] .player-cms-list--measure .player-cms-item {
   }
 }
 
-/* ── 移动端播放器内浮标 / 卡片收小（2026-11-11 全局盘点补齐）──
+/* ── 移动端播放器内浮标 / 卡片收小 ──
  跳过片头/片尾为纯文本浮标 → 2xs；自动连播卡片含按钮 → xs（与状态型提示同档）。 */
 html[data-mobile-layout="true"] .player-skip-indicator {
   font-size: var(--text-2xs);

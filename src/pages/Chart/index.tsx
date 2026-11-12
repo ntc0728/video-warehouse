@@ -448,7 +448,7 @@ function ChartRowTitle({ title }: { title: string }) {
 
 /** 榜单行：排名（top3 暖橙强调）+ 封面 + 标题/年份/类型徽标 + 热度值/评分
  *
- * 封面恒横版 16:9（2026-11-11 用户要求：移动端与桌面统一横版，
+ * 封面恒横版 16:9（移动端与桌面统一横版，
  * 原「<1024 竖版 2:3 posterPath」分档废弃）：数据源恒取 backdropPath
  * （缺失回退 posterPath），尺寸恒 w300；CSS 侧 .chart-row__cover 全端
  * 同一 160×90 横版盒（Chart.css 已无视口分档）。 */

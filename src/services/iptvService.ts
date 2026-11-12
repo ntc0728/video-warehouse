@@ -3,8 +3,8 @@
  * 负责 M3U/M3U8 播放列表的获取、解析和频道可用性检测
  * 支持多源类型识别（单流/多频道）、代理转发和频道批量可用性检查
  *
- * [批次2重命名] SourceType 已重命名为 PlaylistSourceType
- * 原因：避免与 types/video.ts 中的 SourceType（'mp4' | 'm3u8' | 'dash' | 'pan'）冲突
+ * SourceType 已重命名为 PlaylistSourceType（避免与 types/video.ts 中的
+ * SourceType（'mp4' | 'm3u8' | 'dash' | 'pan'）冲突）
  */
 import type { IPTVChannel, IPTVSettings } from '@/types/iptv';
 import { PlaylistSourceType } from '@/types/iptv';

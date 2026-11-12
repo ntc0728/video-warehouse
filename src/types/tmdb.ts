@@ -2,8 +2,8 @@
  * TMDB (The Movie Database) API 类型定义
  * 基于 TMDB API v3 响应结构
  *
- * [批次2修复] TMDBVideoItem.type 使用 VideoType 而非字面量类型 'movie' | 'tv'
- * 原因：与 useTMDBStore 中的 VideoType 赋值保持兼容
+ * TMDBVideoItem.type 采用 VideoType（而非字面量类型 'movie' | 'tv'），
+ * 与 useTMDBStore 中的 VideoType 赋值保持兼容
  * 依赖：import type { VideoType } from '@/types/video'
  */
 import type { VideoType } from './video';

@@ -32,7 +32,7 @@ export function MarqueeText({ signature, children, className = '', scroll = true
     const check = () => {
       // 用「第一份文本的真实宽度」判断溢出，而不是容器 scrollWidth：
       // 副本间距（.mq-text 的 margin-right）会被算进 track/scrollWidth，
-      // 导致文本实际放得下、加上间距就超了 → 误判滚动（2026-11-11 用户反馈）。
+      // 导致文本实际放得下、加上间距就超了 → 误判滚动。
       const track = el.firstElementChild as HTMLElement | null;
       const firstText = track?.firstElementChild as HTMLElement | null;
       const textW = firstText ? firstText.getBoundingClientRect().width : el.scrollWidth;

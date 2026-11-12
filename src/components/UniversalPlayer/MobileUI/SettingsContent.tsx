@@ -38,7 +38,7 @@ export const RATIO_LABELS: Record<string, string> = {
 export interface SettingsContentProps {
   /** 竖版底部弹窗：chip / switch 选中后关闭弹窗；右侧抽屉：保持打开以支持连续调节 */
   closeOnChipSelect: boolean;
-  /** 右侧抽屉可从外部裁剪项（需求②）：抽屉固定隐藏倍速/字幕/快捷键，竖版弹窗保留 */
+  /** 右侧抽屉可从外部裁剪项：抽屉固定隐藏倍速/字幕/快捷键，竖版弹窗保留 */
   hideSpeed?: boolean;
   hideSubtitle?: boolean;
   hideShortcuts?: boolean;
@@ -131,7 +131,7 @@ export default function SettingsContent({
 
   return (
     <div className="up-ms-body">
-      {/* 倍速（右侧抽屉按需求②隐藏） */}
+      {/* 倍速（右侧抽屉不展示倍速） */}
       {!hideSpeed && (
       <div className="up-ms-card">
         <div className="up-ms-row">
@@ -219,7 +219,7 @@ export default function SettingsContent({
         </div>
       </div>
 
-      {/* 字幕：开关开启后才显示子项（字幕设置 + 导入字幕文件）（右侧抽屉按需求②隐藏） */}
+      {/* 字幕：开关开启后才显示子项（字幕设置 + 导入字幕文件）（右侧抽屉不展示字幕设置） */}
       {!hideSubtitle && (
       <div className="up-ms-card">
         <div className="up-ms-row">
@@ -311,7 +311,7 @@ export default function SettingsContent({
         </div>
       )}
 
-      {/* 右侧抽屉专属：快捷键（需求② 抽屉内已隐藏，仅竖版弹窗可能展示） */}
+      {/* 右侧抽屉专属：快捷键（快捷键仅在竖版弹窗展示） */}
       {onShowShortcuts && !hideShortcuts && (
         <div className="up-ms-card">
           <button className="up-ms-row up-ms-row--tap" onClick={onShowShortcuts}>

@@ -1,6 +1,6 @@
 /* ── ProxySetup（一键配置代理页）──────────────
  「两栏分步向导 + 底部日志坞」：左步骤导航 / 右分步面板（上一步·下一步）；
- 部署日志收成页面底部吸底「日志坞」（收起一行状态条，点开抽屉，部署中自动展开，2026-11-09 方案 B）。
+ 部署日志收成页面底部吸底「日志坞」（收起一行状态条，点开抽屉，部署中自动展开）。
  主体宽度本页单独收窄（表单向导不需要 2200px 全宽），全用 Design Token（无裸 hex / 无 transition:all）。 */
 .proxy-setup {
   display: flex;
@@ -10,7 +10,7 @@
   width: 100%;
   min-width: 0;
   /* 本页主体宽度单独处理：桌面端比全局内容上限（2200px）收窄；
-     档位经两轮反馈定稿 1920（1120 过窄 → 1280 在 ≥2560 显小） */
+     档位取 1920（1120 过窄、1280 在 ≥2560 显小） */
   max-width: min(var(--layout-content-max-width), 1920px);
   margin-inline: auto;
   padding: var(--space-xl) var(--space-md);
@@ -391,7 +391,7 @@ html[data-device="app"] .proxy-setup__grid {
   color: var(--color-text-tertiary);
 }
 
-/* 底部日志坞（方案 B）：吸底常驻于页面滚动区；抽屉 = 深色日志，状态条 = 一行摘要 */
+/* 底部日志坞：吸底常驻于页面滚动区；抽屉 = 深色日志，状态条 = 一行摘要 */
 .proxy-setup__dock {
   position: sticky;
   bottom: 0;

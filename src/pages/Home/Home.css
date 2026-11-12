@@ -312,8 +312,8 @@ html[data-device="app"] .home-disclaimer {
   width: 100%;
   max-width: 60%;
   padding: var(--space-xl);
-  /* 文字区压暗层镜像真实 banner 的文字渐变；0.45 → 0.3（2026-11-11）：
-   手机暗色下 0.45 把左侧扫光压成近黑（用户观感「骨架全黑」），
+  /* 文字区压暗层镜像真实 banner 的文字渐变（透明度 0.3）：
+   手机暗色下 0.45 把左侧扫光压成近黑，
    骨架只需暗示「文字在这里」，无需照片级遮罩强度。 */
   background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), transparent);
   pointer-events: none;
@@ -403,7 +403,7 @@ html[data-device="app"] .home-disclaimer {
 @media (width >= 1024px) {
   /* 顶部过渡带骨架：盒模型逐条镜像 .home-topstrip
      （外层卡 → __inner → __trend 内层卡；内层左侧「今日热度趋势」chip + 轮播条）。
-     骨架不画描边/底色（§8b），内层 24px 高度用 min-height 补偿 1px 边框。 */
+     骨架不画描边/底色，内层 24px 高度用 min-height 补偿 1px 边框。 */
   .home-skeleton-topstrip {
     display: flex;
     align-items: center;

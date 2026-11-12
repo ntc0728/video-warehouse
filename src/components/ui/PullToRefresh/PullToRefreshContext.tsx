@@ -53,7 +53,7 @@ type PhaseListener = (state: PTRPhaseState) => void;
  * 必须与「handlerInfo 快照」分成两个 Context：若快照与动作同在一个 value 里，
  * 页面 effect（依赖 ctx）会在 register→setState→value 变→effect 重跑 之间震荡：
  * effect 重跑先 cleanup（register(null)）再 register(handler)，快照在 null↔对象 间
- * 反复翻转，形成同步死循环（实测直接挂死 vitest worker）。拆开后页面 effect 只跑一次。
+ * 反复翻转，形成同步死循环。拆开后页面 effect 只跑一次。
  */
 interface PTRActions {
   register: (handler: PTRHandler | null) => void;

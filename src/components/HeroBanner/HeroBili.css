@@ -41,7 +41,7 @@
  右栏 3 行卡片撑到同一行高；精确解公式已在 layout-tokens.css 把 gap 补偿
  进 --hero-side-w，故单卡行高恰好也是 16:9。
  ⚠️ 不再用 min-height: var(--hero-banner-h)：它会与 aspect-ratio 形成
- 「谁先撑高谁」的循环依赖，且旧反推公式属于 2×2/3×3 档，已作废。
+ 「谁先撑高谁」的循环依赖。
  内部图片/遮罩/文案全为 absolute，aspect-ratio 提供唯一的固有高度。 */
   aspect-ratio: 16 / 9;
   border-radius: var(--hero-card-radius);
@@ -323,7 +323,7 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
 
 @media (width <= 1023px) {
   /* 骨架兼容档：真实 HeroBili 在 <1024 不渲染（HeroBanner 分流到 Classic）。
- 此处只保留网格等宽 + 2 列 × 3 行，避免骨架沿用已作废的 1:1 旧形态。 */
+ 此处只保留网格等宽，骨架为 2 列 × 3 行等宽网格。 */
   html:not([data-device="tv"]) .hero-bili__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -505,8 +505,7 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
 }
 
 .hero-side-card__title {
-  /* 原「绝对定位全宽」→ flex 子项；2026-11-09 起年份/类型改横排后
- 进一步压窄标题占比（max-width 60%），避免标题压到右下角标区。 */
+  /* 标题为 flex 子项，max-width 60% 避免压到右下角标区。 */
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
@@ -578,12 +577,11 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
  按钮**左缘** = 容器右缘(=内容右缘) + 呼吸距，天然不叠内容；min() 上限
  (G − 48)（G=--content-edge-gutter，48 ≈ 按钮宽上限 ≈41 + 贴屏安全距，防留白窄时超出视口），
  间距随视口增大（--fab-breath clamp 12~28）但不超过可用留白。与 fab 同一口径。
- 旧方案（right=−space-md/−breath 压卡）与更旧「距视口恒 space-md」均废。
  祖先裁切自查结论不变（三处 overflow 均视口级）。
  水平：全档进页面留白区，统一
  right = space-md − page-pad-x（按钮右缘距视口恒 space-md 呼吸）。
  配套：layout-tokens.css 的 --page-pad-x 60px 档起点 1440 → 1024（原 1024–1439
- 的 --space-lg 流体 15.2–16.5px 放不下 ~30px 按钮，卡面浮层回退档已作废删除），
+ 的 --space-lg 流体 15.2–16.5px 放不下 ~30px 按钮），
  1024–1919 档留白恒 60px → 按钮左缘在 hero 右缘外 ~20px，完全不叠卡。
  z-index 压过兄弟卡片封面（收藏钮 z-index:3 在其上，浮现时仍可点）；
  图标上、竖排文本下。祖先裁切自查：.app-shell / .app-shell__scroll-wrapper /

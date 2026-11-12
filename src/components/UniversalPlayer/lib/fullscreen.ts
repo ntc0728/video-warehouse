@@ -154,7 +154,7 @@ export async function exitFullscreen(video?: HTMLVideoElement | null): Promise<v
 }
 
 /**
- * 屏幕方向锁定（非桌面端全屏默认横屏，需求⑥）：
+ * 屏幕方向锁定（非桌面端全屏默认横屏）：
  * 1. Web 标准 screen.orientation.lock —— 仅真·全屏下浏览器允许，伪全屏/非全屏会 reject → 静默。
  * 2. App 端兜底（Capacitor WebView 无元素级全屏 → 降级 CSS 伪全屏 → Web lock 必 reject）：
  * 走 @capacitor/screen-orientation 原生桥，无需全屏状态。

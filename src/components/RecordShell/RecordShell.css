@@ -197,7 +197,7 @@
   /* 侧栏 → 横向精简栏（参考桌面端：.record-aside 不使用卡片式包裹，仅作布局条；
  gap 与桌面端一致用 space-md，保证 .record-edit-row 与上方元素间距对齐）。
  margin-top 归零：基础规则的 space-sm 会让筛选栏与顶栏间距比其它页面（仅 page-padding
- 一档）多出一级（2026-11-10 用户反馈：收藏/历史页与顶栏间距过大，与其他页面对齐） */
+ 一档）多出一级；收藏/历史页与顶栏间距与其他页面对齐 */
   .record-aside {
     z-index: 5;
     display: flex;
@@ -276,7 +276,7 @@
  且不撑开 .record-main 高度。flex item 的 min:auto = min-content，内容超高
  时被撑开；内容少时 flex-grow 仍填满剩余空间，空状态垂直居中链不受影响。 */
     min-height: auto;
-    /* 面板底部与页面留距（2026-11-09 用户反馈：外层卡片式面板底部贴边）：
+    /* 面板底部保留页面留距：
        左右由 padding 留白，底部必须用 margin 把面板整体抬离页底。 */
     margin-bottom: var(--space-sm);
     padding: 0 var(--space-sm);

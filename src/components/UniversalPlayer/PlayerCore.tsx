@@ -64,7 +64,7 @@ export default function PlayerCore({
   const mirror = usePlayerStore(s => s.mirror);
   const aspectRatio = usePlayerStore(s => s.aspectRatio);
   const isPiP = usePlayerStore(s => s.isPiP);
-  // Issue4 色彩调整：亮度/饱和度/对比度经 CSS filter 应用到视频（手势与弹窗共用同一 store 字段）
+  // 色彩调整：亮度/饱和度/对比度经 CSS filter 应用到视频（手势与弹窗共用同一 store 字段）
   const colorFilter = usePlayerStore(s => s.colorFilter);
   // 外挂字幕渲染管线：subtitleUrl（blob VTT）此前只存 store 无消费方，导入字幕从未显示
   const subtitleUrl = usePlayerStore(s => s.subtitleUrl);

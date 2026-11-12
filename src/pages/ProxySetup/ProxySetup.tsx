@@ -373,7 +373,7 @@ export default function ProxySetup() {
 
         </div>
 
-        {/* 底部日志坞（方案 B）：吸底常驻；收起 = 一行状态条（条数 + 最近一条），点开抽屉看全量；部署中自动展开 */}
+        {/* 底部日志坞：吸底常驻；收起 = 一行状态条（条数 + 最近一条），点开抽屉看全量；部署中自动展开 */}
         <div className={`proxy-setup__dock${deploying ? ' is-busy' : ''}`}>
           <div className="proxy-setup__dock-drawer" hidden={!dockOpen}>
             <div className="proxy-setup__console" ref={logRef}>

@@ -265,8 +265,8 @@ function HeroBannerClassic({
   //接口数据只取前 6 张驱动轮播（<1024 / 移动端只取前 6 张）。
   // ⚠️ 必须 useMemo：裸 slice() 每次渲染产生新数组引用，会让下方依赖 [displayItems]
   // 的 useLayoutEffect 每轮都执行，其中 setBgIndices([0]) 传新数组永不 Object.is 相等
-  // → setState → 再渲染 → 再 effect ……「Maximum update depth exceeded」死循环
-  // （实测报错；HeroBili 的 bannerItems 同款 slice 一直是 useMemo，本处补齐）。
+ // → setState → 再渲染 → 再 effect ……「Maximum update depth exceeded」死循环
+ // （与 HeroBili 一致改用 useMemo 缓存）。
   const displayItems = useMemo(() => items.slice(0, BANNER_MAX), [items]);
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -779,7 +779,7 @@ function HeroBannerClassic({
   }, [isDragging, handleDragMove, handleDragEnd]);
 
   // 空状态：加载中只显示骨架（无文字），加载完成且无数据才显示"暂无推荐"。
-  // 底图分两态（2026-11-11 用户要求）：加载中 = 骨架扫光；空态（暂无推荐）=
+  // 底图分两态：加载中 = 骨架扫光；空态（暂无推荐）=
   // 项目 card 封面加载失败通用品牌占位（MonitorPlay + kinoTV，与 LazyImage 品牌兜底同款），
   // 不再是纯黑底。 */
   if (!displayItems.length) {

@@ -24,7 +24,7 @@ interface GraphNodes {
 }
 
 /**
- * Issue4 音效调节：通过 Web Audio 图谱把 <video> 的音频路由到
+ * 音效调节：通过 Web Audio 图谱把 <video> 的音频路由到
  * source → 3段EQ → 声道拆分 → (右声道 Haas 延迟) → 合并 → 增益 → 声道平衡 → 输出
  * - 默认（off + balance0 + gain1）时不构建图谱，保留原生音频路径（零风险）。
  * - 仅当用户首次选择非默认音效时才创建 AudioContext / MediaElementSource；

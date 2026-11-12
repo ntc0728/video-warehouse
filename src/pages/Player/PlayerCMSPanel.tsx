@@ -106,7 +106,7 @@ export function PlayerCMSPanel({
 
   // 面板只展示「video 至少带一条线路或一集」或「尚未探测（lazy 入口）」的源：
   // cmsResults 里 video 为空、或 video 存在但 sources/episodes 都空的壳条目
-  // （切源失败 / 探测无数据）不再渲染成可点 tab。2026-11-11 用户反馈。
+  // （切源失败 / 探测无数据）不再渲染成可点 tab。
   const visibleSourceIds = selectedSourceIds.filter((sourceId) => {
     const result = resultMap.get(sourceId);
     if (!result) return true;

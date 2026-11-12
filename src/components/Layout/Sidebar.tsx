@@ -41,7 +41,7 @@ interface SidebarProps {
 const tabs = [
   { key: '/', title: '首页', icon: <Icon icon={Home} size="md" />, activeIcon: <Icon icon={Home} size="md" strokeWidth={2.5} /> },
   { key: '/browse', title: '搜索中心', icon: <Icon icon={Search} size="md" />, activeIcon: <Icon icon={Search} size="md" strokeWidth={2.5} /> },
-  // 热度榜（2026-11-11 用户要求补）：移动 web 汉堡菜单此前缺项，仅桌面顶栏有入口
+  // 热度榜：移动端菜单含热度榜入口（桌面顶栏同有入口）
   { key: '/chart', title: '热度榜', icon: <Icon icon={Flame} size="md" />, activeIcon: <Icon icon={Flame} size="md" strokeWidth={2.5} /> },
   { key: '/iptv', title: 'IPTV', icon: <Icon icon={Tv} size="md" />, activeIcon: <Icon icon={Tv} size="md" strokeWidth={2.5} /> },
   { key: '/collections', title: '收藏', icon: <Icon icon={Star} size="md" />, activeIcon: <Icon icon={Star} size="md" strokeWidth={2.5} /> },

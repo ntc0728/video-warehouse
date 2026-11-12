@@ -181,7 +181,7 @@ export function useKeyboardShortcuts({
           break;
         case 'c':
         case 'C': {
-          // 字幕开关：subtitleEnabled 驱动 <track> 挂载（批次 4 新增的字幕渲染管线）
+          // 字幕开关：subtitleEnabled 驱动 <track> 挂载（字幕渲染管线）
           e.preventDefault();
           const { subtitleEnabled, setSubtitleEnabled } = usePlayerStore.getState();
           setSubtitleEnabled(!subtitleEnabled);

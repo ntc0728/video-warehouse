@@ -282,7 +282,7 @@ hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
 /* 移动端删除按钮常驻（对齐收藏/历史既有规则） */
 @media (width <= 767px) {
   :is(.history-page, .collection-page) .record-card__delete {
-    /* 按钮整体收一档（2026-11-09 用户反馈「删除图标和底色有点大」）：
+    /* 删除按钮采用紧凑尺寸：
        Icon 注入的 width/height 走 var(--icon-xs)，就地覆写为 --text-2xs(11px)，
        底色/命中区随内容收缩（padding 不变，22.4 → 18px 见方）。 */
     --icon-xs: var(--text-2xs);
@@ -291,7 +291,7 @@ hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
     opacity: 1;
   }
   /* 视口 < 768px：超长标题「进入视口」才跑马灯（离开视口即停，避免全部常驻滚动）。
-     时长 ×1.5（7s → 10.5s）：2026-11-09 用户反馈移动端自动滚动偏快。 */
+     时长 ×1.5（7s → 10.5s）：移动端滚动周期 10.5s。 */
   :is(.history-page, .collection-page) .record-card.is-in-view .record-card__title.is-overflow .record-card__title-track {
     animation: rc-marquee calc(var(--dur-marquee) * 1.5) linear infinite;
   }
@@ -324,7 +324,7 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
   }
 
   :is(.history-page, .collection-page) .record-card__media {
-    /* 封面同时满足两点（2026-11-09 用户两轮反馈合并）：
+    /* 封面同时满足两点：
        ① 高度通铺卡片（cover 上下不留白）→ align-self: stretch
        ② 保持 16:9 比例（不机械拉伸变形）→ 宽由高反推：aspect-ratio 16/9 + width auto
        卡高由右侧信息列内容决定（flex stretch），封面宽 = 卡高 × 16/9；
@@ -347,7 +347,7 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
     display: none;
   }
 
-  /* 标题右端为删除按钮留位（2026-11-09 用户反馈：长标题压到删除按钮上）：
+  /* 标题预留删除按钮宽度，避免重叠：
      删除按钮 = absolute top/right space-xs + padding space-xs + icon-xs，
      标题宽度上限扣除「按钮宽 + 右偏移 + 间隙」，跑马灯被裁在本盒内，
      不会再从按钮底下穿过（效果同竖版 VideoCard 标题跑马灯：超宽即双段无缝滚动）。 */

@@ -668,7 +668,7 @@ a[role="button"]:active:not(:disabled):not(.no-press):not(.settings-page *):not(
   padding: var(--space-sm) var(--space-sm) 0 var(--space-sm);
 }
 
-/* 移动端补底部间距（2026-11-09 用户反馈：browse/IPTV 卡片底部贴边）——
+/* 移动端补底部间距（避免 browse/IPTV 卡片底部贴边）——
  与左右同档 --space-sm。
  ⚠️ 记录页（收藏/历史）内容溢出本外框（flex 撑满视口），根 padding-bottom
  不计入滚动末端，故那两页的底部留白另加在自己的内容层（History.css /
@@ -1203,7 +1203,7 @@ root[data-device] 的更高特异性压过 :root 的 (0,1,0)，与 --iptv-cols �
 [data-sonner-toaster][data-y-position="top"][data-x-position="center"] {
   top: calc(var(--header-height) + var(--space-lg)) !important;
   right: 0 !important;
-  /* 水平真居中（2026-11-11 用户实测 toast 靠右）：sonner 自身对 ol 容器写
+  /* 水平真居中（修正 sonner ol 容器偏移导致的 toast 靠右）：sonner 自身对 ol 容器写
  left/right = offset 内距（实测 16px）却又把 width 钉成 clientWidth（390）→
  内容盒整体右移 offset/2，项内 margin:auto 居中跟着偏。
  强制 ol 铺满视口宽度，项级 left/right:0 + margin:auto 即视口居中。 */

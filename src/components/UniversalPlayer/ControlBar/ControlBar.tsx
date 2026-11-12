@@ -198,7 +198,7 @@ export default function ControlBar({
         )}
 
         <div className="up-control-right">
-          {/* 音量：全屏模式按需求④移除（移动端音量无意义，iOS 甚至禁止 JS 改音量） */}
+          {/* 音量：全屏模式移除（移动端音量无意义，iOS 甚至禁止 JS 改音量） */}
           {!isMobile && !fullscreen && (
             <VolumeControl
               volume={volume}
@@ -235,7 +235,7 @@ export default function ControlBar({
                 onPopoverChange={onPopoverChange}
               />
             )}
-            {/* 循环：全屏模式按需求④移出底部（收纳进右上角「更多设置」抽屉） */}
+            {/* 循环：全屏模式移出底部（收纳进右上角「更多设置」抽屉） */}
             {isVideoMode && !isMobile && !fullscreen && onLoopModeChange && (
               <LoopButton mode={loopMode} onChange={onLoopModeChange} />
             )}

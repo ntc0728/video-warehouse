@@ -434,7 +434,7 @@ describe('parseM3U8Content 预留属性解析（catchup / UA / Referer）', () =
   });
 });
 
-describe('buildCatchupUrl（M3U catchup 回看 URL 拼装，Gap G1 / §3.4）', () => {
+describe('buildCatchupUrl（M3U catchup 回看 URL 拼装）', () => {
   // 固定时间基准，避免 Date.now() 抖动影响断言（函数 now 参数默认 Date.now()）
   const NOW = 1_700_000_000_000; // 2023-11-14 左右，纯数值无语义
   const BASE = 'http://example.com/live/ch01.m3u8';

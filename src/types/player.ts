@@ -163,15 +163,15 @@ export interface UniversalPlayerProps {
   channelFavorite?: boolean;
   /** IPTV：切换当前频道收藏态（未传则不渲染收藏按钮） */
   onToggleFavorite?: () => void;
-  /** IPTV 专用：频道初始化用的原始 query（url/id/name）；`url` 传真实播放地址。
-   * 2026-11-11：此前把整段 query 当 url 传入，导致 store.currentSrc / MediaSession
+  /** IPTV 专用：频道初始化用的原始 query（url/id/name）；`url` 须传真实播放地址：
+   * 整段 query 当 url 传入会导致 store.currentSrc / MediaSession
    * 后台播放拿到非媒体 URL。 */
   initQuery?: string;
   /** 当前集的展示标签（header badge 用，如 "第2季 第3集"） */
   episodeLabel?: string;
   /** 进度匹配用的「裸」集标签（如 "第3集" / 信息型篇名），必须与历史记录写入口径一致。
-   * 不传则回退 episodeLabel（兼容非剧集场景）。2026-11-11：此前把展示标签直接用于
-   * 严格相等匹配，季名前缀导致「按内容身份续播」永不命中。 */
+   * 不传则回退 episodeLabel（兼容非剧集场景）。展示标签带季名前缀，直接用于
+   * 严格相等匹配会导致「按内容身份续播」永不命中。 */
   progressEpisodeLabel?: string;
   /** 当前季号（剧集播放时有值），用于进度恢复按「内容身份」精确匹配 */
   seasonNumber?: number;

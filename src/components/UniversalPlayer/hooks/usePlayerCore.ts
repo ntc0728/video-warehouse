@@ -57,9 +57,9 @@ function isTimeBuffered(video: HTMLVideoElement, time: number): boolean {
 }
 
 /**
- * 解冻切后台后冻结的视频画面（Issue2）。
+ * 解冻切后台后冻结的视频画面。
  *
- * 旧实现失效原因（实测）：
+ * 直接改写 transform + offsetWidth 不产生样式变化，无法解冻：
  * 1. 同值重写 transform + offsetWidth —— 不产生任何样式变化，合成层不失效，完全无效。
  * 2. 追加 translateZ(0) 两帧后还原 —— translateZ 只触发「合成层重绘」，若解码管道
  * 未重新提交帧，重绘的仍是最后一帧 → 视觉不变。
@@ -219,7 +219,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
   /** 播放进度恢复逻辑 */
   // 进度匹配用「裸标签」（与历史写入口径一致）；展示标签带季名前缀，不能直接用于严格相等
   const { loadProgress } = useProgressRestore({ videoId, vodId, episodeUrl, episodeLabel: progressEpisodeLabel ?? episodeLabel, seasonNumber, skipHistory });
-  /** Issue4 音效调节：Web Audio 图谱随 audioEffect 状态变化应用（默认态不构建图谱，零风险） */
+  /** 音效调节：Web Audio 图谱随 audioEffect 状态变化应用（默认态不构建图谱，零风险） */
   useAudioEffects(videoRef);
   /** MediaSession（后台听视频）：锁屏媒体卡片 + 媒体键控制；开关由 store.backgroundPlay 驱动 */
   useMediaSession({
@@ -281,7 +281,7 @@ export function usePlayerCore(options: UsePlayerCoreOptions) {
     }
   }, [url, type]);
 
-// Issue2：切后台后视频画面冻结（音频/进度继续，但合成层不刷新）。
+// 切后台后视频画面冻结（音频/进度继续，但合成层不刷新）。
 // 浏览器后台 Tab 会停掉 video 的帧呈现；带 transform（镜像/画面比例）或 filter
 // （色彩调整）的视频合成层，部分 Chromium 版本切回前台后不会自动重新栅格化，
 // 画面停在最后一帧。解冻策略见 reviveFrozenVideo()（其上方定义）。

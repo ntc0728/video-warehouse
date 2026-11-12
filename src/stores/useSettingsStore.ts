@@ -3,7 +3,7 @@
  * 管理视频源索引、IPTV源索引、主题模式、CORS代理和翻译API等全局配置
  * 主题支持 light/dark/system 三种模式，system 模式跟随系统偏好
  *
- * [批次3合并] 原 useSubtitleStore 的翻译 API 配置（translationAppId/translationApiKey/autoTranslate/targetLang）已合并到此 store
+ * 翻译 API 配置（translationAppId/translationApiKey/autoTranslate/targetLang）由原 useSubtitleStore 合并至此
  * [数据迁移] 旧 localStorage key `subtitle-store` 的 translation API 数据会在首次加载时自动迁移到 `app-settings`
  * [安全] 敏感字段（tmdbAccessToken、translationApiKey）使用 AES-GCM 加密存储
  *
@@ -70,8 +70,8 @@ const APP_SETTINGS_PERSIST_KEY = 'app-settings';
 
 /**
  * uiScale 合法档位边界：95%–120%（选项 95/100/105/110/115/120 + 自动）。
- * 2026-11-09 方案 B：删除 90% 档（与全站 --type-scale 0.95 叠加后正文跌破 12px、
- * 角标跌破 10px）、补 105% 对称档。旧档位 90% / 130% / 150% 落盘值
+ * 90% 档与全站 --type-scale 0.95 叠加后正文跌破 12px、角标跌破 10px，已移除；
+ * 补 105% 对称档。旧档位 90% / 130% / 150% 落盘值
  * 钳到最近合法档（90% → 95%，130%/150% → 120%），避免下拉无匹配项显示空值。
  */
 const UI_SCALE_MAX = 1.2;

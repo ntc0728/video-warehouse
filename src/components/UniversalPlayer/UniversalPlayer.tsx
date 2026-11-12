@@ -209,9 +209,8 @@ export default function UniversalPlayer({
   // 复用同一 URL 重建 mpegts.js 重试（URL 变化时复位）
   const [degradedType, setDegradedType] = useState<SourceType | null>(null);
   // 仅音频源（manifest 无视频轨，HLSAdapter 上报「该源仅含音频」）：黑屏 + 音频正常播放。
-  // 供点击语义使用——此时单击直接暂停/播放、不进入双击全屏（2026-11-11 用户反馈
-  // 「仅有音频时点击暂停无法暂停」：黑屏上控制栏已自动隐藏，首击只叫出控制栏，
-  // 250ms 内第二击又被判为全屏）。
+  // 供点击语义使用——此时单击直接暂停/播放、不进入双击全屏（黑屏上控制栏已自动隐藏，
+  // 首击只叫出控制栏，250ms 内第二击又被判为全屏）。
   const [audioOnly, setAudioOnly] = useState(false);
   // 移动端布局判定（app 端恒真）：移动端/App 端点播页走「精简控制栏 + 右上角操作组 + 底部弹窗」布局
   const isMobileLayout = useIsMobileLayout();
@@ -219,7 +218,7 @@ export default function UniversalPlayer({
   // 播放器渲染的是移动端形态（头部三图标 + 精简控制栏）时，show()（操作类）与
   // mobileSettingsToast（设置类）必须汇入同一提示槽——否则窄窗下操作类走右上角
   // .up-player-toast、设置类走居中，同一操作（镜像/倍速/循环等 store 双触发）会
-  // 同时上屏两个胶囊（2026-11-11 实测叠加）。真机此前只是「同槽覆盖」巧合掩盖。
+  // 同时上屏两个胶囊——两枚提示可能同时上屏，取更靠下者避免重叠。
   // 仅真桌面宽窗保留右上角通道（与截图类居中提示位置远离，不构成叠加）。
   // Hook 必须无条件调用（rules-of-hooks）：isNativePlatform() 是常量级判定，
   // 但写在 || 左侧会让 useIsRealPhone 在 App 端整条渲染周期缺席，Hook 链跨端不一致。
@@ -244,7 +243,7 @@ export default function UniversalPlayer({
   const hasHeaderRightControls = showHeaderFullscreen || (isMobileLayout && mode === 'video');
   // 移动端弹窗状态
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
-  // 全屏/横屏「更多设置」右侧抽屉（需求⑤）
+  // 全屏/横屏「更多设置」右侧抽屉
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [castSheetOpen, setCastSheetOpen] = useState(false);
   // 投屏弹窗懒加载：首次点击投屏按钮后才挂载（触发 lazy chunk 拉取），之后保持挂载以复用状态
@@ -256,7 +255,7 @@ export default function UniversalPlayer({
   const [showShortcuts, setShowShortcuts] = useState(false);
   //-6 桌面右键菜单（点播模式，位置为视口坐标）
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-  // Issue4：右键菜单触发的设置弹窗（色彩/音效），null 表示关闭
+  // 右键菜单触发的设置弹窗（色彩/音效），null 表示关闭
   const [activePanel, setActivePanel] = useState<'color' | 'audio' | null>(null);
   // 投屏激活状态（右上角图标常亮提示）
   const [castActive, setCastActive] = useState(false);
@@ -903,8 +902,8 @@ skipHistory,
   }, [playerCore]);
 
   // IPTV 线路计数：同名频道总数（含当前），当前位次 = 在同名列表中的下标。
-  // 与 useIPTVNavigation 的候选口径一致（2026-11-11 修正：此前排除自身且按 sourceId
-  // 区分，导致计数恒 0、OSD 恒显示「线路 1/N」且首点换源跳号）。
+  // 与 useIPTVNavigation 的候选口径一致：同名列表含自身、不按 sourceId 区分
+  //（否则计数恒 0、OSD 恒显示「线路 1/N」且首点换源跳号）。
   const iptvLineInfo = useMemo(() => {
     if (mode !== 'iptv' || !currentChannel) return { count: 0, index: 0 };
     const lines = _channels.filter(ch => ch.name === currentChannel.name);
@@ -940,9 +939,9 @@ skipHistory,
   const isFullscreen = usePlayerStore(s => s.isFullscreen);
   // 仅「真机移动端 + 全屏 + 点播」启用控制栏改造 / 右上角组 / 右侧抽屉。
   // 用 isMobileDevice 而非 isMobileLayout：横屏手机宽度 > 767px 会被 isMobileLayout 判成非移动，
-  // 而 PC 桌面全屏必须保持原样（需求①：pc 桌面 web 不改）。
+  // 而 PC 桌面 web 保持原点击语义。
   const fsMobile = isMobileDevice && isFullscreen && mode === 'video';
-  // 需求④：每次进入/退出全屏（移动端）都强制关闭更多设置抽屉，
+  // 每次进入/退出全屏（移动端）都强制关闭更多设置抽屉，
   // 保证「再次全屏需手动点击更多设置图标才出现弹窗」。
   useEffect(() => {
     setDrawerOpen(false);
@@ -1261,7 +1260,7 @@ app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全�
         }
       />
 
-      {/* 全屏/横屏常驻右上角操作组（需求④）：画中画·投屏·更多设置。
+      {/* 全屏/横屏常驻右上角操作组：画中画·投屏·更多设置。
  与控制栏自动隐藏解耦——控制栏隐藏后仍在，点击「更多设置」打开右侧抽屉。 */}
       {fsMobile && (
         <div className="up-fs-corner" onClick={(e) => e.stopPropagation()}>
@@ -1397,7 +1396,7 @@ app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全�
         />
       )}
 
-      {/* Issue4：色彩/音效调整弹窗（覆盖层点击关闭，弹窗内 stopPropagation 避免误触播放） */}
+      {/* 色彩/音效调整弹窗（覆盖层点击关闭，弹窗内 stopPropagation 避免误触播放） */}
       {activePanel && (
         <div className="up-settings-overlay" onClick={() => setActivePanel(null)}>
           {activePanel === 'color' ? (
@@ -1415,7 +1414,7 @@ app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全�
       )}
 
       {/* 音量条全模式可用（键盘/滑杆/遥控器调音量时展示）；TV 端同时由 useTVInput 驱动。
- Web 桌面端隐藏：右侧垂直音量条是触摸/遥控场景设计，桌面走控制栏音量滑杆即可（Issue1） */}
+ Web 桌面端隐藏：右侧垂直音量条是触摸/遥控场景设计，桌面走控制栏音量滑杆即可 */}
       <VolumePopup
         visible={showVolumePopup && !isDesktopWeb}
         volume={volume}
@@ -1516,7 +1515,7 @@ app 端播放页已全屏铺满（且进入即锁定横屏），不再显示全�
         </>
       )}
 
-      {/* 全屏/横屏「更多设置」右侧抽屉（需求⑤）：内容 = 原移动端竖版更多设置全部项，
+      {/* 全屏/横屏「更多设置」右侧抽屉：内容 = 原移动端竖版更多设置全部项，
  加全屏专属的解码模式与快捷键；选中不关闭以支持连续调节 */}
         {fsMobile && (
           <SettingsDrawer

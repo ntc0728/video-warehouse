@@ -3,7 +3,7 @@
  * 管理视频播放状态、解码模式、画质切换、画中画、字幕样式等核心播放器功能
  * 使用 Zustand + persist 中间件，仅持久化用户偏好设置（音量、播放速率、解码模式、字幕样式）
  *
- * [批次3合并] 原 useSubtitleStore 的 subtitleSettings 功能已合并到此 store
+ * subtitleSettings 功能由原 useSubtitleStore 合并至此
  * [数据迁移] 旧 localStorage key `subtitle-store` 的 settings 数据会在首次加载时自动迁移到 `player-store`
  */
 import { create } from 'zustand';
@@ -12,14 +12,14 @@ import type { VideoSource, SourceType } from '@/types/video';
 import type { PlayerMode, PlatformType, LoopMode } from '@/types/player';
 import type { SubtitleSettings } from '@/types/subtitle';
 
-/** 视频色彩调整（CSS filter 参数；1 = 原始值），Issue4 色彩调整弹窗 */
+/** 视频色彩调整（CSS filter 参数；1 = 原始值） */
 export interface ColorFilter {
   brightness: number;
   saturation: number;
   contrast: number;
 }
 
-/** 音效预设（常见播放器音效；off = 关闭/透传），Issue4 音效调节弹窗 */
+/** 音效预设（常见播放器音效；off = 关闭/透传 */
 export type AudioPreset =
   | 'off' | 'pop' | 'rock' | 'classical' | 'bass' | 'vocal' | 'treble' | '3d';
 
@@ -83,9 +83,9 @@ interface PlayerState {
   /** 源切换提示：历史/指定源无数据被改选时由 CMS 源聚合链写入，
  * 驱动续播卡顶部行（播放器内靠上居中）；与续播卡同生命周期（约 6s 自清） */
   sourceNotice: string | null;
-  /** 视频色彩调整（CSS filter）：亮度/饱和度/对比度，1 为原始值（Issue4 色彩调整弹窗） */
+  /** 视频色彩调整（CSS filter）：亮度/饱和度/对比度，1 为原始值 */
   colorFilter: ColorFilter;
-  /** 视频音效调节状态（Issue4 音效调节弹窗）：预设 + 声道平衡 + 音量增强 */
+  /** 视频音效调节状态：预设 + 声道平衡 + 音量增强 */
   audioEffect: AudioEffectState;
 
   setSource: (src: string, type: SourceType) => void;

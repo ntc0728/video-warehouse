@@ -8,8 +8,8 @@
  record 系根类在 RecordShell 上），独立保证「flex:1 撑满路由区剩余高 +
  内容区 2200 封顶居中」，让 .token-required 垂直/水平都居中。
  padding 归零：page-padding 的纵向内距是「上有下无」（top space-sm / bottom 0），
- 会让 flex 居中的提示整体下坠 ≈半档（实测 390 +6px / 1440 +4px，
- 用户反馈「有点靠下」）；提示自身已有 space-3xl 内距兜边，水平由 text-align/flex 居中。 */
+ 会让 flex 居中的提示整体下坠 ≈半档（实测 390 +6px / 1440 +4px）；
+ 提示自身已有 space-3xl 内距兜边，水平由 text-align/flex 居中。 */
 .token-required-page {
   display: flex;
   flex: 1 1 0;
@@ -27,7 +27,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* 小视口保护（2026-11-11 用户手机实测「提示偏下」根因）：
+  /* 小视口保护（min() 钳到宿主可视高度，避免盒体溢出下沉）：
    手机浏览器可视高度常 < 480px + 上下 space-3xl 内距，min-height 固定档会让
    盒体顶死溢出 → 盒内居中的内容整体下沉十几像素。改 min() 钳到宿主实际高度，
    盒体恒 ≤ 内容区，flex 居中在任意视口都成立。 */
@@ -73,7 +73,7 @@
   text-decoration: underline;
 }
 
-/* 移动端不再 50vh 紧凑（2026-11-11 用户要求「页面居中显示」）：
+/* 移动端内容垂直水平居中（不再 50vh 紧凑）：
  删除原 ≤767 / app 的 flex:none + min-height:50vh 覆盖，
  基础规则 flex:1 撑满宿主（.token-required-page 已建 flex 链）→ 全端垂直居中，
  与首页无 token 提示的高度链行为一致。 */

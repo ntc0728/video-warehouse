@@ -60,8 +60,8 @@ const GESTURE_EXCLUDE_SELECTOR = [
   '.iptv-osd-bar',
   '.iptv-volume-popup',
   '.up-ms-sheet',
-  /* 全屏「更多设置」抽屉：此前漏登记 → 抽屉内纵向滑动被手势拿去调音量，
-     且 preventDefault 让抽屉无法滚动（2026-11-11 真机反馈） */
+  /* 全屏「更多设置」抽屉：漏登记会导致抽屉内纵向滑动被手势拿去调音量，
+     且 preventDefault 让抽屉无法滚动 */
   '.up-fs-drawer',
   '.up-cast-sheet',
   '.up-subtitle-settings',

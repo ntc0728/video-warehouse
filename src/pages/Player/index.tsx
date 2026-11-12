@@ -160,7 +160,7 @@ export default function PlayerPage() {
   const [tmdbMediaType, setTmdbMediaType] = useState<'movie' | 'tv'>('movie');
 
   // 非 TMDB id（CMS 直链 / 收藏 / 历史进入）：媒体类型取自 video.type。
-  // 否则 tmdbMediaType 恒为默认 'movie'，切源重搜会按电影形态过滤剧集（2026-11-11 审查）。
+  // 否则 tmdbMediaType 恒为默认 'movie'，切源重搜会按电影形态过滤剧集。
   useEffect(() => {
     if (!id || id.startsWith('tmdb-')) return;
     const mt = resolveMediaType(id, video?.type);
@@ -749,7 +749,7 @@ export default function PlayerPage() {
     : (episodes.length === 0 ? currentSourceNameRef.current : undefined);
 
   // 进度匹配标签：必须与历史写入口径完全一致（裸集标签「第N集」/信息型篇名，不带季名前缀）。
-  // 展示用 episodeLabel 带「第N季 」前缀，直接做严格相等会永不命中（2026-11-11 修复）。
+  // 展示用 episodeLabel 带「第N季 」前缀，直接做严格相等会永不命中。
   const progressEpisodeLabel = currentEp
     ? (isPlainEpisodeTitle(currentEp.title) ? `第${currentEp.number}集` : currentEp.title)
     : episodeLabel;

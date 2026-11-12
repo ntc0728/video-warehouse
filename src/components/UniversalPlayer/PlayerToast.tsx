@@ -98,7 +98,7 @@ export function ToastProvider({
   /**
  * 测量居中提示的目标锚点：
  * - `roomy`：播放器在视口内还留有足够可见高度（≥ MIN_TOAST_ROOM）
- * - 移动端（mobileCenter，2026-11-11 拍板「顶部胶囊」）：水平居中于播放器，
+   * - 移动端（mobileCenter，顶部胶囊）：水平居中于播放器，
  * 垂直 = 播放器顶缘 + topAnchorOffsetRef（header 下沿 / 可见续播卡下沿取 max，
  * 弹出瞬间一次测定，滚动重测不重查显隐防抽搐）。顶部是唯一无争抢区带
  * （中央=播放按钮+seek HUD，底部=控制栏+字幕）。y 为提示中心
@@ -135,7 +135,7 @@ export function ToastProvider({
     if (mobileCenter) {
       if (remeasureOffset) {
         // 弹出瞬间测定锚点偏移：header 下沿，续播卡可见时让位到其下沿（同锚带
-        // 曾经上下叠两枚胶囊，2026-11-11 实测），取更靠下者
+        // 两枚胶囊可能同时存在），取更靠下者
         let offset = headerH + 36;
         const resumeCard = el.querySelector<HTMLElement>('.up-resume-card');
         if (resumeCard) {
@@ -158,7 +158,7 @@ export function ToastProvider({
       y = Math.max(y, rect.top + headerH + 36);
     }
     // 夹取到可见交集内：容器滚到只剩一条时（如用户滚到剧集列表后触发错误提示）
-    // rect.top 为负，不夹取会把提示带到视口外（曾实测 centerY=-422 不可见）
+    // rect.top 为负，不夹取会把提示带到视口外
     const minY = visibleTop + EDGE_MARGIN;
     const maxY = visibleBottom - EDGE_MARGIN;
     y = maxY > minY ? Math.min(Math.max(y, minY), maxY) : (visibleTop + visibleBottom) / 2;

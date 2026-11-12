@@ -39,7 +39,7 @@
   white-space: nowrap;
 }
 .bmb-seg {
-  /* 移动端模式段钮（2026-11-09 二轮：仍偏大 → 26→24px、字号 xs→2xs(11px)）。
+  /* 移动端模式段钮（26→24px、字号 xs→2xs(11px)，满足 AA 下限）。
      24px 是 WCAG 2.5.8 AA 的可点区下限，不再往下压。 */
   min-height: 24px;
   padding: var(--space-2xs) var(--space-sm);
@@ -70,7 +70,7 @@
   background: var(--color-surface-hover);
   color: var(--color-text);
   font: inherit;
-  /* 2026-11-09 二轮：字号 xs→2xs(11px)，图标 12→11px，高度 26→24（AA 下限） */
+  /* 字号 xs→2xs(11px)，图标 12→11px，高度 26→24（AA 下限） */
   font-size: var(--text-2xs);
   transition: border-color 0.14s, background 0.14s, color 0.14s;
   cursor: pointer;

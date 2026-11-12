@@ -234,8 +234,8 @@ const VideoCard = memo(function VideoCard({
       const gap = parseFloat(getComputedStyle(trackEl).columnGap) || 0;
       const distance = textWidth + gap;
       // 匀速 30px/s；过短文本夹到 5s（避免窄卡里"闪滚"），超长标题封顶 24s。
-      // 移动端（≤767px / app）无 hover、常驻自动滚，速度降到 20px/s
-      // （2026-11-09 用户反馈自动滚动偏快），时长上下限同步放宽为 7s / 32s。
+      // 移动端（≤767px / app）无 hover、常驻自动滚，速度降到 20px/s，
+      // 时长上下限同步放宽为 7s / 32s。
       const isMobileAutoScroll =
         window.matchMedia('(max-width: 767px)').matches ||
         document.documentElement.getAttribute('data-device') === 'app';
@@ -440,7 +440,7 @@ const VideoCard = memo(function VideoCard({
               </div>
               {/* 右侧：进度时间（同一行、右对齐；标题自动让出宽度）。
                   横版年份胶囊已删：唯一横版数据源 ContinueWatchingItem 无 year 字段，
-                  video.year 恒 falsy，从未渲染过（2026-11-09 死代码清理）。 */}
+                  video.year 恒 falsy，从未渲染过。 */}
               <div className="video-card-landscape__meta">
                 {progress !== undefined && duration !== undefined && duration > 0 && (() => {
                   const pct = progress / duration;

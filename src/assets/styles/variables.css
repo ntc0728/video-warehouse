@@ -325,7 +325,7 @@
  （两档塌缩）；段2 逆视口递减更违反可读性常识（桌面 1920 正文 13px < 平板 768 的 14px）。
  恒定常量本身即 ≥ 行业下限，**不设可读性下限钳制**（钳制是多余的）。 */
   /* 角标/元信息最小档：11px 基 × ui-scale × type-scale，并钳 10px 下限
- （2026-11-09 方案 B：界面缩放 95% 档与移动端 --type-scale 0.95 叠加时裸算式得 9.93px，
+ （界面缩放 95% 档与移动端 --type-scale 0.95 叠加时裸算式得 9.93px，
  低于全行业最小档 Vant xs=10 → max() 兜底；默认档 10.45px 不受影响）。 */
   --text-2xs: max(10px, calc(11px * var(--ui-scale) * var(--type-scale))); /* 恒定 11 × type-scale，钳 10px 下限（原 clamp(9px,…,10.333px)） */
   --text-xs:  calc(12px * var(--ui-scale) * var(--type-scale)); /* 恒定 12 × type-scale（原 clamp(12px,…,12.667px)） */
@@ -435,8 +435,8 @@
   --comp-thumb-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale)); /* 14→28 滑块拖拽手柄 */
   /* 榜单页（Chart）封面 / 骨架尺寸：固定值而非流体——封面为「媒体比例盒」，
  尺寸由 16:9 比例与网格决定，不随视口流体（流体会让行高跳动）。
- 2026-11-11 封面全端横版：原竖版 --comp-chart-cover-w/h（112×168）随
- 「<1024 / app 竖版分档」废弃删除，全端统一横版 160×90；排名列 32。 */
+ 封面全端横版：竖版 --comp-chart-cover-w/h（112×168）已由横版 token 取代，
+ 随「<1024 / app 竖版分档」废弃删除，全端统一横版 160×90；排名列 32。 */
   --comp-chart-rank-w:  32px;
   --comp-chart-cover-land-w: 160px;
   --comp-chart-cover-land-h:  90px;

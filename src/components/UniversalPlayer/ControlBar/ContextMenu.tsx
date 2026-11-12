@@ -14,9 +14,9 @@ interface ContextMenuProps {
   containerRef: React.RefObject<HTMLElement | null>;
   onClose: () => void;
   onTogglePlay: () => void;
-  /** Issue4：打开「视频色彩调整」弹窗 */
+  /** 打开「视频色彩调整」弹窗 */
   onOpenColor: () => void;
-  /** Issue4：打开「视频音效调节」弹窗 */
+  /** 打开「视频音效调节」弹窗 */
   onOpenAudio: () => void;
   onShowShortcuts: () => void;
 }

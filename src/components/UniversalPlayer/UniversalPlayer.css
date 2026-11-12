@@ -3,7 +3,7 @@
  播放器 chrome 恒为深色底（视频 + rgba(0,0,0,.6) 半透明面板），而 --color-primary
  在**浅色主题**是 #000 → 所有「用 primary 做强调」的规则在这里退化成黑色、压在黑面板上。
 
- 修前实测（浅色主题）不可见清单：
+ 浅色主题下需保证可见性的元素（primary 黑色化会不可见）：
  · 频道列表一级活跃左竖条 .up-channel-group-active::before → rgb(0,0,0)
  · 频道列表二级活跃左边框 .up-channel-item-active → 3px rgb(0,0,0)
  · 二级活跃序号 .up-channel-item-active …-num → color(srgb 0 0 0/.65)
@@ -493,7 +493,7 @@
 
 @media (hover: none) and (pointer: coarse) {
   /* 触屏常驻显示（无 hover 可触发）；opacity 0.7 → 1：实心圆点，
-   半透明在黑底上观感发灰（2026-11-11 用户反馈）。
+   半透明在黑底上观感发灰。
    尺寸同步收小一档：×0.85（≈11.4 → 9.7px）。 */
   .up-progress-thumb {
     width: calc(var(--text-xs) * 0.85);
@@ -1576,7 +1576,7 @@ html[data-mobile-layout="true"] .up-iptv-buffering-reason {
 }
 
 /* 续播卡移动端字号同收最小档（与顶部胶囊/缓冲文本统一 --text-2xs ≈10.45px；
- 桌面维持 --text-sm 不动，2026-11-11 拍板「三种提示统一最小档」） */
+ 桌面维持 --text-sm 不动，三种提示统一最小档） */
 html[data-mobile-layout="true"] .up-resume-card__text,
 html[data-mobile-layout="true"] .up-resume-card__action,
 html[data-mobile-layout="true"] .up-resume-card__notice {
@@ -1616,7 +1616,7 @@ html[data-mobile-layout="true"] .up-resume-card__notice {
   align-items: center;
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
-  /* 与 toast / 续播卡统一配方：0.6 黑 + blur 8px（2026-11-11 拍板） */
+  /* 与 toast / 续播卡统一配方：0.6 黑 + blur 8px */
   background: rgba(0, 0, 0, 0.6);
   color: var(--player-text);
   font-size: var(--text-base);
@@ -1659,7 +1659,7 @@ html[data-mobile-layout="true"] .up-resume-card__notice {
   align-items: center;
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
-  /* 与 toast / 续播卡统一配方：0.6 黑 + blur 8px（2026-11-11 拍板） */
+  /* 与 toast / 续播卡统一配方：0.6 黑 + blur 8px */
   background: rgba(0, 0, 0, 0.6);
   color: var(--player-text);
   font-size: var(--text-lg);
@@ -1853,7 +1853,7 @@ html[data-mobile-layout="true"] .up-resume-card__notice {
   height: auto;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-lg);
-  /* 统一底色配方（2026-11-11 拍板）：0.6 黑 + blur 8px——亮画面可读性够、
+  /* 统一底色配方：0.6 黑 + blur 8px——亮画面可读性够、
    存在感比实黑轻，与居中胶囊/续播卡同配方，叠加时不再一深一浅 */
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
@@ -1926,7 +1926,7 @@ html[data-player-header-controls="true"] .up-player-toast {
   text-align: center;
 }
 /* 移动端顶部胶囊变体（.up-player-center-toast--top，仅 mobileCenter 渲染）：
- 字号收家族最小档 --text-2xs（2026-11-11 拍板：三种提示统一最小档）、
+ 字号收家族最小档 --text-2xs（三种提示统一最小档）、
  放开 nowrap 允许两行换行——长文案（如「自动播放被拦截…」）不再溢出胶囊底色。
  位置锚定 header/续播卡下沿由 JS 写入 inline style，此处只管观感。 */
 .up-player-center-toast--top {
@@ -2490,7 +2490,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 
 /* ============ 外挂字幕轨（<track kind="subtitles">）默认渲染样式 ============ */
-/* 字幕文本由浏览器 ::cue 渲染，此处提供与播放器黑场匹配的基线样式（-9 批次4） */
+/* 字幕文本由浏览器 ::cue 渲染，此处提供与播放器黑场匹配的基线样式 */
 .up-player-core video::cue {
   background: rgba(0, 0, 0, 0.65);
   color: var(--color-on-image);
@@ -2632,7 +2632,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   background: rgba(255, 255, 255, 0.12);
 }
 
-/* ============ Issue4 色彩/音效调整弹窗 ============ */
+/* ============ 色彩/音效调整弹窗 ============ */
 .up-settings-overlay {
   position: absolute;
   inset: 0;
@@ -2766,7 +2766,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 }
 .up-settings-reset:hover { background: rgba(255, 255, 255, 0.12); }
 
-/* ════════════ 全屏 / 横屏 UI（需求④⑤）════════════ */
+/* ════════════ 全屏 / 横屏 UI ════════════ */
 
 /* CSS 网页伪全屏：容器 fixed 铺满视口，自定义 UI 完整保留（iOS iPhone 默认档）。
  与 :fullscreen 伪类不同，这是 JS 加的类，用于「无元素级 fullscreen 能力」的环境。 */
@@ -2802,7 +2802,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   background: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
 }
 
-/* 右侧「更多设置」抽屉（需求⑤）：内容 = 原移动端竖版更多设置全部项 + 全屏专属解码/快捷键。
+/* 右侧「更多设置」抽屉：内容 = 原移动端竖版更多设置全部项 + 全屏专属解码/快捷键。
  深色半透明，保证在视频上也清晰；选中不关闭以支持连续调节。 */
 .up-fs-drawer {
   position: absolute;
@@ -2816,7 +2816,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   min-width: 300px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
-  /* 需求②：背景与右键菜单弹窗一致 */
+  /* 背景与右键菜单弹窗一致 */
   background: rgba(20, 20, 20, 0.96);
   animation: up-fs-drawer-in 0.22s ease-out both;
   backdrop-filter: blur(8px);
@@ -2850,7 +2850,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   min-height: 0;
   padding: 0 var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom));
   /* 内容超出可滚动：此前缺 overflow，设置项多时（清晰度/循环/定时/后台听/镜像/比例/解码）
-     末尾几项被裁掉且无法上滑（2026-11-11 真机反馈）。touch-action 交还纵向滚动，
+     末尾几项被裁掉且无法上滑。touch-action 交还纵向滚动，
      overscroll-behavior 防止滚动穿透到播放器手势。 */
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -2868,7 +2868,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
   background: rgba(255, 255, 255, 0.06);
   box-shadow: none;
 }
-/* 需求②：抽屉内文本/图标样式与右键菜单一致（--text-sm / font-weight 600 / 白色图标） */
+/* 抽屉内文本/图标样式与右键菜单一致（--text-sm / font-weight 600 / 白色图标） */
 .up-fs-drawer .up-ms-label {
   color: rgba(255, 255, 255, 0.92);
   font-weight: 600;
@@ -2910,7 +2910,7 @@ html[data-mobile-layout="true"] .up-cast-sheet {
 
 
 
-/* ── 移动端提示信息统一收小（2026-11-11 全局盘点补齐）──
+/* ── 移动端提示信息统一收小 ──
  与顶部胶囊 / 缓冲层 / 续播卡同口径：
  · 纯文本提示 → --text-2xs（≈10.45px）
  · 带按钮或状态型提示 → --text-xs（≈11.4px，保可读与可点）

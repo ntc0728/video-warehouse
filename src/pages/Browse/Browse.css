@@ -816,9 +816,8 @@ padding-top 归零 —— 首行（模式胶囊 / 结果头）与
 justify-self: start 统一贴格左缘 —— 四字与两字
  天然共享同一条左基线（不再需要任何 margin-left 补偿），
  选中态也保持「文字 + padding」的胶囊宽度，不撑满整行/整格。
- 高度 — 二轮：padding+line-height 推导不可控，改显式高度 + flex 居中。
- 三轮：padding 用 --space-2xs(≈2px) 太少、且系数由 1.5→1.3 抵消了增量，
- 净增仅 1.5px = 肉眼无感。四轮改用「字高 + 上下 padding × 2」：
+ 高度：padding+line-height 推导不可控，改用「字高 + 上下 padding × 2」显式高度 + flex 居中
+（padding 仅 --space-2xs(≈2px) 时系数缩放会抵消增量，肉眼无感）：
  padding 加倍到 --space-xs(≈4px)，总高仍锁在 ≈20px。 */
   html:not([data-device="app"]):not([data-device="tv"])
     .filter-bar .filter-bar__chip {

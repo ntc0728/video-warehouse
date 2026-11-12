@@ -15,7 +15,7 @@ interface OverlayScrollbarProps {
  * Keep-Alive 多页常驻）挤占，表现为「页面在滚、滚动条卡顶不跟手」。
  * 2. 所有监听器（scroll / ResizeObserver / MutationObserver）**直接调用 updateThumb**，
  * 不用 rAF 节流——`requestAnimationFrame` 在 headless / 后台标签 / 节能模式 /
- * 主线程繁忙时会延迟甚至不触发，scroll 更新会被吞掉（实测 thumb 固定顶部）。
+ * 主线程繁忙时会延迟甚至不触发，scroll 更新会被吞掉。
  * scroll 事件本身由浏览器合成器以 60fps 上限派发，DOM 写入成本极低，无需节流；
  * MutationObserver 回调按 microtask 批次合并，天然低频。
  * 3. 仅 visible（有/无滚动）切换走 state——低频，且同值 setState React 自动 bail out。
@@ -98,7 +98,7 @@ export default function OverlayScrollbar({ scrollContainer }: OverlayScrollbarPr
   }, [updateThumb]);
 
   // ── 路由切换同步重算 thumb────────────────
-  // 根因（实测复现）：路由切换时旧页面（高内容 → thumb 可见）卸载、新页面（如设置页）
+  // 根因：路由切换时旧页面（高内容 → thumb 可见）卸载、新页面（如设置页）
   // 挂载。旧实现直接在 layout 阶段调 updateThumb，但此刻新页面布局未稳——
   // 旧内容刚卸载、字体/图片/异步数据未就绪，scrollHeight 会短暂「假性溢出」，
   // updateThumb 误判为可滚动 → 保留 thumb 可见；等设置页稳定变矮后，后续

@@ -58,7 +58,7 @@ export function useIPTVNavigation({
     if (switchByChannel && currentChannel) {
       // 候选 = 全部同名频道（含自身）：线路序号语义 = 「线路 X/Y」中的当前位次。
       // 旧实现排除自身且按 sourceId 区分——org 主干所有频道 sourceId 相同 → 候选恒空，
-      // 换线能力等于未生效（2026-11-11 调研）。index 指向自身时视为无变化（不提示）。
+      // 换线能力等于未生效。index 指向自身时视为无变化（不提示）。
       const sameNameChannels = channels.filter(
         ch => ch.name === currentChannel.name
       );

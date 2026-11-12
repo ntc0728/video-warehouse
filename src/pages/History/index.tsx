@@ -355,7 +355,7 @@ export default function HistoryPage() {
           name: ch?.name ?? r.channelName,
           logo: ch?.logo ?? r.channelLogo,
           group: ch?.group ?? r.channelGroup,
-          // 快照兜底：频道下架/缓存过期时用播放时的流地址与源快照（2026-11-11 recordPlay 升级）
+          // 快照兜底：频道下架/缓存过期时用播放时的流地址与源快照
           url: ch?.url ?? r.url ?? '',
           sourceId: ch?.sourceId ?? r.sourceId,
           _histTime: r.playedAt,

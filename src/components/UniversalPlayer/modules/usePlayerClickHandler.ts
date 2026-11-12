@@ -67,7 +67,7 @@ export function usePlayerClickHandler({
       }
       // 第一拍：立即切换控制栏可见性
       clickTimerRef.current = setTimeout(() => { clickTimerRef.current = null; }, 250);
-      // 需求④：控制栏隐藏 → 仅显示控制栏（不切换播放）；控制栏已显示 → 点击空白区域暂停/播放
+      // 控制栏隐藏 → 仅显示控制栏（不切换播放）；控制栏已显示 → 点击空白区域暂停/播放
       if (isControlsVisible) {
         togglePlay();
       } else {

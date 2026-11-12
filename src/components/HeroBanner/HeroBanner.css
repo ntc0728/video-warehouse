@@ -172,8 +172,7 @@
 .hero-banner__bg-placeholder {
   position: absolute;
   inset: 0;
-  /* 2026-11-11：原「--color-media-surface 纯深底 + scale 脉冲」在手机上就是一整块黑
- （用户实测「banner 加载及骨架全黑」），没有任何加载反馈。
+  /* 手机上「--color-media-surface 纯深底 + scale 脉冲」观感是一整块黑，没有加载反馈。
  改为全站骨架扫光（同 thumbnail-skeleton-bg：shimmer 渐变 + 25% 黑垫底 overlay），
  明暗与其它骨架卡一致；图片就绪后的深底仍由 .hero-banner__main 承担不变。 */
   background:
@@ -356,8 +355,7 @@ html[data-device="app"] .hero-banner__skeleton--btn {
   cursor: pointer;
   transition: color var(--dur-2xs) ease;
   /* ⚠️ 必须显式恢复：按钮位于 .hero-banner__content（pointer-events:none 的
- 文字遮罩层）内，真机点击走命中测试会被整层拦掉——桌面 evaluate.click()
- 不做命中测试所以测不出来（2026-11-11 用户真机实测「点了没反应」）。 */
+ 文字遮罩层）内，点击走命中测试会被整层拦掉。 */
   pointer-events: auto;
 }
 
@@ -508,8 +506,7 @@ html[data-device="app"] .hero-banner__skeleton--btn {
 
   /* 文字距 banner 左/下缘（content/slide padding 归零后由这里独家控制）：
      margin-left / margin-bottom 均 --space-lg(~12px，390 视口)，
-     恢复到 content padding 删除前的观感（原 ≈14px / 11px）。
-     2026-11-09 用户反馈：6px/3px 太贴边 → 先调 12/8，再要求下间距加大 → 12/12。 */
+     上下留距 12/12，保证贴边观感余量。 */
   .hero-banner__text {
     max-width: 100%;
     margin-bottom: var(--space-lg);

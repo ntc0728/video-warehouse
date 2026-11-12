@@ -10,7 +10,7 @@ const FIELDS: { key: keyof ColorFilter; label: string; icon: typeof Sun; min: nu
 ];
 
 /**
- * Issue4 视频色彩调整弹窗：亮度 / 饱和度 / 对比度（CSS filter），含重置。
+ * 视频色彩调整弹窗：亮度 / 饱和度 / 对比度（CSS filter），含重置。
  * 与移动端纵向滑动手势共用 store.colorFilter（手势只改 brightness），PlayerCore 统一应用。
  */
 export default function ColorAdjustPanel({ onClose }: { onClose: () => void }) {

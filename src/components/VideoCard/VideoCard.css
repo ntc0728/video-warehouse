@@ -21,8 +21,6 @@
 
 /* ≥1440 卡片间距与首页行统一为 --hero-side-gap（见 index.css「卡片间距统一」块，
  该覆盖也在那里）——列布局恒走上方 --card-cols 等分，与首页 VideoCard 行一致。
- （原「≥1280 auto-fill --card-size 固定轨道 + 居中」已废弃：收藏/Browse 卡片
- 与首页行卡尺寸脱节，290px vs ~180px 差异过大，回归等分。）
  子项 stagger 入场动画。
  兜底延迟 0.39s：nth-child 只枚举到 12，第 13+ 个子项若无延迟（0s）会比第 1 个
  还早出现（fadeInUp 的 both 让有延迟的项先保持透明），视觉上"最后几张卡直接闪现、
@@ -423,9 +421,7 @@ html:not([data-theme="dark"]) .video-card-cover:has(.lazy-image-placeholder) {
 }
 
 /* ── 收藏页角标移动端重排（status 分支）──
- 桌面 / 移动统一：左下 = 年份 + 类型同一行并排、右下 = 观看状态。
- （原移动端「badges-bl 撑满底部 + 类型右对齐 + 状态叠在类型上方」已废弃，
-  年份/类型同行靠左，状态回右下角。） */
+ 桌面 / 移动统一：左下 = 年份 + 类型同一行并排、右下 = 观看状态。 */
 /* 基类规则已满足（badges-bl 左下 flex 行；status 右下 --space-xs），
  此处仅保留一条约束：badges-bl 最宽 60%，避免与右侧状态胶囊重叠。 */
 @media (width <= 767px) {
@@ -891,8 +887,7 @@ html[data-device="app"] .video-card-title--overflow .video-card-title-track {
     inset: auto 0 0;
   }
 
-  /* 条高提回 --space-xs(3px)：--space-2xs 在 390 视口仅 ~1px，红条肉眼不可见
-     （2026-11-08 修遮罩时误收窄到 2xs，桌面 1.5px 勉强可见、移动端完全消失）。
+  /* 条高提回 --space-xs(3px)：--space-2xs 在 390 视口仅 ~1px，红条肉眼不可见。
      与历史页 RecordCard 进度条同款（space-xs），观感即「桌面同款」。 */
   .video-card--landscape .video-card-landscape__progress-bar-wrap {
     height: var(--space-xs);
@@ -934,7 +929,7 @@ html[data-device="app"] .video-card--landscape .video-card-landscape__bottom {
   .video-card--landscape .video-card-landscape__bottom {
     gap: var(--space-2xs);
     /* 标题左/下间距从 --space-2xs(~1px) 提到 --space-sm(~6px)：
-       极简封面后标题是封面上唯一内容，1px 贴边观感过紧（2026-11-09 用户反馈）。
+       极简封面后标题是封面上唯一内容，标题与封面边缘保留间距。
        上边距维持 --space-lg：渐变遮罩的过渡区高度，不是布局留白。 */
     padding: var(--space-lg) var(--space-sm) var(--space-sm);
   }

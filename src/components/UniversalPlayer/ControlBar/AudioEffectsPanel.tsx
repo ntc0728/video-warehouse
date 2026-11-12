@@ -15,7 +15,7 @@ const PRESETS: { key: AudioPreset; label: string }[] = [
 ];
 
 /**
- * Issue4 视频音效调节弹窗：EQ 预设 + 声道平衡 + 音量增强，含重置。
+ * 视频音效调节弹窗：EQ 预设 + 声道平衡 + 音量增强，含重置。
  * 经 Web Audio 图谱（useAudioEffects）应用到 <video> 音频；默认态不构建图谱，零风险。
  */
 export default function AudioEffectsPanel({ onClose }: { onClose: () => void }) {

@@ -52,7 +52,7 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
   }, [duration]);
 
   const updateFromEvent = useCallback((clientX: number) => {
-    // Issue3：缓冲中（非拖拽）hover 不更新圆点/tooltip 位置——避免「圆点跟随鼠标」的误导
+    // 缓冲中（非拖拽）hover 不更新圆点/tooltip 位置——避免「圆点跟随鼠标」的误导
     if (!isDragging && isBuffering) return;
     if (!barRef.current || duration <= 0) return;
     const rect = barRef.current.getBoundingClientRect();
@@ -69,7 +69,7 @@ export default function ProgressBar({ canSeek, currentTime, duration, buffered, 
   }, [duration, isDragging, isBuffering, onSeek]);
 
   const beginDrag = useCallback((clientX: number) => {
-    // 直播 / 无时长 禁止拖拽；Issue3：缓冲中允许自由 seek（点击即跳到目标位置，
+    // 直播 / 无时长 禁止拖拽；缓冲中允许自由 seek（点击即跳到目标位置，
     // 以最后一次点击为准；浏览器会自动缓冲到该区间），不再钳制到已缓冲区间（避免「圆点复位到 0」）
     if (isLive || duration <= 0) return;
     setIsDragging(true);

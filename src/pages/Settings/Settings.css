@@ -1659,7 +1659,7 @@ html[data-device="app"] .modal-content-animate.changelog-modal {
  原 .settings-page:has(.settings-subpage) 永不命中；改用 body:has 选择。
  ⚠️ 只过渡 transform（合成器动画）。原方案的 filter: brightness(0.96) 已删除——
  filter 过渡逐帧重绘整页（含 backdrop 的贴片内容），把 transform 也拖回主线程，
- 真机上返回/进入的 300ms 内逐帧卡顿（用户反馈「页面抖动抽搐」的主嫌疑）。
+ 真机上返回/进入的 300ms 内逐帧卡顿（页面抖动抽搐的主嫌疑）。
  will-change 在子页打开瞬间（菜单还被不透明子页盖住时）预建合成层，
  避免 transition 起播那一刻才提升层造成首帧顿挫。 */
   body:has(.settings-subpage):not(.settings-subpage--closing) .settings-page {
@@ -1882,7 +1882,7 @@ html[data-device="app"] .modal-content-animate.changelog-modal {
 }
 
 /* 设置页控件缩档（按钮、图标、tab、方型按钮尺寸过大）：
- 字号部分已上收为 --type-scale（variables.css：桌面 1 / 移动端 0.95，2026-11-10 定稿），
+ 字号部分已上收为 --type-scale（variables.css：桌面 1 / 移动端 0.95），
  此处只保留控件高度族 ×0.8（从原 0.93/0.8 双档中的加码档保留）——
  theme-btn/back-btn 方块（btn-min-height）、counter-btn ±/counter-value（tab-height）、
  Button min-h（btn-min-width）、settings-input（input-height）、滑块手柄

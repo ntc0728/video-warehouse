@@ -360,7 +360,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
               if (seasons && seasons.size > 0) {
                 // 探测代表 video：正季优先，特别篇（季 0）不作为「该源有数据」的默认播放对象。
                 // 但「最小正季是壳（0 线路 0 集）」时不能就此判该源无数据——回退到第一个
-                // 真有可播内容的季（2026-11-11 审查：否则后续季有数据的源会被误判并隐藏）。
+                // 真有可播内容的季（否则后续季有数据的源会被误判并隐藏）。
                 const primary = pickPrimarySeasonVideo(seasons);
                 const isPlayable = (v: Video | null | undefined) =>
                   !!v && ((v.sources?.length ?? 0) > 0 || (v.episodes?.length ?? 0) > 0);
@@ -425,7 +425,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
       if (hits.size === 0) await allDone; // 暂无任何命中：等全部落定再定夺空态
       // 详情页指定了源、但它尚未落定（错峰 120ms/源 + 失败重试 800ms 可能超过竞速窗口）：
       // 再等它落定（或 4s 上限），避免「用户点了 A 源却悄悄播 B 源」——选择优先级里
-      // 指定源最高，必须给它落定机会（2026-11-11 审查发现）。
+      // 指定源最高，必须给它落定机会。
       if (routeSourceIndex !== undefined && !hits.has(routeSourceIndex) && !ctrl.signal.aborted) {
         await Promise.race([allDone, sleep(4000)]);
       }
@@ -441,7 +441,7 @@ export function useCMSSourceManager(opts: UseCMSSourceManagerOptions) {
         // 全部启用源都无当前视频数据：空态（面板「无数据源」文案，cmsLoading 已落）。
         // ⚠️ cmsResults 必须写入每池源的落定记录（video:null）而非清空：Player 空态
         // 门控（index.tsx :949-950）把「tmdb id + cmsResults 空 + 无季数据」当作
-        // 「仍在聚合」→ 置空会永不落空态（PLAYER-095 回归拖住 loading）。
+        // 「仍在聚合」→ 置空会永不落空态，拖住 loading。
         finishLoading();
         setVideo(null);
         setSources([]);

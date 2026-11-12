@@ -33,7 +33,7 @@ const IPTVChannelCard = memo(function IPTVChannelCard({ channel, hideFavorite = 
   // 收藏按钮不依赖台标加载结果。此前是 (imageLoaded || !channel.logo)：台标 404、
   // 被网络/广告拦截，或命中失败记忆（resolveChannelLogoCandidates 返回空数组）时
   // onLoad 永不触发、imageLoaded 恒 false → 整颗红心不渲染。
-  // 实测 IPTV 页 60 张卡只有 3 颗红心，正是这条门控造成的（收藏图标被覆盖）。
+  // 该门控会遮挡收藏图标，需放开条件。
   const showFavorite = !batchMode && !hideFavorite;
 
   const sourceName = channel.sourceId && sourceNames

@@ -17,7 +17,7 @@
  *
  * v6()：移除本 hook 内的全部取页逻辑（mount 立即拉取 / filterSig 重置拉取 /
  * refreshNow 立即拉取 / goToPage / loadMore / retry），收拢到逻辑分页层。
- * v5：移除骨架批次计数相关 effect（v3+v4 的内联骨架占位图已废弃）。
+ * 骨架占位由逻辑分页层统一处理，本文件不再做骨架批次计数。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';

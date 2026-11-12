@@ -120,8 +120,8 @@
   height: calc(var(--space-2xl) * 1.2);
 }
 
-/* ── Mobile: 略放大按钮（2026-11-10 三轮回调：1.25 → 1.1 → 1.2；
-   uiScale 0.95 下 28.8×28.8px；WCAG 2.5.8 AA 下限 24px，仍留余量）── */
+/* ── Mobile: 放大 1.2 倍（uiScale 0.95 下 28.8×28.8px；
+   WCAG 2.5.8 AA 下限 24px，仍留余量）── */
 @media (width <= 767px) {
   .back-to-top-button {
     right: var(--space-md);

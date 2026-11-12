@@ -455,7 +455,7 @@
 
 @media (width <= 767px) {
   .sticky-header {
-    /* 移动端顶栏控件紧凑档（2026-11-09 二轮：用户反馈仍偏大）：
+    /* 移动端顶栏控件紧凑档：
        方盒 44 → 32px，头像视觉圆 30px（可点区仍 ≥32，高于 WCAG 2.5.8 的 24px；
        B 站 H5 同类入口可点区仅 24px）。图标在 TSX 侧同步降到 xs。
        ⚠️ Apple 44 / Material 48 的舒适触控基线已不满足，属产品取向取舍。 */
@@ -476,7 +476,7 @@
   }
 
   .sticky-header__logo-wrap {
-    /* 移动端 logo 收紧（2026-11-09 用户反馈 logo 仍偏大）：44 → 36px，
+    /* 移动端 logo 36px（44 → 36），
        与 32px 控件 / 30px 头像成 36 > 32 > 30 的递减层级。
        ⚠️ index.html 首帧骨架 .bs-logo 必须同步，否则 splash→React 会跳变。 */
     width: 36px !important;

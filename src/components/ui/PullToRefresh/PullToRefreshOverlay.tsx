@@ -224,7 +224,7 @@ export function PullToRefreshOverlay() {
   return (
     <div className="ptr-overlay" aria-hidden={phase === 'idle'}>
       {/* 原 SVG 光晕 filter（#ptr-halo）已删除：引用式滤镜在高 DPR 手机上低分辨率
- 栅格化再放大 → 光晕发糊（2026-11-11 用户实测）。白轮廓改由 PullIndicator 的
+ 栅格化再放大 → 光晕发糊。白轮廓改由 PullIndicator 的
  .ptr-tv-halo 白色剪影垫底副本承担（纯矢量，任意 DPR 锐利）。 */}
       <div
         className={`ptr-overlay__indicator ptr-overlay__indicator--${variant}`}
