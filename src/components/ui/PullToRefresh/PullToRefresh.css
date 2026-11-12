@@ -50,9 +50,9 @@
 /* ----------：default 变体专属（浮于图片上时） ----------
  不使用任何背景色 / box-shadow，靠两处「白描边」让黑白线稿 + 文字在任意图片底色上自带着色轮廓：
  1) 小电视白色剪影垫底副本（.ptr-tv-halo，纯矢量——原 SVG 引用滤镜 url(#ptr-halo)
-    在高 DPR 手机上低分辨率栅格化再放大 → 光晕发糊，2026-11-11 用户实测后废弃）；
+    的光晕副本在高 DPR 下发糊，已移除）；
  2) 文字用「深色填充 + 白色描边」（paint-order: stroke fill），浅底看深色字、深底看白描边。
- ⚠️ 定位链（2026-11-11 真机实测「四态全变白剪影，只有更新中正常」）：wrap 必须
+ ⚠️ 定位链（wrap 必须建立独立定位链，否则指示器各态显示异常）：wrap 必须
  position:relative，halo 才相对小电视盒绝对定位；且 absolute 的 halo 默认绘制在
  static 的原稿之上 → fore 副本必须提 z-index:1，否则白色剪影盖住一切。
  ⚠️ settings 变体不渲染光晕副本。 */
@@ -77,12 +77,12 @@
   height: 100%;
 }
 .ptr-overlay__indicator--default .ptr-tv-halo .ptr-tv * {
-  fill: #fff;
-  stroke: #fff;
+  fill: var(--color-on-image);
+  stroke: var(--color-on-image);
   stroke-width: 4;
   paint-order: stroke;
 }
-/* 电波（两道弧线）**不参与光晕副本**（2026-11-11 用户复测「看不出两道弧线」）。
+/* 电波（两道弧线）**不参与光晕副本**（保持两道弧线可辨识）。
  内弧 r13 / 外弧 r17 中心只隔 4 个 viewBox 单位（渲染后 ~2–3px），光晕每侧外扩
  ~1.25 会把两弧之间的缝填成一条白带 → 只剩一根粗白弧。
  电波浮在小电视上方、不压内容，本身用主题前景色即足够可读，无需白描边垫底。 */

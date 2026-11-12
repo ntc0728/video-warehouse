@@ -22,10 +22,10 @@
   width: 100%;
 }
 
-/* 速度统一 21s（--dur-marquee 7s × 3）：比 IPTV OSD 的 10s 明显慢一档，
- 播放器 header 标题与面板 tab 共用（2026-11-11 用户两次反馈偏快）。 */
+/* 速度统一 21s（--dur-marquee × 3）：比 IPTV OSD 的 10s 明显慢一档，
+ 播放器 header 标题与面板 tab 共用。 */
 .mq-track--scrolling {
-  animation: mq-scroll calc(var(--dur-marquee, 7s) * 3) linear infinite;
+  animation: mq-scroll calc(var(--dur-marquee) * 3) linear infinite;
 }
 
 @keyframes mq-scroll {

@@ -328,11 +328,11 @@
 /* 剧集格的信息型标题（特别篇篇名等）：居中，最多 3 行，溢出省略 */
 .playlist-cell--ep .playlist-cell-ep-title {
   display: -webkit-box;
+  text-align: center;
+  overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
-  overflow: hidden;
-  text-align: center;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* ══ 特别篇桶（季 0）：列表行布局 ══
@@ -361,9 +361,9 @@
 .playlist-cell--row .playlist-row-title {
   flex: 1;
   min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* 「全部」视图行内季标：绝对定位左上会压住单行标题，改随行内联 */
