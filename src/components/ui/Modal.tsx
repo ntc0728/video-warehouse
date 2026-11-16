@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useCallback } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { CustomScrollbar } from '@/components/common'
+import { blurActiveEditable, isEditableTarget } from '@/lib/keyboard'
 
 interface ModalProps {
   visible: boolean
@@ -35,8 +36,12 @@ const Modal: React.FC<ModalProps> = ({
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      if (!open && onClose) {
-        onClose()
+      if (!open) {
+        // 主动收键盘：关闭动画期间输入框仍在 DOM 里，不 blur 会让键盘多留 ~300ms
+        blurActiveEditable()
+        if (onClose) {
+          onClose()
+        }
       }
     },
     [onClose]
@@ -96,6 +101,10 @@ const Modal: React.FC<ModalProps> = ({
           ref={contentRef}
           className={`modal-content-animate ${className ?? ''}`}
           onOpenAutoFocus={handleOpenAutoFocus}
+          onPointerDown={(e) => {
+            // 点击面板内非输入区域 → 收起键盘（iOS 不会因为点空白处自动 blur）
+            if (!isEditableTarget(e.target)) blurActiveEditable()
+          }}
           onEscapeKeyDown={closeOnAction ? undefined : (e) => e.preventDefault()}
           onPointerDownOutside={closeOnAction ? undefined : (e) => e.preventDefault()}
           onInteractOutside={closeOnAction ? undefined : (e) => e.preventDefault()}

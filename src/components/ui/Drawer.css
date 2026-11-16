@@ -19,7 +19,8 @@
   position: fixed;
   top: 0;
   right: 0;
-  bottom: 0;
+  /* 键盘遮挡（iOS / 旧 WebView）时整体缩到键盘上沿；Android resizes-content 下为 0 */
+  bottom: var(--kb-inset, 0);
   z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
@@ -135,7 +136,8 @@ body:has(.drawer-content) .back-to-top-button {
  左「‹ 返回」+ 中标题居中 + 右「重置」（与 S3 示例一致）。
  进入动画：translateX(28px) + opacity 淡入（与 S3 示例 pgIn 一致）。 */
 .drawer-content--fullscreen {
-  inset: 0;
+  /* 全屏抽屉与可见视口对齐：顶部跟随 --kb-vvtop（iOS 键盘平移），底部让出键盘 */
+  inset: var(--kb-vvtop, 0) 0 var(--kb-inset, 0);
   width: 100%;
   max-width: 100%;
   box-shadow: none;

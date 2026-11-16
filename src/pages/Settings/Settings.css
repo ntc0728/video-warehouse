@@ -906,8 +906,10 @@ body.skin-transitioning .skin-btn.active {
 .settings-subpage__body {
   flex: 1;
   min-height: 0;
-  /* 与全局 .page-padding 一致（左右 sm、上 sm、下 0；底部由 app 安全区承担） */
-  padding: var(--space-sm) var(--space-sm) 0;
+  /* 与全局 .page-padding 一致（左右 sm、上 sm、下 0；底部由 app 安全区承担）。
+     键盘弹起时底部再让出遮挡高度，保证底部输入框可滚到键盘上方。 */
+  padding: var(--space-sm) var(--space-sm) var(--kb-inset, 0);
+  scroll-padding-bottom: var(--kb-inset, 0);
   overflow-y: auto;
 }
 
@@ -1087,12 +1089,19 @@ body.skin-transitioning .skin-btn.active {
   overflow: hidden;
 }
 
+/* 触摸设备（平板 / 手机横屏）居中弹窗：高度上限跟随键盘上方的可见视口 */
+@media (pointer: coarse) {
+  .modal-content-animate.settings-modal {
+    max-height: min(80vh, var(--layout-modal-max-h), calc(var(--kb-vvh, 100dvh) - var(--space-md)));
+  }
+}
+
 /* 移动端：设置弹窗从底部滑出，覆盖 .settings-modal 的居中宽度 */
 @media (width <= 767px) {
   .modal-content-animate.settings-modal {
     width: 100%;
     max-width: 100%;
-    max-height: 90vh;
+    max-height: min(90vh, calc(var(--kb-vvh, 100dvh) - var(--space-sm)));
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 }
@@ -1101,7 +1110,7 @@ body.skin-transitioning .skin-btn.active {
   html[data-device="app"] .modal-content-animate.settings-modal {
     width: 100%;
     max-width: 100%;
-    max-height: 90vh;
+    max-height: min(90vh, calc(var(--kb-vvh, 100dvh) - var(--space-sm)));
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 

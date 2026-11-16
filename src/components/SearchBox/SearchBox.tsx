@@ -289,11 +289,18 @@ export default function SearchBox({
   // 计算 dropdown 位置，防止超出视口
   useEffect(() => {
     if (!showDropdown) return;
-    const id = requestAnimationFrame(() => {
+    let raf = 0;
+    const compute = () => {
+      raf = 0;
       const rect = inputRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const spaceBelow = window.innerHeight - rect.bottom - 16;
-      const spaceAbove = rect.top - 16;
+      // 可见视口：iOS 键盘弹起时 innerHeight 不变，必须用 visualViewport；
+      // offsetTop 是可见区在布局视口中的顶部偏移（Safari 会让视口平移）。
+      const vv = window.visualViewport;
+      const viewTop = vv?.offsetTop ?? 0;
+      const viewBottom = viewTop + (vv?.height ?? window.innerHeight);
+      const spaceBelow = Math.max(0, viewBottom - rect.bottom - 16);
+      const spaceAbove = Math.max(0, rect.top - viewTop - 16);
       if (spaceBelow >= 200) {
         setDropdownMaxHeight(spaceBelow);
         setDropdownAbove(false);
@@ -304,8 +311,23 @@ export default function SearchBox({
         setDropdownMaxHeight(Math.max(spaceBelow, spaceAbove));
         setDropdownAbove(spaceAbove > spaceBelow);
       }
-    });
-    return () => cancelAnimationFrame(id);
+    };
+    const schedule = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(compute);
+    };
+    schedule();
+    // 键盘弹起/收起、Safari 视口平移、地址栏伸缩都会改变可用空间 → 重算
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', schedule);
+    vv?.addEventListener('scroll', schedule);
+    window.addEventListener('resize', schedule);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      vv?.removeEventListener('resize', schedule);
+      vv?.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+    };
   }, [showDropdown]);
 
   const handleBlur = useCallback(() => {

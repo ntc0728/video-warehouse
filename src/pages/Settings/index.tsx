@@ -278,6 +278,9 @@ export default function SettingsPage() {
                 type="text"
                 name="baiduTranslateAppId"
                 autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="请输入 App ID"
                 value={modals.appIdInput}
                 onChange={(e) => modals.setAppIdInput(e.target.value)}
@@ -303,6 +306,9 @@ export default function SettingsPage() {
                 type="password"
                 name="baiduTranslateSecretKey"
                 autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="请输入 Secret Key"
                 value={modals.apiKeyInput}
                 onChange={(e) => modals.setApiKeyInput(e.target.value)}
@@ -349,6 +355,10 @@ export default function SettingsPage() {
                 type="url"
                 name="streamProxyUrl"
                 autoComplete="off"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="https://your-worker.workers.dev"
                 value={modals.proxyUrlInput}
                 onChange={(e) => { modals.setProxyUrlInput(e.target.value); modals.setProxyUrlError(null); }}
@@ -392,6 +402,9 @@ export default function SettingsPage() {
                 type="text"
                 name="proxyPattern"
                 autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="liveplay\\.(miguvideo|myqcloud)|livecdn\\.aliyun|oss-cn-.*aliyuncs|raw\\.githubusercontent|jsdelivr"
                 value={modals.patternInput}
                 onChange={(e) => modals.setPatternInput(e.target.value)}
@@ -435,6 +448,10 @@ export default function SettingsPage() {
                 type="url"
                 name="corsProxyUrl"
                 autoComplete="off"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="https://your-worker.workers.dev"
                 value={modals.corsProxyInput}
                 onChange={(e) => { modals.setCorsProxyInput(e.target.value); modals.setCorsProxyError(null); }}
@@ -479,6 +496,9 @@ export default function SettingsPage() {
                 type="password"
                 name="tmdbAccessToken"
                 autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="输入 TMDB Access Token（Bearer Token）"
                 value={modals.tmdbTokenInput}
                 onChange={(e) => { modals.setTMDBTokenInput(e.target.value); modals.setTmdbTokenError(null); }}

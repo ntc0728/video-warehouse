@@ -273,6 +273,10 @@ export default function ProxySetup() {
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     placeholder="粘贴 API Token（Workers Scripts → Edit 权限）"
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                   <button type="button" className="proxy-setup__btn proxy-setup__btn--ghost" onClick={() => setShowToken((v) => !v)}>
                     {showToken ? '隐藏' : '显示'}
@@ -291,6 +295,10 @@ export default function ProxySetup() {
                   value={accountId}
                   onChange={(e) => setAccountId(e.target.value)}
                   placeholder="dash.cloudflare.com 右侧可查"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                 />
               </div>
               <div className="proxy-setup__field">
@@ -301,6 +309,11 @@ export default function ProxySetup() {
                   value={domain}
                   onChange={(e) => setDomain(e.target.value)}
                   placeholder="proxy.example.com"
+                  inputMode="url"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                 />
               </div>
               <div className="proxy-setup__nav-row">

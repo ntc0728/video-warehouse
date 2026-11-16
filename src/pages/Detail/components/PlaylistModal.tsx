@@ -11,6 +11,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Link } from 'react-router-dom';
 import LazyImage from '@/components/LazyImage/LazyImage';
 import { toast } from '@/components/ui/toastBus';
+import { blurActiveEditable, isEditableTarget } from '@/lib/keyboard';
 import { useIsMobileLayout, useIsTV } from '@/hooks/useMediaQuery';
 import { useUserStore } from '@/stores';
 import { isPlainEpisodeTitle, plainEpisodeNumber } from '@/services/vodParser';
@@ -519,6 +520,12 @@ export default function PlaylistModal({
               setQuery(e.target.value);
               setVisibleCount(40);
             }}
+            enterKeyHint="search"
+            inputMode="search"
+            autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
           />
         </div>
         <div className="playlist-count">{countLabel}</div>
@@ -818,13 +825,26 @@ export default function PlaylistModal({
   }`;
 
   return (
-    <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
+    <Dialog.Root
+      open
+      onOpenChange={(o) => {
+        if (!o) {
+          // 主动收键盘：退出动画期间输入框仍在 DOM 里
+          blurActiveEditable();
+          onClose();
+        }
+      }}
+    >
       <Dialog.Portal>
         <Dialog.Overlay className="modal-overlay-animate" />
         <Dialog.Content
           className={baseClass}
           style={variant === 'drawer' ? { transform: `translateY(${dragY}px)` } : undefined}
           aria-describedby={undefined}
+          onPointerDown={(e) => {
+            // 点击面板内非输入区域 → 收起键盘（iOS 不会因为点空白处自动 blur）
+            if (!isEditableTarget(e.target)) blurActiveEditable();
+          }}
           onInteractOutside={(e) => {
             if (variant === 'drawer') e.preventDefault();
           }}

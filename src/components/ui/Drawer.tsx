@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { X, ChevronLeft } from 'lucide-react'
 import './Drawer.css'
 import { Icon } from "@/components/ui/Icon";
+import { blurActiveEditable, isEditableTarget } from '@/lib/keyboard';
 
 interface DrawerProps {
   open: boolean
@@ -50,6 +51,7 @@ const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children, fullscr
     (o: boolean) => {
       if (!o && !isClosingRef.current) {
         isClosingRef.current = true;
+        blurActiveEditable();
         onClose();
         setTimeout(() => { isClosingRef.current = false; }, DRAWER_EXIT_MS);
       }
@@ -68,6 +70,10 @@ const Drawer: React.FC<DrawerProps> = ({ open, onClose, title, children, fullscr
         <Dialog.Content
           className={`drawer-content${fullscreen ? ' drawer-content--fullscreen' : ''}`}
           aria-describedby={undefined}
+          onPointerDown={(e) => {
+            // 点击面板内非输入区域 → 收起键盘（iOS 不会因为点空白处自动 blur）
+            if (!isEditableTarget(e.target)) blurActiveEditable();
+          }}
         >
           <div className="drawer-header">
             {fullscreen ? (
