@@ -9,6 +9,8 @@
  *   B（preview） 播放器系（player / failover / cms-error / iptv-player）：生产单包挂载快且稳，5 worker。
  *   C（dev）     cross-tab（4 条，单 worker）：双页签 + storage/IndexedDB/BroadcastChannel 回写，
  *               与其它 spec 并行时事件回写会被饿死（单步 10s 红线内的假红）→ 单独成阶段隔离并发。
+ *   smoke-player-fs-mobile（6 条，dev 专属：`__smoke_fullscreen=1` 生产无效）已移出默认套，
+ *   走按需 `npm run test:e2e:smoke-fs`；`src/components/UniversalPlayer/**` 改动的增量映射仍会带出它。
  *
  * 已移出默认套、改按需跑（保留覆盖，非删除）：
  *   - 取证截图 boot-splash-shots                       → npm run test:e2e:shots
@@ -126,7 +128,7 @@ const PREVIEW_SPECS = [
 ];
 // dev Stage A 排除项 = 播放器系（归 B）+ 移出默认套的骨架三兄弟与设置页子页（详见文件头）。
 // 注：chart / person 是顶级业务路由，保留默认套（只移子页、不移顶级路由）。
-const A_EXCLUDE = ['skeleton', 'boot-splash', 'boot-splash-iso', 'boot-splash-shots', 'source-checker', 'proxy-setup', 'player', 'player-failover', 'player-cms-error', 'iptv-player', 'cross-tab'].join(',');
+const A_EXCLUDE = ['skeleton', 'boot-splash', 'boot-splash-iso', 'boot-splash-shots', 'source-checker', 'proxy-setup', 'player', 'player-failover', 'player-cms-error', 'iptv-player', 'cross-tab', 'smoke-player-fs-mobile'].join(',');
 
 // Stage A（dev 行为套）：稳定档 3 worker（4 worker dev 编译争用会挤挂时序敏感断言）。
 const STAGE_A_ARGS = ['--all', '--dev', '--workers', '3'];

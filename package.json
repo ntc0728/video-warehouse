@@ -38,6 +38,7 @@
     "test:e2e:skeleton": "node scripts/e2e-skeleton.mjs scripts/skeleton.spec.ts scripts/boot-splash.spec.ts",
     "test:e2e:boot-iso": "node scripts/e2e-skeleton.mjs scripts/boot-splash-iso.spec.ts",
     "test:e2e:subpages": "node scripts/e2e-skeleton.mjs scripts/source-checker.spec.ts scripts/proxy-setup.spec.ts",
+    "test:e2e:smoke-fs": "node scripts/e2e-skeleton.mjs --dev scripts/smoke-player-fs-mobile.spec.ts",
     "test:e2e:report": "pnpm exec playwright show-report"
   },
   "dependencies": {
