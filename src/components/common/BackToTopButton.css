@@ -379,7 +379,7 @@ html.fab-refreshing .fab-stack__refresh svg {
 .back-to-top-button__label {
   /* 按钮调大到 3xl 档，文字恢复 2xs 基准（去掉 0.85 缩放） */
   font-size: var(--text-2xs);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1;
   letter-spacing: 0.02em;
 }

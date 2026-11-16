@@ -12,7 +12,7 @@
  font-display: swap + 条件选择器按需加载（仅对应皮肤激活时声明 font-family）。 */
 @font-face {
   font-family: 'Fredoka';
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   font-style: normal;
   font-display: swap;
   src: url('/fonts/fredoka-400-normal.woff2') format('woff2');
@@ -20,7 +20,7 @@
 
 @font-face {
   font-family: 'Fredoka';
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   font-style: normal;
   font-display: swap;
   src: url('/fonts/fredoka-500-normal.woff2') format('woff2');
@@ -28,7 +28,7 @@
 
 @font-face {
   font-family: 'Fredoka';
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   font-style: normal;
   font-display: swap;
   src: url('/fonts/fredoka-600-normal.woff2') format('woff2');
@@ -36,7 +36,7 @@
 
 @font-face {
   font-family: 'Fredoka';
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   font-style: normal;
   font-display: swap;
   src: url('/fonts/fredoka-700-normal.woff2') format('woff2');
@@ -44,7 +44,7 @@
 
 @font-face {
   font-family: 'Orbitron';
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   font-style: normal;
   font-display: swap;
   src: url('/fonts/orbitron-400-normal.woff2') format('woff2');
@@ -52,7 +52,7 @@
 
 @font-face {
   font-family: 'Orbitron';
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   font-style: normal;
   font-display: swap;
   src: url('/fonts/orbitron-700-normal.woff2') format('woff2');
@@ -68,7 +68,7 @@
 
 @font-face {
   font-family: 'Press Start 2P';
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   font-style: normal;
   font-display: swap;
   src: url('/fonts/press-start-2p-400-normal.woff2') format('woff2');
@@ -105,8 +105,7 @@ html[data-skin="cartoon"] {
   --shadow-md: 0 10px 24px rgba(45, 42, 50, 0.14);
   --radius-md: 14px;
   --radius-lg: 20px;
-  --skin-accent: #ff6b6b;
-  --skin-accent-soft: rgba(255, 107, 107, 0.15);
+--skin-accent-soft: rgba(255, 107, 107, 0.15);
 }
 
 /* 纸纹背景 */
@@ -129,7 +128,7 @@ html[data-skin="cartoon"] h3,
 html[data-skin="cartoon"] .brand-name,
 html[data-skin="cartoon"] [class*="title"] {
   font-family: 'Fredoka', 'PingFang SC', 'Noto Sans SC', 'MiSans', 'Microsoft YaHei', sans-serif;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   letter-spacing: 0.2px;
 }
 
@@ -200,8 +199,7 @@ html[data-skin="mechanical"] {
   --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.6);
   --radius-md: 4px;
   --radius-lg: 6px;
-  --skin-accent: #00e5ff;
-  --skin-accent-soft: rgba(0, 229, 255, 0.12);
+--skin-accent-soft: rgba(0, 229, 255, 0.12);
 }
 
 /* 碳纤纹理背景 */
@@ -225,7 +223,7 @@ html[data-skin="mechanical"] h3,
 html[data-skin="mechanical"] .brand-name,
 html[data-skin="mechanical"] [class*="title"] {
   font-family: 'Orbitron', 'Noto Sans SC', monospace;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   letter-spacing: 0.5px;
 }
 
@@ -329,8 +327,7 @@ html[data-skin="retro"] {
   --shadow-md: 0 8px 32px rgba(255, 0, 255, 0.25);
   --radius-md: 2px;
   --radius-lg: 4px;
-  --skin-accent: #f0f;
-  --skin-accent-soft: rgba(255, 0, 255, 0.15);
+--skin-accent-soft: rgba(255, 0, 255, 0.15);
 }
 
 /* 像素点阵背景 */
@@ -355,7 +352,7 @@ html[data-skin="retro"] h3,
 html[data-skin="retro"] .brand-name,
 html[data-skin="retro"] [class*="title"] {
   font-family: 'Press Start 2P', 'Noto Sans SC', monospace;
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   letter-spacing: 0.0625rem;
 }
 
@@ -510,8 +507,7 @@ html[data-skin="cartoon"][data-theme="dark"] {
   --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.3);
   --shadow-card: 0 6px 16px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 10px 24px rgba(0, 0, 0, 0.45);
-  --skin-accent: #ff8a8a;
-  --skin-accent-soft: rgba(255, 138, 138, 0.18);
+--skin-accent-soft: rgba(255, 138, 138, 0.18);
 }
 /* 顶栏：显式接管背景，确保暗色变体下彻底覆盖（盖过 StickyHeader.css 的 color-mix 半透明基础规则） */
 html[data-skin="cartoon"][data-theme="dark"] .sticky-header {
@@ -546,8 +542,7 @@ html[data-skin="mechanical"][data-theme="light"] {
   --shadow-sm: 0 2px 8px rgba(15, 25, 35, 0.12);
   --shadow-card: 0 4px 16px rgba(15, 25, 35, 0.14), 0 0 1px rgba(0, 145, 167, 0.4);
   --shadow-md: 0 8px 32px rgba(15, 25, 35, 0.16);
-  --skin-accent: #0091a7;
-  --skin-accent-soft: rgba(0, 145, 167, 0.12);
+--skin-accent-soft: rgba(0, 145, 167, 0.12);
 }
 /* 顶栏：显式接管背景，确保亮色变体下彻底覆盖 */
 html[data-skin="mechanical"][data-theme="light"] .sticky-header {
@@ -589,8 +584,7 @@ html[data-skin="retro"][data-theme="light"] {
   --shadow-sm: 0 2px 8px rgba(192, 0, 192, 0.15);
   --shadow-card: 0 4px 20px rgba(192, 0, 192, 0.2), 0 0 2px rgba(0, 145, 167, 0.3);
   --shadow-md: 0 8px 32px rgba(192, 0, 192, 0.25);
-  --skin-accent: #c000c0;
-  --skin-accent-soft: rgba(192, 0, 192, 0.15);
+--skin-accent-soft: rgba(192, 0, 192, 0.15);
 }
 /* 顶栏：显式接管背景，确保亮色变体下彻底覆盖 */
 html[data-skin="retro"][data-theme="light"] .sticky-header {

@@ -7,7 +7,7 @@
 
 .cms-blocked-modal__text strong {
   color: var(--color-text);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .cms-blocked-modal__actions {
@@ -22,7 +22,7 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   transition: background-color var(--dur-2xs) ease, border-color var(--dur-2xs) ease;
   cursor: pointer;
 }

@@ -64,7 +64,6 @@ interface HeroBannerProps {
    initialEnterDelay?: number;
 }
 
-const HERO_MASK_BG = 'var(--hero-mask-dark)';
 /**
  * 首页 banner 轮播池上限。
  * 接口返回的 trending 动辄 20 条，但 banner 只承载「首屏几张主推图」：
@@ -795,7 +794,6 @@ function HeroBannerClassic({
                 <span className="lazy-image-fallback__brand">kinoTV</span>
               </div>
             )}
-            <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
           </div>
           {loading ? (
             <div className="hero-banner__content" aria-hidden="true">
@@ -1151,7 +1149,6 @@ function HeroBannerClassic({
             <span className="lazy-image-fallback__brand">kinoTV</span>
           </div>
         )}
-        <div className="hero-banner__mask" style={{ background: HERO_MASK_BG }} />
 
         {/* 内容叠加（标题/评分/简介/CTA）：文字 track 与背景图 track 同构。
  拖拽 / 回弹时文字随 banner 一起水平位移（问题 #2，任何距离都跟随）；

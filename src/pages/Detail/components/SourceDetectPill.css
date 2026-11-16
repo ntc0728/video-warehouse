@@ -21,13 +21,13 @@
   background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--text-xs);
-  transition: background var(--dur-fast), border-color var(--dur-fast);
+  transition: background var(--dur-2xs), border-color var(--dur-2xs);
   cursor: pointer;
 }
 .sdp-pill:hover {
   /* hover 不变深色（黑）边框，仅提背景 */
   border-color: var(--color-border-light);
-  background: var(--color-surface-2);
+  background: var(--color-surface-hover);
 }
 /* 鼠标点击/激活不显焦点环（:focus 无 !important，键盘 :focus-visible 仍由 index.css 全局规则点亮，保留无障碍焦点指示） */
 .sdp-pill:focus,
@@ -124,7 +124,7 @@
   background: var(--color-surface);
   visibility: hidden;
   opacity: 0;
-  transition: opacity var(--dur-fast), visibility var(--dur-fast);
+  transition: opacity var(--dur-2xs), visibility var(--dur-2xs);
   box-shadow: var(--shadow-lg);
 }
 .sdp-pop.is-open {
@@ -171,7 +171,7 @@
   padding: 4px 7px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
-  background: var(--color-surface-2);
+  background: var(--color-surface-hover);
   font-size: var(--text-2xs);
 }
 .sdp-cell-dot {

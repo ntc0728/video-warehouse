@@ -82,7 +82,7 @@
   margin: 0;
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   text-transform: uppercase;
   letter-spacing: 0.32em;
   animation: app-loading-fade-in 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s both;
@@ -250,7 +250,7 @@
 
 .app-loading--tv .app-loading__brand-sub {
   font-size: var(--text-lg);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   letter-spacing: 0.6em;
 }
 

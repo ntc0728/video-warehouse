@@ -65,12 +65,12 @@
 .source-modal__label {
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
 }
 .source-modal__hint-inline {
   margin-left: var(--space-2xs);
   color: var(--color-text-tertiary);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
 }
 .source-modal__input {
   width: 100%;
@@ -173,7 +173,7 @@
 .source-modal__enable-label {
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
 }
 .source-modal__switch {
   position: relative;

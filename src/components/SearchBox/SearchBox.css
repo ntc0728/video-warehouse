@@ -102,7 +102,7 @@
   background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--text-sm);
-  transition: border-color var(--dur-fast) var(--ease-spring), box-shadow var(--dur-fast) var(--ease-spring), background var(--dur-fast) var(--ease-spring);
+  transition: border-color var(--dur-2xs) var(--ease-spring), box-shadow var(--dur-2xs) var(--ease-spring), background var(--dur-2xs) var(--ease-spring);
 }
 
 /* header variant 玻璃态：仅作用于 box（不含 submit） */
@@ -276,7 +276,7 @@ html[data-device="app"] .search-box__input::placeholder {
   background: var(--color-primary);
   color: var(--color-text-inverse);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   cursor: pointer;
   transition: background var(--dur-2xs) ease, opacity var(--dur-2xs) ease, transform var(--dur-2xs) ease;
 }
@@ -397,7 +397,7 @@ html[data-device="app"] .search-box__input::placeholder {
   align-items: center;
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   letter-spacing: 0.02em;
 }
 
@@ -483,7 +483,7 @@ html[data-device="app"] .search-box__input::placeholder {
   background: var(--color-surface-hover);
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1;
 }
 

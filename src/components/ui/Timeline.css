@@ -68,13 +68,13 @@
   color: var(--timeline-label-color);
   font-family: inherit;
   font-size: var(--text-sm);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   cursor: pointer;
   transition: background var(--dur-2xs) ease, color var(--dur-2xs) ease;
 }
 
 .timeline--vertical .timeline-node-btn:hover {
-  background: var(--color-hover-bg);
+  background: var(--color-surface-hover);
   color: var(--timeline-label-active-color);
 }
 
@@ -129,14 +129,14 @@
   color: var(--timeline-label-color);
   font-family: inherit;
   font-size: var(--text-xs);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   cursor: pointer;
   white-space: nowrap;
   transition: background var(--dur-2xs) ease, color var(--dur-2xs) ease;
 }
 
 .timeline--horizontal .timeline-node-btn:hover {
-  background: var(--color-hover-bg);
+  background: var(--color-surface-hover);
   color: var(--timeline-label-active-color);
 }
 
@@ -162,7 +162,7 @@
 
 .timeline-node--active .timeline-node-btn {
   color: var(--timeline-label-active-color);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 /* ── 计数徽标（共用）—— 圆点右侧 ────────── */
@@ -175,10 +175,10 @@
   height: var(--timeline-count-h);
   padding: 0 var(--space-2xs);
   border-radius: var(--radius-full);
-  background: var(--color-hover-bg);
+  background: var(--color-surface-hover);
   color: var(--color-text-secondary);
   font-size: var(--timeline-count-font);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1;
 }
 

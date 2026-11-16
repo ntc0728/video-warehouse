@@ -66,7 +66,7 @@
   background: rgba(0, 0, 0, 0.5);
   color: rgba(255, 255, 255, 0.9);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   white-space: nowrap;
   backdrop-filter: blur(8px);
   transform: translateX(-50%);

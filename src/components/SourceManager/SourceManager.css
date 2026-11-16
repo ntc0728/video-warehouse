@@ -83,7 +83,7 @@
   margin: 0;
   color: var(--color-text);
   font-size: var(--text-xl);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 .source-manager__title-icon {
   flex-shrink: 0;
@@ -104,7 +104,7 @@
   background: color-mix(in srgb, var(--color-success) 12%, transparent);
   color: var(--color-success-text);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
 }
 
@@ -302,7 +302,7 @@
   min-width: 0;
   color: var(--color-text);
   font-size: var(--text-base);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -313,7 +313,7 @@
   align-items: center;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
 }
 /* 延迟测速中：旋转图标占位（与文字宽度一致） */
@@ -341,7 +341,7 @@
   padding: var(--space-3xs) var(--space-xs);
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   white-space: nowrap;
 }
 .source-manager__kind--builtin {

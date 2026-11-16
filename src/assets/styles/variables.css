@@ -52,26 +52,22 @@
   TV 10-foot 契约（文件末尾 [data-device="tv"] 独立 clamp）不乘，保持 2× 档。 */
   --type-scale: 1;
   /* 卡片固定宽度（≥1280 auto-fill 轨道）：290 设计基 × scale */
-  --card-size: calc(290px * var(--ui-scale));
-  /* ── Colors ─────────────────────────────────────────────────────────── */
+/* ── Colors ─────────────────────────────────────────────────────────── */
   /* 主色 — 按钮/链接/激活态/焦点环/进度条，暗色下反转为白 */
   --color-primary: #000;
   --color-primary-hover: #333;              /* primary hover 态 */
   --color-primary-light: rgba(0, 0, 0, 0.05); /* 悬浮/选中背景色（tag hover、tooltip 背景） */
   --color-primary-bg: rgba(0, 0, 0, 0.08);  /* 更深一级的 primary 背景（较少使用） */
   --color-primary-shadow: rgba(0, 0, 0, 0.15); /* 激活 tag/chip 的投影色 */
+  /* primary 的柔和底（焦点环 / 选中高亮）：与主色同源派生、随主题翻转。
+ 组件层不再写旧品牌色 fallback（历史遗留 rgba(99,102,241,.12) 一律走本 token）。 */
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 12%, transparent);
   --color-progress-stripe: rgba(255, 255, 255, 0.15); /* 进度条条纹高光 */
-
-  /* ── 下拉刷新小电视品牌色（B 站同款，仅 PullToRefresh 组件使用） ── */
-  --color-bili: #fb7299;        /* B 站粉主色 */
-  --color-bili-light: #ffc4d6;  /* 腮红/浅粉 */
-  --color-bili-deep: #e85a8a;   /* 深粉（投影/描边加重） */
 
   /* ── Z-index 层级体系───────────────────────
  浮层必须分档，避免局部浮层与弹窗/遮罩冲突（同档时 DOM 顺序不确定、浮层可能反盖弹窗）。
 
  token 值 档位与用途
- --z-base 1 常规内容层叠（相对定位的子元素）
  --z-fixed 50 固定 / 吸顶 UI（移动底部 tab bar、吸顶导航、批量操作栏、下拉刷新、源检测胶囊）
  --z-fixed-header 55 固定吸顶导航（Layout 的 fixed sticky-header，压住 tab bar 与内容）
  --z-subpage 60 全屏二级页（SubPage / settings-subpage）：高于吸顶导航、低于局部浮层
@@ -93,8 +89,7 @@
  本体系——它们只在本组件内部比较大小，不参与页级层叠。
  design-audit 的 raw-z-index 检查因此只拦 **≥100**（页级覆盖层起点）；
  50–99 的裸值是「组件局部抬升」的过渡带，按需逐条定义，不强制 token 化。 */
-  --z-base: 1;
-  --z-fixed: 50;
+--z-fixed: 50;
   --z-fixed-header: 55;
   --z-subpage: 60;
   --z-float: 90;
@@ -111,7 +106,6 @@
  灰专属模块/占位语义；暗色维持 #141414 不变） */
   --color-surface: #fff;                   /* 卡片/弹窗/输入框背景 */
   --color-surface-hover: rgba(0, 0, 0, 0.05); /* 按钮/卡片 hover */
-  --color-hover-bg: rgba(0, 0, 0, 0.05);   /* 通用悬浮背景（与 surface-hover 同值） */
   --color-surface-elevated: #fff;           /* 浮层背景（HelpTooltip/Popover） */
   --color-text: #000;                      /* 主文字 */
   --color-text-secondary: #666;            /* 次要文字（白底 5.74:1） */
@@ -154,17 +148,17 @@
  同批：三档旧值 #f5f5f5 与旧页底完全同值（去卡化后隐形），
  改取模块灰档 #f5f6f8，在白页上清晰成块。 */
   --color-tag-bg: #f5f6f8;                 /* 筛选 tag 背景 */
-  --color-favorite-bg: #f5f6f8;            /* 收藏按钮底色 */
-  --color-favorite-active-bg: #fff2e8;     /* 已收藏状态背景 */
+/* 收藏按钮底色 */
+/* 已收藏状态背景 */
   --color-favorite-active: #fa8c16;        /* 已收藏图标色（橙色） */
   --color-page-btn-bg: #f5f6f8;            /* 分页按钮背景 */
   --color-page-btn-hover-bg: rgba(0, 0, 0, 0.05); /* 分页按钮 hover */
-  --color-page-info: #666;                 /* 分页"共N条"文字 */
+/* 分页"共N条"文字 */
   --color-input-bg: #fff;                  /* 输入框背景 */
   --color-input-border: #d9d9d9;           /* 输入框边框 */
   --color-tab-active-bg: #000;             /* Tab 激活背景 */
   --color-tab-active-text: #fff;           /* Tab 激活文字 */
-  --color-tab-inactive-text: #6b6b6b;      /* Tab 未激活文字（#a0a0a0→#6b6b6b，与 tertiary 同档） */
+/* Tab 未激活文字（#a0a0a0→#6b6b6b，与 tertiary 同档） */
   /* 语义色 — 状态反馈
  ★双档契约：下面 4 个 fill 档仅供**填充/描边**（色块、圆点底、进度），
  在浅底上对比不足（success 2.27 / warning 2.38 / error 3.27 / info 4.10），
@@ -185,12 +179,13 @@
   /* 首页右侧浮层动作按钮（刷新）：
  截图为青蓝强调色，与 --color-info 的靛蓝不同，单独成 token 便于后续统一换肤。 */
   --color-action-blue: #00aeef;
-  --color-action-blue-hover: #16b8f2;
-  --color-error-light: #ff7875;            /* 浅红色，用于 hover 态背景 */
+--color-error-light: #ff7875;            /* 浅红色，用于 hover 态背景 */
   --color-success-bg: #e8f5ec;             /* 成功底色（Browse 源状态 badge ok 档） */
   --color-warning-bg: #fdf3e7;             /* 警告底色（Browse 源状态 badge warn 档） */
   --color-warning-border: #ffe58f;         /* 警告描边（IPTV 曾只写 var() fallback，token 从未定义） */
   --color-error-bg: #fdecea;               /* 错误底色（Browse 源状态 badge bad 档） */
+  /* 错误色投影（输入校验 / 焦点环）：随 --color-error 主题值派生，不再用旧红 fallback */
+  --color-error-shadow: color-mix(in srgb, var(--color-error) 18%, transparent);
   /* 骨架屏动画 — 色源收敛：
  全站骨架**只有一个色源**，即上方 --color-placeholder-shimmer-a/b
  （浅色 #eceff5↔#dde3ec；深色 #2b2b2b↔#3d3d3d）。
@@ -213,7 +208,7 @@
   --player-text-tertiary:  #b8b8b8;       /* OSD 弱化文字（控制按钮默认态） */
   --player-progress-bg: #fff;             /* 进度条轨道（始终白色） */
   --player-accent: #2d8cf0;               /* 进度条/控制按钮高亮色（蓝色） */
-  --player-overlay-bg: rgba(0, 0, 0, 0.6); /* 控制栏/弹层半透明遮罩 */
+/* 控制栏/弹层半透明遮罩 */
   /* 播放器「主色」：组件层曾在 .up-universal-player 内直接重定义 --color-primary: #3b82f6。
  组件层不定义视觉常量（ITCSS），故提到 token 层，由组件引用。 */
   --player-primary: #3b82f6;              /* 播放器内 primary（蓝） */
@@ -242,12 +237,12 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);    /* 卡片默认投影 */
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);   /* 中等投影（弹窗） */
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.3);    /* 大投影（modal） */
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);   /* 超大投影（toast） */
+/* 超大投影（toast） */
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);  /* 轻量卡片投影（VideoCard/IPTV 等） */
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.12); /* 卡片 hover 投影 */
   --shadow-soft: 0 0 4px rgba(0, 0, 0, 0.08);    /* 对称柔影（无 y 偏移）：分段控件选中态等小控件，
  避免偏移型阴影在小尺寸上呈现「上下厚左右薄」 */
-  --shadow-focus: 0 0 0 3px var(--color-primary); /* 焦点环（键盘导航） */
+/* 焦点环（键盘导航） */
 
   /* ── Easing ─────────────────────────────────────────────────────────── */
   /* Material Design 标准缓动曲线，全项目 transition/animation 统一引用 */
@@ -257,17 +252,16 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);      /* overshoot 弹性：pop/收藏/badge */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);         /* 强力减速：页面进入 */
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);    /* 对称平滑：路由过渡 */
-  --ease-bounce: cubic-bezier(0.68, -0.6, 0.32, 1.6);     /* 落地反弹：toast */
+/* 落地反弹：toast */
 
   /* ── 动画时长档位 ── */
-  --dur-fast: 150ms;     /* 微交互：press/hover */
-  --dur-base: 250ms;     /* 常规：fade/slide */
   --dur-slow: 500ms;     /* 页面级：route transition */
   --dur-spring: 400ms;   /* 弹性动画：pop/bounce */
-  --dur-theme: 200ms;    /* 主题/皮肤切换过渡（11.6：500ms→200ms，配合去 box-shadow 消除卡顿） */
+/* 主题/皮肤切换过渡（11.6：500ms→200ms，配合去 box-shadow 消除卡顿） */
   --dur-pt-enter: 240ms; /* 页面内容进场：柔和淡入，与 --ease-standard 搭配，不产生亮度跃变 */
   --dur-pt-leave: 200ms; /* 来源页离场：进入黑场路由（/iptv/play）时旧页退场 */
-  --dur-pt-curtain: 200ms; /* 黑场幕布淡入/淡出：与 src/lib/pageTransition.ts 的 PT_DUR 对齐 */
+/* 黑场幕布淡入/淡出：与 src/lib/pageTransition.ts 的 PT_DUR 对齐 */
+  --lazy-crossfade: 280ms; /* 图片加载完成的透明度交叉淡入（LazyImage 单组件消费） */
 
   /* ── 交互时长阶梯──────────────────────────────────
  取值直接来自全站 transition/animation 字面量的**出现频次前 5 名**
@@ -367,9 +361,9 @@
  ⚠️ 必须单位数（stylelint 的 declaration-property-value-disallowed-list 禁 px 行高）。
  落地节奏：先用于信息密集组件（榜单简介 / 设置说明 / 详情简介），
  **不做全局 body { line-height }**（会一次性改变全站行高、大面积位移）。 */
-  --lh-tight: 1.25;                        /* 标题 / 单行控件 / 徽标 */
+/* 标题 / 单行控件 / 徽标 */
   --lh-base: 1.5;                          /* 中文正文下限 */
-  --lh-relaxed: 1.75;                      /* 长文本段落 */
+/* 长文本段落 */
 
   /* ── Spacing（密度契约 v2 · 紧凑端点 ）──────────────────
  段1 375→768：MIN（375 处）与旧契约逐字节相同（手机零回归），768 处值 =
@@ -396,12 +390,6 @@
  文本 2xs=11 时裸算式 15.4，刚好差 0.6px；加 max() 保证顶栏/分页/Chart 图标不被压到 15.x。
  TV 块另行覆盖为 22.39，不受此下限影响。 */
   --icon-xs:  max(16px, calc(var(--text-2xs) * 1.40));
-  /* 最小图标档（此前 Home / TMDBMovieRow 的骨架角标写
- `var(--icon-2xs, 10px)` 而本 token **从未定义** → 兜底静默接管，实际恒为 10px。
- 属「引用了不存在的 token」家族（同 的 --ui-scale 重复定义）。
- 与 --text-2xs（恒定 11px）同属「小尺寸恒定」哲学：装饰性骨架角标不该随视口放大，
- 故写成恒定 10px × --ui-scale（ui-scale=1 时与兜底值逐像素一致 → 零观感变化）。 */
-  --icon-2xs: calc(10px * var(--ui-scale));    /* 恒定 10（骨架角标高度） */
   --icon-sm:  calc(var(--text-sm)   * 1.30);   /* 13→14 ×1.30 = 16.9→18.2 */
   --icon-md:  calc(var(--text-base) * 1.43);   /* 14→15 ×1.43 = 20.0→21.5 */
   --icon-lg:  calc(var(--text-xl)   * 1.50);   /* 16→18 ×1.50 = 24.0→27.0 */
@@ -416,7 +404,7 @@
   /* ── Pagination Dots (分页圆点 — TV 经 [data-device="tv"] 与桌面等大(1080p)、4K=2× 同步放大) ─ */
   --dot-size: calc(clamp(5px, 3.092px + 0.509vw, 7px) * var(--ui-scale)); /* 5→8 圆点 */
   --dot-active-w: calc(clamp(16px, 10.911px + 1.357vw, 21.333px) * var(--ui-scale)); /* 16→24 激活胶囊宽 */
-  --dot-active-h: calc(clamp(5px, 3.092px + 0.509vw, 7px) * var(--ui-scale)); /* 5→8 激活胶囊高 */
+/* 5→8 激活胶囊高 */
   --dot-gap: calc(clamp(3px, 1.092px + 0.509vw, 5px) * var(--ui-scale)); /* 3→6 圆点间距 */
 
   /* ── Component Sizes (控件尺寸) ──────────────────────────────────────── */
@@ -457,8 +445,8 @@
   --vol-track-width: calc(clamp(3px, 2.364px + 0.17vw, 3.667px) * var(--ui-scale)); /* 3→4 音量滑块轨道 */
   --vol-track-radius: calc(clamp(1px, 0.364px + 0.17vw, 1.667px) * var(--ui-scale)); /* 1→2 音量滑块圆角 */
   /* 单选按钮 */
-  --radio-size: calc(clamp(14px, 5.094px + 2.375vw, 23.333px) * var(--ui-scale)); /* 14→28 外圈尺寸 */
-  --radio-dot-size: calc(clamp(6px, 0.911px + 1.357vw, 11.333px) * var(--ui-scale)); /* 6→14 内圈尺寸 */
+/* 14→28 外圈尺寸 */
+/* 6→14 内圈尺寸 */
   /* 徽章 */
   --badge-size: calc(clamp(10px, 2.366px + 2.036vw, 18px) * var(--ui-scale)); /* 10→22 频道可用性徽章 */
 
@@ -481,13 +469,13 @@
   --safe-area-y: 0px;
 
   /* ── Breakpoints (for JS reference, not used in @media) ──────────────── */
-  --breakpoint-sm: 640px;     /* 小屏 */
-  --breakpoint-md: 768px;     /* 平板 */
-  --breakpoint-lg: 1024px;    /* 桌面 */
-  --breakpoint-xl: 1280px;    /* 列数/卡片起点（与 Tailwind xl=1280 一致；页面布局大屏起点为 1440，见各处 ≥1440 媒体查询） */
-  --breakpoint-2xl: 1920px;   /* 2K */
-  --breakpoint-3xl: 2560px;   /* 3K/TV */
-  --breakpoint-4xl: 3840px;   /* 4K */
+/* 小屏 */
+/* 平板 */
+/* 桌面 */
+/* 列数/卡片起点（与 Tailwind xl=1280 一致；页面布局大屏起点为 1440，见各处 ≥1440 媒体查询） */
+/* 2K */
+/* 3K/TV */
+/* 4K */
 
   /* ── Layout tokens (fixed / fluid as appropriate) ────────────────────── */
   --layout-page-min-height: 100%; /* 页面根最小高度：填满滚动区剩余空间。= 100dvh − header − tabbar − TV 安全区，自动跟随断点/顶栏折叠/TV overscan。**勿写 px 或 100dvh**：100dvh 在 AppLayout 内会溢出（多出 header+tabbar），固定 px 在 TV 4K 下失效。⚠️ Player 除外（高度由视频 16:9 派生，用本 token 会破坏比例）。 */
@@ -511,18 +499,18 @@
  需要「封顶值 − 2×留白」的页面（如播放页把滚动容器铺满视口、封顶下沉到内容块）
  一律用本变量，不要另写 2200px 字面量。 */
   --layout-content-cap: 2200px;
-  --layout-hero-height: calc(clamp(200px, 9.16px + 50.891vw, 400px) * var(--ui-scale)); /* 首页 Hero 高度 */
-  --layout-hero-height-mobile: calc(clamp(280px, 241.832px + 10.178vw, 320px) * var(--ui-scale)); /* 移动端 Hero 高度：280→340px 流体 */
+/* 首页 Hero 高度 */
+/* 移动端 Hero 高度：280→340px 流体 */
   --layout-card-daily-width: calc(clamp(200px, 123.664px + 20.356vw, 280px) * var(--ui-scale)); /* 每日推荐卡片宽度：200→320px 流体（4K 增长） */
-  --layout-error-detail-height: calc(clamp(200px, 123.664px + 20.356vw, 280px) * var(--ui-scale)); /* 错误详情区高度：200→320px 流体 */
+/* 错误详情区高度：200→320px 流体 */
   --layout-spinner-border: calc(clamp(3px, 1.728px + 0.339vw, 4.333px) * var(--ui-scale)); /* 加载旋转环边框粗细：3→5px 流体 */
-  --layout-perf-panel-min-w: calc(clamp(280px, 190.941px + 23.749vw, 373.333px) * var(--ui-scale)); /* 性能监控面板最小宽度 + Trending Banner logo 最大宽度：280→420px 流体 */
+/* 性能监控面板最小宽度 + Trending Banner logo 最大宽度：280→420px 流体 */
   --layout-channel-num-w: calc(clamp(120px, 81.832px + 10.178vw, 160px) * var(--ui-scale)); /* 频道编号/时间显示最小宽度：120→180px 流体 */
   --layout-quality-badge-min-w: calc(clamp(84px, 61.099px + 6.107vw, 108px) * var(--ui-scale)); /* 画质徽章最小宽度：84→120px 流体 */
   --layout-vol-popup-w: calc(clamp(60px, 37.099px + 6.107vw, 84px) * var(--ui-scale)); /* 音量弹出框宽度：60→96px 流体 */
   --layout-vol-slider-w: calc(clamp(180px, 116.387px + 16.964vw, 246.667px) * var(--ui-scale)); /* 音量滑块宽度：180→280px 流体 */
-  --layout-player-vol-w: calc(clamp(80px, 54.555px + 6.785vw, 106.667px) * var(--ui-scale)); /* 播放器音量控制区宽度：80→120px 流体 */
-  --layout-popover-min-w: calc(clamp(100px, 68.193px + 8.482vw, 133.333px) * var(--ui-scale)); /* 气泡提示最小宽度：100→150px 流体 */
+/* 播放器音量控制区宽度：80→120px 流体 */
+/* 气泡提示最小宽度：100→150px 流体 */
   --layout-popover-wide-min-w: calc(clamp(140px, 101.832px + 10.178vw, 180px) * var(--ui-scale)); /* 宽气泡最小宽度：140→200px 流体 */
   --layout-help-popover-w: calc(clamp(260px, 183.664px + 20.356vw, 340px) * var(--ui-scale)); /* 帮助气泡宽度（HelpPopover） */
   --layout-sidebar-width:      clamp(260px, 15.84rem + 1.73vw, 320px);  /* 260→320px 流体 */
@@ -546,13 +534,13 @@
  1440→127.2 / 1920→131.1 / 2560→139.3（含 ui-scale 1.08）。
  量测口径：最长分类名「央视 CCTV」+ 计数药丸「999」（font-weight 600 活跃态）。 */
   --layout-channel-group-w: calc(136px * var(--ui-scale));
-  --layout-source-url-max-w: calc(clamp(160px, 109.109px + 13.571vw, 213.333px) * var(--ui-scale)); /* 源地址最大宽度：160→240px 流体 */
-  --layout-hero-poster-w: calc(clamp(160px, 83.664px + 20.356vw, 240px) * var(--ui-scale)); /* Hero 海报宽度：160→280px 流体 */
-  --layout-searchbox-header-max-w: calc(clamp(480px, 352.774px + 33.927vw, 613.333px) * var(--ui-scale)); /* 顶部导航 SearchBox 最大宽度：480→680px 流体 */
+/* 源地址最大宽度：160→240px 流体 */
+/* Hero 海报宽度：160→280px 流体 */
+/* 顶部导航 SearchBox 最大宽度：480→680px 流体 */
   --layout-searchbox-browse-max-w: calc(clamp(560px, 432.774px + 33.927vw, 693.333px) * var(--ui-scale)); /* Browse 页 SearchBox 最大宽度：560→760px 流体 */
-  --layout-groups-collapsed-h: calc(clamp(76px, 54.372px + 5.768vw, 98.667px) * var(--ui-scale)); /* IPTV 分组折叠高度：76→110px 流体 */
+/* IPTV 分组折叠高度：76→110px 流体 */
   --layout-select-w: calc(clamp(140px, 63.664px + 20.356vw, 220px) * var(--ui-scale)); /* 下拉框/弹层宽度：140→260px 流体（大屏不再偏小） */
-  --layout-select-w-mobile: calc(clamp(120px, 81.832px + 10.178vw, 160px) * var(--ui-scale)); /* 移动端下拉宽度：120→180px 流体 */
+/* 移动端下拉宽度：120→180px 流体 */
   --layout-epg-max-height:     clamp(200px, 20rem + 5vw, 50vh);     /* EPG 节目列表最大高度 */
   /* R6 大屏兜底（E2a 回退，维持「不动」契约）：保留旧 rem 式——消费点 min(vh,…) 由
  vh 主导，三段式化收益低、desktop 768–1920 渲染值 +31~41% 不可接受。
@@ -562,19 +550,19 @@
   --layout-epg-empty-min-height: calc(clamp(100px, 68.193px + 8.482vw, 133.333px) * var(--ui-scale)); /* EPG 空态最小高度：100→150px 流体 */
   --layout-epg-time-min-width: calc(clamp(100px, 68.193px + 8.482vw, 133.333px) * var(--ui-scale)); /* EPG 时间列最小宽度：100→150px 流体 */
   --layout-program-guide-width: min(480px, calc(100% - 2 * var(--space-lg))); /* 节目指南面板宽度 */
-  --layout-detail-hero-max-h: clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem); /* 详情页 Hero 最大高度（配合 min(65vh,...) 使用） */
+/* 详情页 Hero 最大高度（配合 min(65vh,...) 使用） */
   --layout-modal-max-h: clamp(30rem, 27.16rem + 12.12vw, 56.25rem);         /* Modal 内容最大高度（配合 min(60vh,...) 使用） */
   --layout-program-guide-max-h: clamp(25rem, 22.29rem + 11.54vw, 50rem);    /* 节目单面板最大高度（配合 min(75vh,...) 使用） */
   --layout-dropdown-max-h:      clamp(20rem, 20rem + 5vh, 28rem);           /* 顶部搜索下拉最大高度（桌面默认/非 TV 非大屏）：320→448px（vh 基、封顶 448，不随 4K 翻倍）。TV 与桌面大屏(≥1920)由各自块以标准 clamp(A,(A/19.2)vw,2A) 覆盖（A=374→748），1080p 下两者均=374px。 */
   --layout-osd-timeshift-dot: calc(clamp(6px, 3.455px + 0.679vw, 8.667px) * var(--ui-scale)); /* 时移进度条圆点尺寸：6→10px 流体 */
   /* ── Logo tokens (流式适配) ────────────────────────────────────────── */
   --layout-logo-size:          clamp(48px, 2.667rem + 0.87vw, 64px);  /* 48→64px 流体 */
-  --layout-logo-size-sm:       clamp(40px, 2.222rem + 0.73vw, 52px);  /* 40→52px 流体 */
-  --layout-logo-size-lg:       clamp(56px, 3.111rem + 1.02vw, 72px);  /* 56→72px 流体 */
+/* 40→52px 流体 */
+/* 56→72px 流体 */
   --layout-brand-font-size: calc(clamp(20px, 17.455px + 0.679vw, 22.667px) * var(--ui-scale)); /* 20→24px 流体 */
-  --layout-brand-font-size-sm: calc(clamp(16px, 13.455px + 0.679vw, 18.667px) * var(--ui-scale)); /* 16→20px 流体 */
-  --layout-brand-font-size-lg: calc(clamp(24px, 21.455px + 0.679vw, 26.667px) * var(--ui-scale)); /* 24→28px 流体 */
-  --layout-detail-hero-play-icon: calc(clamp(137.136px, 102.235px + 9.307vw, 173.712px) * var(--ui-scale)); /* 详情页 Hero 播放按钮尺寸：8.571→12rem 流体 */
+/* 16→20px 流体 */
+/* 24→28px 流体 */
+/* 详情页 Hero 播放按钮尺寸：8.571→12rem 流体 */
   --layout-outline-width: calc(clamp(2px, 1.364px + 0.17vw, 2.667px) * var(--ui-scale)); /* 聚焦轮廓线粗细：2→3px 流体 */
 
   /* ── Avatar Sizes ───────────────────────────────────────────────────────── */
@@ -584,30 +572,28 @@
 
     /* ── Misc Sizes ─────────────────────────────────────────────────────────── */
     --tab-underline-overlap: -1px;   /* Tab 下边框负 margin 覆盖 */
-  --source-meta-min-width: calc(clamp(120px, 81.832px + 10.178vw, 160px) * var(--ui-scale)); /* 源详情最小宽度：120→180px 流体 */
-  --error-msg-max-width: calc(clamp(100px, 74.555px + 6.785vw, 126.667px) * var(--ui-scale)); /* 错误文案最大宽度：100→140px 流体 */
+/* 源详情最小宽度：120→180px 流体 */
+/* 错误文案最大宽度：100→140px 流体 */
   /* ── 源检测组件微尺寸（SourceDetectPill / SourceStatusIndicator 同源，组件 CSS 内不再写死真实 px）── */
   --src-det-progress-w: 46px;                                  /* 内联进度条宽度（微元素，固定） */
   --src-det-popup-max-h: calc(clamp(220px, 156.387px + 16.964vw, 286.667px) * var(--ui-scale)); /* 检测弹层最大高度：220→320px 流体 */
   --src-det-grid-min: calc(clamp(150px, 105.471px + 11.874vw, 196.667px) * var(--ui-scale)); /* 弹层网格单元最小宽：150→220px 流体 */
+  /* ── 历史页时间轴（Timeline 与 HistorySkeleton 共用，组件 CSS 内不再写 fallback 字面量）── */
+  --timeline-bead-h: 1.5rem;                                   /* 算珠单节高度 */
   --loading-stripe-size: 20px;                                 /* AppLoading 条纹图案尺寸（装饰，固定） */
   --layout-tabbar-height: calc(clamp(56px, 45.822px + 2.714vw, 66.667px) * var(--ui-scale)); /* 移动端底部 TabBar 高度：56→72px 流体 */
   --layout-cast-avatar: calc(clamp(56px, 42.641px + 3.562vw, 70px) * var(--ui-scale)); /* Detail 演员头像：56→70px 流体（64→80 略大，×0.875） */
-  --layout-datepicker-width: calc(clamp(340px, 263.664px + 20.356vw, 420px) * var(--ui-scale)); /* 日期选择器宽度：340→460px 流体 */
-  --layout-collapse-max-h: calc(clamp(1000px, 745.547px + 67.854vw, 1266.667px) * var(--ui-scale)); /* 折叠面板最大高度：1000→1400px 流体 */
-  --layout-detail-poster-w: calc(clamp(128px, -14.494px + 37.998vw, 277.333px) * var(--ui-scale)); /* 详情页海报宽度 */
-  --layout-detail-poster-w-tv: calc(clamp(110px, 78.193px + 8.482vw, 143.333px) * var(--ui-scale)); /* TV 端海报宽度 */
+/* 日期选择器宽度：340→460px 流体 */
+/* 折叠面板最大高度：1000→1400px 流体 */
+/* 详情页海报宽度 */
+/* TV 端海报宽度 */
   --layout-searchbox-max-w: calc(clamp(280px, -50.789px + 88.21vw, 626.667px) * var(--ui-scale)); /* SearchBox 最大宽度（通用） */
 
   /* ── Card Grid Columns ──
  ⚠️ --card-cols 基值 + 全部断点阶梯已移至 layout-tokens.css（单真源）。
  此处仅保留语义别名 --row-cols（下方）；改列数请改 layout-tokens.css，勿在此重定义。 */
   /* --row-cols = --card-cols 的**语义别名**（首页横滚行 / TMDBMovieRow 读它）。
-原先每个断点都手抄一份 `--row-cols: N`，与 --card-cols 逐档同值，
- 属纯冗余维护点（漏改一档即骨架列数与真实网格错位）。现只保留这一行引用，
- 断点档一律不再重复声明 —— 改列数只改 --card-cols。 */
-  --row-cols:  var(--card-cols);
-  /* 继续观看行（横版 16:9 卡）：独立断点 2/3/5——
+原先每个断点都手抄一份 `/* 继续观看行（横版 16:9 卡）：独立断点 2/3/5——
  移动端 2 列、平板 3 列、桌面(≥1280) 5 列。横版卡更宽，列数比竖版少，
  保证卡片尺寸合理。断点与 --card-cols 对齐（768/1280）便于理解。 */
   --continue-cols: 2;
@@ -616,21 +602,7 @@
   --header-height: clamp(60px, 3.375rem + 1vw, 76px); /* 顶部导航栏高度 */
   --header-height-compact: calc(clamp(48px, 37.822px + 2.714vw, 58.667px) * var(--ui-scale)); /* 紧凑模式（滚动后折叠）：48→64px 流体 */
 
-  /* ── Glass Effect (玻璃态背景) ───────────────────────────────────────── */
-  /* 普通页面导航栏背景（65% 玻璃,透出页面背景 35% — 解决"导航栏不透明"问题） */
-  --glass-bg-strong:   color-mix(in srgb, var(--color-background) 65%, transparent);
-  /* Immersive 页面导航栏背景（25% 玻璃,透出 hero 海报 75%） */
-  --glass-bg:          color-mix(in srgb, var(--color-background) 25%, transparent);
-  /* 模糊半径（saturate 提升色彩饱和度补偿 blur 损失） */
-  --glass-blur:        saturate(180%) blur(14px);
-  /* 玻璃层下方的细分隔阴影 */
-  --glass-shadow:      0 1px 0 rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
-  /* 玻璃层边框（微弱分隔线） */
-  --glass-border:      rgba(0, 0, 0, 0.08);
-
-  /* ── Scrollbar (统一 6px 极细 + 极淡色) ─────────────────────────────── */
-  --scrollbar-width: calc(clamp(6px, 3.455px + 0.679vw, 8.667px) * var(--ui-scale)); /* 滚动条宽度：6→10px 流体 */
-  --scrollbar-width-thin: calc(clamp(4px, 1.455px + 0.679vw, 6.667px) * var(--ui-scale)); /* 极细滚动条（横向）：4→8px 流体 */
+/* ── Scrollbar (统一极细 + 极淡色) ─────────────────────────────── */
   --scrollbar-color: rgba(0, 0, 0, 0.15); /* 滚动条默认色（极淡） */
   --scrollbar-color-hover: rgba(0, 0, 0, 0.3);   /* hover 态加深 */
   --scrollbar-color-active: rgba(0, 0, 0, 0.45); /* 拖拽态最深 */
@@ -679,38 +651,25 @@ html[data-device="app"] {
     --comp-input-min-w: calc(clamp(242.6px, 275.664px - 2.03958vw, 260px) * var(--ui-scale)); /* 递减：260@768 → 246.294@1440 → 242.6 */
     --comp-tab-height: calc(clamp(35.827px, 41.28871px - 0.34137vw, 38.667px) * var(--ui-scale)); /* 递减：38.667@768 → 36.373@1440 → 35.827 */
     --comp-thumb-size: calc(clamp(22.212px, 24.22786px - 0.11652vw, 23.333px) * var(--ui-scale)); /* 递减：23.333@768 → 22.55@1440 → 22.212 */
-    --dot-active-h: calc(clamp(7px, 6.46369px + 0.06983vw, 8px) * var(--ui-scale));
-    --dot-active-w: calc(clamp(21.333px, 19.90265px + 0.18624vw, 24px) * var(--ui-scale));
+--dot-active-w: calc(clamp(21.333px, 19.90265px + 0.18624vw, 24px) * var(--ui-scale));
     --dot-gap: calc(clamp(5px, 4.46369px + 0.06983vw, 6px) * var(--ui-scale));
     --dot-size: calc(clamp(7px, 6.46369px + 0.06983vw, 8px) * var(--ui-scale));
-    --error-msg-max-width: calc(clamp(126.667px, 119.51634px + 0.93108vw, 140px) * var(--ui-scale));
-    --grid-gap: calc(clamp(13.333px, 11.90268px + 0.18624vw, 16px) * var(--ui-scale)); /* v2 */
+--grid-gap: calc(clamp(13.333px, 11.90268px + 0.18624vw, 16px) * var(--ui-scale)); /* v2 */
     --header-height-compact: calc(clamp(58.667px, 55.80684px + 0.37242vw, 64px) * var(--ui-scale));
     /* ▼ R6 兜底 4 个（bottomsheet/detail-hero/modal/program-guide -max-h）无段2：
  已回退旧 rem 式（E2a），全程单条 clamp，不参与三段式 */
     --layout-brand-font-size: calc(clamp(22.667px, 21.95209px + 0.09309vw, 24px) * var(--ui-scale));
-    --layout-brand-font-size-lg: calc(clamp(26.667px, 25.95209px + 0.09309vw, 28px) * var(--ui-scale));
-    --layout-brand-font-size-sm: calc(clamp(18.667px, 17.95209px + 0.09309vw, 20px) * var(--ui-scale));
-    --layout-card-daily-width: calc(clamp(280px, 258.54749px + 2.7933vw, 320px) * var(--ui-scale));
+--layout-card-daily-width: calc(clamp(280px, 258.54749px + 2.7933vw, 320px) * var(--ui-scale));
     --layout-cast-avatar: calc(clamp(70px, 66.246px + 0.48883vw, 77px) * var(--ui-scale)); /* 70→77：80→88 ×0.875 */
     --layout-channel-num-w: calc(clamp(160px, 149.27374px + 1.39665vw, 180px) * var(--ui-scale));
-    --layout-collapse-max-h: calc(clamp(1266.667px, 1195.1588px + 9.31096vw, 1400px) * var(--ui-scale));
-    --layout-content-max-width: min(100%, var(--layout-content-cap)); /* 内容区硬上限：桌面满屏、仅 ≥2200 视口封顶居中，替代原「随视口缓增的居中列」曲线；封顶裸值见 --layout-content-cap */
-    --layout-datepicker-width: calc(clamp(420px, 398.54749px + 2.7933vw, 460px) * var(--ui-scale));
-    --layout-detail-hero-play-icon: calc(clamp(173.712px, 163.90391px + 1.27709vw, 192px) * var(--ui-scale));
-    --layout-detail-poster-w: calc(clamp(128px, 32px + 8vw, 352px) * var(--ui-scale)); /* 详情页海报宽度： 恢复旧曲线 clamp(8rem,2rem+8vw,22rem)（≈147px@1440 / 186px@1920， 277→352 过大） */
-    --layout-detail-poster-w-tv: calc(clamp(143.333px, 134.39427px + 1.1639vw, 160px) * var(--ui-scale));
-    --layout-epg-empty-min-height: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
+--layout-content-max-width: min(100%, var(--layout-content-cap)); /* 内容区硬上限：桌面满屏、仅 ≥2200 视口封顶居中，替代原「随视口缓增的居中列」曲线；封顶裸值见 --layout-content-cap */
+/* 详情页海报宽度： 恢复旧曲线 clamp(8rem,2rem+8vw,22rem)（≈147px@1440 / 186px@1920， 277→352 过大） */
+--layout-epg-empty-min-height: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
     --layout-epg-time-min-width: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
     --layout-episode-panel-w: calc(clamp(513.333px, 488.30489px + 3.25887vw, 560px) * var(--ui-scale));
     --layout-episode-panel-w-alt: calc(clamp(546.667px, 518.06383px + 3.72437vw, 600px) * var(--ui-scale));
-    --layout-error-detail-height: calc(clamp(280px, 258.54749px + 2.7933vw, 320px) * var(--ui-scale));
-    --layout-groups-collapsed-h: calc(clamp(98.667px, 92.58897px + 0.79141vw, 110px) * var(--ui-scale));
-    --layout-help-popover-w: calc(clamp(340px, 318.54749px + 2.7933vw, 380px) * var(--ui-scale));
-    --layout-hero-height: calc(clamp(400px, 346.36872px + 6.98324vw, 500px) * var(--ui-scale));
-    --layout-hero-height-mobile: calc(clamp(320px, 309.27374px + 1.39665vw, 340px) * var(--ui-scale));
-    --layout-hero-poster-w: calc(clamp(240px, 218.54749px + 2.7933vw, 280px) * var(--ui-scale));
-    --layout-loading-min-height: calc(clamp(420px, 387.82123px + 4.18994vw, 480px) * var(--ui-scale));
+--layout-help-popover-w: calc(clamp(340px, 318.54749px + 2.7933vw, 380px) * var(--ui-scale));
+--layout-loading-min-height: calc(clamp(420px, 387.82123px + 4.18994vw, 480px) * var(--ui-scale));
     --layout-modal-max-width: calc(clamp(506.667px, 456.61131px + 6.51767vw, 600px) * var(--ui-scale));
     /* --layout-osd-max-width 此处原有「≥1024 档」锚点覆盖， 已删除：
  该 token 现为单条比例曲线 clamp(320px, 78vw, 1400px)，:root 一处定义即贯通全档，
@@ -718,33 +677,24 @@ html[data-device="app"] {
     --layout-osd-timeshift-dot: calc(clamp(8.667px, 7.95209px + 0.09309vw, 10px) * var(--ui-scale));
     --layout-outline-width: calc(clamp(2.667px, 2.48841px + 0.02325vw, 3px) * var(--ui-scale));
     --layout-panel-medium-w: calc(clamp(413.333px, 377.57863px + 4.65552vw, 480px) * var(--ui-scale));
-    --layout-perf-panel-min-w: calc(clamp(373.333px, 348.30489px + 3.25887vw, 420px) * var(--ui-scale));
-    --layout-player-vol-w: calc(clamp(106.667px, 99.51634px + 0.93108vw, 120px) * var(--ui-scale));
-    --layout-popover-min-w: calc(clamp(133.333px, 124.39427px + 1.1639vw, 150px) * var(--ui-scale));
-    --layout-popover-wide-min-w: calc(clamp(180px, 169.27374px + 1.39665vw, 200px) * var(--ui-scale));
+--layout-popover-wide-min-w: calc(clamp(180px, 169.27374px + 1.39665vw, 200px) * var(--ui-scale));
     --layout-quality-badge-min-w: calc(clamp(108px, 101.56425px + 0.83799vw, 120px) * var(--ui-scale));
     --layout-searchbox-browse-max-w: calc(clamp(693.333px, 657.57863px + 4.65552vw, 760px) * var(--ui-scale));
-    --layout-searchbox-header-max-w: calc(clamp(613.333px, 577.57863px + 4.65552vw, 680px) * var(--ui-scale));
-    --layout-searchbox-max-w: calc(clamp(626.667px, 533.70628px + 12.10426vw, 800px) * var(--ui-scale));
+--layout-searchbox-max-w: calc(clamp(626.667px, 533.70628px + 12.10426vw, 800px) * var(--ui-scale));
     --layout-select-w: calc(clamp(220px, 198.54749px + 2.7933vw, 260px) * var(--ui-scale));
-    --layout-select-w-mobile: calc(clamp(160px, 149.27374px + 1.39665vw, 180px) * var(--ui-scale));
-    --layout-source-url-max-w: calc(clamp(213.333px, 199.03115px + 1.86222vw, 240px) * var(--ui-scale));
-    --layout-spinner-border: calc(clamp(4.333px, 3.97528px + 0.04658vw, 5px) * var(--ui-scale));
+--layout-spinner-border: calc(clamp(4.333px, 3.97528px + 0.04658vw, 5px) * var(--ui-scale));
     --layout-tabbar-height: calc(clamp(66.667px, 63.80684px + 0.37242vw, 72px) * var(--ui-scale));
     --layout-time-display-min-w: calc(clamp(123.333px, 114.39427px + 1.1639vw, 140px) * var(--ui-scale));
     --layout-vol-popup-w: calc(clamp(84px, 77.56425px + 0.83799vw, 96px) * var(--ui-scale));
     --layout-vol-slider-w: calc(clamp(246.667px, 228.79008px + 2.32772vw, 280px) * var(--ui-scale));
-    --radio-dot-size: calc(clamp(10.951px, 11.57871px - 0.03199vw, 11.333px) * var(--ui-scale)); /* 递减：11.333@768 → 11.118@1440 → 10.951 */
-    --radio-size: calc(clamp(22.212px, 24.22786px - 0.11652vw, 23.333px) * var(--ui-scale)); /* 递减：23.333@768 → 22.55@1440 → 22.212 */
+/* 递减：11.333@768 → 11.118@1440 → 10.951 */
+/* 递减：23.333@768 → 22.55@1440 → 22.212 */
     --radius-lg: calc(clamp(15.333px, 13.90265px + 0.18624vw, 18px) * var(--ui-scale));
     --radius-md: calc(clamp(8.667px, 7.95209px + 0.09309vw, 10px) * var(--ui-scale));
     --radius-sm: calc(clamp(4.333px, 3.97528px + 0.04658vw, 5px) * var(--ui-scale));
     /* 根字号段2：与改前 --text-base 段2 曲线逐字节一致（14@768 → 13.2@1440 → 13 冻结） */
     --root-font-size: calc(clamp(13px, 14.91429px - 0.11905vw, 14px) * var(--ui-scale));
-    --scrollbar-width: calc(clamp(8.667px, 7.95209px + 0.09309vw, 10px) * var(--ui-scale));
-    --scrollbar-width-thin: calc(clamp(6.667px, 5.95209px + 0.09309vw, 8px) * var(--ui-scale));
-    --source-meta-min-width: calc(clamp(160px, 149.27374px + 1.39665vw, 180px) * var(--ui-scale));
-    --space-2xl: calc(clamp(28.333px, 23.68476px + 0.60524vw, 37px) * var(--ui-scale));
+--space-2xl: calc(clamp(28.333px, 23.68476px + 0.60524vw, 37px) * var(--ui-scale));
     --space-2xs: calc(clamp(1.5px, 0.96371px + 0.06983vw, 2.5px) * var(--ui-scale));
     --space-3xl: calc(clamp(38.667px, 31.51631px + 0.93108vw, 52px) * var(--ui-scale));
     --space-3xs: calc(clamp(1.667px, 1.48841px + 0.02325vw, 2px) * var(--ui-scale));
@@ -901,7 +851,6 @@ card-cols 不参与「大屏 UI 起点右移到 1440」——
   --color-background: #141414;
   --color-surface: #1f1f1f;
   --color-surface-hover: rgba(255, 255, 255, 0.08);
-  --color-hover-bg: rgba(255, 255, 255, 0.08);
   --color-surface-elevated: #262626;
   --color-text: #fff;
   --color-text-secondary: #a0a0a0;
@@ -919,18 +868,14 @@ card-cols 不参与「大屏 UI 起点右移到 1440」——
   --color-placeholder-shimmer-b: #3d3d3d;
   --color-placeholder-border: #454545;     /* 加载/失败态描边暗档（原 #363636 加深一档） */
   --color-tag-bg: #262626;
-  --color-favorite-bg: #303030;
-  --color-favorite-active-bg: #3a2000;
-  --color-favorite-active: #d89614;        /* 暗色下收藏图标偏暗橙 */
+--color-favorite-active: #d89614;        /* 暗色下收藏图标偏暗橙 */
   --color-page-btn-bg: #262626;
   --color-page-btn-hover-bg: rgba(255, 255, 255, 0.08);
-  --color-page-info: #a0a0a0;
-  --color-input-bg: #1f1f1f;
+--color-input-bg: #1f1f1f;
   --color-input-border: #434343;
   --color-tab-active-bg: #fff;             /* 暗色下 Tab 激活背景反转为白 */
   --color-tab-active-text: #000;
-  --color-tab-inactive-text: #a0a0a0;
-  --color-success: #49aa19;
+--color-success: #49aa19;
   --color-error: #ff7875;                  /* 提档：#d32029(3.15:1)→#ff7875(6.43:1) */
   --color-danger: #cf1322;                 /* 与浅色同值：白字 5.57:1（原 #ef4444 仅 3.76） */
   --color-warning: #d89614;
@@ -944,8 +889,7 @@ card-cols 不参与「大屏 UI 起点右移到 1440」——
   --color-info-text:    #3c9ae8;           /* 5.48:1 */
   /* 首页右侧浮层「刷新」按钮强调蓝：暗色下保持同一青蓝（按钮自带白图标，对比度足够） */
   --color-action-blue: #00aeef;
-  --color-action-blue-hover: #16b8f2;
-  --color-error-light: #ff4d4f;           /* 暗色主题浅红（与 error 同值） */
+--color-error-light: #ff4d4f;           /* 暗色主题浅红（与 error 同值） */
   --color-success-bg: rgba(73, 170, 25, 0.16);   /* 成功底色（暗色半透明档） */
   --color-warning-bg: rgba(216, 150, 20, 0.16);  /* 警告底色（暗色半透明档） */
   /* 警告描边暗色档：与 --color-warning-bg 同 rgb 三元组，仅提高不透明度到可辨识描边级别。
@@ -961,24 +905,17 @@ card-cols 不参与「大屏 UI 起点右移到 1440」——
   --player-text: #fff;                    /* 播放器文字 */
   --player-progress-bg: #fff;             /* 进度条轨道 */
   --player-accent: #2d8cf0;               /* 进度条/高亮色（蓝） */
-  --player-overlay-bg: rgba(0, 0, 0, 0.6); /* 控制栏遮罩 */
+/* 控制栏遮罩 */
   /* 暗色投影 — 加深阴影以匹配深色背景 */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
-  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3);
+--shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3);
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.45);
-  --shadow-focus: 0 0 0 3px var(--color-primary); /* 焦点环（暗色下 primary = 白） */
+/* 焦点环（暗色下 primary = 白） */
 
   /* Glass Effect (暗色 — 透明度更弱以覆盖深色页面) */
-  --glass-bg-strong:   color-mix(in srgb, var(--color-background) 55%, transparent);
-  --glass-bg:          color-mix(in srgb, var(--color-background) 18%, transparent);
-  --glass-blur:        saturate(180%) blur(14px);
-  --glass-shadow:      0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 12px rgba(0, 0, 0, 0.25);
-  --glass-border:      rgba(255, 255, 255, 0.08);
-
-  /* Scrollbar — 暗色 (白色极淡) */
+/* Scrollbar — 暗色 (白色极淡) */
   --scrollbar-color: rgba(255, 255, 255, 0.18);
   --scrollbar-color-hover: rgba(255, 255, 255, 0.35);
   --scrollbar-color-active: rgba(255, 255, 255, 0.55);
@@ -1030,7 +967,7 @@ card-cols 不参与「大屏 UI 起点右移到 1440」——
   --icon-3xl: calc(var(--text-3xl) * 1.70);
   --dot-size:     clamp(5px, 0.2604vw, 10px);   /* 5→10 圆点（=桌面 5→10，4K=2×） */
   --dot-active-w: clamp(16px, 0.8333vw, 24px);  /* 16→24 激活胶囊宽（=桌面 16→24，4K=2×） */
-  --dot-active-h: clamp(5px, 0.2604vw, 10px);   /* 5→10 圆点（=桌面 5→10，4K=2×） */
+/* 5→10 圆点（=桌面 5→10，4K=2×） */
   --dot-gap:      clamp(3px, 0.1563vw, 6px);    /* 3→6 圆点间距（=桌面 3→6，4K=2×） */
 
   /* 间距 token：TV 比例化统一 clamp(A, (A/19.2)vw, 2A)，1080p 基线=A=桌面冻结值、4K=2A。 */
@@ -1064,8 +1001,8 @@ card-cols 不参与「大屏 UI 起点右移到 1440」——
   --switch-thumb-offset: clamp(24px, 1.25vw, 48px);          /* 24→48 (桌面24, 4K=48) */
   --vol-track-width:     clamp(4px, 0.2083vw, 8px);     /* 4→8 (桌面4, 4K=8) */
   --vol-track-radius:    clamp(2px, 0.1042vw, 4px);   /* 2→4 (桌面2, 4K=4) */
-  --radio-size:          clamp(28px, 1.4583vw, 56px);     /* 28→56 (桌面28, 4K=56) */
-  --radio-dot-size:      clamp(14px, 0.7292vw, 28px);   /* 14→28 (桌面14, 4K=28) */
+/* 28→56 (桌面28, 4K=56) */
+/* 14→28 (桌面14, 4K=28) */
   --badge-size:          clamp(22px, 1.1458vw, 44px);   /* 22→44 (桌面22, 4K=44) */
 
   /* ── Border Radius（TV 基数=桌面冻结值，4K=2×）─────────────────────────────── */
@@ -1118,13 +1055,10 @@ card-cols 不参与「大屏 UI 起点右移到 1440」——
   --avatar-lg: 72px;
   --avatar-sm: 56px;
   --avatar-xs: 30px;
-  --error-msg-max-width: 100px;
-  --header-height-compact: 48px;
+--header-height-compact: 48px;
   /* 品牌文字大小档：原为「恒 MIN 补钉」（24/16，TV 未覆盖者回到
  桌面值），与本次正文 20sp 提升不匹配；改为标准 TV 契约曲线，1080p=28/20、4K=56/40。 */
-  --layout-brand-font-size-lg: clamp(28px, 1.45833vw, 56px);
-  --layout-brand-font-size-sm: clamp(20px, 1.04167vw, 40px);
-  --layout-card-daily-width: 200px;
+--layout-card-daily-width: 200px;
   --layout-cast-avatar: 56px; /* 64×0.875 */
   --layout-channel-num-w: 120px;
   /* 频道列表一级栏：旧值 A=162 是基于「TV 组项文字 16px」标定的，
@@ -1134,48 +1068,29 @@ card-cols 不参与「大屏 UI 起点右移到 1440」——
  ⚠️ 须与 UniversalPlayer.css 的 `.up-platform-tv .up-channel-groups { max-width }` 同步
  （通用规则的 44% 上限会把它钳回 193.6px）。 */
   --layout-channel-group-w: clamp(208px, 10.8333vw, 416px);
-  --layout-collapse-max-h: 1000px;
-  --layout-content-max-width: 320px;
-  --layout-datepicker-width: 340px;
-  --layout-detail-hero-play-icon: 137.136px;
-  --layout-detail-poster-w: 128px;
-  --layout-detail-poster-w-tv: 110px;
-  --layout-epg-empty-min-height: 100px;
+--layout-content-max-width: 320px;
+--layout-epg-empty-min-height: 100px;
   --layout-epg-time-min-width: 100px;
   --layout-episode-panel-w: 420px;
   --layout-episode-panel-w-alt: 440px;
-  --layout-error-detail-height: 200px;
-  --layout-groups-collapsed-h: 76px;
-  --layout-help-popover-w: 260px;
-  --layout-hero-height: 200px;
-  --layout-hero-height-mobile: 280px;
-  --layout-hero-poster-w: 160px;
-  --layout-loading-min-height: 300px;
+--layout-help-popover-w: 260px;
+--layout-loading-min-height: 300px;
   --layout-modal-max-width: 320px;
   --layout-osd-max-width: 320px;
   --layout-osd-timeshift-dot: 6px;
   --layout-outline-width: 2px;
   --layout-panel-medium-w: 280px;
-  --layout-perf-panel-min-w: 280px;
-  --layout-player-vol-w: 80px;
-  --layout-popover-min-w: 100px;
-  --layout-popover-wide-min-w: 140px;
+--layout-popover-wide-min-w: 140px;
   --layout-quality-badge-min-w: 84px;
   --layout-searchbox-browse-max-w: 560px;
-  --layout-searchbox-header-max-w: 480px;
-  --layout-searchbox-max-w: 280px;
+--layout-searchbox-max-w: 280px;
   --layout-select-w: 140px;
-  --layout-select-w-mobile: 120px;
-  --layout-source-url-max-w: 160px;
-  --layout-spinner-border: 3px;
+--layout-spinner-border: 3px;
   --layout-tabbar-height: 56px;
   --layout-time-display-min-w: 90px;
   --layout-vol-popup-w: 60px;
   --layout-vol-slider-w: 180px;
-  --scrollbar-width: 6px;
-  --scrollbar-width-thin: 4px;
-  --source-meta-min-width: 120px;
-  --space-lg-xl: 14px;
+--space-lg-xl: 14px;
   --src-det-grid-min: 150px;
   --src-det-popup-max-h: 220px;
 }
@@ -1199,7 +1114,7 @@ card-cols 不参与「大屏 UI 起点右移到 1440」——
  固定 px/rem 上限段。） */
 @media (width >= 1920px) {
   html:not([data-device="app"]) {
-    --layout-detail-hero-max-h:   clamp(50.875rem, 42.4vw,   101.75rem); /* 814→1628px */
+/* 814→1628px */
     --layout-modal-max-h:         clamp(68.75rem,  57.29vw,  137.5rem);  /* 1100→2200px */
     --layout-program-guide-max-h: clamp(62.5rem,   52.08vw,  125rem);    /* 1000→2000px */
     --layout-epg-max-height:      clamp(36rem,     30vw,     72rem);     /* 576→1152px（配合 60vh 上限） */
@@ -1253,7 +1168,6 @@ html[data-device="tv"] {
   --hero-title-size: calc(clamp(11.6px, 10px + 0.2083vw, 14px) * var(--ui-scale));  /* 13@1440 → 14@1920 */
   /* 兼容 token： 封面出血后标题浮在图上、不再占独立下行；
  保留供旧引用/骨架高度对照使用，真实 banner 高已由 aspect-ratio 派生。 */
-  --hero-title-bar-h: calc(2 * var(--space-xs) + 1.4 * var(--hero-title-size));
-  --hero-card-radius: calc(clamp(5.2px, 2px + 0.4167vw, 10px) * var(--ui-scale));   /* 8@1440 → 10@1920 */
+--hero-card-radius: calc(clamp(5.2px, 2px + 0.4167vw, 10px) * var(--ui-scale));   /* 8@1440 → 10@1920 */
 }
 

@@ -47,7 +47,7 @@
 :is(.history-page, .collection-page) .record-card--selected,
 :is(.history-page, .collection-page) .record-card--selected:hover {
   border: 2px solid var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-soft, rgba(99, 102, 241, 0.12));
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
 }
 :is(.history-page, .collection-page) .record-card--selected::after {
   display: none;
@@ -157,7 +157,7 @@ hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
   color: rgba(255, 255, 255, 0.9);
   /* 全站最小文本档（进度时间用最小字体） */
   font-size: var(--text-2xs);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   white-space: nowrap;
@@ -184,7 +184,7 @@ hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
   margin: 0;
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   line-height: 1.5;
   white-space: nowrap;
   overflow: hidden;
@@ -241,22 +241,22 @@ hover 轻微放大（scale 1.06），与 VideoCard 竖版统一 */
   margin-left: auto;
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
 }
 :is(.history-page, .collection-page) .record-card__badge-type {
   flex-shrink: 0;
   padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-sm);
   font-size: var(--text-2xs);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1.5;
 }
 :is(.history-page, .collection-page) .record-card__badge-type--video {
-  background: var(--color-primary-soft, rgba(99, 102, 241, 0.12));
+  background: var(--color-primary-soft);
   color: var(--color-primary);
 }
 :is(.history-page, .collection-page) .record-card__badge-type--live {
-  background: rgba(34, 197, 94, 0.14);
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
   color: var(--color-success-text);
 }
 :is(.history-page, .collection-page) .record-card__badge-source {
@@ -412,7 +412,7 @@ html[data-device='app'] :is(.history-page, .collection-page) .record-card.is-in-
  批量勾选框 .record-card__check 明确不门控。 */
 :is(.history-page, .collection-page) .record-card__media .record-card__live-badge,
 :is(.history-page, .collection-page) .record-card__media .record-card__progress-overlay {
-  transition: opacity var(--dur-base) var(--ease-out-expo);
+  transition: opacity var(--dur-md) var(--ease-out-expo);
 }
 
 :is(.history-page, .collection-page) .record-card__media:has(.lazy-image-placeholder) > .record-card__live-badge,

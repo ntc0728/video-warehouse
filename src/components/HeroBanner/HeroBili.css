@@ -212,8 +212,8 @@
 }
 
 .hero-bili__meta > .hero-bili__rating {
-  color: rgba(250, 204, 21, 0.95);
-  font-weight: 600;
+  color: var(--color-on-image-rating);
+  font-weight: var(--fw-semibold);
 }
 
 /* banner 简介（左下按钮上方）：左侧主色竖线 +
@@ -350,8 +350,7 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
  去卡片化：边框/圆角/底色/投影随外层 .hero-bili 卡一并移除
  （本组件仅 >=1024 桌面渲染），封面直接铺页面底色。 */
 .hero-side-card {
-  --hero-corner-fs: calc(var(--text-xs) * 0.9);
-  --hero-corner-fav: calc(var(--icon-lg) * 0.9);
+--hero-corner-fav: calc(var(--icon-lg) * 0.9);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -413,11 +412,11 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   background: rgba(0, 0, 0, 0.72);
   color: var(--color-on-image);
   font-size: var(--text-xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   line-height: 1.4;
   backdrop-filter: blur(6px);
   pointer-events: none;
-  transition: opacity var(--dur-base) var(--ease-out-expo);
+  transition: opacity var(--dur-md) var(--ease-out-expo);
 }
 
 .hero-side-card__corner--rating {
@@ -425,7 +424,7 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   left: var(--space-xs);
   /* 对齐 .video-card-rating：评分色 + 600 + 行高 1（星级/数字胶囊不偏厚） */
   color: var(--color-rating);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1;
 }
 
@@ -531,7 +530,7 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   background: none;
   color: var(--color-on-image);
   font-size: var(--hero-title-size);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1.4;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
   pointer-events: auto;

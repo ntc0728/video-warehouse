@@ -26,7 +26,7 @@
 
 .detail-hero-rating {
   color: var(--color-rating);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 /* 颜色走可覆写变量：Detail 页是压在 backdrop 上的白字，

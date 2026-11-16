@@ -181,7 +181,7 @@
   border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 /* ── 亮色模式：选中筛选轨（.bmb-chip）亮色下用实色 primary 背景 ── */

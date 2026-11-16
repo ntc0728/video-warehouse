@@ -429,8 +429,8 @@
          layout-tokens.css --hero-side-w（与真实页同一份分档公式，不再手抄第二套）；
          <1024 非宽屏档 banner 走 aspect-ratio，不读该 token。
          2026-11-04：banner 恒按 16:9 派生高度（与真实 HeroBili 同语义），
-         右栏 flex stretch 到 banner 行高、3 行卡均分；不再消费 --hero-banner-h
-         （注入侧无 --space-md / --hero-side-gap 定义，消费会 invalid）。
+         右栏 flex stretch 到 banner 行高、3 行卡均分；不消费 hero 高度变量
+         （注入侧缺依赖 token，消费会 invalid；该高度 token 已随死 token 收敛删除）。
          卡壳 padding 镜像真实 .hero-bili。 */
       .bs-herobili {
         padding: 7px 9.5px 9.5px;
@@ -515,8 +515,8 @@
          与 .detail-skeleton__top 同构）→ tabs（2 枚）→ 内容卡（演员圆头像行 +
          简介行 + 剧照网格）→ 推荐行（FILL 补，复用 poster 网格）。 */
       .bs-detail__top { display: flex; flex-direction: column; gap: 16px; }
-      /* max-height 镜像 .detail-hero / DetailSkeleton：min(65vh, --layout-detail-hero-max-h)
-         基值档 clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem)（variables.css 同值硬编码，骨架读不到 bundle token）。
+      /* max-height 镜像 .detail-hero / DetailSkeleton：min(65vh, clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem))
+         （骨架读不到 bundle token，故同值硬编码；原 --layout-detail-hero-max-h 已随死 token 收敛删除）。
          ⚠️ 它只在矮视口卡住超高 banner，1280×720 下 banner 自然高 404 < 上限 468 不生效——
          「banner 显大」的真因是右栏不齐平（见下方 align-self: stretch，2026-09-22 二次修正） */
       .bs-detail__hero { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: min(65vh, clamp(28.125rem, 26.4375rem + 7.22vw, 43.75rem)); background: var(--bs-skeleton-a); border-radius: 12px; }

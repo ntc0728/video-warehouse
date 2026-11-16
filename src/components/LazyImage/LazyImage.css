@@ -59,9 +59,9 @@
   opacity: 0;
   filter: blur(12px);
   transform: scale(1.04);
-  transition: opacity var(--dur-base) var(--ease-out-expo),
-              filter var(--dur-base) var(--ease-out-expo),
-              transform var(--dur-base) var(--ease-out-expo);
+  transition: opacity var(--dur-md) var(--ease-out-expo),
+              filter var(--dur-md) var(--ease-out-expo),
+              transform var(--dur-md) var(--ease-out-expo);
   object-fit: cover;
 }
 
@@ -83,7 +83,7 @@
 }
 .lazy-image-container--cached.loaded.revealed .lazy-image:not(.lazy-image--base):not(.lazy-image--pending) {
   opacity: 1;
-  transition: opacity var(--dur-fast) var(--ease-out-expo);
+  transition: opacity var(--dur-2xs) var(--ease-out-expo);
 }
 
 /* 交叉淡入层（crossfadeOnChange）：旧图作底(base)、新图淡入覆盖(pending)，
@@ -157,7 +157,7 @@
 .lazy-image-fallback__brand {
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1;
   letter-spacing: 0.18em;
   opacity: 0.8;
@@ -192,9 +192,9 @@
   }
 
   .lazy-image {
-    transition: opacity var(--dur-fast) var(--ease-out-expo),
-                filter var(--dur-fast) var(--ease-out-expo),
-                transform var(--dur-fast) var(--ease-out-expo);
+    transition: opacity var(--dur-2xs) var(--ease-out-expo),
+                filter var(--dur-2xs) var(--ease-out-expo),
+                transform var(--dur-2xs) var(--ease-out-expo);
   }
 }
 /* app 恒移动：@media (width <= 767px) 的 app 端恒生效副本 */
@@ -204,9 +204,9 @@
   }
 
   html[data-device="app"] .lazy-image {
-    transition: opacity var(--dur-fast) var(--ease-out-expo),
-                filter var(--dur-fast) var(--ease-out-expo),
-                transform var(--dur-fast) var(--ease-out-expo);
+    transition: opacity var(--dur-2xs) var(--ease-out-expo),
+                filter var(--dur-2xs) var(--ease-out-expo),
+                transform var(--dur-2xs) var(--ease-out-expo);
   }
 
 

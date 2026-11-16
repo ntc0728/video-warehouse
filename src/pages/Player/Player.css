@@ -128,13 +128,13 @@
   background: transparent;
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   text-align: left;
   cursor: pointer;
 }
 
 .player-panel-header:hover {
-  background: var(--color-hover-bg);
+  background: var(--color-surface-hover);
 }
 .player-panel-header:focus, .player-panel-header:active{
   outline: none !important;
@@ -164,7 +164,7 @@
   margin-left: auto;
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   text-align: right;
   white-space: nowrap;
   overflow: hidden;
@@ -265,7 +265,7 @@
   background: var(--color-tag-bg);
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
   transition: all var(--dur-sm);
   cursor: pointer;
@@ -312,7 +312,7 @@
   background: var(--color-tag-bg);
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   overflow: hidden;
   text-overflow: ellipsis;
   transition: all var(--dur-sm);
@@ -360,7 +360,7 @@
   background: var(--color-tag-bg);
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
   /* 关键：此前无 overflow 时 grid 1fr 轨道被 min-content 撑爆——特别篇信息型
    集名很长，超长集名会超出面板列宽被裁 */
@@ -451,7 +451,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   background: var(--color-tag-bg);
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
   overflow: hidden;
   transition: all var(--dur-sm);
@@ -529,7 +529,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
 .player-tv-loader__label {
   color: rgba(255, 255, 255, 0.6);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   letter-spacing: 0.04em;
 }
 
@@ -651,7 +651,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--text-lg);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
 }
 
 /* 播放器空状态副标题（如 "请尝试切换其他 CMS 源"） */
@@ -709,7 +709,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   min-width: 0;
   margin: 0;
   font-size: var(--text-lg);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .player-detail-meta {
@@ -718,7 +718,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
  这里是 --color-surface 浅底 → 覆写共享变量改回深色字 + 浅色类型胶囊，
  否则白字压白底看不见。 */
   --hero-meta-color: var(--color-text-secondary);
-  --hero-meta-type-bg: var(--color-hover-bg);
+  --hero-meta-type-bg: var(--color-surface-hover);
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-md);
@@ -806,7 +806,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
 
 .player-detail-meta-label {
   flex: 0 0 auto;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
 }
 
@@ -841,7 +841,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
   margin: 0 0 var(--space-sm);
   padding: 0 var(--space-md);
   font-size: var(--text-lg);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .player-recommend-row {
@@ -1143,7 +1143,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
 .player-autoplay-text {
   color: var(--player-text);
   font-size: var(--text-base);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   white-space: nowrap;
 }
 
@@ -1190,7 +1190,7 @@ focus-visible，叠上 index.css 全局桌面焦点环（--color-primary 浅色=
  TV 端（[data-device="tv"] 自有体系）与 app 端走 var() 的第二个参数回退。 */
     --player-sidebar-w: clamp(170px, 13vw, 210px);        /* 面板栏：动态 + 170 下限（一行一条后继续收窄，播放器等比变宽变高，2026-11-11） */
     --player-sidebar-min-w: 170px;
-    --player-stage-min-w: 480px;                          /* 播放器最小宽度 */
+/* 播放器最小宽度 */
     --player-stage-max-h: calc(100dvh - var(--header-height) - var(--space-sm) * 3);
     --player-tab-h: calc(var(--comp-tab-height) * 0.78);  /* 面板内 tab 收窄：≈38→30 / 36→28 */
     /* 内容块封顶 = 「封顶值 − 2×横向留白」，与旧「壳 2200 居中 + padding」逐像素等价：

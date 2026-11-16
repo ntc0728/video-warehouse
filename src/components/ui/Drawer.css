@@ -35,7 +35,7 @@
 }
 
 .drawer-content[data-state='closed'] {
-  animation: drawer-slide-out 0.26s var(--ease-in-expo, ease) forwards;
+  animation: drawer-slide-out var(--dur-md) var(--ease-standard) forwards;
 }
 
 .drawer-header {
@@ -49,7 +49,7 @@
 .drawer-title {
   color: var(--color-text);
   font-size: var(--text-base);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .drawer-close {
@@ -280,7 +280,7 @@ body:has(.drawer-content) .back-to-top-button {
   background: transparent !important;
   color: var(--color-text-tertiary) !important;
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   box-shadow: none !important;
   cursor: default !important;
   pointer-events: none;
@@ -311,7 +311,7 @@ body:has(.drawer-content) .back-to-top-button {
   content: '↕️ 排序';
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 .drawer-content--fullscreen .drawer-body .filter-bar__sort {
   flex-wrap: wrap;
@@ -325,7 +325,7 @@ body:has(.drawer-content) .back-to-top-button {
   background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1.5;
   transition: color var(--dur-2xs) ease, background-color var(--dur-2xs) ease, border-color var(--dur-2xs) ease;
 }
