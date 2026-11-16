@@ -377,7 +377,6 @@
   --space-sm: calc(clamp(6px, 5.04581px + 0.25445vw, 7px) * var(--ui-scale)); /* 6→7→9 */
   --space-md: calc(clamp(8px, 6.5687px + 0.38168vw, 9.5px) * var(--ui-scale)); /* 8→9.5→12.5 */
   --space-lg: calc(clamp(12px, 9.77385px + 0.59364vw, 14.333px) * var(--ui-scale)); /* 12→14.333→19 */
-  --space-lg-xl: calc(clamp(14px, 11.1374px + 0.76336vw, 17px) * var(--ui-scale)); /* 14→17→23 lg↔xl 过渡档（分类快选 gap 等） */
   --space-xl: calc(clamp(16px, 12.50095px + 0.93308vw, 19.667px) * var(--ui-scale)); /* 16→19.667→27 */
   --space-2xl: calc(clamp(24px, 19.86548px + 1.10254vw, 28.333px) * var(--ui-scale)); /* 24→28.333→37 */
   --space-3xl: calc(clamp(32px, 25.63835px + 1.69644vw, 38.667px) * var(--ui-scale)); /* 32→38.667→52 */
@@ -699,7 +698,6 @@ html[data-device="app"] {
     --space-3xl: calc(clamp(38.667px, 31.51631px + 0.93108vw, 52px) * var(--ui-scale));
     --space-3xs: calc(clamp(1.667px, 1.48841px + 0.02325vw, 2px) * var(--ui-scale));
     --space-lg: calc(clamp(14.333px, 11.83001px + 0.32591vw, 19px) * var(--ui-scale));
-    --space-lg-xl: calc(clamp(17px, 13.78216px + 0.41899vw, 23px) * var(--ui-scale));
     --space-md: calc(clamp(9.5px, 7.89104px + 0.2095vw, 12.5px) * var(--ui-scale));
     --space-sm: calc(clamp(7px, 5.92741px + 0.13966vw, 9px) * var(--ui-scale));
     --space-xl: calc(clamp(19.667px, 15.73423px + 0.51208vw, 27px) * var(--ui-scale));
@@ -1090,7 +1088,6 @@ card-cols 不参与「大屏 UI 起点右移到 1440」——
   --layout-time-display-min-w: 90px;
   --layout-vol-popup-w: 60px;
   --layout-vol-slider-w: 180px;
---space-lg-xl: 14px;
   --src-det-grid-min: 150px;
   --src-det-popup-max-h: 220px;
 }

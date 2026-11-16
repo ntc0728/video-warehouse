@@ -1303,7 +1303,7 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
 /* 原 html[data-device="tv"] { --iptv-cols:5; --iptv-page-cols:5; } 已移至 layout-tokens.css 的 TV 覆盖块 */
 
 /* ═══════════════════════════════════════════════════════════════════════════
- >1440 桌面：卡片间距统一（断点 1280 → 1440）
+>=1440 桌面：卡片间距统一（断点 1280 → 1440；含 1440 本身，与 layout-tokens 的 7 列档对齐）
  1) 所有 video / iptv card 之间的间距统一为 var(--hero-side-gap)（10px@1440 → 12px@1920）。
  2) 焦点环与批量选中态等功能性描边守护保留（特异性盖过卡片自身边框/投影）。
  ⚠️ 注意：本块曾含「全站去卡片化」——
@@ -1311,7 +1311,7 @@ html[data-mobile-layout="true"] body[data-player-toast="active"] [data-sonner-to
  卡片恢复组件自带外观（VideoCard.css / IPTVChannelCard.css / RecordShell）。
  ⚠️ TV 红线：全部规则带 html:not([data-device="tv"]) 前缀（TV 恒用原卡片外观）。
  ═══════════════════════════════════════════════════════════════════════════ */
-@media (width > 1440px) {
+@media (width >= 1440px) {
   /* ── 功能性描边守护（特异性高于组件默认规则，确保焦点/选中态可见） ── */
   /* 键盘焦点环（改用 outline 口径，与全局规则同源同形，
  消除「大屏与其它尺寸焦点样式不一致」；box-shadow 会被 overflow:hidden 裁切）

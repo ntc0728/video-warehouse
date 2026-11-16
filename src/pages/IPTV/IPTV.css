@@ -715,7 +715,7 @@ top-card 同批并入去卡（原「仅桌面 >=1024」注释有误——
   align-items: center;
   width: 100%;
   margin-bottom: var(--space-md);
-  padding: var(--space-md) var(--space-lg-xl);
+  padding: var(--space-md) var(--space-lg);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-surface);
