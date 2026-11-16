@@ -26,8 +26,9 @@ function renderPill(over: Partial<ComponentProps<typeof SourceDetectPill>> = {})
 }
 
 describe('SourceDetectPill（源状态 = 本次搜索结果口径）', () => {
-  it('有数据时状态点为绿，计数回显 done/total', () => {
+  it('标签为「源状态」，有数据时状态点为绿、计数回显 done/total', () => {
     const { container } = renderPill();
+    expect(container.querySelector('.sdp-label')?.textContent).toBe('源状态');
     expect(container.querySelector('.sdp-dot')?.className).toContain('is-ok');
     expect(container.querySelector('.sdp-count')?.textContent).toBe('4/4');
   });
