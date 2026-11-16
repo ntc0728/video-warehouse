@@ -1,7 +1,7 @@
 {
   "name": "kinotv",
   "private": true,
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "影视聚合平台：多源视频浏览、IPTV 直播、收藏与智能搜索",
   "license": "MIT",
   "repository": {
