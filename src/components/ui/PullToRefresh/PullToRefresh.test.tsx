@@ -44,10 +44,13 @@ function Tree({
   variant,
   scrollRef,
   enabled,
+  showHarness = true,
 }: {
   variant: 'default' | 'settings';
   scrollRef: RefObject<HTMLDivElement>;
   enabled?: boolean;
+  /** false = 模拟页面卸载（浮层做页面实例切换时的手势/刷新作废） */
+  showHarness?: boolean;
 }) {
   return (
     <>
@@ -59,7 +62,7 @@ function Tree({
       >
         <PullToRefreshProvider>
           <PullToRefreshOverlay />
-          <Harness variant={variant} enabled={enabled} />
+          {showHarness && <Harness variant={variant} enabled={enabled} />}
         </PullToRefreshProvider>
       </ScrollContainerContext.Provider>
     </>
@@ -140,7 +143,7 @@ describe('PullToRefreshOverlay', () => {
 });
 
 /**
- * 接管条件（PullToRefreshOverlay.tsx:96-137 的放行守卫）。
+ * 接管条件（PullToRefreshOverlay 的 claim 守卫）。
  * 这些守卫的用意是「不干扰正常交互」：只有「滚动容器在顶部 + 按住 + 明确向下拖」才接管。
  * 任一守卫失效都会被用户感知为误吞点击 / 莫名刷新，故此处分条钉死。
  */
@@ -200,5 +203,148 @@ describe('PullToRefreshOverlay · 接管条件', () => {
     firePtr(window, 'pointerup');
     expect(phase()).toBe('idle');
     expect(refreshSpy).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * 手势归属 / 生命周期仲裁：浮层、内滚容器、输入框、斜滑、多指、取消、切页。
+ * 这些是「PTR 与页面交互同时生效」的根因面，任何一条失效都会回到误触/误刷新。
+ */
+describe('PullToRefreshOverlay · 手势归属与生命周期', () => {
+  const phase = () => document.querySelector('.ptr-indicator')!.getAttribute('data-phase');
+
+  /** 与真实滚动容器同构的最小桩：声明 overflow 且有溢出 */
+  const scrollableInner = () => {
+    const el = document.createElement('div');
+    el.style.overflowY = 'auto';
+    Object.defineProperty(el, 'scrollHeight', { configurable: true, value: 500 });
+    Object.defineProperty(el, 'clientHeight', { configurable: true, value: 300 });
+    return el;
+  };
+
+  it('内层可滚动列表上的下拉不接管（手势归列表）', () => {
+    const { page } = mount();
+    const list = scrollableInner();
+    const item = document.createElement('div');
+    list.appendChild(item);
+    page.appendChild(list);
+
+    firePtr(item, 'pointerdown', { clientY: 0 });
+    firePtr(item, 'pointermove', { clientY: 120 });
+    expect(phase()).toBe('idle');
+  });
+
+  it('浮层（role=dialog / data-ptr=off）内下拉不接管', () => {
+    const { page } = mount();
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    const body = document.createElement('div');
+    dialog.appendChild(body);
+    page.appendChild(dialog);
+
+    firePtr(body, 'pointerdown', { clientY: 0 });
+    firePtr(body, 'pointermove', { clientY: 120 });
+    expect(phase()).toBe('idle');
+
+    const optedOut = document.createElement('div');
+    optedOut.setAttribute('data-ptr', 'off');
+    const content = document.createElement('div');
+    optedOut.appendChild(content);
+    page.appendChild(optedOut);
+    firePtr(content, 'pointerdown', { clientY: 0 });
+    firePtr(content, 'pointermove', { clientY: 120 });
+    expect(phase()).toBe('idle');
+  });
+
+  it('输入框内下拉不接管（文本选择/光标拖动）', () => {
+    const { page } = mount();
+    const input = document.createElement('input');
+    page.appendChild(input);
+
+    firePtr(input, 'pointerdown', { clientY: 0 });
+    firePtr(input, 'pointermove', { clientY: 120 });
+    expect(phase()).toBe('idle');
+  });
+
+  it('斜滑（横向位移占优）不接管；转为纵向后仍可正常接管', () => {
+    const { page } = mount();
+    firePtr(page, 'pointerdown', { clientX: 0, clientY: 0 });
+    // dx=120, dy=20 → 横向手势（Hero/灯箱/横向 chips 的典型斜滑）
+    firePtr(page, 'pointermove', { clientX: 120, clientY: 20 });
+    expect(phase()).toBe('idle');
+    // 同一手势转回纵向 → 接管
+    firePtr(page, 'pointermove', { clientX: 0, clientY: 120 });
+    expect(phase()).toBe('armed');
+    firePtr(window, 'pointercancel');
+  });
+
+  it('pointercancel 视为中止：回弹且不刷新', () => {
+    const { scroll } = mount();
+    firePtr(scroll, 'pointerdown', { clientY: 0 });
+    firePtr(scroll, 'pointermove', { clientY: 120 });
+    expect(phase()).toBe('armed');
+
+    firePtr(window, 'pointercancel');
+    expect(phase()).toBe('idle');
+    firePtr(window, 'pointerup');
+    expect(refreshSpy).not.toHaveBeenCalled();
+  });
+
+  it('第二根手指按下 → 中止本次下拉，且不刷新', () => {
+    const { scroll } = mount();
+    firePtr(scroll, 'pointerdown', { pointerId: 1, clientY: 0 });
+    firePtr(scroll, 'pointermove', { pointerId: 1, clientY: 120 });
+    expect(phase()).toBe('armed');
+
+    firePtr(scroll, 'pointerdown', { pointerId: 2, clientY: 100 });
+    expect(phase()).toBe('idle');
+    firePtr(scroll, 'pointermove', { pointerId: 2, clientY: 300 });
+    expect(phase()).toBe('idle');
+
+    firePtr(window, 'pointerup', { pointerId: 2 });
+    firePtr(window, 'pointerup', { pointerId: 1 });
+    expect(refreshSpy).not.toHaveBeenCalled();
+  });
+
+  it('手势中途页面实例切换 → 立即回 idle，松手不刷新', () => {
+    const scrollRef = createRef<HTMLDivElement>();
+    const { rerender, page } = mount();
+    firePtr(page, 'pointerdown', { clientY: 0 });
+    firePtr(page, 'pointermove', { clientY: 120 });
+    expect(phase()).toBe('armed');
+
+    rerender(<Tree variant="settings" scrollRef={scrollRef} showHarness={false} />);
+    expect(phase()).toBe('idle');
+    firePtr(window, 'pointerup');
+    expect(refreshSpy).not.toHaveBeenCalled();
+  });
+
+  it('刷新中切页：作废旧结算，新页（无 handler）保持 idle', async () => {
+    const deferred: { resolve: (() => void) | null } = { resolve: null };
+    refreshSpy.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          deferred.resolve = resolve;
+        }),
+    );
+    const scrollRef = createRef<HTMLDivElement>();
+    const { rerender } = mount();
+    const indicator = () => document.querySelector('.ptr-indicator')!.getAttribute('data-phase');
+
+    firePtr(screen.getByTestId('page'), 'pointerdown', { clientY: 0 });
+    firePtr(screen.getByTestId('page'), 'pointermove', { clientY: 120 });
+    firePtr(window, 'pointerup');
+    await waitFor(() => expect(refreshSpy).toHaveBeenCalled());
+    expect(indicator()).toBe('refreshing');
+
+    // 页面卸载：浮层复位，旧 Promise 的 settle 因代际失效而不得再驱动 UI
+    rerender(<Tree variant="settings" scrollRef={scrollRef} showHarness={false} />);
+    expect(indicator()).toBe('idle');
+
+    await act(async () => {
+      deferred.resolve?.();
+      await Promise.resolve();
+    });
+    expect(indicator()).toBe('idle');
   });
 });

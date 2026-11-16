@@ -108,6 +108,7 @@ export default function Sidebar({ isOpen, onToggle, isMobile }: SidebarProps) {
         <aside
           className={`sidebar-container sidebar-container--mobile${isOpen ? ' sidebar-container--open' : ''}`}
           style={{ width: 'var(--sidebar-width-mobile)' }}
+          data-ptr="off"
         >
           <div className="sidebar-header">
             <span className="sidebar-header__brand">

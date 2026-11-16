@@ -193,9 +193,31 @@ export default function DetailPage() {
   // ── 状态 ──────────────────────────────────────
   const [activeTab, setActiveTab] = useState<DetailTab>('info');
   const visitedTabsRef = useRef(new Set<DetailTab>(['info']));
-  // 下拉刷新：通过 nonce 触发主请求 + 剧照重新拉取（复用模块级缓存，刷新时绕过缓存回显）
+  // 下拉刷新：通过 nonce 触发主请求 + 剧照重新拉取（复用模块级缓存，刷新时绕过缓存回显）。
+  // 浮层要等主数据真正加载完才回弹：直接 bump nonce 返回 void 会让浮层在请求发出前
+  // 就判定「刷新成功」（失败也不可见）。播放源搜索有自己的 loading，不并入本 Promise。
   const [pullRefreshNonce, setPullRefreshNonce] = useState(0);
-  usePullToRefresh(() => setPullRefreshNonce((n) => n + 1));
+  const pullRefreshResolveRef = useRef<(() => void) | null>(null);
+  const pullRefreshStartedRef = useRef(false);
+  const finishPullRefresh = useCallback(() => {
+    const resolve = pullRefreshResolveRef.current;
+    pullRefreshResolveRef.current = null;
+    pullRefreshStartedRef.current = false;
+    resolve?.();
+  }, []);
+  usePullToRefresh(() => {
+    if (pullRefreshResolveRef.current) return Promise.resolve();
+    pullRefreshStartedRef.current = false;
+    const promise = new Promise<void>((resolve) => {
+      pullRefreshResolveRef.current = resolve;
+    });
+    setPullRefreshNonce((n) => n + 1);
+    // 早退分支（无效 id / 未配置 Token）不会进入 loading：下一拍直接结算，避免浮层空转
+    window.setTimeout(() => {
+      if (!pullRefreshStartedRef.current) finishPullRefresh();
+    }, 1500);
+    return promise;
+  });
   const prevDetailIdRef = useRef<string | undefined>(undefined);
 
   const [tmdbLoading, setTmdbLoading] = useState(true);
@@ -426,6 +448,18 @@ export default function DetailPage() {
 
     return () => ctrl.abort();
   }, [id, pullRefreshNonce]);
+
+  // 下拉刷新完成信号：等主数据 loading 起跳后再结束（避免上面的 layout effect 还没置位
+  // 就被判「已完成」）。卸载时结掉在飞 Promise，避免浮层等待一个永不 resolve 的回调。
+  useEffect(() => {
+    if (!pullRefreshResolveRef.current) return;
+    if (tmdbLoading) {
+      pullRefreshStartedRef.current = true;
+      return;
+    }
+    if (pullRefreshStartedRef.current) finishPullRefresh();
+  }, [tmdbLoading, finishPullRefresh]);
+  useEffect(() => () => finishPullRefresh(), [finishPullRefresh]);
 
   // ── CMS 按需加载 ─────────────────────────────
   const fetchCMSSources = useCallback(async () => {

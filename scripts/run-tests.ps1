@@ -211,6 +211,11 @@ $uiPrecisionMap = @{
         spec = @("scripts/settings.spec.ts")
         grep = "6\.3|6\.4|6\.5"
     }
+    # 下拉刷新：手势归属 / 浮层排除 / 子页禁用
+    "src/components/ui/PullToRefresh/**" = @{
+        spec = @("scripts/pull-to-refresh.spec.ts")
+        grep = "PTR-"
+    }
     "src/components/TokenRequired/**" = @{
         spec = @("scripts/settings.spec.ts")
         grep = "6\.2"

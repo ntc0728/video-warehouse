@@ -50,7 +50,8 @@ export default function SubPage({ title, onBack, children }: SubPageProps) {
   };
 
   return createPortal(
-    <div className="sub-page">
+    // data-ptr="off"：全屏子页有自己的滚动归属，下拉刷新不应在子页内接管
+    <div className="sub-page" data-ptr="off">
       <div className="sub-page__header">
         <button
           type="button"

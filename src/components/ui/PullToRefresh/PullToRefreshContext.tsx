@@ -35,6 +35,8 @@ export interface PTRHandler {
 
 /** 浮层当前活跃处理器的「响应式快照」——用于实时驱动浮层重渲染 */
 export interface PTRHandlerInfo {
+  /** 注册方实例 id：页面切换 / 卸载时浮层据此作废手势与在飞刷新 */
+  ownerId: string;
   variant: 'default' | 'settings';
   enabled: boolean;
 }
@@ -56,7 +58,13 @@ type PhaseListener = (state: PTRPhaseState) => void;
  * 反复翻转，形成同步死循环。拆开后页面 effect 只跑一次。
  */
 interface PTRActions {
-  register: (handler: PTRHandler | null) => void;
+  /**
+   * 注册当前页面的刷新处理器。ownerId 用于「实例级」注销：
+   * 旧页清理只在它仍是当前登记方时生效，避免卸载顺序颠倒时把新页的处理器清空。
+   */
+  register: (ownerId: string, handler: PTRHandler) => void;
+  /** 注销（ownerId 不匹配时忽略，保证不会误清后来者） */
+  unregister: (ownerId: string) => void;
   getHandler: () => PTRHandler | null;
   /** 订阅浮层阶段（浮层内部在每次 phase/pull 变化时同步广播），返回退订函数 */
   subscribe: (listener: PhaseListener) => () => void;
@@ -70,13 +78,25 @@ export const PTRSnapshotContext = createContext<PTRHandlerInfo | null>(null);
 
 export function PullToRefreshProvider({ children }: { children: ReactNode }) {
   const handlerRef = useRef<PTRHandler | null>(null);
+  const ownerIdRef = useRef<string | null>(null);
   const [handlerInfo, setHandlerInfo] = useState<PTRHandlerInfo | null>(null);
   const listenersRef = useRef(new Set<PhaseListener>());
-  const register = useCallback((h: PTRHandler | null) => {
+  const register = useCallback((ownerId: string, h: PTRHandler) => {
+    ownerIdRef.current = ownerId;
     handlerRef.current = h;
-    setHandlerInfo(
-      h ? { variant: h.variant ?? 'default', enabled: h.enabled ?? true } : null,
-    );
+    setHandlerInfo({
+      ownerId,
+      variant: h.variant ?? 'default',
+      enabled: h.enabled ?? true,
+    });
+  }, []);
+  const unregister = useCallback((ownerId: string) => {
+    // 只有「当前登记方」才能清空：路由切换 / 软刷新重挂载时，旧实例的清理
+    // 可能晚于新实例注册（effect 顺序不保证），无条件 register(null) 会误清。
+    if (ownerIdRef.current !== ownerId) return;
+    ownerIdRef.current = null;
+    handlerRef.current = null;
+    setHandlerInfo(null);
   }, []);
   const getHandler = useCallback(() => handlerRef.current, []);
   const subscribe = useCallback((listener: PhaseListener) => {
@@ -90,8 +110,8 @@ export function PullToRefreshProvider({ children }: { children: ReactNode }) {
     listenersRef.current.forEach((l) => l(state));
   }, []);
   const actions = useMemo(
-    () => ({ register, getHandler, subscribe, emitPhase }),
-    [register, getHandler, subscribe, emitPhase],
+    () => ({ register, unregister, getHandler, subscribe, emitPhase }),
+    [register, unregister, getHandler, subscribe, emitPhase],
   );
   return (
     <PTRActionsContext.Provider value={actions}>
@@ -124,7 +144,8 @@ export function usePullPhase(): PTRPhaseState {
  * 因此刷新天然复用当前参数——这正是「相关页面记录搜索参数」的实现方式。
  *
  * 单活跃页面假设：AppLayout 同一时刻只渲染一个路由组件（无 Keep-Alive），
- * 故浮层始终取「当前挂载页面」注册的处理器；路由切换时旧页 register(null) 后新页注册。
+ * 故浮层始终取「当前挂载页面」注册的处理器。每个钩子实例带稳定 ownerId，
+ * 注销时按 id 校验，旧页清理不会误清新页（软刷新重挂载 / 过渡态下可能乱序）。
  */
 export function usePullToRefresh(
   onRefresh: () => void | Promise<void>,
@@ -153,11 +174,13 @@ export function usePullToRefresh(
   onRefreshRef.current = onRefresh;
   const optsRef = useRef(options);
   optsRef.current = options;
-  // 每个钩子实例一个稳定 id，仅用于占位依赖，确保挂载时注册一次
+  // 每个钩子实例一个稳定 id：既作占位依赖（挂载时只注册一次），
+  // 也作注册表实例键（页面切换时浮层据此作废旧手势/旧刷新）
   const idRef = useRef(Math.random().toString(36).slice(2));
 
   useEffect(() => {
     if (!actions) return;
+    const ownerId = idRef.current;
     const handler: PTRHandler = {
       get onRefresh() {
         return async () => {
@@ -181,8 +204,8 @@ export function usePullToRefresh(
         return optsRef.current?.variant ?? 'default';
       },
     };
-    actions.register(handler);
-    return () => actions.register(null);
+    actions.register(ownerId, handler);
+    return () => actions.unregister(ownerId);
     // 依赖 variant/enabled 原语：变体或启用态变化时重新注册，驱动浮层快照更新并实时重渲染
   }, [actions, idRef, options?.enabled, options?.variant]);
 
