@@ -1,0 +1,14 @@
+{
+  "name": "KinoTV",
+  "short_name": "KinoTV",
+  "description": "影视聚合平台：多源视频浏览、IPTV 直播、收藏与智能搜索",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#141414",
+  "theme_color": "#1890ff",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
