@@ -11,13 +11,15 @@
 
 | 文件 | 测试页面 / 主题 | 覆盖内容（describe 段） | 用例数 |
 |------|----------|----------|--------|
-| `home.spec.ts` | 首页 | 1.1 加载与初始态 / 1.2 HeroBanner 交互 / 1.3 分类快捷入口 / 1.3b 桌面分类入口 / 1.3c 宽屏分类面板 / 1.3d 宽屏 HeroBili 卡 / 1.3e 主图失败兜底 / 1.4 TMDBMovieRow / 1.5 全局交互 / 1.7 非手机小视口（768–1023） | 13 |
-| `browse.spec.ts` | 浏览/搜索页 | 2.1 搜索模式切换 / 2.2 搜索 / 2.3 筛选与排序 / 2.4 CMS 直链搜索 / 2.7 移动端搜索 / 2.8 BrowseMobileBar / 2.9 筛选面板底部操作区 / 2.10 逻辑分页 / 2.11 分页器渲染门控 | 13 |
+| `home.spec.ts` | 首页 | 1.1 加载与初始态 / 1.2 HeroBanner 交互 / 1.3 分类快捷入口 / 1.3b 桌面分类入口 / 1.3c 宽屏分类面板 / 1.3d 宽屏 HeroBili 卡 / 1.3e 主图失败兜底 / 1.4 TMDBMovieRow / 1.5 全局交互 / 1.7 非手机小视口（768–1023） | 12 |
+| `browse.spec.ts` | 浏览/搜索页 | 2.1 搜索模式切换 / 2.2 搜索 / 2.3 筛选与排序 / 2.4 CMS 直链搜索 / 2.7 移动端搜索 / 2.8 BrowseMobileBar / 2.9 筛选面板底部操作区 / 2.10 逻辑分页 / 2.11 分页器渲染门控 | 15 |
 | `chart.spec.ts` | 热度榜 | CHART 热度榜页 | 5 |
-| `detail.spec.ts` | 详情页 | 3.1 加载 / 3.2 Hero / 3.3 操作按钮 / 3.4 Tab 导航 / 3.5 概览 / 3.6 播放列表 / 3.8 推荐 / 3.11 剧照灯箱 | 8 |
+| `detail.spec.ts` | 详情页 | 3.1 加载 / 3.2 Hero / 3.3 操作按钮 / 3.4 Tab 导航 / 3.5 概览 / 3.6 播放列表 / 3.8 推荐 / 3.11 剧照灯箱 | 11 |
 | `player.spec.ts` | 播放页 | 4.1 加载与布局稳定 / 4.5 CMS 源管理 / 4.8 收藏与详情 / 4.11 移动端播放器 / 4.12 移动端布局判定 / 4.13 投屏能力分端 / 4.14 PiP 契约 | 11 |
 | `player-failover.spec.ts` | 播放页 | 源不可用自动故障转移 | 1 |
 | `player-cms-error.spec.ts` | 播放页 | CMS 业务错误码失败态（PLAYER-095） | 1 |
+| `mobile-keyboard.spec.ts` | 移动端输入框 / 软键盘 | 输入框防聚焦放大（web/iPad/app）+ 软键盘弹层几何 | 8 |
+| `pull-to-refresh.spec.ts` | 下拉刷新手势归属 | PTR-001~004（斜向翻页 / 纵向下拉 / 子页与抽屉排除） | 4 |
 | `iptv.spec.ts` | IPTV 直播页 | 5.1 加载 / 5.2 分组筛选 / 5.5 频道检测 / 5.7 懒加载与滚动 / 5.10 台标回退链 / 5.11 卡片收藏按钮 | 6 |
 | `iptv-player.spec.ts` | IPTV 播放页 | 11.1 加载与频道匹配 / 11.2 平台适配 / 11.3 独立逻辑 / 11.4 chrome 尺寸契约 / 11.5 EPG 节目单 / 11.6 TV 遥控器焦点 | 11 |
 | `settings.spec.ts` | 设置页 | 6.1 主题 / 6.2 TMDB / 6.3 视频源 / 6.4 播放 / 6.5 IPTV / 6.6 关于与彩蛋 / 6.7 个人资料 / 6.8 移动端菜单项 / 6.9 顶部搜索框 / 6.11 桌面左栏竖排导航 | 10 |
@@ -29,12 +31,12 @@
 | `smoke-player-fs-mobile.spec.ts` | 播放器全屏专项 | PC 桌面全屏 / 移动竖屏更多弹窗 / 移动横屏角落组+抽屉 / 移动竖屏点击语义 | 6 |
 | `source-checker.spec.ts` | 源检测（按需 subpages） | 9.1 网速检测 / 9.6 Tab 与统计 | 2 |
 | `proxy-setup.spec.ts` | 代理配置子页（按需 subpages） | PROXY-001 路由与结构 / PROXY-002·003 高亮 + Token 报错 | 2 |
-| `skeleton.spec.ts` | 骨架契约（按需 skeleton） | 契约 A 色源唯一 / B 列数三方同源（逐断点）/ C 可见性+结构同构 / 播放页 shape | 18 |
-| `boot-splash.spec.ts` | 启动骨架（按需 skeleton） | index.html 内联骨架：视口填充与路由感知 | 21 |
+| `skeleton.spec.ts` | 骨架契约（按需 skeleton） | 契约 A 色源唯一 / B 列数三方同源（逐断点）/ C 可见性+结构同构 / 播放页 shape | 19 |
+| `boot-splash.spec.ts` | 启动骨架（按需 skeleton） | index.html 内联骨架：视口填充与路由感知 | 19 |
 | `boot-splash-iso.spec.ts` | 七视口同构（按需 boot-iso） | `七视口同构 @375/768/1024/1280/1440/1920/2560px` × home/browse/collections 等 | 42 |
 | `boot-splash-shots.spec.ts` | 骨架截图取证（按需 shots） | 多主题/多视口截图 + 摘除验证（人工核查，不进默认套） | 29 |
 
-> **上表用例数由 `pnpm run test:count` 统计**（`npx playwright test --list`），全仓合计 **249 条 / 22 spec**。
+> **上表用例数由 `pnpm run test:count` 统计**（`npx playwright test --list`），全仓合计 **261 条 / 24 spec**。
 > **唯一事实源 = `pnpm run test:count`**（可选的外部映射文档的生成块与之一致，文档缺失时自动跳过校验，由 `lint:test-map` 校验）；
 > 加删用例后请重跑 `pnpm run test:count -- --write`，**不要手改上面任何一个数字**。
 

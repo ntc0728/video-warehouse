@@ -2,6 +2,19 @@
   "name": "kinotv",
   "private": true,
   "version": "2.1.0",
+  "description": "影视聚合平台：多源视频浏览、IPTV 直播、收藏与智能搜索",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ntc0728/video-warehouse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ntc0728/video-warehouse/issues"
+  },
+  "homepage": "https://video-warehouse.top",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "type": "module",
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=\"--require ./scripts/vite-early-bind.cjs\" vite",
