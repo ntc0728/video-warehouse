@@ -291,6 +291,20 @@ window.__vite_plugin_react_preamble_installed__ = true;
     // 注意：'::' 会同时监听 0.0.0.0，即局域网可访问（依赖系统防火墙拦截入站）。
     host: '::',
     open: false,
+    // E2E 产物不参与 HMR 监听：Playwright 会把 trace 资源（html/png/css）写进
+    // `.pw-out-*` / `test-results` 等目录，dev server 监听到即触发 `page reload`，
+    // 正在跑的多页签用例会被整体刷新（内存态清空 → 跨页签同步断言假红）。
+    // 这些目录只由测试产生，与源码无关，忽略后 dev 行为与冷启动一致。
+    watch: {
+      ignored: [
+        '**/.pw-out-*/**',
+        '**/.pw-blob*/**',
+        '**/test-results/**',
+        '**/playwright-report/**',
+        '**/output/**',
+        '**/test-storage-state.json',
+      ],
+    },
     // ⚠️ 改端口/宿主时同步 scripts/vite-early-bind.cjs 的 DEFAULT_PORT/DEFAULT_HOST
     //（dev 端口提前 bind 补丁，npm/pnpm 通用，替代旧 pnpm patch 方案）。
     // 预热常用模块：dev server 启动后立即 transform 核心模块，
