@@ -168,6 +168,72 @@ $uiPrecisionMap = @{
         grep = "2\.1|2\.2|6\.9|跨页联动回归|桌面端"
     }
 
+    # ── 移动端输入框防聚焦放大 / 软键盘浮层几何 ──
+    "src/hooks/useVirtualKeyboardInset.ts" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/lib/keyboard.ts" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/assets/styles/index.css" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/components/ui/Modal.tsx" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/components/ui/BottomSheet.tsx" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/components/ui/Drawer.tsx" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/components/ui/Drawer.css" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/components/common/SubPage/SubPage.css" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/components/SearchBox/SearchBox.tsx" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/components/SearchBox/SearchBox.css" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/pages/Detail/components/PlaylistModal.tsx" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/pages/Detail/components/PlaylistModal.css" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/pages/IPTV/GroupPicker.tsx" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/components/SourceManager/SourceModal.tsx" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/components/SourceManager/SourceModal.css" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+    "src/pages/Settings/Settings.css" = @{
+        spec = @("scripts/mobile-keyboard.spec.ts")
+        grep = "MOBILE-KB-"
+    }
+
     # ── 卡片模块 ──
     "src/components/VideoCard/**" = @{
         spec = @("scripts/home.spec.ts", "scripts/browse.spec.ts", "scripts/detail.spec.ts", "scripts/collections.spec.ts", "scripts/history.spec.ts", "scripts/person.spec.ts")
@@ -210,6 +276,11 @@ $uiPrecisionMap = @{
     "src/components/SourceManager/**" = @{
         spec = @("scripts/settings.spec.ts")
         grep = "6\.3|6\.4|6\.5"
+    }
+    # 下拉刷新：手势归属 / 浮层排除 / 子页禁用
+    "src/components/ui/PullToRefresh/**" = @{
+        spec = @("scripts/pull-to-refresh.spec.ts")
+        grep = "PTR-"
     }
     "src/components/TokenRequired/**" = @{
         spec = @("scripts/settings.spec.ts")

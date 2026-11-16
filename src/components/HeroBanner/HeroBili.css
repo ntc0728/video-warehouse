@@ -118,7 +118,9 @@
 /* 轮播圆点：banner 底部居中、双按钮下方（随 caption 流式排布，非绝对定位） */
 .hero-bili__dots {
   display: flex;
-  gap: var(--dot-gap);
+  /* 视觉圆点保持原尺寸，命中区用 24px 伪元素外扩；间距取「24 - 圆点直径」，
+ 保证相邻 24px 命中区只相切不重叠（WCAG 2.5.8 的 24px 间距例外）。 */
+  gap: calc(var(--tap-target-min) - var(--dot-size) + var(--space-3xs));
   justify-content: center;
   align-items: center;
   /* caption 底锚：加大此值 → 按钮与圆点间距 4→8px，文案/按钮整体上移 */
@@ -127,6 +129,7 @@
 }
 
 .hero-bili__dot {
+  position: relative;
   width: var(--dot-size);
   height: var(--dot-size);
   padding: 0;
@@ -135,6 +138,20 @@
   background: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   transition: width var(--dur-md) ease, background-color var(--dur-md) ease;
+}
+
+/* 24×24 透明命中区：视觉仍是 7–8px 圆点，但点击热区达到 WCAG 2.5.8 AA。
+ 伪元素属于按钮的命中盒；相邻按钮间距已按 24px 留出，不会互相覆盖。
+ 向下扩展（top:0）而不是上下各 8px：上方紧邻播放/收藏按钮，
+ 避免 24px 热区向上侵占它们的点击区。 */
+.hero-bili__dot::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--tap-target-min);
+  height: var(--tap-target-min);
+  transform: translateX(-50%);
 }
 
 .hero-bili__dot.is-active {
@@ -195,8 +212,8 @@
 }
 
 .hero-bili__meta > .hero-bili__rating {
-  color: rgba(250, 204, 21, 0.95);
-  font-weight: 600;
+  color: var(--color-on-image-rating);
+  font-weight: var(--fw-semibold);
 }
 
 /* banner 简介（左下按钮上方）：左侧主色竖线 +
@@ -333,8 +350,7 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
  去卡片化：边框/圆角/底色/投影随外层 .hero-bili 卡一并移除
  （本组件仅 >=1024 桌面渲染），封面直接铺页面底色。 */
 .hero-side-card {
-  --hero-corner-fs: calc(var(--text-xs) * 0.9);
-  --hero-corner-fav: calc(var(--icon-lg) * 0.9);
+--hero-corner-fav: calc(var(--icon-lg) * 0.9);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -396,11 +412,11 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   background: rgba(0, 0, 0, 0.72);
   color: var(--color-on-image);
   font-size: var(--text-xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   line-height: 1.4;
   backdrop-filter: blur(6px);
   pointer-events: none;
-  transition: opacity var(--dur-base) var(--ease-out-expo);
+  transition: opacity var(--dur-md) var(--ease-out-expo);
 }
 
 .hero-side-card__corner--rating {
@@ -408,7 +424,7 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   left: var(--space-xs);
   /* 对齐 .video-card-rating：评分色 + 600 + 行高 1（星级/数字胶囊不偏厚） */
   color: var(--color-rating);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1;
 }
 
@@ -514,7 +530,7 @@ html:not([data-device="tv"]) .hero-bili__cards > .hero-side-card:nth-child(n + 7
   background: none;
   color: var(--color-on-image);
   font-size: var(--hero-title-size);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1.4;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
   pointer-events: auto;

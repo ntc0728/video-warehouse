@@ -64,7 +64,7 @@
   color: var(--color-primary);
   font-family: inherit;
   font-size: inherit;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   text-decoration: none;
   cursor: pointer;
 }

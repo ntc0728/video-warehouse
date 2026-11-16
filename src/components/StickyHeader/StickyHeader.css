@@ -21,7 +21,7 @@
   background: color-mix(in srgb, var(--color-surface) 88%, transparent);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
   /* 滚动后切换为实体背景时背景色平滑过渡 */
-  transition: background-color var(--dur-base) var(--ease-standard);
+  transition: background-color var(--dur-md) var(--ease-standard);
 }
 
 /* ── Immersive: 首页 + 详情页，fixed 叠加在 Hero 上 ── */
@@ -135,7 +135,7 @@
 .sticky-header__brand-sub {
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   letter-spacing: 0.06em;
 }
 
@@ -186,13 +186,16 @@
   display: flex;
   gap: var(--space-xs);
   align-items: center;
+  /* WCAG 2.5.8 AA：紧凑档实测 23.89px，抬到 24×24 */
+  min-width: var(--tap-target-min);
+  min-height: var(--tap-target-min);
   padding: var(--space-xs);
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
   transition: background var(--dur-2xs) ease, color var(--dur-2xs) ease, scale 0.32s var(--ease-spring);
   cursor: pointer;
@@ -206,7 +209,7 @@
 .sticky-header__nav-item--active {
   background: var(--color-primary);
   color: var(--color-text-inverse);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 /* ── Theme Toggle ──────────────────────────────────── */
@@ -271,6 +274,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  /* WCAG 2.5.8 AA：紧凑档实测 23.89px，抬到 24×24 */
+  min-width: var(--tap-target-min);
+  min-height: var(--tap-target-min);
   padding: var(--space-xs);
   border: none;
   border-radius: var(--radius-md);
@@ -340,7 +346,7 @@
 
 .sticky-header__profile-name {
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

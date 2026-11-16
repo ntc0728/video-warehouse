@@ -1,0 +1,31 @@
+name: CI
+
+# 质量门禁 + 单测 + 构建：push / PR 全量执行。
+# E2E 不进 CI（需要真实浏览器与采集站可达性），由维护者按分段口径本地验证。
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org/
+      - name: 质量门禁（9 门：design / css / tokens / json / version-sync / test-map / lock / eslint / build）
+        run: pnpm run lint:all
+      - name: 单元测试
+        run: pnpm run test

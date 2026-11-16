@@ -101,17 +101,17 @@
   padding: var(--space-sm) var(--space-md);
   border: 1px solid transparent;
   border-radius: var(--radius-full);
-  background: var(--color-hover-bg);
+  background: var(--color-surface-hover);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   white-space: nowrap;
   cursor: pointer;
   transition: all var(--dur-2xs);
 }
 
 .batch-action-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-hover-bg) 80%, var(--color-border));
+  background: color-mix(in srgb, var(--color-surface-hover) 80%, var(--color-border));
 }
 
 .batch-action-btn:disabled {
@@ -121,12 +121,12 @@
 
 /* 批量操作危险按钮（删除/清除） */
 .batch-action-btn--danger {
-  background: rgba(255, 77, 79, 0.1);
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
   color: var(--color-error-text);
 }
 
 .batch-action-btn--danger:hover:not(:disabled) {
-  background: rgba(255, 77, 79, 0.18);
+  background: color-mix(in srgb, var(--color-error) 18%, transparent);
 }
 
 /* ── 移动端适配 ──────────────────────────────────────── */

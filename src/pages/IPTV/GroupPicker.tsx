@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { BottomSheet, Modal } from '@/components/ui'
 import { useScrollContainer } from '@/hooks/useScrollContext'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { resolveHotGroups } from './hotGroups'
 import './GroupPicker.css'
 
@@ -23,6 +24,8 @@ export default function GroupPicker({
   const [isOpen, setIsOpen] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
   const scrollContainer = useScrollContainer()
+  // 触摸设备打开分组面板不自动弹键盘：底部弹层刚出现就被键盘压掉半屏
+  const isCoarsePointer = useMediaQuery('(pointer: coarse)')
 
   // 追踪上次从弹窗选中的非热门分组（用于保持 tab 显示）
   const [lastNonHotGroup, setLastNonHotGroup] = useState<string | null>(null)
@@ -270,7 +273,13 @@ export default function GroupPicker({
           }
         }}
         aria-label="搜索分组"
-        autoFocus
+        autoFocus={!isCoarsePointer}
+        enterKeyHint="search"
+        inputMode="search"
+        autoComplete="off"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
       />
       <div className="grouppicker__grid">
         {filteredBySearch.map((g) => (

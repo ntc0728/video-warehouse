@@ -6,9 +6,11 @@
  * 一次只能看到一个门的结果，修完再跑才能发现下一个门还有问题。
  * 本脚本顺序跑完全部检查（每步失败也继续），最后汇总报告，任一失败 exit 1。
  *
- * 门禁清单（**8 门**）：
- *   lint:design / lint:css / lint:json / lint:version-sync / lint:test-map /
- *   **lint:lock-pnpm** / lint(eslint) / build。
+ * 门禁清单（**9 门**）：
+ *   lint:design / lint:css / **lint:tokens** / lint:json / lint:version-sync / lint:test-map /
+ *   lint:lock-pnpm / lint(eslint) / build。
+ * - `lint:tokens` = `lint-css-tokens.mjs`，拦「引用了不存在的 token」（声明会静默失效）
+ *   与「定义但从未消费」的死 token；`--radix-*` 与 JS 注入契约（setProperty / style={{ '--x' }}）视为合法。
  * - `lint:version-sync` = `sync-android-version.mjs --check`，拦 `capacitor.config.ts`
  *   版本号漂移（CI 只在临时 checkout 里 sync、不回写仓库，故仓库副本会长期落后）。
  * - `lint:test-map` = `test-count-report.mjs --check`，拦**测试映射腐化**：
@@ -45,6 +47,7 @@ const SANDBOX_SHIM_ACTIVE =
 const steps = [
   { name: 'lint:design', cmd: 'pnpm run lint:design' },
   { name: 'lint:css', cmd: 'pnpm run lint:css' },
+  { name: 'lint:tokens (token 引用闭合)', cmd: 'pnpm run lint:tokens' },
   { name: 'lint:json (重复 key)', cmd: 'node scripts/json-dup-key-check.mjs' },
   { name: 'lint:version-sync (版本漂移)', cmd: 'pnpm run lint:version-sync' },
   { name: 'lint:test-map (映射/计数漂移)', cmd: 'pnpm run lint:test-map' },

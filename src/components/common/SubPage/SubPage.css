@@ -56,7 +56,7 @@
   margin: 0;
   color: var(--color-text);
   font-size: var(--text-lg);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -73,5 +73,8 @@
 .sub-page__body {
   flex: 1;
   min-height: 0;
+  /* 键盘弹起时给内容留出可滚动空间，底部输入框才能被滚到键盘上方 */
+  padding-bottom: var(--kb-inset, 0);
+  scroll-padding-bottom: var(--kb-inset, 0);
   overflow-y: auto;
 }

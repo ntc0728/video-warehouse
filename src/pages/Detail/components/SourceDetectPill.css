@@ -1,4 +1,4 @@
-/* V4 风格：detail-sources 工具栏内的源检测 pill */
+/* V4 风格：detail-sources 工具栏内的源状态 pill */
 .sdp {
   position: relative;
   /* 建立独立堆叠上下文，确保悬浮弹窗稳定盖在下方「匹配结果」网格之上，
@@ -21,13 +21,13 @@
   background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--text-xs);
-  transition: background var(--dur-fast), border-color var(--dur-fast);
+  transition: background var(--dur-2xs), border-color var(--dur-2xs);
   cursor: pointer;
 }
 .sdp-pill:hover {
   /* hover 不变深色（黑）边框，仅提背景 */
   border-color: var(--color-border-light);
-  background: var(--color-surface-2);
+  background: var(--color-surface-hover);
 }
 /* 鼠标点击/激活不显焦点环（:focus 无 !important，键盘 :focus-visible 仍由 index.css 全局规则点亮，保留无障碍焦点指示） */
 .sdp-pill:focus,
@@ -89,6 +89,12 @@
 .sdp-dot.is-ok {
   background: var(--color-success);
 }
+.sdp-dot.is-fail {
+  background: var(--color-error);
+}
+.sdp-dot.is-warn {
+  background: var(--color-warning);
+}
 .sdp-spin {
   flex: 0 0 auto;
   width: 11px;
@@ -118,7 +124,7 @@
   background: var(--color-surface);
   visibility: hidden;
   opacity: 0;
-  transition: opacity var(--dur-fast), visibility var(--dur-fast);
+  transition: opacity var(--dur-2xs), visibility var(--dur-2xs);
   box-shadow: var(--shadow-lg);
 }
 .sdp-pop.is-open {
@@ -146,7 +152,9 @@
 .sdp-pop-summary .fail b {
   color: var(--color-error-text);
 }
-
+.sdp-pop-summary .warn b {
+  color: var(--color-warning-text);
+}
 
 .sdp-pop-grid {
   display: grid;
@@ -163,7 +171,7 @@
   padding: 4px 7px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
-  background: var(--color-surface-2);
+  background: var(--color-surface-hover);
   font-size: var(--text-2xs);
 }
 .sdp-cell-dot {
@@ -171,10 +179,20 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-error);
+  background: var(--color-text-tertiary);
 }
 .sdp-cell.is-ok .sdp-cell-dot {
   background: var(--color-success);
+}
+/* 不支持关键词搜索：源本身可达、但没有按片名搜索的能力（琥珀，区别于「请求失败」） */
+.sdp-cell.is-unsupported .sdp-cell-dot {
+  background: var(--color-warning);
+}
+.sdp-cell.is-fail .sdp-cell-dot {
+  background: var(--color-error);
+}
+.sdp-cell.is-pending {
+  opacity: 0.6;
 }
 .sdp-cell-name {
   white-space: nowrap;

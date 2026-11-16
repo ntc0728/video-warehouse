@@ -488,11 +488,15 @@ test.describe('2.9 移动端筛选面板底部操作区', () => {
     const zIndex = await drawer.evaluate((el) => Number(getComputedStyle(el).zIndex));
     expect(zIndex).toBeGreaterThanOrEqual(1000);
 
-    // 082b 面板打开期间返回顶部玻璃圆钮（fixed + backdrop-filter，坐标正压「完成」）不参与绘制
-    const backToTopDisplay = await page
-      .locator('.back-to-top-button')
-      .evaluate((el) => getComputedStyle(el).display);
-    expect(backToTopDisplay).toBe('none');
+    // 082b 面板打开期间返回顶部玻璃圆钮（fixed + backdrop-filter，坐标正压「完成」）不参与绘制。
+    // 圆钮在退出动画结束后会被整块卸载（BackToTopButton 的 shouldRender），
+    // 因此「已卸载」与「display:none」都等价于不参与绘制；单次 evaluate 原子判断，
+    // 避免 locator 自动等待在「刚卸载」的窗口里空转到 5s 超时（并发负载下的假红）。
+    const backToTopDisplay = await page.evaluate(() => {
+      const el = document.querySelector('.back-to-top-button');
+      return el ? getComputedStyle(el).display : null;
+    });
+    expect(backToTopDisplay === null || backToTopDisplay === 'none').toBe(true);
   });
 });
 

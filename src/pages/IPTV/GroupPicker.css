@@ -13,7 +13,7 @@
   background-color: var(--color-tag-bg);
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
   transition: color var(--dur-2xs) ease, background-color var(--dur-2xs) ease, border-color var(--dur-2xs) ease;
   cursor: pointer;
@@ -42,7 +42,7 @@
   background-color: var(--color-tag-bg);
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
   transition: color var(--dur-2xs) ease, background-color var(--dur-2xs) ease, transform var(--dur-2xs) ease;
   cursor: pointer;
@@ -72,7 +72,7 @@
   background-color: var(--color-tag-bg);
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
   transition: color var(--dur-2xs) ease, background-color var(--dur-2xs) ease, transform var(--dur-2xs) ease;
   cursor: pointer;
@@ -119,7 +119,7 @@
   background-color: var(--color-tag-bg);
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;

@@ -18,11 +18,11 @@
 /* ── 左侧时间轴：算珠位静态阶梯（真实算珠 top 由 JS 逐帧计算） ── */
 .history-skeleton__bead {
   /* 与 History.tsx 的 BEAD_PAD + BEAD_GAP 同量级：珠高 + 珠间距 */
-  --history-skeleton-bead-step: calc(var(--timeline-bead-h, 1.5rem) + var(--space-2xs));
+  --history-skeleton-bead-step: calc(var(--timeline-bead-h) + var(--space-2xs));
   position: absolute;
   left: 0;
   width: 100%;
-  height: var(--timeline-bead-h, 1.5rem);
+  height: var(--timeline-bead-h);
 }
 
 .history-skeleton__bead:nth-child(1) { top: 0; }

@@ -92,11 +92,23 @@ const GREP = val('-g', val('--grep', ''));
 /** 位置参数 = 调试目标 spec 文件（-g/--workers 等旗标的值不在此列） */
 
 /** 全量档的 spec 名单：扫 scripts/*.spec.ts（与 playwright config testDir 对齐） */
+/** suite 通过 E2E_EXCLUDE_SPECS 把整段 spec 迁出本阶段（播放器系走 preview、cross-tab 走 Stage C）。
+ *  与 playwright.config 的 testIgnore 同源；批次层必须同步过滤——否则某批文件全被排除时，
+ *  playwright 收集到 0 条用例以 "No tests found" exit 1，把整个阶段打红（2026-11-16 smoke 移出默认套时踩到）。 */
+function isSpecExcluded(f) {
+  const excludes = (process.env.E2E_EXCLUDE_SPECS || '')
+    .split(',')
+    .map((n) => n.trim())
+    .filter(Boolean);
+  return excludes.some((n) => f.endsWith(`/${n}.spec.ts`) || f === `${n}.spec.ts`);
+}
+
 function collectAllSpecFiles() {
-  const dir = resolve(ROOT, 'scripts');
-  return fs.readdirSync(dir)
+  return fs
+    .readdirSync(resolve(ROOT, 'scripts'))
     .filter((f) => f.endsWith('.spec.ts'))
     .map((f) => `scripts/${f}`)
+    .filter((f) => !isSpecExcluded(f))
     .sort();
 }
 
@@ -348,7 +360,10 @@ if (FULL) {
   const otherSpecs = allSpecs.filter((f) => !isPlayerChainSpec(f) && (!f.endsWith('cross-tab.spec.ts') || USE_DEV));
   fullBatches = [];
   if (otherSpecs.length > 0) fullBatches.push({ files: otherSpecs, workers: WORKERS });
-  if (playerSpecs.length > 0) fullBatches.push({ files: playerSpecs, workers: 1 });
+  // 批内文件可能被 E2E_EXCLUDE_SPECS 整体排除（如 smoke 移出默认套后的 Stage A）：
+  // 空批会以 "No tests found" exit 1，必须跳过。
+  const playerBatch = playerSpecs.filter((f) => !isExcluded(f));
+  if (playerBatch.length > 0) fullBatches.push({ files: playerBatch, workers: 1 });
 }
 
 const deadlineAt = Date.now() + BUDGET_S * 1000;

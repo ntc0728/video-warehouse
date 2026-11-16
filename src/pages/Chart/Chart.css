@@ -53,7 +53,7 @@
 .chart-head__title {
   color: var(--color-text);
   font-size: var(--text-xl);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 .chart-head__sub {
   margin-left: auto;
@@ -117,7 +117,7 @@
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   white-space: nowrap;
-  transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
+  transition: color var(--dur-2xs) ease, background var(--dur-2xs) ease;
   cursor: pointer;
 }
 .chart-tabs__tab:hover {
@@ -128,7 +128,7 @@
 .chart-tabs__tab--on:hover {
   background: var(--color-tab-active-bg);
   color: var(--color-tab-active-text);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 /* 趋势榜 tab 内 今日/本周 分段 */
 .chart-tabs__window {
@@ -156,7 +156,7 @@
 .chart-tabs__window-btn--on {
   background: var(--color-tab-active-bg);
   color: var(--color-tab-active-text);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 /* ── 榜单列表：桌面 2 列（1、2 同行横向排序），移动 1 列 ── */
@@ -215,7 +215,7 @@
   flex: 0 0 44px;
   color: var(--color-text-tertiary);
   font-size: var(--text-lg);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   font-style: italic;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -247,7 +247,7 @@
      —— RecordCard / VideoCard 同为 --text-sm / 500 / 1.5（此前误用区块标题档
      --text-lg / 600，移动端比同类卡大出近 2px）。TV 随家族抬到 --text-base。 */
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   line-height: 1.5;
   white-space: nowrap;
   overflow: hidden;
@@ -318,7 +318,7 @@
   align-items: center;
   color: var(--color-warning-text);
   font-size: var(--text-base);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
 .chart-row__heat .n svg {

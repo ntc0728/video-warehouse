@@ -116,13 +116,13 @@ export default function BrowsePage() {
   } = useBrowseData();
 
   // 下拉刷新：智能检索强制重取第 1 页（force 绕过 store 缓存回显）；
-  // 直链搜索重跑当前关键词；meta 记录当前搜索/分类参数
+  // 直链搜索重跑当前关键词；meta 记录当前搜索/分类参数。
+  // 两条分支都必须把 Promise 交还给浮层：否则浮层在请求发出前就判定「刷新成功」。
   usePullToRefresh(() => {
     if (searchMode === 'cms') {
-      searchCMS(query);
-    } else {
-      hardRefresh();
+      return searchCMS(query);
     }
+    return hardRefresh();
   }, {
     meta: () => {
       const q = (searchParams.get('q')?.trim()) || query.trim();
@@ -587,10 +587,11 @@ export default function BrowsePage() {
     }
   }, [endRefresh]);
 
-  /** 强制刷新第 1 页（下拉刷新 / 从首页分类导航进入 / 重复提交同一搜索词） */
+  /** 强制刷新第 1 页（下拉刷新 / 从首页分类导航进入 / 重复提交同一搜索词）。
+   * 返回取页 Promise：下拉刷新的浮层要等真实取页结束才回弹（失败态由结果区承担）。 */
   const hardRefresh = useCallback(() => {
     refreshNow();
-    void runGoto(1, { force: true });
+    return runGoto(1, { force: true });
   }, [refreshNow, runGoto]);
 
   useEffect(() => {

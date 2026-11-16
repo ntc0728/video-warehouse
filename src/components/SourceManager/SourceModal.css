@@ -3,9 +3,18 @@
  内部 .source-modal 仅做内容布局（不限定宽度，避免被压缩）。 */
 /* Radix Dialog.Content：宽度限制 + 整体 padding（标题与内容都包含在内） */
 .source-modal-wrap {
+  display: flex;
+  flex-direction: column;
   width: min(100vw - 2 * var(--space-md), 26rem);
-  max-height: 80vh;
+  /* 键盘弹起时高度跟随可见视口（iOS 走 --kb-vvh，Android resizes-content 下二者相等） */
+  max-height: min(80vh, calc(var(--kb-vvh, 100dvh) - var(--space-sm)));
   padding: var(--space-lg);
+}
+
+/* 内容区在限高内独立滚动：键盘弹起后仍能滚到下面的字段与保存按钮 */
+.source-modal-wrap > .custom-scrollbar-container {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* 桌面端：加宽到 30rem（移动端 <640px 保持视口自适应，不因固定宽度溢出小屏） */
@@ -56,12 +65,12 @@
 .source-modal__label {
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
 }
 .source-modal__hint-inline {
   margin-left: var(--space-2xs);
   color: var(--color-text-tertiary);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
 }
 .source-modal__input {
   width: 100%;
@@ -164,7 +173,7 @@
 .source-modal__enable-label {
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
 }
 .source-modal__switch {
   position: relative;

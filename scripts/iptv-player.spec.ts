@@ -154,7 +154,6 @@ function readPrimary(page: Page) {
     return {
       theme: document.documentElement.getAttribute('data-theme') ?? 'light',
       primary: getComputedStyle(root).getPropertyValue('--color-primary').trim(),
-      primaryRgb: getComputedStyle(root).getPropertyValue('--color-primary-rgb').trim(),
       // 一级活跃左竖条：alpha 应接近 1（透明=不可见），且不能是黑/白（与深色面板同色）
       barAlpha: parts.length >= 4 ? parts[3] : 1,
       barMax: parts.length >= 3 ? Math.max(parts[0], parts[1], parts[2]) : 0,
@@ -294,8 +293,9 @@ test.describe('11.4 播放页 chrome 尺寸契约', () => {
       // 强调色不能与深色面板同色（黑）或与白字同色（白）
       expect(p!.primary).not.toBe('#000');
       expect(p!.primary).not.toBe('#fff');
-      // 时移/换源那类 rgba(var(--color-primary-rgb), …) 消费点依赖这个 token，不能为空
-      expect(p!.primaryRgb).not.toBe('');
+      // 时移/换源那类半透明强调底已改为 color-mix(in srgb, var(--color-primary) N%, transparent)，
+      // 由 primary 单源派生（不再维护 --color-primary-rgb 三元组）；只要能保证 primary 非黑/白，
+      // 这些派生底色就不会退化成不可见/同色。上面两条 + 下面的竖条/边框断言已覆盖该语义。
       // 一级活跃左竖条：必须画出来（近不透明）且不是黑/白
       expect(p!.barAlpha).toBeGreaterThan(0.9);
       expect(p!.barMax).toBeGreaterThan(80);

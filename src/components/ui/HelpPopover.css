@@ -16,7 +16,7 @@
 }
 
 .help-popover-trigger:hover {
-  background: var(--color-surface-subtle);
+  background: var(--color-surface-hover);
   color: var(--color-text-secondary);
 }
 
@@ -47,7 +47,7 @@
   min-width: 0;
   color: var(--color-text);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1.4;
   overflow-wrap: break-word;
 }
@@ -71,8 +71,8 @@
 }
 
 .help-popover-close:hover {
-  background: var(--color-surface-subtle);
-  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
 }
 
 .help-popover-body {

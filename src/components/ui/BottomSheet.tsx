@@ -3,6 +3,7 @@
 import React, { useRef, useCallback, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useIsMobileLayout } from '@/hooks/useMediaQuery'
+import { blurActiveEditable, isEditableTarget } from '@/lib/keyboard'
 
 interface BottomSheetProps {
   visible: boolean
@@ -49,6 +50,9 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
       return
     }
 
+    // 开始下拉关闭手势 → 主动收起键盘（避免键盘盖住面板 300ms 才消失）。
+    // 8px 门槛：轻点输入框时的 1~2px 抖动不能误判成拖拽而把键盘收掉。
+    if (deltaY > 8) blurActiveEditable()
     currentTranslateRef.current = deltaY
     contentRef.current.style.transform = `translateY(${deltaY}px)`
     contentRef.current.style.transition = 'none'
@@ -81,7 +85,10 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      if (!open) onClose()
+      if (!open) {
+        blurActiveEditable()
+        onClose()
+      }
     },
     [onClose],
   )
@@ -102,6 +109,10 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
           className={`bottomsheet-content-animate ${className ?? ''}`}
           style={{ padding: 'var(--space-sm) var(--space-md) calc(var(--space-lg) + env(safe-area-inset-bottom))' }}
           onOpenAutoFocus={handleOpenAutoFocus}
+          onPointerDown={(e) => {
+            // 点击面板内非输入区域 → 收起键盘（iOS 不会因为点空白处自动 blur）
+            if (!isEditableTarget(e.target)) blurActiveEditable()
+          }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}

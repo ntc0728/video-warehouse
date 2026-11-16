@@ -12,6 +12,7 @@ import { useEffect } from 'react';
 import { Shuffle } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { Icon } from '@/components/ui/Icon';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { SourceScene } from '@/types/source';
 import './SourceModal.css';
 
@@ -59,6 +60,8 @@ function genId() {
 export default function SourceModal(props: SourceModalProps) {
   const { visible, scene, mode, value, onChange, onClose, onSubmit } = props;
   const isVideo = scene === 'video';
+  // 触摸设备打开表单不自动聚焦：否则底部弹层刚出现就被键盘压掉半屏（桌面保留自动聚焦）
+  const isCoarsePointer = useMediaQuery('(pointer: coarse)');
 
   const title = mode === 'add'
     ? isVideo ? '添加视频源' : scene === 'iptv' ? '添加 IPTV 源' : '添加节目单源'
@@ -89,7 +92,7 @@ export default function SourceModal(props: SourceModalProps) {
             value={value.name}
             onChange={(e) => onChange({ name: e.target.value })}
             placeholder={isVideo ? '例如：新增源' : '例如：我的 IPTV'}
-            autoFocus
+            autoFocus={!isCoarsePointer}
           />
         </Field>
 
@@ -100,6 +103,11 @@ export default function SourceModal(props: SourceModalProps) {
             value={value.url}
             onChange={(e) => onChange({ url: e.target.value })}
             placeholder={isVideo ? 'https://example.com/api' : 'https://example.com/playlist.m3u'}
+            inputMode="url"
+            autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
           />
         </Field>
 
@@ -111,6 +119,11 @@ export default function SourceModal(props: SourceModalProps) {
               value={value.detail}
               onChange={(e) => onChange({ detail: e.target.value })}
               placeholder="https://example.com/detail"
+              inputMode="url"
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
             />
           </Field>
         )}

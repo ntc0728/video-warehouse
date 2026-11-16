@@ -216,10 +216,7 @@ html:not([data-device="tv"]) {
     --hero-side-w: calc(
       0.4 * var(--hero-grid-w) - 37 / 45 * var(--hero-side-gap, 12px)
     );
-    --hero-banner-h: calc(
-      (var(--hero-grid-w) - var(--hero-side-w)) * 9 / 16
-    );
-  }
+}
 }
 
 /* ── TV 端覆盖（恒定，不随视口变；靠源码顺序 / 特异性取胜，必须置于文件末尾） ──

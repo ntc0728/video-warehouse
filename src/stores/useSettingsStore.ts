@@ -127,6 +127,13 @@ export const DEFAULT_SETTINGS = {
  * - 解密失败（兼容旧明文数据）时按明文原样写回，行为与 decryptText 兜底一致。
  */
 const encryptedStorage = createJSONStorage<SettingsState>(() => {
+  /**
+   * 写入代际闸门：加密是异步的，连续两次写入（如 setTvMode + setTheme 同一 tick）
+   * 的完成顺序不保证与发起顺序一致 —— 旧快照后落盘会把新值覆盖回旧值，
+   * 表现为「改完设置刷新页面又变回去」「另一页签同步到旧主题」。
+   * 只有最新一次写入允许落盘（载荷始终是全量快照，跳过中间态无副作用）。
+   */
+  let writeSeq = 0;
   const storage: {
     getItem: (name: string) => string | null;
     setItem: (name: string, value: string) => void;
@@ -140,6 +147,7 @@ const encryptedStorage = createJSONStorage<SettingsState>(() => {
       }
     },
     setItem: (name, value) => {
+      const seq = ++writeSeq;
       try {
         const parsed = JSON.parse(value) as { state?: Record<string, unknown>; version?: number };
         if (parsed?.state) {
@@ -159,6 +167,7 @@ const encryptedStorage = createJSONStorage<SettingsState>(() => {
               }
             }
             await Promise.all(tasks);
+            if (seq !== writeSeq) return; // 已被更新的一次写入取代：丢弃这份旧快照
             try {
               localStorage.setItem(name, JSON.stringify(next));
             } catch {
@@ -177,6 +186,7 @@ const encryptedStorage = createJSONStorage<SettingsState>(() => {
       }
     },
     removeItem: (name) => {
+      writeSeq += 1; // 作废在飞写入，避免移除后又被旧快照写回
       try {
         localStorage.removeItem(name);
       } catch {
@@ -341,9 +351,16 @@ export const useSettingsStore = create<SettingsState>()(
 // 每页签保留自己的值；excluded 键永远不会被写回覆盖，也不参与收敛。
 let settingsCrossTabSyncAttached = false;
 const CROSS_TAB_EXCLUDED_KEYS = new Set(['tvMode', 'tvOverscan', 'projectorMode']);
+/**
+ * 合并代际：解密敏感字段是异步的，连续两次 storage 事件可能乱序完成。
+ * 旧载荷后完成会把新值覆盖回旧值（表现为另一页签停在旧主题/旧配置）。
+ * 只有最新一次合并允许 setState；被更新载荷取代的旧载荷直接丢弃。
+ */
+let crossTabMergeSeq = 0;
 
 /** 解析另一页签写入的持久化载荷，白名单逐键比对合并（含敏感字段解密） */
 export async function mergeSettingsFromCrossTab(raw: string): Promise<void> {
+  const seq = ++crossTabMergeSeq;
   let parsed: { state?: Record<string, unknown> };
   try {
     parsed = JSON.parse(raw) as { state?: Record<string, unknown> };
@@ -370,6 +387,7 @@ export async function mergeSettingsFromCrossTab(raw: string): Promise<void> {
   }
 
   if (Object.keys(patch).length > 0) {
+    if (seq !== crossTabMergeSeq) return; // 更新的载荷已到：丢弃这份旧快照
     useSettingsStore.setState(patch as Partial<SettingsState>);
   }
 }

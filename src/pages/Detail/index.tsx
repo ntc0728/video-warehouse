@@ -9,8 +9,8 @@ import { useParams, useNavigationType, Link, useLocation } from 'react-router-do
 import { useCustomNavigate } from '@/lib/navigation';
 import { useUserStore, useSettingsStore } from '@/stores';
 import { useHeaderContent } from '@/components/Layout/useHeaderContent';
-import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources, getEnabledVideoSourceIndices, checkSelectedVideoSources, pickPrimarySeasonVideo } from '@/services/videoService';
-import type { SelectedSourceCheckResult } from '@/services/videoService';
+import { searchVideoFromMultipleSources, searchVideoSeasonsFromSingleSource, getVideoSources, getEnabledVideoSourceIndices, pickPrimarySeasonVideo } from '@/services/videoService';
+import type { SourceSearchErrorKind } from '@/services/videoService';
 import { fetchMovieDetail, fetchTVDetail, fetchMovieImages, fetchTVImages, buildImageUrl } from '@/services/tmdbService';
 import { useSmartBack } from '@/lib/navigation';
 import type { MediaType } from '@/lib/mediaType';
@@ -26,7 +26,7 @@ import LazyImage from '@/components/LazyImage/LazyImage';
 import StillsLightbox from '@/components/StillsLightbox/StillsLightbox';
 import TokenRequired from '@/components/TokenRequired';
 import PlaylistModal from './components/PlaylistModal';
-import SourceDetectPill, { type SourceDetectStatus } from './components/SourceDetectPill';
+import SourceDetectPill, { type SourceDetectStatus, type SourceDetectPillSummary, type SourceStatusCell } from './components/SourceDetectPill';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import {
   Play, Heart, ArrowLeft,
@@ -39,8 +39,6 @@ import { Icon, SIZE_VAR, type IconSize } from "@/components/ui/Icon";
 import { usePullToRefresh } from '@/components/ui/PullToRefresh';
 
 // ── 常量 ──────────────────────────────────────────────
-
-const CMS_DEBOUNCE_MS = 2000;
 
 
 /**
@@ -112,6 +110,21 @@ interface DetailSourceResult {
   seasonNumbers: number[];
   isSeries: boolean;
   error?: string;
+  /** 失败原因分类：区分「无本片数据 / 不支持关键词搜索 / 请求失败」（成功时不填） */
+  errorKind?: SourceSearchErrorKind;
+}
+
+/**
+ * 「有可播内容」判定（唯一口径）：剧集看是否任选集带线路，单片看 sources。
+ * 与播放页聚合探测一致——壳条目（0 线路 0 集）不算有数据，不能让源卡显示
+ * 「可播放」却点进去播不了。
+ */
+function hasPlayableContent(v: Video | null | undefined): boolean {
+  if (!v) return false;
+  if (v.episodes && v.episodes.length > 0) {
+    return v.episodes.some((ep) => ep.sources.length > 0);
+  }
+  return v.sources.length > 0;
 }
 
 /** 去掉标题中的「第一季 / 第1季 / 第12季」等季号字眼，仅保留剧集原名 */
@@ -192,10 +205,31 @@ export default function DetailPage() {
 
   // ── 状态 ──────────────────────────────────────
   const [activeTab, setActiveTab] = useState<DetailTab>('info');
-  const visitedTabsRef = useRef(new Set<DetailTab>(['info']));
-  // 下拉刷新：通过 nonce 触发主请求 + 剧照重新拉取（复用模块级缓存，刷新时绕过缓存回显）
+  // 下拉刷新：通过 nonce 触发主请求 + 剧照重新拉取（复用模块级缓存，刷新时绕过缓存回显）。
+  // 浮层要等主数据真正加载完才回弹：直接 bump nonce 返回 void 会让浮层在请求发出前
+  // 就判定「刷新成功」（失败也不可见）。播放源搜索有自己的 loading，不并入本 Promise。
   const [pullRefreshNonce, setPullRefreshNonce] = useState(0);
-  usePullToRefresh(() => setPullRefreshNonce((n) => n + 1));
+  const pullRefreshResolveRef = useRef<(() => void) | null>(null);
+  const pullRefreshStartedRef = useRef(false);
+  const finishPullRefresh = useCallback(() => {
+    const resolve = pullRefreshResolveRef.current;
+    pullRefreshResolveRef.current = null;
+    pullRefreshStartedRef.current = false;
+    resolve?.();
+  }, []);
+  usePullToRefresh(() => {
+    if (pullRefreshResolveRef.current) return Promise.resolve();
+    pullRefreshStartedRef.current = false;
+    const promise = new Promise<void>((resolve) => {
+      pullRefreshResolveRef.current = resolve;
+    });
+    setPullRefreshNonce((n) => n + 1);
+    // 早退分支（无效 id / 未配置 Token）不会进入 loading：下一拍直接结算，避免浮层空转
+    window.setTimeout(() => {
+      if (!pullRefreshStartedRef.current) finishPullRefresh();
+    }, 1500);
+    return promise;
+  });
   const prevDetailIdRef = useRef<string | undefined>(undefined);
 
   const [tmdbLoading, setTmdbLoading] = useState(true);
@@ -235,42 +269,24 @@ export default function DetailPage() {
   const [cmsLoaded, setCmsLoaded] = useState(false);
   const [cmsError, setCmsError] = useState<string | null>(null);
 
-  // 源检测（V4 pill）：检测设置页选中的 CMS 源可用性
-  const [srcDetect, setSrcDetect] = useState<{
-    status: SourceDetectStatus;
-    done: number;
-    total: number;
-    ok: number;
-    fail: number;
-    results: SelectedSourceCheckResult[];
-  }>({ status: 'idle', done: 0, total: 0, ok: 0, fail: 0, results: [] });
-
-  const runSourceDetection = useCallback(async () => {
-    const indices = await getEnabledVideoSourceIndices();
-    if (indices.length === 0) return;
-    setSrcDetect({ status: 'running', done: 0, total: indices.length, ok: 0, fail: 0, results: [] });
-    try {
-      const res = await checkSelectedVideoSources(indices, (done, total) => {
-        setSrcDetect((s) => ({ ...s, done, total }));
-      });
-      setSrcDetect((s) => ({
-        ...s,
-        status: 'done',
-        done: res.total,
-        total: res.total,
-        ok: res.ok,
-        fail: res.fail,
-        results: res.results,
-      }));
-    } catch {
-      setSrcDetect((s) => ({ ...s, status: 'idle' }));
-    }
-  }, []);
+  // 源状态（搜索结果口径）：胶囊/弹层直接反映「本次搜索每个源落在哪」。
+  // 不再单独探根列表——那只证明接口可达（茅台资源这类禁止关键词搜索的源也会是绿的）。
+  const [enabledSourceMeta, setEnabledSourceMeta] = useState<{ index: number; name: string }[]>([]);
   // 查询动画轮播的源名称（加载开始后填充真实 CMS 源名）
   const [querySourceNames, setQuerySourceNames] = useState<string[]>([]);
   const [queryMsgIndex, setQueryMsgIndex] = useState(0);
-  const cmsLastFetchRef = useRef(0);
   const cmsAbortRef = useRef<AbortController | null>(null);
+  // 在飞去重：同一批参数（id + 刷新代 + 启用源）的请求不重复发起；
+  // 点击「重新匹配」用 force 显式重启（旧请求 abort + 重发），不再依赖 2s 静默防抖。
+  const cmsReqSeqRef = useRef(0);
+  const cmsGenRef = useRef('');
+  const cmsInFlightRef = useRef(false);
+  // 自动路径只尝试一次：失败后不靠 effect 反复重试（用户可点「重新获取/重新匹配」）
+  const cmsAttemptedRef = useRef(false);
+  const [cmsProgress, setCmsProgress] = useState({ done: 0, total: 0 });
+  // cmsResults 的镜像：刷新时判断「是否已有旧结果可继续展示」（state 在异步闭包里会过期）
+  const cmsResultsRef = useRef<DetailSourceResult[]>([]);
+  useEffect(() => { cmsResultsRef.current = cmsResults; }, [cmsResults]);
 
   // 播放列表「全部」弹框状态
   const [playModal, setPlayModal] = useState<{
@@ -284,17 +300,11 @@ export default function DetailPage() {
   const [, setActiveSeasonIndex] = useState(0);
 
   /** 是否有可播放线路（剧集：任一选集含线路；单集/电影：sources 非空） */
-  const isPlayable = useCallback((v: Video | undefined) => {
-    if (!v) return false;
-    if (v.episodes && v.episodes.length > 0) {
-      return v.episodes.some((ep) => ep.sources.length > 0);
-    }
-    return v.sources.length > 0;
-  }, []);
+  const isPlayable = useCallback((v: Video | undefined) => hasPlayableContent(v), []);
 
-  // 仅展示有匹配结果的源（不可用源不单独提示）
+  // 仅展示有可播内容的源（壳条目不算数据；不可用源不单独提示，由源状态胶囊说明）
   const availableResults = useMemo(
-    () => cmsResults.filter((r) => r.video),
+    () => cmsResults.filter((r) => hasPlayableContent(r.video)),
     [cmsResults],
   );
 
@@ -303,6 +313,58 @@ export default function DetailPage() {
   const runningText = querySourceNames.length > 0
     ? `正在查询${querySourceNames[queryMsgIndex % querySourceNames.length]}…`
     : '正在匹配播放源…';
+
+  // ── 源状态（搜索结果口径）──────────────────────
+  // 逐源落点：有数据 / 无本片数据 / 不支持关键词搜索 / 请求失败 / 查询中。
+  // 未返回结果的源在 loading 期间标 pending，落定后按「无本片数据」计。
+  const sourceCells = useMemo<SourceStatusCell[]>(() => {
+    return enabledSourceMeta.map((m) => {
+      const r = cmsResults.find((x) => x.sourceIndex === m.index);
+      if (!r) return { index: m.index, name: m.name, state: cmsLoading ? 'pending' : 'empty' };
+      if (hasPlayableContent(r.video)) return { index: m.index, name: m.name, state: 'ok' };
+      if (r.errorKind === 'unsupported') {
+        return { index: m.index, name: m.name, state: 'unsupported', detail: r.error || '该源不支持关键词搜索' };
+      }
+      if (r.errorKind === 'network') {
+        return { index: m.index, name: m.name, state: 'fail', detail: r.error || '请求失败' };
+      }
+      return { index: m.index, name: m.name, state: 'empty', detail: r.error || '未找到本片资源' };
+    });
+  }, [enabledSourceMeta, cmsResults, cmsLoading]);
+
+  const sourceSummary = useMemo<SourceDetectPillSummary>(() => {
+    const count = (state: SourceStatusCell['state']) => sourceCells.filter((c) => c.state === state).length;
+    return { ok: count('ok'), empty: count('empty'), unsupported: count('unsupported'), fail: count('fail') };
+  }, [sourceCells]);
+
+  const pillStatus: SourceDetectStatus = cmsLoading ? 'running' : cmsLoaded ? 'done' : 'idle';
+  // 进度按「本次查询已落定的源」计：刷新时使用实时进度，避免沿用上一次的满格计数
+  const pillTotal = enabledSourceMeta.length;
+  const pillDone = cmsLoading
+    ? cmsProgress.done
+    : sourceCells.filter((c) => c.state !== 'pending').length;
+
+  // 被过滤掉的源（有原因）：卡片区下方一行说明，避免「源状态看着可用、列表里却没有」的困惑；
+  // 胶囊弹层只在 hover 时可见，移动端没有 hover，这一行是移动端的兜底入口。
+  const hiddenSourceCells = useMemo(
+    () => sourceCells.filter((c) => c.state === 'empty' || c.state === 'unsupported' || c.state === 'fail'),
+    [sourceCells],
+  );
+  const hiddenSourceText = hiddenSourceCells
+    .map((c) => `${c.name}（${c.state === 'empty' ? '无本片资源' : c.state === 'unsupported' ? '不支持关键词搜索' : '请求失败'}）`)
+    .join('、');
+
+  // 工具栏胶囊（两个分支共用同一份实例，避免 props 各处漂移）
+  const sourcePill = (
+    <SourceDetectPill
+      status={pillStatus}
+      done={pillDone}
+      total={pillTotal}
+      summary={sourceSummary}
+      cells={sourceCells}
+      runningText={runningText}
+    />
+  );
 
   // 剧照网格：根据容器实际列数限制显示 2 行
   const stillsGridRef = useRef<HTMLDivElement | null>(null);
@@ -383,10 +445,17 @@ export default function DetailPage() {
     const ctrl = new AbortController();
     setTmdbLoading(true); setTmdbError(null); setTmdbDetail(null); setBgLoaded(false);
     setCmsLoaded(false); setCmsResults([]); setCmsError(null);
-    // 重置 CMS 去抖时间戳：否则「切 id / 下拉刷新」触发重新匹配时会撞上 2s 防抖被静默
-    // 丢弃（fetchCMSSources 直接 return，既不置 cmsLoading 也不置 cmsLoaded）→ 页面
-    // 永久停在「暂无匹配的播放资源」，只能手点「重新获取」。
-    cmsLastFetchRef.current = 0;
+    // 换片 / 下拉刷新 = 新一轮：允许自动路径再尝试一次
+    cmsAttemptedRef.current = false;
+    // 掐掉上一轮 CMS 搜索：旧请求（闭包里的旧 title/id）不得把结果写进新一轮。
+    // 同时作废其收尾资格（seq 自增）并复位 loading，避免阻塞新一轮的自动触发。
+    if (cmsAbortRef.current) {
+      cmsAbortRef.current.abort();
+      cmsAbortRef.current = null;
+      cmsReqSeqRef.current += 1;
+      cmsInFlightRef.current = false;
+      setCmsLoading(false);
+    }
     if (prevDetailIdRef.current !== id) { setActiveTab('info'); prevDetailIdRef.current = id; }
     // token 未配置：不发 TMDB 请求（整页已由 render 层 TokenRequired 拦截，此处防在飞请求）
     if (id.startsWith('tmdb-') && !hasToken) {
@@ -427,18 +496,50 @@ export default function DetailPage() {
     return () => ctrl.abort();
   }, [id, pullRefreshNonce]);
 
-  // ── CMS 按需加载 ─────────────────────────────
-  const fetchCMSSources = useCallback(async () => {
-    if (!id || !tmdbDetail) return;
-    const now = Date.now();
-    if (now - cmsLastFetchRef.current < CMS_DEBOUNCE_MS) return;
-    cmsLastFetchRef.current = now;
+  // 下拉刷新完成信号：等主数据 loading 起跳后再结束（避免上面的 layout effect 还没置位
+  // 就被判「已完成」）。卸载时结掉在飞 Promise，避免浮层等待一个永不 resolve 的回调。
+  useEffect(() => {
+    if (!pullRefreshResolveRef.current) return;
+    if (tmdbLoading) {
+      pullRefreshStartedRef.current = true;
+      return;
+    }
+    if (pullRefreshStartedRef.current) finishPullRefresh();
+  }, [tmdbLoading, finishPullRefresh]);
+  useEffect(() => () => finishPullRefresh(), [finishPullRefresh]);
 
-    const indices = await getEnabledVideoSourceIndices();
+  // ── CMS 按需加载 ─────────────────────────────
+  /**
+   * 拉取/刷新播放源。
+   *
+   * @param opts.force 用户显式「重新匹配」：跳过缓存、abort 在飞请求后重发。
+   *   自动路径（切 tab / 首次加载）不 force——同参数在飞时直接复用，不再用
+   *   时间戳防抖静默丢弃点击（旧实现 2s 内重复调用直接 return，按钮看起来没反应）。
+   */
+  const fetchCMSSources = useCallback(async (opts?: { force?: boolean }) => {
+    if (!id || !tmdbDetail) return;
+
+    let indices: number[];
+    let allSources: { name?: string }[];
+    try {
+      indices = await getEnabledVideoSourceIndices();
+      allSources = await getVideoSources();
+    } catch (err) {
+      setCmsError(err instanceof Error ? err.message : '获取视频源配置失败');
+      return;
+    }
+    const metas = indices.map((i) => ({ index: i, name: allSources[i]?.name ?? '未知' }));
+    // 源名先落地：缓存命中路径也要能画出逐源状态
+    setEnabledSourceMeta(metas);
+    setQuerySourceNames(metas.length > 0 ? metas.map((m) => m.name) : ['视频源']);
+
+    // 同参数在飞 → 复用；显式 force 才重启（避免重复请求打满代理）
+    const gen = `${id}|${pullRefreshNonce}|${indices.join(',')}`;
+    if (!opts?.force && cmsInFlightRef.current && cmsGenRef.current === gen) return;
 
     // CMS 结果会话缓存：命中直接回显，零网络重搜（detail → /play → detail 最贵一跳）。
-    // sourceKey 编入启用源索引，源配置变化自动失效；下拉刷新（nonce>0）绕过。
-    if (pullRefreshNonce === 0) {
+    // sourceKey 编入启用源索引，源配置变化自动失效；下拉刷新（nonce>0）与手动重匹配绕过。
+    if (pullRefreshNonce === 0 && !opts?.force) {
       const cached = readDetailCache(id);
       const sourceKey = indices.join(',');
       if (cached?.cms && cached.cms.sourceKey === sourceKey && Date.now() - cached.cms.fetchedAt <= DETAIL_CACHE_TTL_MS) {
@@ -451,103 +552,111 @@ export default function DetailPage() {
     if (cmsAbortRef.current) cmsAbortRef.current.abort();
     const ctrl = new AbortController();
     cmsAbortRef.current = ctrl;
-    setCmsLoading(true); setCmsError(null); setCmsResults([]);
+    const reqId = ++cmsReqSeqRef.current;
+    cmsInFlightRef.current = true;
+    cmsGenRef.current = gen;
+    cmsAttemptedRef.current = true;
 
-    // 填充查询动画轮播用的真实源名称
-    try {
-      const allSources = await getVideoSources();
-      const names = indices
-        .map((i) => allSources[i]?.name)
-        .filter((n): n is string => Boolean(n));
-      setQuerySourceNames(names.length > 0 ? names : ['视频源']);
-      setQueryMsgIndex(0);
-    } catch {
-      setQuerySourceNames(['视频源']);
-    }
+    // 刷新（已有结果）时保留旧列表：清空会让整块塌成大转圈、再逐源长回来，
+    // 视觉上就是「点一下卡住」。首屏加载没有旧结果，照常清空后逐源上屏。
+    const keepOld = cmsResultsRef.current.length > 0;
+    setCmsLoading(true); setCmsError(null);
+    setCmsProgress({ done: 0, total: indices.length });
+    if (!keepOld) setCmsResults([]);
+    setQueryMsgIndex(0);
 
     const videoTitle = title || '';
     const videoYear = year;
+    // 错峰发起（每源 +120ms）：所有源同打一个 CORS 代理域，瞬发并发易触发限流/
+    // 连接排队，表现为「首屏很慢、个别源假无数据」。播放页聚合同一策略。
+    const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
     try {
-      // 增量上屏：每源一返回即 setCmsResults 追加，
-      // 首条可用结果到达即停掉网格大转圈、显示数据，其余源陆续补上。
+      // 增量上屏：每源一返回即追加，首条可用结果到达就停掉大转圈，其余源陆续补上。
       const collected: DetailSourceResult[] = [];
       const pushOne = (r: DetailSourceResult) => {
         if (ctrl.signal.aborted) return;
         collected.push(r);
-        setCmsResults((prev) => [...prev, r]);
+        setCmsProgress((p) => ({ ...p, done: Math.min(p.total || indices.length, p.done + 1) }));
+        if (!keepOld) setCmsResults((prev) => [...prev, r]);
       };
-      if (tmdbMediaType === 'tv') {
-        // 剧集：逐源并发查所有季，每源完成即上屏
-        await Promise.allSettled(
-          indices.map(async (index) => {
-            let r: DetailSourceResult;
-            try {
-              if (ctrl.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-              const res = await searchVideoSeasonsFromSingleSource(index, videoTitle, videoYear, ctrl.signal);
-              const entries = Array.from(res.seasons.entries()).sort((a, b) => a[0] - b[0]);
-              let seasonVideos = entries.map(([, v]) => v);
-              let seasonNums = entries.map(([n]) => n);
-              // 降级：CMS 未按季拆分时，整剧作为单季
-              if (seasonVideos.length === 0) {
-                const single = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal, tmdbMediaType);
-                const v0 = single[0]?.video;
-                if (v0) { seasonVideos = [v0]; seasonNums = [1]; }
+      const runSource = async (index: number, slot: number) => {
+        if (slot > 0) {
+          await sleep(slot * 120);
+          if (ctrl.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        }
+        let r: DetailSourceResult;
+        try {
+          if (ctrl.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+          if (tmdbMediaType === 'tv') {
+            const res = await searchVideoSeasonsFromSingleSource(index, videoTitle, videoYear, ctrl.signal);
+            const entries = Array.from(res.seasons.entries()).sort((a, b) => a[0] - b[0]);
+            let seasonVideos: Video[] = entries.map(([, v]) => v);
+            let seasonNums = entries.map(([n]) => n);
+            let errorKind: SourceSearchErrorKind | undefined = res.errorKind;
+            let error: string | undefined = res.error;
+            // 降级：CMS 未按季拆分时整剧作为单季（不支持搜索的源不必再白打一次）
+            if (seasonVideos.length === 0 && res.errorKind !== 'unsupported') {
+              const single = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal, tmdbMediaType);
+              const one = single[0];
+              const v0 = one?.video;
+              if (v0) {
+                seasonVideos = [v0]; seasonNums = [1];
+                error = undefined; errorKind = undefined;
+              } else {
+                error = one?.error ?? error;
+                errorKind = one?.errorKind ?? errorKind;
               }
-              // 源卡代表 video：正季优先（季 0 是特别篇桶，「立即播放」不应默认播特别篇）；
-              // 降级单搜的数据不在 res.seasons 里，回退 seasonVideos[0]
-              const repVideo = pickPrimarySeasonVideo(res.seasons) ?? seasonVideos[0] ?? null;
-              r = {
-                sourceIndex: res.sourceIndex,
-                sourceId: res.sourceId,
-                sourceName: res.sourceName,
-                video: repVideo ?? null,
-                seasons: seasonVideos,
-                seasonNumbers: seasonNums,
-                isSeries: seasonVideos.length > 0,
-                error: seasonVideos.length > 0 ? undefined : (res.error ?? '未找到匹配资源'),
-              };
-            } catch (e) {
-              r = {
+            }
+            // 源卡代表 video：正季优先（季 0 是特别篇桶，「立即播放」不应默认播特别篇）；
+            // 且必须是真有可播内容的季——最小正季是壳时回退第一个有内容的季，
+            // 否则会「判定无数据」把后面季有数据的源整源藏掉。
+            const primary = pickPrimarySeasonVideo(res.seasons) ?? seasonVideos[0] ?? null;
+            const repVideo = hasPlayableContent(primary)
+              ? primary
+              : seasonVideos.find(hasPlayableContent) ?? primary;
+            r = {
+              sourceIndex: res.sourceIndex,
+              sourceId: res.sourceId,
+              sourceName: res.sourceName,
+              video: repVideo ?? null,
+              seasons: seasonVideos,
+              seasonNumbers: seasonNums,
+              isSeries: seasonVideos.length > 0,
+              error: seasonVideos.length > 0 ? undefined : (error ?? '未找到匹配资源'),
+              errorKind: seasonVideos.length > 0 ? undefined : errorKind,
+            };
+          } else {
+            const rs = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal, tmdbMediaType);
+            const one = rs[0];
+            r = one
+              ? ({ ...one, seasons: [], seasonNumbers: [], isSeries: false } as DetailSourceResult)
+              : {
                 sourceIndex: index, sourceId: '', sourceName: '未知',
                 video: null, seasons: [], seasonNumbers: [], isSeries: false,
-                error: e instanceof Error ? e.message : '请求失败',
+                error: '未找到匹配资源', errorKind: 'no-match',
               };
-            }
-            pushOne(r);
-          }),
-        );
-      } else {
-        // 电影：逐源并发（带年份限制），每源完成即上屏
-        await Promise.allSettled(
-          indices.map(async (index) => {
-            let r: DetailSourceResult;
-            try {
-              if (ctrl.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-              const rs = await searchVideoFromMultipleSources([index], videoTitle, videoYear, ctrl.signal, tmdbMediaType);
-              const one = rs[0];
-              r = one
-                ? ({ ...one, seasons: [], seasonNumbers: [], isSeries: false } as DetailSourceResult)
-                : {
-                  sourceIndex: index, sourceId: '', sourceName: '未知',
-                  video: null, seasons: [], seasonNumbers: [], isSeries: false, error: '未找到匹配资源',
-                };
-            } catch (e) {
-              r = {
-                sourceIndex: index, sourceId: '', sourceName: '未知',
-                video: null, seasons: [], seasonNumbers: [], isSeries: false,
-                error: e instanceof Error ? e.message : '请求失败',
-              };
-            }
-            pushOne(r);
-          }),
-        );
-      }
+          }
+        } catch (e) {
+          r = {
+            sourceIndex: index, sourceId: '', sourceName: '未知',
+            video: null, seasons: [], seasonNumbers: [], isSeries: false,
+            error: e instanceof Error ? e.message : '请求失败',
+            errorKind: 'network',
+          };
+        }
+        pushOne(r);
+      };
+
+      await Promise.allSettled(indices.map((index, slot) => runSource(index, slot)));
+
       if (ctrl.signal.aborted) return;
+      // 刷新：全部落定后整体替换（期间旧列表保持可见）
+      if (keepOld) setCmsResults(collected);
       // 全失败不写缓存：全源超时/断网属偶发瞬时故障，
       // 写进去会让 10min TTL 内每次切 tab 都回显空结果，比重搜更差。
       // 部分失败仍照写（单源偶发失败不否定其余源的结果，下拉刷新可强刷）。
-      if (collected.some((r) => r.video)) {
+      if (collected.some((r) => hasPlayableContent(r.video))) {
         writeDetailCache(id, { cms: { results: collected, sourceKey: indices.join(','), fetchedAt: Date.now() } });
       }
       setCmsLoaded(true);
@@ -555,13 +664,19 @@ export default function DetailPage() {
       // 每源已各自 catch，此处仅兜底整体异常（如 getEnabledVideoSourceIndices 失败）
       if (!ctrl.signal.aborted) setCmsError(err instanceof Error ? err.message : '获取播放源失败');
     } finally {
-      if (!ctrl.signal.aborted) setCmsLoading(false);
+      // 只有最新一轮请求才能收尾（旧请求被 abort 后不得把新一轮的 loading 关掉）
+      if (cmsReqSeqRef.current === reqId) {
+        cmsInFlightRef.current = false;
+        if (!ctrl.signal.aborted) setCmsLoading(false);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, tmdbDetail, pullRefreshNonce]);
 
   useEffect(() => {
-    if (activeTab === 'sources' && !cmsLoaded && !cmsLoading) fetchCMSSources();
+    // 自动路径只尝试一次（cmsAttemptedRef）：失败后不靠本 effect 无限重试，
+    // 用户可点「重新获取 / 重新匹配」显式重来。
+    if (activeTab === 'sources' && !cmsLoaded && !cmsLoading && !cmsAttemptedRef.current) fetchCMSSources();
   }, [activeTab, cmsLoaded, cmsLoading, fetchCMSSources]);
 
   // 查询动画：加载期间逐条轮播源名称文案
@@ -945,14 +1060,7 @@ export default function DetailPage() {
             <button
               key={tab.key}
               className={`tab-underline detail-tab ${activeTab === tab.key ? 'tab-underline--active detail-tab--active' : ''}`}
-              onClick={() => {
-                const firstPlaylist =
-                  tab.key === 'sources' && !visitedTabsRef.current.has('sources');
-                visitedTabsRef.current.add(tab.key);
-                setActiveTab(tab.key);
-                // 第一次进入详情页并点击播放列表 tab 时，自动触发源检测
-                if (firstPlaylist) runSourceDetection();
-              }}
+              onClick={() => setActiveTab(tab.key)}
             >
               <Icon icon={tab.icon} size="sm" />
               <span>{tab.label}</span>
@@ -1125,7 +1233,7 @@ export default function DetailPage() {
         {/* 播放列表 */}
         {activeTab === 'sources' && (
           <div className="detail-sources">
-            {cmsLoading && availableResults.length === 0 ? (
+            {(cmsLoading || !cmsLoaded) && availableResults.length === 0 && !cmsError ? (
               <div className="detail-sources-container">
                 <div className="detail-sources-header">
                   <div className="detail-sources-header-left">
@@ -1133,15 +1241,7 @@ export default function DetailPage() {
                     <span className="detail-sources-keyword">当前关键词："{title}"</span>
                   </div>
                   <div className="detail-sources-toolbar">
-                    <SourceDetectPill
-                      status={srcDetect.status}
-                      done={srcDetect.done}
-                      total={srcDetect.total}
-                      ok={srcDetect.ok}
-                      fail={srcDetect.fail}
-                      results={srcDetect.results}
-                      runningText={runningText}
-                    />
+                    {sourcePill}
                   </div>
                 </div>
                 <div className="detail-sources-grid">
@@ -1155,7 +1255,7 @@ export default function DetailPage() {
               <div className="detail-state detail-state--error">
                 <Icon icon={WifiOff} size="2xl" /><p>{cmsError}</p>
                 <span>请检查网络连接或更换 CMS 视频源</span>
-                <button className="retry-btn retry-btn--outlined" onClick={fetchCMSSources}><Icon icon={RefreshCw} size="xs" /> 重新获取</button>
+                <button className="retry-btn retry-btn--outlined" onClick={() => fetchCMSSources({ force: true })}><Icon icon={RefreshCw} size="xs" /> 重新获取</button>
               </div>
             ) : cmsResults.length > 0 ? (
               availableResults.length > 0 ? (
@@ -1166,29 +1266,17 @@ export default function DetailPage() {
                     <span className="detail-sources-keyword">当前关键词："{title}"</span>
                   </div>
                   <div className="detail-sources-toolbar">
-                    {/* 搜索未完（CMS 查询中 / 源检测 running）不显示「重新匹配」——
- 此时重复触发无意义，完成后才出现 */}
-                    {srcDetect.status !== 'running' && !cmsLoading && (
-                      <button
-                        className="retry-btn retry-btn--tab"
-                        onClick={() => {
-                          fetchCMSSources();
-                          // 点击「重新匹配」同时触发源检测（idle pill 转为 running→done）
-                          runSourceDetection();
-                        }}
-                      >
-                        <Icon icon={RefreshCw} size="xs" /> 重新匹配
-                      </button>
-                    )}
-                    <SourceDetectPill
-                      status={srcDetect.status}
-                      done={srcDetect.done}
-                      total={srcDetect.total}
-                      ok={srcDetect.ok}
-                      fail={srcDetect.fail}
-                      results={srcDetect.results}
-                      runningText={runningText}
-                    />
+                    {/* 按钮常驻（不因 loading 隐藏/出现而抖动布局），在飞时置灰防重复点击；
+                      点击走 force：abort 在飞请求后立即重发，不再被静默防抖吞掉 */}
+                    <button
+                      className="retry-btn retry-btn--tab"
+                      onClick={() => fetchCMSSources({ force: true })}
+                      disabled={cmsLoading}
+                      aria-busy={cmsLoading}
+                    >
+                      <Icon icon={RefreshCw} size="xs" /> 重新匹配
+                    </button>
+                    {sourcePill}
                   </div>
                 </div>
                 <div className="detail-sources-grid">
@@ -1277,6 +1365,13 @@ export default function DetailPage() {
                     );
                   })}
                 </div>
+                {/* 被过滤掉的源及其原因：胶囊弹层只在 hover 时可见，移动端没有 hover，
+                    这一行是「源状态看着可用、列表里却没有它」的解释入口 */}
+                {hiddenSourceCells.length > 0 && (
+                  <p className="detail-sources-skipped" title={`未显示：${hiddenSourceText}`}>
+                    未显示：{hiddenSourceText}
+                  </p>
+                )}
                 {playModal && (
                   <PlaylistModal
                     data={playModal}
@@ -1325,9 +1420,10 @@ export default function DetailPage() {
                       <span className="detail-sources-keyword">当前关键词："{title}"</span>
                     </div>
                     <div className="detail-sources-toolbar">
-                      <button className="retry-btn retry-btn--tab" onClick={fetchCMSSources}>
+                      <button className="retry-btn retry-btn--tab" onClick={() => fetchCMSSources({ force: true })} disabled={cmsLoading} aria-busy={cmsLoading}>
                         <Icon icon={RefreshCw} size="xs" /> 重新匹配
                       </button>
+                      {sourcePill}
                     </div>
                   </div>
                   <div className="detail-sources-grid">
@@ -1337,13 +1433,18 @@ export default function DetailPage() {
                       <span>请尝试更换关键词或稍后再试</span>
                     </div>
                   </div>
+                  {hiddenSourceCells.length > 0 && (
+                    <p className="detail-sources-skipped" title={`未显示：${hiddenSourceText}`}>
+                      未显示：{hiddenSourceText}
+                    </p>
+                  )}
                 </div>
               )
             ) : (
               <div className="detail-state">
                 <Icon icon={Server} size="2xl" /><p>暂无匹配的播放资源</p>
                 <span>请检查网络连接或更换 CMS 视频源</span>
-                <button className="retry-btn retry-btn--outlined" onClick={fetchCMSSources}><Icon icon={RefreshCw} size="xs" /> 重新获取</button>
+                <button className="retry-btn retry-btn--outlined" onClick={() => fetchCMSSources({ force: true })}><Icon icon={RefreshCw} size="xs" /> 重新获取</button>
               </div>
             )}
           </div>

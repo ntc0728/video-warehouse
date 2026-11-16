@@ -72,7 +72,7 @@
   background: transparent;
   color: rgba(255, 255, 255, 0.9);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   transition: color var(--dur-sm);
   cursor: pointer;
 }
@@ -136,7 +136,7 @@
   margin: 0 0 var(--space-sm);
   color: var(--color-on-image);
   font-size: var(--text-2xl);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
 }
 
@@ -470,7 +470,7 @@
 }
 
 [data-device="tv"] .person-name {
-  font-size: var(--text-4xl);
+  font-size: var(--text-3xl);
 }
 
 [data-device="tv"] .person-bio {

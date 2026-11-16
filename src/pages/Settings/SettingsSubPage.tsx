@@ -101,6 +101,7 @@ export default function SettingsSubPage({ tab, onBack, children }: SettingsSubPa
     <div
       ref={containerRef}
       className={`settings-subpage${leaving ? ' settings-subpage--leaving' : ''}`}
+      data-ptr="off"
       onAnimationEnd={handleAnimationEnd}
     >
       <div className="settings-subpage__header">

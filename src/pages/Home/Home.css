@@ -228,7 +228,7 @@ html:not([data-device="tv"]) .home-page.home-skeleton > .home-skeleton-rows {
   color: var(--color-primary);
   font-family: inherit;
   font-size: inherit;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   text-decoration: none;
   cursor: pointer;
 }
@@ -630,7 +630,7 @@ html[data-device="app"] .home-disclaimer {
   display: flex;
   flex-direction: column;
   width: 100%;
-  transition: transform var(--dur-base) var(--ease-standard);
+  transition: transform var(--dur-md) var(--ease-standard);
 }
 
 .home-topstrip__rotator-item {
@@ -666,7 +666,7 @@ html[data-device="app"] .home-disclaimer {
   gap: var(--space-3xs);
   align-items: center;
   color: var(--color-warning-text);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -710,7 +710,7 @@ html[data-device="app"] .home-disclaimer {
  空间不足时由简介（__desc）单独收缩 ellipsis。 */
   flex: 0 0 auto;
   color: var(--color-text);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   white-space: nowrap;
 }
 

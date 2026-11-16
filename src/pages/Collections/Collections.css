@@ -31,7 +31,7 @@
 .collection-section-head__title {
   color: var(--color-text);
   font-size: var(--text-base);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .collection-section-head__count {
@@ -39,7 +39,7 @@
   margin-left: auto;
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
 }
 
 /* ── 加载态：player-loading-wrap 在 Player 页为 absolute 叠加层，

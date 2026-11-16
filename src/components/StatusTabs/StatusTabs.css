@@ -16,7 +16,7 @@
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   white-space: nowrap;
   transition: color var(--dur-2xs) ease, border-color var(--dur-2xs) ease, scale 0.32s var(--ease-spring);
   border-bottom: 2px solid transparent;
@@ -29,7 +29,7 @@
 
 .status-tab--active {
   color: var(--color-text);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   border-bottom-color: var(--status-tab-color, var(--color-primary));
 }
 
@@ -51,10 +51,10 @@
   min-width: var(--badge-size);
   padding: var(--space-3xs) var(--space-2xs);
   border-radius: var(--radius-full);
-  background: var(--color-hover-bg);
+  background: var(--color-surface-hover);
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   line-height: 1.2;
   text-align: center;
 }

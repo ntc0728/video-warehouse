@@ -204,7 +204,10 @@ function parseSuite() {
   const excludeM = src.match(/const\s+A_EXCLUDE\s*=\s*\[([\s\S]*?)\]/);
   if (!excludeM) fail('e2e-suite.mjs 里找不到 A_EXCLUDE', 2);
   const aExcludeBases = [...excludeM[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
-  return { preview, aExcludeBases };
+  // Stage C：独立进程单跑的 cross-tab（双页签事件回写，与其它 spec 并行会假红）
+  const stageCM = src.match(/const\s+STAGE_C_SPECS\s*=\s*\[([\s\S]*?)\]/);
+  const stageC = stageCM ? [...stageCM[1].matchAll(/'([^']+\.spec\.ts)'/g)].map((x) => x[1]) : [];
+  return { preview, stageC, aExcludeBases };
 }
 
 // ── 4. 计算 ─────────────────────────────────────────────────────────────────
@@ -266,7 +269,7 @@ for (const [k, v] of Object.entries(run.uiTestMap)) v.forEach((s) => refs.add(`$
 for (const e of run.uiPrecisionMap) e.specs.forEach((s) => refs.add(`${s} (来自 $uiPrecisionMap["${e.key}"])`));
 for (const e of run.logicTestMap) e.specs.filter((s) => s !== 'vitest').forEach((s) => refs.add(`${s} (来自 $logicTestMap["${e.key}"])`));
 for (const [g, v] of Object.entries(run.groups)) v.forEach((s) => refs.add(`${s} (来自 $testGroups["${g}"])`));
-[...suite.preview, ...suite.aExcludeBases].forEach((s) => refs.add(`${s} (来自 e2e-suite.mjs)`));
+[...suite.preview, ...suite.stageC, ...suite.aExcludeBases].forEach((s) => refs.add(`${s} (来自 e2e-suite.mjs)`));
 Object.entries(onDemand).forEach(([k, v]) => v.forEach((s) => refs.add(`${s} (来自 package.json ${k})`)));
 for (const r of refs) {
   const p = r.split(' ')[0];
@@ -290,16 +293,17 @@ for (const e of run.logicTestMap) checkGrep(`$logicTestMap["${e.key}"]`, e.specs
 
 // ── 5.3 校验 C+D：档位恒等式 + 映射 pattern 基路径存在性 ─────────────────────
 const stageB = suite.preview;
+const stageC = suite.stageC;
 const stageA = files
   .map((f) => `scripts/${f}`)
   // Stage A = 全仓 − Stage B − A_EXCLUDE 基名（A_EXCLUDE 只写基名，不带 .spec.ts）
-  .filter((s) => !stageB.includes(s) && !suite.aExcludeBases.includes(specShort(s).replace(/\.spec\.ts$/, '')));
+  .filter((s) => !stageB.includes(s) && !stageC.includes(s) && !suite.aExcludeBases.includes(specShort(s).replace(/\.spec\.ts$/, '')));
 const sumOver = (list) => list.reduce((a, s) => a + n(s), 0);
 // 按需档里不落在默认套两阶段的 spec（去重后）才算「额外档」，用于第二条恒等式
-const onDemandOnly = [...new Set(Object.values(onDemand).flat())].filter((s) => !stageA.includes(s) && !stageB.includes(s));
+const onDemandOnly = [...new Set(Object.values(onDemand).flat())].filter((s) => !stageA.includes(s) && !stageB.includes(s) && !stageC.includes(s));
 const identities = [
-  ['Stage A + Stage B = 默认套', sumOver(stageA) + sumOver(stageB), sumOver([...stageA, ...stageB])],
-  ['默认套 + 按需档 = 全仓 --list', sumOver([...stageA, ...stageB]) + sumOver(onDemandOnly), total],
+  ['Stage A + Stage B + Stage C = 默认套', sumOver(stageA) + sumOver(stageB) + sumOver(stageC), sumOver([...stageA, ...stageB, ...stageC])],
+  ['默认套 + 按需档 = 全仓 --list', sumOver([...stageA, ...stageB, ...stageC]) + sumOver(onDemandOnly), total],
   ['回归组 spec 全部存在', (run.groups.regression ?? []).filter((s) => existsSync(join(ROOT, s))).length, (run.groups.regression ?? []).length],
 ];
 const identityErrors = [];
@@ -323,6 +327,7 @@ const groupRow = (label, cmd, specs) => `| ${label} | \`${cmd}\` | **${sumOver(s
 const ownership = (f) => {
   const p = `scripts/${f}`;
   if (stageB.includes(p)) return '默认套 B（preview 播放器系）';
+  if (stageC.includes(p)) return '默认套 C（dev cross-tab 单跑）';
   if (stageA.includes(p)) return '默认套 A（dev 行为套）';
   for (const [k, v] of Object.entries(onDemand)) if (v.includes(p)) return `按需 \`${k}\``;
   return '未挂任何档（手工/已废弃）';
@@ -335,14 +340,15 @@ md.push('');
 md.push('| 档位 | 命令 | 用例数 | spec 数 |');
 md.push('| --- | --- | --- | --- |');
 md.push(`| 全仓枚举 | \`npx playwright test --list\` | **${total}** | ${files.length} |`);
-md.push(`| 默认套 | \`npm run test:e2e\` | **${sumOver([...stageA, ...stageB])}** | ${stageA.length + stageB.length} |`);
+md.push(`| 默认套 | \`npm run test:e2e\` | **${sumOver([...stageA, ...stageB, ...stageC])}** | ${stageA.length + stageB.length + stageC.length} |`);
 md.push(`| ├ Stage A（dev 行为套） | \`e2e-suite.mjs\` 阶段 A | ${sumOver(stageA)} | ${stageA.length} |`);
-md.push(`| └ Stage B（preview 播放器系） | \`e2e-suite.mjs\` 阶段 B | ${sumOver(stageB)} | ${stageB.length} |`);
+md.push(`| ├ Stage B（preview 播放器系） | \`e2e-suite.mjs\` 阶段 B | ${sumOver(stageB)} | ${stageB.length} |`);
+md.push(`| └ Stage C（dev cross-tab 单跑） | \`e2e-suite.mjs\` 阶段 C | ${sumOver(stageC)} | ${stageC.length} |`);
 md.push(`| 发版回归组 | \`npm run test:regression\` | **${sumOver(run.groups.regression ?? [])}** | ${(run.groups.regression ?? []).length} |`);
 md.push(`| 冒烟组（与改动侦测取交集） | \`npm run test:smoke\` | ${sumOver(run.groups.smoke ?? [])} | ${(run.groups.smoke ?? []).length} |`);
 for (const [k, v] of Object.entries(onDemand)) md.push(`| 按需 | \`npm run ${k}\` | ${sumOver(v)} | ${v.length} |`);
 md.push('');
-md.push('恒等式（脚本校验）：Stage A + Stage B = 默认套；默认套 + 按需档 = 全仓枚举数。');
+md.push('恒等式（脚本校验）：Stage A + Stage B + Stage C = 默认套；默认套 + 按需档 = 全仓枚举数。');
 md.push('');
 md.push('#### ② 每个 spec 的用例数（`--list` 实际枚举）');
 md.push('');
@@ -414,7 +420,7 @@ if (OPT.write) {
 
 const lines = [];
 lines.push(`全仓枚举：${total} 条 / ${files.length} spec`);
-lines.push(`默认套：${sumOver([...stageA, ...stageB])} 条（A ${sumOver(stageA)}/${stageA.length} + B ${sumOver(stageB)}/${stageB.length}）`);
+lines.push(`默认套：${sumOver([...stageA, ...stageB, ...stageC])} 条（A ${sumOver(stageA)}/${stageA.length} + B ${sumOver(stageB)}/${stageB.length} + C ${sumOver(stageC)}/${stageC.length}）`);
 lines.push(`回归组：${sumOver(run.groups.regression ?? [])} 条 / ${(run.groups.regression ?? []).length} spec`);
 lines.push('');
 lines.push('每 spec：');
