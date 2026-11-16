@@ -3,9 +3,10 @@
  * E2E 总编排器 —— 默认全量入口 `npm run test:e2e`。
  * 完整指令清单见 `scripts/README.md` 与 `package.json` 的 `test:e2e:*` 脚本。
  *
- * 阶段（串行，总预算默认 300s，到点看门狗击杀并判失败）：
+ * 阶段（串行，总预算默认 300s，到点看门狗击杀并判失败；`--stages` 可只跑子集）：
  *   A（dev）     行为全套：除 PREVIEW_SPECS / A_EXCLUDE 外所有 spec。dev 是 cross-tab
  *                （/src 导入）与 smoke-fs / home 面板稳定性用例的必需形态；稳定档 3 worker。
+ *                自有预算 **210s**（实测波动带 108–252s 的中位契约：超时 = 负载异常 → 走分段口径）。
  *   B（preview） 播放器系（player / failover / cms-error / iptv-player）：生产单包挂载快且稳，5 worker。
  *   C（dev）     cross-tab（4 条，单 worker）：双页签 + storage/IndexedDB/BroadcastChannel 回写，
  *               与其它 spec 并行时事件回写会被饿死（单步 10s 红线内的假红）→ 单独成阶段隔离并发。
@@ -19,10 +20,16 @@
  *     （合跑会贴近看门狗边界，故拆开各自单跑）
  *   - 设置页子页 source-checker / proxy-setup           → npm run test:e2e:subpages
  *
- * 报告：两阶段各只写一份 **blob**（`.pw-blob`），跑完 merge 成一份含 A+B 全量的
+ * 报告：各阶段各写一份 **blob**（`.pw-blob`/`.pw-blob-b`/`.pw-blob-c`），跑完 merge 成一份全量的
  *   `playwright-report/`（html + list）。
- *   ⚠ 两阶段若共用 config 的 html outputFolder，后跑的会把先跑的报告整份覆盖，
+ *   ⚠ 各阶段若共用 config 的 html outputFolder，后跑的会把先跑的报告整份覆盖，
  *   所以各写一份 blob 再 merge。
+
+ * `--stages A,B`（缺省 A,B,C）：只跑子集 —— 负载日看门狗击杀后补跑剩余段。
+ * 分段口径「**三段全绿 = 全量绿**」由 `.pw-suite-state.json` 兜底校验：每段结束记录
+ * `{exit, duration, HEAD, worktree 是否干净, dist 是否新鲜}`；三段全绿但 **HEAD 不一致 /
+ * worktree 带改动 / dist 过期（B 是 preview，跑的是构建产物）** 时判为「不可作为全量绿」→ exit 1
+ * （`--force` 越过）。部分跑只清理所选阶段的 blob 目录，未跑段的 blob 保留参与合并。
  *
  * 关键不可逆结论（勿反复试探）：
  *   - 行为套整体改投 preview 不可行（home 面板稳定性 / cross-tab 依赖 dev）。
@@ -35,7 +42,7 @@
  *   node scripts/e2e-suite.mjs --budget 420          # 临时放宽预算秒数（排查用，不进默认路径）
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -87,6 +94,8 @@ process.on('SIGINT', () => { shutdownAll(); process.exit(130); });
 const watchdog = setTimeout(() => {
   say(`⛔ 超出预算 ${(BUDGET_MS / 1000).toFixed(0)}s —— 看门狗击杀全部阶段。`);
   say('按预算契约处理：审耗时 top 用例（--reporter=list 自带时长）、把取证类移出默认套、或合并同构断言。**不得**靠删断言凑时间。');
+  // 已完成阶段的结果先落盘（分段口径：A 已绿的事实不能只留在日志里），再击杀
+  persistState();
   shutdownAll();
   process.exit(1);
 }, BUDGET_MS);
@@ -117,6 +126,89 @@ if (onlyIdx >= 0) {
 
 say(`E2E 套件开跑（预算 ${(BUDGET_MS / 1000).toFixed(0)}s，模式：${process.env.E2E_PARALLEL === '1' ? '并行分片' : '串行'}）`);
 
+// ── --stages：只跑子集（负载日补跑剩余段）────────────────────────────
+// 缺省 = A,B,C 全量。分段口径「三段全绿 = 全量绿」由 .pw-suite-state.json 兜底校验（见文件头）。
+const STAGE_ORDER = ['A', 'B', 'C'];
+const stagesIdx = argv.indexOf('--stages');
+let SELECTED = [...STAGE_ORDER];
+let stagesArgRaw = '';
+if (stagesIdx >= 0) {
+  stagesArgRaw = argv[stagesIdx + 1] || '';
+  SELECTED = stagesArgRaw.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean);
+  const unknown = SELECTED.filter((k) => !STAGE_ORDER.includes(k));
+  if (stagesArgRaw && (unknown.length > 0 || SELECTED.length === 0)) {
+    console.error(`✗ --stages 只接受 A/B/C 的逗号组合，收到：'${stagesArgRaw}'`);
+    process.exit(2);
+  }
+}
+const flag = (n) => argv.includes(n);
+const FORCE = flag('--force');
+const runAll = SELECTED.length === STAGE_ORDER.length;
+
+/** 上下文快照（整轮一次）：HEAD / worktree 是否带改动 / dist 是否比 src 新。
+ *  分段口径的可信度全靠这三项 —— 跨 HEAD 或 dist 过期的分段绿不可作为全量绿。 */
+async function captureContext() {
+  const run = (cmd, args) =>
+    new Promise((done) => {
+      const child = spawn(cmd, args, { cwd: ROOT, windowsHide: true });
+      let out = '';
+      child.stdout?.on('data', (d) => { out += d; });
+      child.on('error', () => done(null));
+      child.on('close', (code) => done(code === 0 ? out.trim() : null));
+    });
+  const head = (await run('git', ['rev-parse', '--short', 'HEAD'])) ?? 'unknown';
+  const st = await run('git', ['status', '--porcelain']);
+  const dirty = st === null ? null : st.length > 0;
+  return { head, dirty };
+}
+
+/** dist 是否不旧于 src/index.html（B 是 preview，跑的是构建产物；过期 = 断言旧产物） */
+function distFresh() {
+  const distIndex = resolve(ROOT, 'dist/index.html');
+  if (!existsSync(distIndex)) return false;
+  const distM = statSync(distIndex).mtimeMs;
+  let newest = distM;
+  const walk = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = resolve(dir, e.name);
+      if (e.isDirectory()) { walk(p); continue; }
+      if (!/\.(css|ts|tsx|html|json)$/.test(e.name)) continue;
+      const m = statSync(p).mtimeMs;
+      if (m > newest) newest = m;
+    }
+  };
+  walk(resolve(ROOT, 'src'));
+  const ih = statSync(resolve(ROOT, 'index.html')).mtimeMs;
+  if (ih > newest) newest = ih;
+  return distM >= newest;
+}
+
+const STATE_FILE = resolve(ROOT, '.pw-suite-state.json');
+const RUN_CTX = { head: 'unknown', dirty: null, distFresh: null };
+
+/** 把本轮已完成阶段的结果并入状态文件（看门狗击杀前也要调用，A 已绿的事实不能只留在日志里） */
+function persistState() {
+  try {
+    const prev = existsSync(STATE_FILE) ? JSON.parse(readFileSync(STATE_FILE, 'utf8')) : {};
+    const stages = { ...(prev.stages || {}) };
+    for (const r of results) {
+      stages[r.key] = {
+        exit: r.code ?? null,
+        durationS: r.durationS ?? null,
+        head: RUN_CTX.head,
+        dirty: RUN_CTX.dirty,
+        distFresh: RUN_CTX.distFresh,
+        at: new Date().toISOString(),
+      };
+    }
+    writeFileSync(
+      STATE_FILE,
+      JSON.stringify({ head: RUN_CTX.head, dirty: RUN_CTX.dirty, distFresh: RUN_CTX.distFresh, updatedAt: new Date().toISOString(), stages }, null, 2),
+    );
+  } catch { /* 状态落盘失败不影响测试结论 */ }
+}
+
+
 // 播放器系只能 preview（生产单包挂载快且稳）。
 // 例外：smoke-player-fs-mobile 留 dev —— `.up-fs-corner` 等横屏全屏 UI 在生产 bundle 下不出现，
 // 属构建形态差异。
@@ -131,7 +223,7 @@ const PREVIEW_SPECS = [
 const A_EXCLUDE = ['skeleton', 'boot-splash', 'boot-splash-iso', 'boot-splash-shots', 'source-checker', 'proxy-setup', 'player', 'player-failover', 'player-cms-error', 'iptv-player', 'cross-tab', 'smoke-player-fs-mobile'].join(',');
 
 // Stage A（dev 行为套）：稳定档 3 worker（4 worker dev 编译争用会挤挂时序敏感断言）。
-const STAGE_A_ARGS = ['--all', '--dev', '--workers', '3'];
+const STAGE_A_ARGS = ['--all', '--dev', '--budget', '210', '--workers', '3'];
 const STAGE_A_ENV = { E2E_SKIP_SHOTS: '1', E2E_EXCLUDE_SPECS: A_EXCLUDE };
 // Stage B（preview 契约+播放器）：生产单包无 dev 编译争用 → 5 worker 并行化 iso 42 探针。
 const STAGE_B_ARGS = ['--all', '--budget', '150', '--retries', '1', '--workers', '5', ...PREVIEW_SPECS];
@@ -164,6 +256,31 @@ const BLOB_ENV_A = { E2E_PW_EXTRA: '--reporter=list --reporter=blob', PLAYWRIGHT
 const BLOB_ENV_B = { E2E_PW_EXTRA: '--reporter=blob', PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB_DIR_B };
 const BLOB_ENV_C = { E2E_PW_EXTRA: '--reporter=list --reporter=blob', PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB_DIR_C };
 
+// ── 阶段注册表：key → 编排参数。A 的 210s 是「波动带中位契约」（实测 108–252s），超时 = 负载异常 → 分段口径。
+const STAGES = {
+  A: {
+    key: 'A',
+    name: 'A-dev-behavior',
+    args: STAGE_A_ARGS,
+    env: { ...STAGE_A_ENV, ...BLOB_ENV_A },
+    blobDir: BLOB_DIR_A,
+  },
+  B: {
+    key: 'B',
+    name: 'B-preview-contract-player',
+    args: STAGE_B_ARGS,
+    env: { ...BLOB_ENV_B },
+    blobDir: BLOB_DIR_B,
+  },
+  C: {
+    key: 'C',
+    name: 'C-dev-cross-tab',
+    args: STAGE_C_ARGS,
+    env: { ...STAGE_C_ENV, ...BLOB_ENV_C },
+    blobDir: BLOB_DIR_C,
+  },
+};
+
 /** 把 from 目录里的 blob zip 归集到 to 目录（merge-reports 只读一个目录）。
  *  用 renameSync 而非「复制 + 删除」：既省 IO，也完全避开沙箱 delete-shim 的批量删除守卫。*/
 function collectBlobs(from, to) {
@@ -186,7 +303,11 @@ function collectBlobs(from, to) {
  *  用**异步** spawn：受限沙箱里 `spawnSync` 一律 EBUSY，
  *  而 merge 失败只会让报告不完整、不会让套件变红 → 静默踩坑，故此处必须避开 spawnSync。*/
 function mergeReports() {
-  const moved = collectBlobs(BLOB_DIR_B, BLOB_DIR_A) + collectBlobs(BLOB_DIR_C, BLOB_DIR_A);
+  // 部分跑（--stages 子集）只归集**所选阶段**的 blob：历史 zip 不进报告，
+  // 否则 merge-reports 会重放旧用例结果（上轮失败也一起重放，误导诊断）。
+  if (!runAll) rmSync(resolve(ROOT, BLOB_DIR_A), { recursive: true, force: true });
+  const selDirs = SELECTED.map((k) => STAGES[k].blobDir).filter((d) => d !== BLOB_DIR_A);
+  const moved = selDirs.reduce((sum, d) => sum + collectBlobs(d, BLOB_DIR_A), 0);
   const dst = resolve(ROOT, BLOB_DIR_A);
   const blobs = existsSync(dst) ? readdirSync(dst).filter((f) => f.endsWith('.zip')).length : 0;
   if (!blobs) {
@@ -207,33 +328,78 @@ function mergeReports() {
   });
 }
 
-if (PARALLEL) {
-  for (const d of [BLOB_DIR_A, BLOB_DIR_B, BLOB_DIR_C]) rmSync(resolve(ROOT, d), { recursive: true, force: true });
-  const [ra, rb] = await Promise.all([
-    stage('A-dev-behavior', STAGE_A_ARGS, { ...STAGE_A_ENV, E2E_PW_EXTRA: '--reporter=blob', PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB_DIR_A }),
-    stage('B-preview-contract-player', STAGE_B_ARGS, { E2E_PW_EXTRA: '--reporter=blob', PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB_DIR_B }),
-  ]);
-  results.push(ra, rb);
-  // Stage C 与 A/B 并行会互抢 CPU（它本身就是抗饿死才拆出来的），故串行补跑
-  results.push(await stage('C-dev-cross-tab', STAGE_C_ARGS, { ...STAGE_C_ENV, ...BLOB_ENV_C }));
-  clearTimeout(watchdog);
-  await mergeReports();
-} else {
-  // 串行同样走 blob + merge（原为「各写 config 的 html」，Stage B 会把 Stage A 报告整份
-  // 覆盖 → 默认套最终只剩 24 条 player 系用例，Stage A 那 108 条的明细全丢）。
-  for (const d of [BLOB_DIR_A, BLOB_DIR_B, BLOB_DIR_C]) rmSync(resolve(ROOT, d), { recursive: true, force: true });
-  results.push(await stage('A-dev-behavior', STAGE_A_ARGS, { ...STAGE_A_ENV, ...BLOB_ENV_A }));
-  results.push(await stage('B-preview-contract-player', STAGE_B_ARGS, BLOB_ENV_B));
-  results.push(await stage('C-dev-cross-tab', STAGE_C_ARGS, { ...STAGE_C_ENV, ...BLOB_ENV_C }));
-  clearTimeout(watchdog);
-  await mergeReports();
+// 上下文快照：整轮一次（HEAD / worktree / dist 新鲜度），供分段口径判定
+Object.assign(RUN_CTX, await captureContext(), { distFresh: distFresh() });
+if (RUN_CTX.head === 'unknown') {
+  console.warn('⚠ git 不可用：分段口径的 HEAD/worktree 校验将按不可信处理（--force 越过）');
 }
+if (SELECTED.includes('B') && !RUN_CTX.distFresh && !FORCE) {
+  console.error('✗ dist 过期（src 比 dist/index.html 新）：Stage B 是 preview，跑的是旧产物。先 npm run build，或 --force 带过期 dist 硬跑。');
+  process.exit(2);
+}
+
+// 只清理**所选阶段**的 blob 目录：未跑阶段的 blob 保留参与合并，
+// 这样部分跑的报告仍是「三段全量」视图（新鲜度由 --stages 的 HEAD/dist 校验兜底）。
+for (const k of SELECTED) rmSync(resolve(ROOT, STAGES[k].blobDir), { recursive: true, force: true });
+
+const runStage = async (key) => {
+  const def = STAGES[key];
+  const t0 = Date.now();
+  const r = await stage(def.name, def.args, def.env);
+  const entry = {
+    key,
+    name: def.name,
+    code: r.code ?? null,
+    durationS: Math.round((Date.now() - t0) / 1000),
+  };
+  results.push(entry);
+  persistState(); // 每段结束即落盘：看门狗击杀后 A 已绿的事实不能只留在日志里
+  return entry;
+};
+
+const runABParallel = PARALLEL && SELECTED.includes('A') && SELECTED.includes('B');
+if (runABParallel) {
+  await Promise.all([runStage('A'), runStage('B')]);
+  // Stage C 与 A/B 并行会互抢 CPU（它本身就是抗饿死才拆出来的），故串行补跑
+  if (SELECTED.includes('C')) await runStage('C');
+} else {
+  for (const k of SELECTED) await runStage(k);
+}
+clearTimeout(watchdog);
+await mergeReports();
 
 const wall = ((Date.now() - T0) / 1000).toFixed(1);
 let bad = 0;
 for (const r of results) {
   if (r.code !== 0) bad = 1;
-  console.log(`阶段 ${r.name}: exit ${r.code}`);
+  console.log(`阶段 ${r.name}: exit ${r.code}（${r.durationS}s）`);
 }
-say(`E2E 套件结束（${PARALLEL ? '并行分片' : '串行'}）：总墙钟 ${wall}s / 预算 ${(BUDGET_MS / 1000).toFixed(0)}s → ${bad ? '失败' : '通过'}`);
+
+// ── 分段口径判定：三段全绿 + 同 HEAD + 干净 worktree + dist 新鲜 = 全量绿 ──
+// 本轮没跑的阶段采用 state 里最近一次记录；三项上下文任一不满足 → 分段绿不可作为全量绿。
+try {
+  const state = existsSync(STATE_FILE) ? JSON.parse(readFileSync(STATE_FILE, 'utf8')) : { stages: {} };
+  const rows = STAGE_ORDER.map((k) => [k, state.stages?.[k]]);
+  console.log('\n分段口径判定（.pw-suite-state.json）：');
+  for (const [k, e] of rows) {
+    if (!e) { console.log(`  ${k}: 无记录（未跑过）`); continue; }
+    const ctxBits = [`head=${e.head}`, e.dirty ? 'worktree 带改动' : 'worktree 干净', e.distFresh ? 'dist 新鲜' : 'dist 过期'];
+    console.log(`  ${k}: ${e.exit === 0 ? '绿' : `exit ${e.exit}`}（${e.durationS ?? '?'}s）· ${ctxBits.join(' · ')}`);
+  }
+  const allGreen = rows.every(([, e]) => e && e.exit === 0);
+  const sameContext =
+    rows.every(([, e]) => e) &&
+    rows.every(([, e]) => e.head === rows[0][1].head && !e.dirty) &&
+    (state.stages?.B?.distFresh ?? false) &&
+    state.head !== 'unknown';
+  if (allGreen && sameContext) {
+    console.log(`✓ 分段口径全量绿 @ ${rows[0][1].head}`);
+  } else if (allGreen) {
+    const why = !rows.every(([, e]) => e) ? '' : state.head === 'unknown' || rows.some(([, e]) => e.head !== rows[0][1].head || e.dirty) ? 'HEAD 不一致或 worktree 带改动' : "dist 过期（B 跑的是旧产物，先 npm run build）";
+    console.error(`✗ 分段绿不可作为全量绿：${why}（--force 越过）`);
+    if (!FORCE) bad = 1;
+  }
+} catch { /* 判定失败不改变本轮 exit，仅无分段结论 */ }
+
+say(`E2E 套件结束（${PARALLEL ? '并行分片' : '串行'}，阶段：${SELECTED.join('/')}）：总墙钟 ${wall}s / 预算 ${(BUDGET_MS / 1000).toFixed(0)}s → ${bad ? '失败' : '通过'}`);
 process.exit(bad);

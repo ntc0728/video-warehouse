@@ -606,9 +606,18 @@ export const useIPTVStore = create<IPTVState>()(
 // 产生事件），链路收敛。
 let iptvCrossTabSyncAttached = false;
 
+/**
+ * 合并代际：连续 storage 事件各自触发 rehydrate → 重派生，解密/合并是异步的，
+ * 乱序完成时旧快照会把新值覆盖回去（与 useSettingsStore 的写入代际闸门同族）。
+ * 只有最新一次合并允许 setState；被更新载荷取代的旧载荷直接丢弃。
+ */
+let iptvMergeSeq = 0;
+
 /** 重读持久化切片并重派生频道收藏标记（storage 事件「常规写入」路径） */
 async function reloadIPTVPersisted(): Promise<void> {
+  const seq = ++iptvMergeSeq;
   await useIPTVStore.persist.rehydrate(); // 兼容 sync 路径返回 void
+  if (seq !== iptvMergeSeq) return; // 更新的载荷已到：丢弃这份旧快照
   const { channels, favoriteChannelIds } = useIPTVStore.getState();
   useIPTVStore.setState({
     channels: channels.map((ch) => ({ ...ch, isFavorite: favoriteChannelIds.includes(ch.id) })),

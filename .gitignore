@@ -187,3 +187,5 @@ changelogs/_pending/_archived/
 
 # 一次性诊断截图产物（2026-10-11 清理）
 px-fixed-*.png
+
+.pw-suite-state.json
