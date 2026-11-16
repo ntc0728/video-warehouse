@@ -7,6 +7,8 @@
  *   A（dev）     行为全套：除 PREVIEW_SPECS / A_EXCLUDE 外所有 spec。dev 是 cross-tab
  *                （/src 导入）与 smoke-fs / home 面板稳定性用例的必需形态；稳定档 3 worker。
  *   B（preview） 播放器系（player / failover / cms-error / iptv-player）：生产单包挂载快且稳，5 worker。
+ *   C（dev）     cross-tab（4 条，单 worker）：双页签 + storage/IndexedDB/BroadcastChannel 回写，
+ *               与其它 spec 并行时事件回写会被饿死（单步 10s 红线内的假红）→ 单独成阶段隔离并发。
  *
  * 已移出默认套、改按需跑（保留覆盖，非删除）：
  *   - 取证截图 boot-splash-shots                       → npm run test:e2e:shots
@@ -124,13 +126,18 @@ const PREVIEW_SPECS = [
 ];
 // dev Stage A 排除项 = 播放器系（归 B）+ 移出默认套的骨架三兄弟与设置页子页（详见文件头）。
 // 注：chart / person 是顶级业务路由，保留默认套（只移子页、不移顶级路由）。
-const A_EXCLUDE = ['skeleton', 'boot-splash', 'boot-splash-iso', 'boot-splash-shots', 'source-checker', 'proxy-setup', 'player', 'player-failover', 'player-cms-error', 'iptv-player'].join(',');
+const A_EXCLUDE = ['skeleton', 'boot-splash', 'boot-splash-iso', 'boot-splash-shots', 'source-checker', 'proxy-setup', 'player', 'player-failover', 'player-cms-error', 'iptv-player', 'cross-tab'].join(',');
 
 // Stage A（dev 行为套）：稳定档 3 worker（4 worker dev 编译争用会挤挂时序敏感断言）。
 const STAGE_A_ARGS = ['--all', '--dev', '--workers', '3'];
 const STAGE_A_ENV = { E2E_SKIP_SHOTS: '1', E2E_EXCLUDE_SPECS: A_EXCLUDE };
 // Stage B（preview 契约+播放器）：生产单包无 dev 编译争用 → 5 worker 并行化 iso 42 探针。
 const STAGE_B_ARGS = ['--all', '--budget', '150', '--retries', '1', '--workers', '5', ...PREVIEW_SPECS];
+// Stage C（dev 单文件）：cross-tab 依赖双页签实时事件回写，与其它 spec 并行时会被饿死
+// （storage 事件 → rehydrate → setState 的链路挤不进 10s 单步上限）→ 独立进程、单 worker。
+const STAGE_C_SPECS = ['scripts/cross-tab.spec.ts'];
+const STAGE_C_ARGS = ['--all', '--dev', '--budget', '90', '--workers', '1', ...STAGE_C_SPECS];
+const STAGE_C_ENV = { E2E_SKIP_SHOTS: '1' };
 
 // 并行分片（实验性，默认关）：两阶段各起独立 server + 各写 blob，跑完 merge 成一份报告。
 // 并行下 chromium 抢 CPU → preview 阶段播放器挂载窗/骨架探针被饿死、Stage B 成片假红
@@ -150,8 +157,10 @@ const results = [];
 //   Stage B 是 ad-hoc 档，e2e-skeleton 已自带 --reporter=list → 只补 blob，避免 list 重复注册。
 const BLOB_DIR_A = '.pw-blob';
 const BLOB_DIR_B = '.pw-blob-b';
+const BLOB_DIR_C = '.pw-blob-c';
 const BLOB_ENV_A = { E2E_PW_EXTRA: '--reporter=list --reporter=blob', PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB_DIR_A };
 const BLOB_ENV_B = { E2E_PW_EXTRA: '--reporter=blob', PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB_DIR_B };
+const BLOB_ENV_C = { E2E_PW_EXTRA: '--reporter=list --reporter=blob', PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB_DIR_C };
 
 /** 把 from 目录里的 blob zip 归集到 to 目录（merge-reports 只读一个目录）。
  *  用 renameSync 而非「复制 + 删除」：既省 IO，也完全避开沙箱 delete-shim 的批量删除守卫。*/
@@ -175,7 +184,7 @@ function collectBlobs(from, to) {
  *  用**异步** spawn：受限沙箱里 `spawnSync` 一律 EBUSY，
  *  而 merge 失败只会让报告不完整、不会让套件变红 → 静默踩坑，故此处必须避开 spawnSync。*/
 function mergeReports() {
-  const moved = collectBlobs(BLOB_DIR_B, BLOB_DIR_A);
+  const moved = collectBlobs(BLOB_DIR_B, BLOB_DIR_A) + collectBlobs(BLOB_DIR_C, BLOB_DIR_A);
   const dst = resolve(ROOT, BLOB_DIR_A);
   const blobs = existsSync(dst) ? readdirSync(dst).filter((f) => f.endsWith('.zip')).length : 0;
   if (!blobs) {
@@ -197,20 +206,23 @@ function mergeReports() {
 }
 
 if (PARALLEL) {
-  for (const d of [BLOB_DIR_A, BLOB_DIR_B]) rmSync(resolve(ROOT, d), { recursive: true, force: true });
+  for (const d of [BLOB_DIR_A, BLOB_DIR_B, BLOB_DIR_C]) rmSync(resolve(ROOT, d), { recursive: true, force: true });
   const [ra, rb] = await Promise.all([
     stage('A-dev-behavior', STAGE_A_ARGS, { ...STAGE_A_ENV, E2E_PW_EXTRA: '--reporter=blob', PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB_DIR_A }),
     stage('B-preview-contract-player', STAGE_B_ARGS, { E2E_PW_EXTRA: '--reporter=blob', PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB_DIR_B }),
   ]);
   results.push(ra, rb);
+  // Stage C 与 A/B 并行会互抢 CPU（它本身就是抗饿死才拆出来的），故串行补跑
+  results.push(await stage('C-dev-cross-tab', STAGE_C_ARGS, { ...STAGE_C_ENV, ...BLOB_ENV_C }));
   clearTimeout(watchdog);
   await mergeReports();
 } else {
   // 串行同样走 blob + merge（原为「各写 config 的 html」，Stage B 会把 Stage A 报告整份
   // 覆盖 → 默认套最终只剩 24 条 player 系用例，Stage A 那 108 条的明细全丢）。
-  for (const d of [BLOB_DIR_A, BLOB_DIR_B]) rmSync(resolve(ROOT, d), { recursive: true, force: true });
+  for (const d of [BLOB_DIR_A, BLOB_DIR_B, BLOB_DIR_C]) rmSync(resolve(ROOT, d), { recursive: true, force: true });
   results.push(await stage('A-dev-behavior', STAGE_A_ARGS, { ...STAGE_A_ENV, ...BLOB_ENV_A }));
   results.push(await stage('B-preview-contract-player', STAGE_B_ARGS, BLOB_ENV_B));
+  results.push(await stage('C-dev-cross-tab', STAGE_C_ARGS, { ...STAGE_C_ENV, ...BLOB_ENV_C }));
   clearTimeout(watchdog);
   await mergeReports();
 }
