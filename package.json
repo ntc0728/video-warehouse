@@ -16,6 +16,7 @@
     "lint:css:fix": "stylelint \"src/**/*.{css,scss}\" --fix",
     "lint:fix": "eslint . --fix",
     "lint:design": "node scripts/design-audit.mjs --strict",
+    "lint:tokens": "node scripts/lint-css-tokens.mjs",
     "lint:design:update": "node scripts/design-audit.mjs --update-baseline",
     "lint:json": "node scripts/json-dup-key-check.mjs",
     "lint:version-sync": "node scripts/sync-android-version.mjs --check",

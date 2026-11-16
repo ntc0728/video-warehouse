@@ -121,6 +121,30 @@ const CHECKS = [
     },
   },
   {
+    id: 'brand-rgba-literal',
+    enforce: true,
+    desc: '组件层彩色 rgba() 字面量（应走 token 或 color-mix(in srgb, var(--color-*) N%, transparent)；黑/白/灰遮罩与主题覆盖行除外）',
+    /**
+     * 为什么只查「非灰」三元组：
+     *   全站 rgba() 绝大多数是纯黑/纯白/纯灰（媒体遮罩、投影、玻璃底），与主题无关，
+     *   换肤也不该变，属合法硬编码；真正的问题是**品牌色/旧品牌色**被写死
+     *   （旧靛蓝 99,102,241、旧 AntD 蓝 24,144,255 等），换主题/换肤后不跟随。
+     * 跳过 `--token: ...` 行：组件作用域内的主题覆盖（如播放器把 primary 家族
+     *   切到强调蓝）本就该在原地定义值，不属于「消费处绕过 token」。
+     */
+    match: (raw) => {
+      if (/^\s*--[a-z0-9-]+\s*:/.test(raw)) return null;
+      const hits = [];
+      for (const m of raw.matchAll(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\b/g)) {
+        const [r, g, b] = [m[1], m[2], m[3]].map(Number);
+        if (r === g && g === b) continue; // 黑/白/灰：遮罩/投影，与主题无关
+        hits.push(m[0]);
+      }
+      return hits.length ? hits : null;
+    },
+    tokens: TOKEN_FILES,
+  },
+  {
     id: 'raw-z-index',
     enforce: true,
     desc: '页级裸 z-index（≥100 必须走 --z-* token；50–99 为组件局部抬升过渡带）',
