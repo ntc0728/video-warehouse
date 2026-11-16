@@ -37,9 +37,9 @@ export interface SourceDetectPillProps {
 }
 
 const statusLabel: Record<SourceDetectStatus, string> = {
-  idle: '源检测',
-  running: '检测中',
-  done: '源检测',
+  idle: '源状态',
+  running: '查询中',
+  done: '源状态',
 };
 
 const cellLabel: Record<SourceCellState, string> = {

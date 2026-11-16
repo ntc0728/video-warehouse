@@ -344,7 +344,7 @@ export default function DetailPage() {
     ? cmsProgress.done
     : sourceCells.filter((c) => c.state !== 'pending').length;
 
-  // 被过滤掉的源（有原因）：卡片区下方一行说明，避免「源检测绿但列表里没有」的困惑；
+  // 被过滤掉的源（有原因）：卡片区下方一行说明，避免「源状态看着可用、列表里却没有」的困惑；
   // 胶囊弹层只在 hover 时可见，移动端没有 hover，这一行是移动端的兜底入口。
   const hiddenSourceCells = useMemo(
     () => sourceCells.filter((c) => c.state === 'empty' || c.state === 'unsupported' || c.state === 'fail'),
@@ -1366,7 +1366,7 @@ export default function DetailPage() {
                   })}
                 </div>
                 {/* 被过滤掉的源及其原因：胶囊弹层只在 hover 时可见，移动端没有 hover，
-                    这一行是「源检测看着可用、列表里却没有它」的解释入口 */}
+                    这一行是「源状态看着可用、列表里却没有它」的解释入口 */}
                 {hiddenSourceCells.length > 0 && (
                   <p className="detail-sources-skipped" title={`未显示：${hiddenSourceText}`}>
                     未显示：{hiddenSourceText}

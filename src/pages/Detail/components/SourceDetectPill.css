@@ -1,4 +1,4 @@
-/* V4 风格：detail-sources 工具栏内的源检测 pill */
+/* V4 风格：detail-sources 工具栏内的源状态 pill */
 .sdp {
   position: relative;
   /* 建立独立堆叠上下文，确保悬浮弹窗稳定盖在下方「匹配结果」网格之上，
