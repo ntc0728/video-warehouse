@@ -45,9 +45,10 @@
   /* ── UI 全局缩放（三段式×大屏整合）── */
   --ui-scale: 1;
   /* ── 字号缩档 ──
-  桌面 = 1（保持按 1440 行业锚点校准的曲线）；移动端 = 0.95
-  （≤767 首帧兜底 + html[data-mobile-layout] / html[data-device="app"] 恒移动覆盖）。
-  乘入全部非 TV --text-* 定义；Tailwind fontSize 与 --icon-*（延迟解析）自动连锁。
+  桌面 = 1；移动端 = 0.95，仅作用于**大四档**（lg/xl/2xl/3xl）。
+  小四档（2xs/xs/sm/base）不乘 type-scale，恒为 11/12/13/14（HIG caption2 11 /
+  M3 label-small 11·label-medium 12 / AntD 正文 14），否则 0.95 会把 2xs 压到
+  10.45px（低于本仓 BASELINE 11px 下限）。
   TV 10-foot 契约（文件末尾 [data-device="tv"] 独立 clamp）不乘，保持 2× 档。 */
   --type-scale: 1;
   /* 卡片固定宽度（≥1280 auto-fill 轨道）：290 设计基 × scale */
@@ -323,14 +324,13 @@
  依据：HIG caption2 11pt / 行业最小 11px；正文取 Ant Design 5 / TDesign / B 站口径 14px。
  原曲线的问题：390 处 --text-2xs 实测 9.05px（不可读）、2560 处 xs 与 2xs 同为 11.88px
  （两档塌缩）；段2 逆视口递减更违反可读性常识（桌面 1920 正文 13px < 平板 768 的 14px）。
- 恒定常量本身即 ≥ 行业下限，**不设可读性下限钳制**（钳制是多余的）。 */
-  /* 角标/元信息最小档：11px 基 × ui-scale × type-scale，并钳 10px 下限
- （界面缩放 95% 档与移动端 --type-scale 0.95 叠加时裸算式得 9.93px，
- 低于全行业最小档 Vant xs=10 → max() 兜底；默认档 10.45px 不受影响）。 */
-  --text-2xs: max(10px, calc(11px * var(--ui-scale) * var(--type-scale))); /* 恒定 11 × type-scale，钳 10px 下限（原 clamp(9px,…,10.333px)） */
-  --text-xs:  calc(12px * var(--ui-scale) * var(--type-scale)); /* 恒定 12 × type-scale（原 clamp(12px,…,12.667px)） */
-  --text-sm:  calc(13px * var(--ui-scale) * var(--type-scale)); /* 恒定 13 × type-scale（原 clamp(13px,…,13.667px)） */
-  --text-base: calc(14px * var(--ui-scale) * var(--type-scale)); /* 恒定 14 × type-scale（正文字号契约；段2 递减已取消）。
+ 恒定常量本身即 ≥ 行业下限；仅最小档在 uiScale 95% 时需 max(11px) 兜底。 */
+  /* 角标/元信息最小档：11px 基 × ui-scale，硬下限 11px。
+ （uiScale 95% 时其他档随缩放，最小档不再跌破 HIG caption2 / M3 label-small 的 11px。） */
+  --text-2xs: max(11px, calc(11px * var(--ui-scale))); /* 最小档硬下限 11 */
+  --text-xs:  calc(12px * var(--ui-scale)); /* 恒定 12（不乘 type-scale） */
+  --text-sm:  calc(13px * var(--ui-scale)); /* 恒定 13（不乘 type-scale） */
+  --text-base: calc(14px * var(--ui-scale)); /* 恒定 14（不乘 type-scale）
  ⚠️ 本 token 不再是 rem 基准——rem 基准已独立为 --root-font-size（见下）。 */
   /* 大四档：段1（375→768）保持流体，段2 见 @media (width >= 768px)：
  768 处 = 段1 末值（连续无跳变）→ 1440 命中行业标准档 16/18/22/28 → 冻结。 */
@@ -391,7 +391,10 @@
  任意视口下图标/文字比例恒定；<768px 随文字 fluid 放大，TV 随文字自动放大。
  系数使各档 ≈ 原值并保留层次；:root 补齐 --icon-2xl/--icon-3xl
  （原仅 TV 定义，桌面引用 size="2xl/3xl" 会 undefined）。 */
-  --icon-xs:  calc(var(--text-2xs)  * 1.40);   /* 9→11 ×1.40 = 12.6→15.4 */
+  /* 最小可交互图标档：16px 硬下限（常见 16px 图标网格；桌面/移动都不得低于它）。
+ 文本 2xs=11 时裸算式 15.4，刚好差 0.6px；加 max() 保证顶栏/分页/Chart 图标不被压到 15.x。
+ TV 块另行覆盖为 22.39，不受此下限影响。 */
+  --icon-xs:  max(16px, calc(var(--text-2xs) * 1.40));
   /* 最小图标档（此前 Home / TMDBMovieRow 的骨架角标写
  `var(--icon-2xs, 10px)` 而本 token **从未定义** → 兜底静默接管，实际恒为 10px。
  属「引用了不存在的 token」家族（同 的 --ui-scale 重复定义）。
@@ -406,6 +409,8 @@
   --icon-3xl: calc(var(--text-3xl)  * 1.70);   /* 26→30 ×1.70 = 44.2→51.0 */
   /* 触摸目标最小尺寸（WCAG 2.5.5 / iOS HIG 44pt）：移动端控制栏等点击热区下限，恒定不随主题缩放 */
   --tap-target: 44px;
+  /* WCAG 2.5.8 AA 最小目标（24×24）：紧凑导航/圆点等热区下限 */
+  --tap-target-min: 24px;
 
   /* ── Pagination Dots (分页圆点 — TV 经 [data-device="tv"] 与桌面等大(1080p)、4K=2× 同步放大) ─ */
   --dot-size: calc(clamp(5px, 3.092px + 0.509vw, 7px) * var(--ui-scale)); /* 5→8 圆点 */

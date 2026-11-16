@@ -84,8 +84,9 @@
 }
 .bmb-filter-ico {
   flex-shrink: 0;
-  width: var(--text-2xs);
-  height: var(--text-2xs);
+  /* 行内图标不随 2xs 文本档压到 11px：12px 是图标可读下限 */
+  width: var(--text-xs);
+  height: var(--text-xs);
 }
 .bmb-badge {
   display: inline-flex;

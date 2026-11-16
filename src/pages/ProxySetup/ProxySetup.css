@@ -414,6 +414,8 @@ html[data-device="app"] .proxy-setup__grid {
   gap: var(--space-sm);
   align-items: center;
   width: 100%;
+  /* WCAG 2.5.8 AA：移动端实测 23.14px，抬到 24 */
+  min-height: var(--tap-target-min);
   padding: var(--space-xs) var(--space-md);
   border: none;
   background: transparent;
@@ -486,6 +488,8 @@ html[data-device="app"] .proxy-setup__grid {
   gap: var(--space-2xs);
   justify-content: center;
   align-items: center;
+  /* WCAG 2.5.8 AA：移动端实测 21.14px，抬到 24 */
+  min-height: var(--tap-target-min);
   padding: var(--space-xs) var(--space-xl);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);

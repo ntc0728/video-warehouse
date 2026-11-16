@@ -27,7 +27,7 @@ export function Icon({ icon: IconCmp, size = 'lg', className, style, ...rest }: 
     <IconCmp
       {...rest}
       className={className}
-      style={{ width: dimension, height: dimension, ...style }}
+      style={{ width: dimension, height: dimension, flexShrink: 0, ...style }}
     />
   );
 }

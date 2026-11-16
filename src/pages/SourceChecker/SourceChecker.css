@@ -57,6 +57,8 @@
   font-size: var(--text-2xs);
 }
 .check-all-btn {
+  /* WCAG 2.5.8 AA：移动端实测 23.14px，抬到 24 */
+  min-height: var(--tap-target-min);
   padding: var(--space-xs) var(--space-lg);
   border: none;
   border-radius: var(--radius-full);
@@ -137,7 +139,8 @@
 }
 .sc-ring-num b em {
   color: var(--color-text-tertiary);
-  font-size: 0.5em;
+  /* 分数分母：0.5em 在 390 会落到 9.55px，用 2xs 下限兜住 */
+  font-size: max(var(--text-2xs), 0.5em);
   font-weight: 600;
   font-style: normal;
 }
@@ -204,6 +207,8 @@
   grid-template-columns: 110px minmax(0, 1fr) 44px;
   gap: var(--space-sm);
   align-items: center;
+  /* 移动端 21.14px + 行距 ≈1px 会踩 WCAG 2.5.8 间距例外；抬到 24 */
+  min-height: var(--tap-target-min);
   padding: var(--space-3xs) var(--space-2xs);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
@@ -354,6 +359,8 @@
   display: flex;
   gap: var(--space-sm);
   align-items: center;
+  /* WCAG 2.5.8 AA：紧凑导航项不低于 24px */
+  min-height: var(--tap-target-min);
   padding: var(--space-md) var(--space-sm);
   border: none;
   border-radius: var(--radius-md);

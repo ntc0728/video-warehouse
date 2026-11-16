@@ -186,6 +186,9 @@
   display: flex;
   gap: var(--space-xs);
   align-items: center;
+  /* WCAG 2.5.8 AA：紧凑档实测 23.89px，抬到 24×24 */
+  min-width: var(--tap-target-min);
+  min-height: var(--tap-target-min);
   padding: var(--space-xs);
   border: none;
   border-radius: var(--radius-md);
@@ -271,6 +274,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  /* WCAG 2.5.8 AA：紧凑档实测 23.89px，抬到 24×24 */
+  min-width: var(--tap-target-min);
+  min-height: var(--tap-target-min);
   padding: var(--space-xs);
   border: none;
   border-radius: var(--radius-md);

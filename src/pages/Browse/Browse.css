@@ -1132,6 +1132,8 @@ focus-visible 排除规则同口径（见 SearchBox.css 134-147）。
 }
 
 .browse-pagination__jump-btn {
+  /* WCAG 2.5.8 AA：移动端实测 22.55px，抬到 24 */
+  min-height: var(--tap-target-min);
   padding: var(--space-3xs) var(--space-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);

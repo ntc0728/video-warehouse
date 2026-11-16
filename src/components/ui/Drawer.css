@@ -208,6 +208,8 @@ body:has(.drawer-content) .back-to-top-button {
   display: inline-flex;
   gap: var(--space-xs);
   align-items: center;
+  /* WCAG 2.5.8 AA：实测 23.14px，抬到 24 */
+  min-height: var(--tap-target-min);
   padding: var(--space-xs) var(--space-sm);
   border: none;
   border-radius: var(--radius-full);
