@@ -28,6 +28,11 @@ export default {
 async function handleRequest(request) {
   const url = new URL(request.url);
 
+  // 流媒体拉取均为只读：仅接受 GET/HEAD
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response("Method Not Allowed", { status: 405 });
+  }
+
   // 每次请求时清理过期缓存
   evictCache();
 
@@ -44,28 +49,30 @@ async function handleRequest(request) {
   return new Response("Not Found", { status: 404 });
 }
 
-const options = {
-  originBlacklist: [],
-  originWhitelist: ["*"],
-};
+// ── 访问控制（防开放代理滥用）──
+// 调用方来源：只放行本站与本机开发端口（浏览器流媒体请求必带 Origin/Referer）。
+// 流目标域名不做白名单：不同采集站的分片 CDN 域名集合不可枚举，靠来源校验限制使用方。
+// 注意：真机/第三方播放器若经此代理拉流，其 host 需在 ALLOWED_CLIENT_HOSTS 内。
+const ALLOWED_CLIENT_HOSTS = new Set([
+  "video-warehouse.top",
+  "www.video-warehouse.top",
+  "localhost",
+  "127.0.0.1",
+]);
 
-const isOriginAllowed = (origin, options) => {
-  if (options.originWhitelist.includes("*")) {
-    return true;
-  }
-  if (
-    options.originWhitelist.length &&
-    !options.originWhitelist.includes(origin)
-  ) {
+const isClientAllowed = (request) => {
+  const source =
+    request.headers.get("Origin") || request.headers.get("Referer") || "";
+  if (!source) return false;
+  try {
+    const host = new URL(source).hostname;
+    return (
+      ALLOWED_CLIENT_HOSTS.has(host) ||
+      host.endsWith(".video-warehouse.top")
+    );
+  } catch {
     return false;
   }
-  if (
-    options.originBlacklist.length &&
-    options.originBlacklist.includes(origin)
-  ) {
-    return false;
-  }
-  return true;
 };
 
 /**
@@ -108,7 +115,7 @@ async function handleM3U8Proxy(request) {
   const headers = JSON.parse(searchParams.get("headers") || "{}");
   const origin = request.headers.get("Origin") || "";
 
-  if (!isOriginAllowed(origin, options)) {
+  if (!isClientAllowed(request)) {
     return new Response(`The origin "${origin}" is not allowed.`, {
       status: 403,
     });
@@ -204,7 +211,7 @@ async function handleDashProxy(request) {
   const headers = JSON.parse(searchParams.get("headers") || "{}");
   const origin = request.headers.get("Origin") || "";
 
-  if (!isOriginAllowed(origin, options)) {
+  if (!isClientAllowed(request)) {
     return new Response(`The origin "${origin}" is not allowed.`, {
       status: 403,
     });
@@ -422,7 +429,7 @@ async function handleTsProxy(request) {
   const headers = JSON.parse(searchParams.get("headers") || "{}");
   const origin = request.headers.get("Origin") || "";
 
-  if (!isOriginAllowed(origin, options)) {
+  if (!isClientAllowed(request)) {
     return new Response(`The origin "${origin}" is not allowed.`, {
       status: 403,
     });
@@ -481,7 +488,7 @@ async function handleFileProxy(request) {
   const headers = JSON.parse(searchParams.get("headers") || "{}");
   const origin = request.headers.get("Origin") || "";
 
-  if (!isOriginAllowed(origin, options)) {
+  if (!isClientAllowed(request)) {
     return new Response(`The origin "${origin}" is not allowed.`, { status: 403 });
   }
 
