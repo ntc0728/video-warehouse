@@ -230,7 +230,7 @@ const STAGE_B_ARGS = ['--all', '--budget', '150', '--retries', '1', '--workers',
 // Stage C（dev 单文件）：cross-tab 依赖双页签实时事件回写，与其它 spec 并行时会被饿死
 // （storage 事件 → rehydrate → setState 的链路挤不进 10s 单步上限）→ 独立进程、单 worker。
 const STAGE_C_SPECS = ['scripts/cross-tab.spec.ts'];
-const STAGE_C_ARGS = ['--all', '--dev', '--budget', '90', '--workers', '1', ...STAGE_C_SPECS];
+const STAGE_C_ARGS = ['--all', '--dev', '--budget', '90', '--retries', '1', '--workers', '1', ...STAGE_C_SPECS];
 const STAGE_C_ENV = { E2E_SKIP_SHOTS: '1' };
 
 // 并行分片（实验性，默认关）：两阶段各起独立 server + 各写 blob，跑完 merge 成一份报告。
