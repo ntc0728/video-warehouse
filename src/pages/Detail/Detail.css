@@ -1033,6 +1033,17 @@
   gap: var(--grid-gap);
 }
 
+/* 被过滤源说明行：源检测看着可用、但本次搜索没有产出可播数据时，
+ 单行列出「源名（原因）」；溢出省略，完整内容走 title。 */
+.detail-sources-skipped {
+  margin: var(--space-sm) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .detail-sources-empty {
   display: flex;
   flex-direction: column;

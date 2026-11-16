@@ -89,6 +89,12 @@
 .sdp-dot.is-ok {
   background: var(--color-success);
 }
+.sdp-dot.is-fail {
+  background: var(--color-error);
+}
+.sdp-dot.is-warn {
+  background: var(--color-warning);
+}
 .sdp-spin {
   flex: 0 0 auto;
   width: 11px;
@@ -146,7 +152,9 @@
 .sdp-pop-summary .fail b {
   color: var(--color-error-text);
 }
-
+.sdp-pop-summary .warn b {
+  color: var(--color-warning-text);
+}
 
 .sdp-pop-grid {
   display: grid;
@@ -171,10 +179,20 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-error);
+  background: var(--color-text-tertiary);
 }
 .sdp-cell.is-ok .sdp-cell-dot {
   background: var(--color-success);
+}
+/* 不支持关键词搜索：源本身可达、但没有按片名搜索的能力（琥珀，区别于「请求失败」） */
+.sdp-cell.is-unsupported .sdp-cell-dot {
+  background: var(--color-warning);
+}
+.sdp-cell.is-fail .sdp-cell-dot {
+  background: var(--color-error);
+}
+.sdp-cell.is-pending {
+  opacity: 0.6;
 }
 .sdp-cell-name {
   white-space: nowrap;

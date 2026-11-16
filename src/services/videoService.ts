@@ -23,6 +23,14 @@ export { parsePlaySources } from './vodParser';
  */
 const SEASON_RESOLVE_CONCURRENCY = 4;
 
+/**
+ * 关键词搜索/详情补拉的默认超时。
+ * 坏源（DNS 失效、反爬挑战页）会一直挂到超时才落定，期间整轮「全部源」收尾被拖住
+ * （详情页表现：大转圈不消失、重新匹配按钮不可用）。8s 是折中：比默认 10s 早收尾，
+ * 又给慢源留足余量（单次请求常见 0.4–2.9s，经代理更久）。
+ */
+const SEARCH_TIMEOUT_MS = 8000;
+
 interface SourceStatus {
   index: number;
   name: string;
@@ -59,10 +67,26 @@ interface CMSListResponse {
   list?: CMSVideoItem[];
   page?: number;
   total?: number;
+  /** 单页容量（不同 CMS 可能是数字或字符串，如 "20"）；分页推算用 */
+  limit?: number | string;
   /** MacCMS 业务状态码：1=成功；其他值代表业务异常（如 1002=当前 API 禁止关键词搜索） */
   code?: number;
   /** 业务异常描述，与 code 配套返回 */
   msg?: string;
+}
+
+/**
+ * CMS 业务错误（HTTP 200 + body.code 非 1）。
+ * 携带业务码，供调用方区分「接口可达但不能按关键词搜」这类原因，
+ * 而不是一律当网络失败（例：1002 = Current API forbids keyword search）。
+ */
+export class CmsBusinessError extends Error {
+  readonly code: number;
+  constructor(code: number, message: string) {
+    super(message);
+    this.name = 'CmsBusinessError';
+    this.code = code;
+  }
 }
 
 /**
@@ -72,7 +96,7 @@ interface CMSListResponse {
  */
 function assertCmsOk(data: CMSListResponse): void {
   if (data.code != null && data.code !== 1) {
-    throw new Error(data.msg?.trim() || `CMS 接口业务异常（code: ${data.code}）`);
+    throw new CmsBusinessError(data.code, data.msg?.trim() || `CMS 接口业务异常（code: ${data.code}）`);
   }
 }
 
@@ -194,6 +218,58 @@ function pickBestCmsMatch(
     if (best) return best;
   }
   return pick(list);
+}
+
+// ── 关键词搜索能力（源级） ──────────────────────────────
+
+/** 关键词搜索失败原因：区分「源里没有这部片」与「源根本不支持搜 / 请求挂了」 */
+export type SourceSearchErrorKind = 'no-match' | 'unsupported' | 'network';
+
+/** 「源不支持关键词搜索」的统一文案（UI 直接展示，避免各处自造措辞） */
+export const SEARCH_UNSUPPORTED_MESSAGE = '该源不支持关键词搜索';
+
+/**
+ * 会话内记住「不支持关键词搜索」的源（按源 id）。
+ *
+ * 两类来源：
+ * - 业务码拒绝：MacCMS 1002 `Current API forbids keyword search`（部分采集站只开放浏览）；
+ * - 忽略 wd 直接回全量目录：首屏无任何标题关联、`total` 远超单页容量（十万级目录）。
+ *
+ * 这类源根列表正常 → 只探根列表的「源检测」永远是绿的，但按片名永远搜不到；
+ * 记住后不再对它发搜索请求（注定失败，还白占一个 CORS 代理连接槽）。
+ * 只存内存：刷新页面重新试探一次，源站改策略后能自愈。
+ */
+const unsearchableSourceIds = new Set<string>();
+
+/** 该源是否已被判定「不支持关键词搜索」（调用方据此跳过扇出） */
+export function isSourceSearchUnsupported(sourceId?: string): boolean {
+  return !!sourceId && unsearchableSourceIds.has(sourceId);
+}
+
+function markSearchUnsupported(sourceId?: string): void {
+  if (sourceId) unsearchableSourceIds.add(sourceId);
+}
+
+/** 业务码/文案判定「源不支持关键词搜索」（1002 = MacCMS 禁止关键词搜索） */
+function isSearchUnsupportedError(error: unknown): boolean {
+  if (error instanceof CmsBusinessError) {
+    return error.code === 1002 || /keyword search|禁止关键词/i.test(error.message);
+  }
+  return error instanceof Error && /keyword search|禁止关键词/i.test(error.message);
+}
+
+/**
+ * 首屏无任何标题关联、且 total 远超单页容量 → 该源忽略了 wd（返回的是全量目录）。
+ * 阈值取 500：正常按片名搜索的命中数不可能到这个量级，而 10 万级目录必然是全量。
+ * 命中后既不翻页也不当作「无本片数据」，而是标记该源不支持搜索。
+ */
+const SEARCH_IGNORED_TOTAL_THRESHOLD = 500;
+function isSearchParamIgnored(data: CMSListResponse, title: string): boolean {
+  const list = data.list ?? [];
+  if (list.length === 0) return false;
+  if (list.some((item) => scoreCmsTitleMatch(item, title) >= 0)) return false;
+  const total = typeof data.total === 'number' ? data.total : 0;
+  return total > SEARCH_IGNORED_TOTAL_THRESHOLD;
 }
 
 /**
@@ -423,7 +499,7 @@ async function resolvePlaySources(
   // 2) 解析为空时，通过详情接口获取完整 vod_play_url
   try {
     const detailUrl = `${api}?ac=videolist&ids=${item.vod_id}`;
-    const detailData = await fetchCmsList(detailUrl, { useProxy: true, signal });
+    const detailData = await fetchCmsList(detailUrl, { useProxy: true, signal, timeout: SEARCH_TIMEOUT_MS });
     const detailItem = detailData.list?.[0];
     if (detailItem) {
       const parsed = parsePlaySources(detailItem.vod_play_url || '', vodType);
@@ -530,6 +606,8 @@ export interface VideoDetailResult {
   sourceName: string;
   video: Video | null;
   error?: string;
+  /** 失败原因分类（成功时不填）：UI 据此区分「无本片数据 / 不支持搜索 / 请求失败」 */
+  errorKind?: SourceSearchErrorKind;
 }
 
 /** 从多个视频源搜索并返回匹配结果（并行搜索） */
@@ -550,20 +628,28 @@ export async function searchVideoFromMultipleSources(
 
       const source = sources[index];
       if (!source) {
-        return { sourceIndex: index, sourceId: '', sourceName: '未知', video: null, error: '源配置不存在' } as VideoDetailResult;
+        return { sourceIndex: index, sourceId: '', sourceName: '未知', video: null, error: '源配置不存在', errorKind: 'network' } as VideoDetailResult;
+      }
+      // 已判定不支持关键词搜索的源：不发注定失败的请求（结果照常返回，供 UI 标注）
+      if (isSourceSearchUnsupported(source.id)) {
+        return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' } as VideoDetailResult;
       }
 
       try {
         // 查询不带 year：年份改作本地打分加分项，避免 CMS vod_year
         // 与 TMDB 不一致时硬过滤导致整源假阴性
         const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
-        const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
+        const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs ?? SEARCH_TIMEOUT_MS, retries: source.retries });
         if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
-          return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
+          return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源', errorKind: 'no-match' } as VideoDetailResult;
+        }
+        if (isSearchParamIgnored(data, title)) {
+          markSearchUnsupported(source.id);
+          return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' } as VideoDetailResult;
         }
         const target = pickBestCmsMatch(data.list, title, year, mediaType);
         if (!target) {
-          return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' } as VideoDetailResult;
+          return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源', errorKind: 'no-match' } as VideoDetailResult;
         }
         const resolved = await resolvePlaySources(source.api, target, signal);
         return {
@@ -574,8 +660,12 @@ export async function searchVideoFromMultipleSources(
         } as VideoDetailResult;
       } catch (error) {
         if (signal?.aborted) throw error;
+        if (isSearchUnsupportedError(error)) {
+          markSearchUnsupported(source.id);
+          return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' } as VideoDetailResult;
+        }
         const message = error instanceof Error ? error.message : String(error);
-        return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: message || '请求失败' } as VideoDetailResult;
+        return { sourceIndex: index, sourceId: source.id, sourceName: source.name, video: null, error: message || '请求失败', errorKind: 'network' } as VideoDetailResult;
       }
     })
   );
@@ -616,23 +706,30 @@ export async function searchVideoFromSingleSource(
   /** 获取指定索引的 CMS 源 */
   const source = sources[sourceIndex];
   if (!source) {
-    return { sourceIndex, sourceId: '', sourceName: '未知', video: null, error: '源配置不存在' };
+    return { sourceIndex, sourceId: '', sourceName: '未知', video: null, error: '源配置不存在', errorKind: 'network' };
+  }
+  if (isSourceSearchUnsupported(source.id)) {
+    return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' };
   }
 
   try {
     /** CMS 搜索接口 URL */
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}`;
     /** 请求 CMS 搜索接口（传递 signal 支持取消；超时/重试取自源配置） */
-    const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
+    const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs ?? SEARCH_TIMEOUT_MS, retries: source.retries });
     // 请求完成后检查是否已取消
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
-      return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' };
+      return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源', errorKind: 'no-match' };
+    }
+    if (isSearchParamIgnored(data, title)) {
+      markSearchUnsupported(source.id);
+      return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' };
     }
     /** 匹配到的视频（打分最高者；无标题关联不兜底，防同名作品挂错源） */
     const target = pickBestCmsMatch(data.list, title, year, mediaType);
     if (!target) {
-      return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源' };
+      return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: '未找到匹配资源', errorKind: 'no-match' };
     }
     /** 解析播放源和集数（传递 signal 支持取消） */
     const resolved = await resolvePlaySources(source.api, target, signal);
@@ -644,8 +741,12 @@ export async function searchVideoFromSingleSource(
     };
   } catch (error) {
     if (signal?.aborted) throw error;
+    if (isSearchUnsupportedError(error)) {
+      markSearchUnsupported(source.id);
+      return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' };
+    }
     const message = error instanceof Error ? error.message : String(error);
-    return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: message || '请求失败' };
+    return { sourceIndex, sourceId: source.id, sourceName: source.name, video: null, error: message || '请求失败', errorKind: 'network' };
   }
 }
 
@@ -658,6 +759,7 @@ export interface CMSSearchAllResult {
   page: number;
   total: number;
   error?: string;
+  errorKind?: SourceSearchErrorKind;
 }
 
 /**
@@ -673,14 +775,21 @@ export async function searchAllFromCMSSource(
   const sources = await getVideoSources();
   const source = sources[sourceIndex];
   if (!source) {
-    return { sourceIndex, sourceId: '', sourceName: '未知', items: [], page: 1, total: 0, error: '源配置不存在' };
+    return { sourceIndex, sourceId: '', sourceName: '未知', items: [], page: 1, total: 0, error: '源配置不存在', errorKind: 'network' };
+  }
+  if (isSourceSearchUnsupported(source.id)) {
+    return { sourceIndex, sourceId: source.id, sourceName: source.name, items: [], page, total: 0, error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' };
   }
 
   try {
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}&pg=${page}`;
-    const data = await fetchCmsList(searchUrl, { useProxy: true, signal: opts?.signal, timeout: source.timeoutMs, retries: source.retries });
+    const data = await fetchCmsList(searchUrl, { useProxy: true, signal: opts?.signal, timeout: source.timeoutMs ?? SEARCH_TIMEOUT_MS, retries: source.retries });
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
-      return { sourceIndex, sourceId: source.id, sourceName: source.name, items: [], page, total: data.total ?? 0, error: '未找到匹配资源' };
+      return { sourceIndex, sourceId: source.id, sourceName: source.name, items: [], page, total: data.total ?? 0, error: '未找到匹配资源', errorKind: 'no-match' };
+    }
+    if (isSearchParamIgnored(data, title)) {
+      markSearchUnsupported(source.id);
+      return { sourceIndex, sourceId: source.id, sourceName: source.name, items: [], page, total: 0, error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' };
     }
 
     const items: Video[] = data.list.map(item => {
@@ -690,8 +799,12 @@ export async function searchAllFromCMSSource(
 
     return { sourceIndex, sourceId: source.id, sourceName: source.name, items, page, total: data.total ?? 0 };
   } catch (error) {
+    if (isSearchUnsupportedError(error)) {
+      markSearchUnsupported(source.id);
+      return { sourceIndex, sourceId: source.id, sourceName: source.name, items: [], page, total: 0, error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' };
+    }
     const message = error instanceof Error ? error.message : String(error);
-    return { sourceIndex, sourceId: source.id, sourceName: source.name, items: [], page, total: 0, error: message || '请求失败' };
+    return { sourceIndex, sourceId: source.id, sourceName: source.name, items: [], page, total: 0, error: message || '请求失败', errorKind: 'network' };
   }
 }
 
@@ -714,9 +827,10 @@ export async function searchVideoByTitle(title: string, _year?: number): Promise
   const trySearch = async (index: number): Promise<Video | null> => {
     const source = sources[index];
     if (!source) return null;
+    if (isSourceSearchUnsupported(source.id)) return null;
     try {
       const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(searchTerm)}`;
-      const data = await fetchCmsList(searchUrl, { useProxy: true, timeout: source.timeoutMs, retries: source.retries });
+      const data = await fetchCmsList(searchUrl, { useProxy: true, timeout: source.timeoutMs ?? SEARCH_TIMEOUT_MS, retries: source.retries });
       if (!data.list || !Array.isArray(data.list) || data.list.length === 0) return null;
       const match = pickBestCmsMatch(data.list, title);
       return match ? mapVideoItem(match) : null;
@@ -751,6 +865,8 @@ export interface SeasonSearchResult {
   /** 季号 → Video 映射（无季号的条目不包含在内） */
   seasons: Map<number, Video>;
   error?: string;
+  /** 失败原因分类（成功时不填）：UI 据此区分「无本片数据 / 不支持搜索 / 请求失败」 */
+  errorKind?: SourceSearchErrorKind;
 }
 
 /**
@@ -776,38 +892,59 @@ export async function searchVideoSeasonsFromSingleSource(
   /** 获取指定索引的 CMS 源 */
   const source = sources[sourceIndex];
   if (!source) {
-    return { sourceIndex, sourceId: '', sourceName: '未知', seasons: new Map(), error: '源配置不存在' };
+    return { sourceIndex, sourceId: '', sourceName: '未知', seasons: new Map(), error: '源配置不存在', errorKind: 'network' };
+  }
+  if (isSourceSearchUnsupported(source.id)) {
+    return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons: new Map(), error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' };
   }
 
   try {
     /** CMS 搜索接口 URL */
     const searchUrl = `${source.api}?ac=videolist&wd=${encodeURIComponent(title)}`;
     /** 请求 CMS 搜索接口（传递 signal 支持取消；超时/重试取自源配置） */
-    const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
+    const data = await fetchCmsList(searchUrl, { useProxy: true, signal, timeout: source.timeoutMs ?? SEARCH_TIMEOUT_MS, retries: source.retries });
     // 请求完成后检查是否已取消
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     if (!data.list || !Array.isArray(data.list) || data.list.length === 0) {
-      return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons: new Map(), error: '未找到匹配资源' };
+      return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons: new Map(), error: '未找到匹配资源', errorKind: 'no-match' };
+    }
+    // 忽略 wd 的源（回的是全量目录）：不翻页、不打分，直接判「不支持搜索」
+    if (isSearchParamIgnored(data, title)) {
+      markSearchUnsupported(source.id);
+      return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons: new Map(), error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' };
     }
 
     /**
  * 翻页聚合：CMS 把每季存为独立 vod 条目，长篇剧 + 同名改编
  * 的命中数很容易超过单页容量，只取第一页会静默漏季（detail 页季列表不全）。
- * 按 total 补拉后续页，PAGE_LIMIT 封顶防御异常 total；按 vod_id 去重防页间重叠。
+ * 页数由 total / 单页容量推算、PAGE_LIMIT 封顶；**并发**补拉而非串行——
+ * 串行时每多一页就多一个完整 RTT，首卡上屏被整源拖慢（单页常见 0.6–2.9s）。
+ * 按 vod_id 去重防页间重叠；单页失败不拖垮整源（该页数据缺失，但已拿到的照常可用）。
  */
     const SEASON_PAGE_LIMIT = 4;
     const mergedList: CMSVideoItem[] = [...data.list];
     const totalCount = typeof data.total === 'number' ? data.total : 0;
     const seenIds = new Set(mergedList.map((i) => String(i.vod_id)));
-    for (let pg = 2; mergedList.length < totalCount && pg <= SEASON_PAGE_LIMIT; pg++) {
+    const pageSize = Math.max(1, Number(data.limit) || data.list.length || 20);
+    const lastPage = Math.min(SEASON_PAGE_LIMIT, Math.ceil(totalCount / pageSize));
+    if (lastPage > 1) {
+      const pageNums = Array.from({ length: lastPage - 1 }, (_, i) => i + 2);
+      const pageResults = await Promise.allSettled(
+        pageNums.map((pg) => fetchCmsList(`${searchUrl}&pg=${pg}`, {
+          useProxy: true, signal, timeout: source.timeoutMs ?? SEARCH_TIMEOUT_MS, retries: source.retries,
+        })),
+      );
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-      const pageData = await fetchCmsList(`${searchUrl}&pg=${pg}`, { useProxy: true, signal, timeout: source.timeoutMs, retries: source.retries });
-      if (!pageData.list || !Array.isArray(pageData.list) || pageData.list.length === 0) break;
-      for (const item of pageData.list) {
-        const idKey = String(item.vod_id);
-        if (seenIds.has(idKey)) continue;
-        seenIds.add(idKey);
-        mergedList.push(item);
+      for (const pr of pageResults) {
+        if (pr.status !== 'fulfilled') continue;
+        const pageData = pr.value;
+        if (!pageData.list || !Array.isArray(pageData.list) || pageData.list.length === 0) continue;
+        for (const item of pageData.list) {
+          const idKey = String(item.vod_id);
+          if (seenIds.has(idKey)) continue;
+          seenIds.add(idKey);
+          mergedList.push(item);
+        }
       }
     }
 
@@ -938,8 +1075,12 @@ export async function searchVideoSeasonsFromSingleSource(
     return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons };
   } catch (error) {
     if (signal?.aborted) throw error;
+    if (isSearchUnsupportedError(error)) {
+      markSearchUnsupported(source.id);
+      return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons: new Map(), error: SEARCH_UNSUPPORTED_MESSAGE, errorKind: 'unsupported' };
+    }
     const message = error instanceof Error ? error.message : String(error);
-    return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons: new Map(), error: message || '请求失败' };
+    return { sourceIndex, sourceId: source.id, sourceName: source.name, seasons: new Map(), error: message || '请求失败', errorKind: 'network' };
   }
 }
 
