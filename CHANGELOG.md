@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.3.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v2.2.0...kinotv-v2.3.0) (2026-11-16)
+
+
+### Features
+
+* **e2e:** --stages 子集补跑 + 分段口径全量绿判定（M1）+ IPTV 跨页签合并代际闸门 ([35e2766](https://github.com/ntc0728/video-warehouse/commit/35e276669597315eaf748d3287a2b9ffbed3cf61))
+* **lint:** 新增 lint:tokens 门 + brand-rgba 护栏，lint:all 升至 9 门 ([644d0a6](https://github.com/ntc0728/video-warehouse/commit/644d0a6234aedef5c71fad178d49632be283e99d))
+* **web:** 补齐 Web 标准文件与站点元信息 ([3d363a9](https://github.com/ntc0728/video-warehouse/commit/3d363a9b1d18dd56c4de5b8ecc7815805672ffd6))
+
+
+### Bug Fixes
+
+* **a11y:** 全视口字号/图标/热区整改 ([587771b](https://github.com/ntc0728/video-warehouse/commit/587771b68f14bee5f65eaa224e85ae8f0e9c1f08))
+* **boot-splash:** 统一启动骨架与运行期骨架配色 ([c96d89a](https://github.com/ntc0728/video-warehouse/commit/c96d89ab44650ed2d4f7bf398ae0be415b1e0f41))
+* **css:** 修复 19 处断链 token + 收敛 69 个死 token + 字重/品牌色 token 化 ([b9ab3a3](https://github.com/ntc0728/video-warehouse/commit/b9ab3a35d5f53bf86e0ff2cca48a2ee6eddfc13c))
+* **css:** 删非标间距档 --space-lg-xl（修 TV 倒挂）+ 1440 断点开闭对齐 ([0e16e0c](https://github.com/ntc0728/video-warehouse/commit/0e16e0cb950bd6a0d4658bdc9cd21da05466c455))
+* **deps:** axios 1.16.1→1.20.0、react-router-dom 7.15.0→7.18.5（清零 31 个生产依赖漏洞） ([a23b511](https://github.com/ntc0728/video-warehouse/commit/a23b5110e3f4a2dd93a27cbbadf26ccecbfe77ca))
+* **detail:** 源状态改用搜索结果口径 + 播放列表扇出/重匹配延迟修复 ([f649f39](https://github.com/ntc0728/video-warehouse/commit/f649f393cac5aec4d9792797ad3b72bc2ea44a95))
+* **e2e:** dev server 忽略测试产物目录，避免 trace 写入触发 page reload ([67710a1](https://github.com/ntc0728/video-warehouse/commit/67710a1d507356b921225c0ef1eef5eb33078573))
+* **mobile:** 输入框防聚焦放大 + 软键盘浮层几何 ([fa6f583](https://github.com/ntc0728/video-warehouse/commit/fa6f5838c4c16e467cdf8b6ed16f786c283b55de))
+* **proxy:** CORS/M3U8 Worker 加固——目标域名白名单 + 来源校验 + GET-only ([fccda5c](https://github.com/ntc0728/video-warehouse/commit/fccda5c3532f4698da391780f111fee030ce63af))
+* **ptr:** 下拉刷新与页面交互的手势仲裁 ([92f8cc0](https://github.com/ntc0728/video-warehouse/commit/92f8cc08b5ed7720afa2674c6a4359707ffcfb0d))
+* **security:** 补齐全站安全响应头（OWASP Secure Headers） ([981e7cc](https://github.com/ntc0728/video-warehouse/commit/981e7cc1b22a993727d100f0311035e6cd86f1cb))
+* **settings:** 跨页签设置落盘/合并乱序竞态 + 详情页源状态标签更名 ([e36458f](https://github.com/ntc0728/video-warehouse/commit/e36458f09e42210a175f44248a19bba6a0ae4f1f))
+* **types:** @types/node 显式 devDep（修复 CI 全新安装缺 @types/node 导致 tsc 解析 node:fs 失败） ([2030b07](https://github.com/ntc0728/video-warehouse/commit/2030b07838c94d65be350addb40addda5a47ff81))
+
 ## [2.2.0](https://github.com/ntc0728/video-warehouse/compare/kinotv-v2.1.0...kinotv-v2.2.0) (2026-11-12)
 
 
